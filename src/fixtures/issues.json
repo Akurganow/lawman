@@ -364,5 +364,83 @@
     },
     "body": "Text.\r\n\r\n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\r\n",
     "comments": []
+  },
+  {
+    "number": 19,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] slop: legacy police-fingerprint",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- police-fingerprint: slop-police tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying -->",
+    "comments": []
+  },
+  {
+    "number": 20,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] agent: legacy value with spaces",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- police-fingerprint: agent-police stage-comment-key file=.agents/x.md pass=reading -->",
+    "comments": []
+  },
+  {
+    "number": 21,
+    "state": "CLOSED",
+    "stateReason": "NOT_PLANNED",
+    "title": "[Lead] slop: legacy role-fingerprint",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": "2026-10-15T08:00:00Z",
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- slop-police-fingerprint: plugins/triz::principles-subitems-attributed-to-altshuller::lying -->",
+    "comments": []
+  },
+  {
+    "number": 22,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] repo: legacy audit routine",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- repo-audit-routine:D:plugins/howp/skills/howp/references/procedures.md:confidence-judgement-without-criterion -->",
+    "comments": []
+  },
+  {
+    "number": 23,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Legacy line inside a fence",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Syntax example:\n\n```\n<!-- police-fingerprint: slop-police src/f.rs::g::lying -->\n```\n",
+    "comments": []
+  },
+  {
+    "number": 24,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Legacy line by another author",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "bystander-fictional"
+    },
+    "body": "<!-- police-fingerprint: slop-police src/h.rs::i::lying -->",
+    "comments": []
   }
 ]

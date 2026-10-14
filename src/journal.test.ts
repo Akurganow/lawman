@@ -1512,6 +1512,151 @@ describe("fixture issues", () => {
   });
 });
 
+describe("legacy fingerprints", () => {
+  const PRECINCT = "main";
+  const canonical = (n: number) => collect(n).markers.map((m) => m.marker);
+  const legacyLine = (s: string) => carrier(s).map((f) => f.marker);
+
+  test("#19 police-fingerprint becomes a lead with a department and an id", () => {
+    const [m] = canonical(19);
+    expect(m).toMatchObject({ role: "patrol", stage: "lead", raw: issues[18].body.split("\n")[2] });
+    expect(m.fields).toEqual({
+      role: "patrol",
+      stage: "lead",
+      department: "slop",
+      id: "tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
+      legacy: "police-fingerprint",
+      at: "2026-10-14T09:00:00Z",
+    });
+  });
+
+  test("#20 a value with spaces gives a lead without an id", () => {
+    const [m] = canonical(20);
+    expect(m.fields).toEqual({
+      role: "patrol",
+      stage: "lead",
+      department: "agent",
+      legacy: "police-fingerprint",
+      at: "2026-10-14T09:00:00Z",
+    });
+  });
+
+  test("#21 role-fingerprint becomes a lead", () => {
+    const [m] = canonical(21);
+    expect(m.fields).toMatchObject({
+      department: "slop",
+      id: "plugins/triz::principles-subitems-attributed-to-altshuller::lying",
+      legacy: "slop-police-fingerprint",
+    });
+  });
+
+  test("#22 repo-audit-routine gives department repo and no id", () => {
+    const [m] = canonical(22);
+    expect(m.fields).toMatchObject({ department: "repo", legacy: "repo-audit-routine" });
+    expect(m.fields).not.toHaveProperty("id");
+  });
+
+  test("#23 a fenced legacy line and #24 a foreign one do not count", () => {
+    expect(collect(23).markers).toEqual([]);
+    expect(collect(24).markers).toEqual([]);
+    expect(collect(24).leadOrigin).toBeNull();
+  });
+
+  test("the department mapping", () => {
+    const dept = (line: string) => legacyLine(line)[0]?.fields.department;
+    expect(dept("<!-- police-fingerprint: abstraction-police a/b::c::d -->")).toBe("abstractions");
+    expect(dept("<!-- abstraction-police-fingerprint: a/b::c::d -->")).toBe("abstractions");
+    expect(dept("<!-- police-fingerprint: evals x -->")).toBe("evals");
+    expect(dept("<!-- evals-fingerprint: x -->")).toBe("evals");
+    expect(dept("<!-- police-fingerprint: dependency-police x -->")).toBe("dependency");
+    expect(dept("<!-- repo-audit-routine:x -->")).toBe("repo");
+  });
+
+  test("a bad department or a malformed line is dropped", () => {
+    expect(legacyLine("<!-- police-fingerprint: Slop-Police a/b::c::d -->")).toEqual([]);
+    expect(legacyLine("<!-- police-fingerprint: 9police a/b::c::d -->")).toEqual([]);
+    expect(legacyLine("<!-- police-fingerprint: slop-police -->")).toEqual([]);
+    expect(legacyLine("<!-- repo-audit-routine: -->")).toEqual([]);
+    expect(legacyLine(" <!-- repo-audit-routine:x -->")).toEqual([]);
+    expect(legacyLine("<!-- repo-audit-routine:x --> tail")).toEqual([]);
+    expect(legacyLine("> <!-- police-fingerprint: slop-police a/b::c::d -->")).toEqual([]);
+  });
+
+  test("an id needs three canonical parts without a hyphen run", () => {
+    const id = (v: string) => legacyLine(`<!-- police-fingerprint: slop-police ${v} -->`)[0].fields.id;
+    expect(id("a/b::c::d")).toBe("a/b::c::d");
+    expect(id("a/b::c--x::d")).toBeUndefined();
+    expect(id("a/b::c")).toBeUndefined();
+    expect(id("a/b::c::d::e")).toBeUndefined();
+    expect(id("a/b::::d")).toBeUndefined();
+    expect(id("A:CODE_OF_CONDUCT.md:missing-code-of-conduct")).toBeUndefined();
+  });
+
+  test("a lawman marker and a legacy marker on one issue are both kept, the earlier is the origin", () => {
+    const text = `<!-- police-fingerprint: slop-police a/b::c::d -->\n${lead()}`;
+    const found = extractMarkers({ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author: TRUSTED }, TRUSTED);
+    expect(found.map((f) => f.marker.fields.legacy ?? "lawman")).toEqual(["police-fingerprint", "lawman"]);
+    const issue = { number: 1, author: { login: TRUSTED }, body: text, createdAt: "2026-10-14T09:00:00Z", comments: [] };
+    expect(collectIssueMarkers(issue, TRUSTED).leadOrigin!.marker.fields.legacy).toBe("police-fingerprint");
+    const swapped = { ...issue, body: `${lead()}\n<!-- repo-audit-routine:x -->` };
+    expect(collectIssueMarkers(swapped, TRUSTED).leadOrigin!.marker.fields.legacy).toBeUndefined();
+  });
+
+  test("an untrusted author and an oversized line count for nothing", () => {
+    expect(carrier("<!-- repo-audit-routine:x -->", "bystander-fictional")).toEqual([]);
+    expect(legacyLine(`<!-- repo-audit-routine:${"x".repeat(MARKER_MAX_BYTES)} -->`)).toEqual([]);
+  });
+
+  describe("through the CLI", () => {
+    const sync = () =>
+      Bun.spawnSync(["bun", "src/journal.ts", "sync", PRECINCT, "--author", TRUSTED], {
+        cwd: ROOT,
+        env: env({ LAWMAN_DB: dbFile }),
+        stdin: Buffer.from(JSON.stringify(issues)),
+      });
+    const rows = (args: string[]) => run(args).out.split("\n").filter((l) => l !== "");
+    const legacyRows = (all: string[]) => all.filter((l) => /^(19|2[0-4])\t/.test(l)).map((l) => l.split("\t").slice(0, 5).join("|"));
+
+    beforeEach(() => {
+      addPrecincts({ [PRECINCT]: 1 });
+      expect(sync().exitCode).toBe(0);
+    });
+
+    test("leads lists the four with their departments and ids", () => {
+      expect(legacyRows(rows(["leads", PRECINCT, "--state", "all"]))).toEqual([
+        "19|OPEN||slop|tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
+        "20|OPEN||agent|",
+        "21|CLOSED|NOT_PLANNED|slop|plugins/triz::principles-subitems-attributed-to-altshuller::lying",
+        "22|OPEN||repo|",
+      ]);
+    });
+
+    test("cap counts the open legacy leads of a department", () => {
+      expect(run(["cap", PRECINCT, "--department", "slop"]).out.trim()).toBe("cap=3 open=1");
+      expect(run(["cap", PRECINCT, "--department", "agent"]).out.trim()).toBe("cap=3 open=1");
+    });
+
+    test("seen finds a legacy id by its symbol", () => {
+      const seen = (id: string) => run(["seen", PRECINCT, "--id", id]).out.trim();
+      expect(seen("tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying")).toBe("open #19");
+      expect(seen("tools/check-conformance.py::skills-ref-not-pinnable-in-ci::unused")).toBe("open #19");
+      expect(seen("plugins/triz::principles-subitems-attributed-to-altshuller::lying")).toBe("declined #21");
+      expect(seen("src/f.rs::g::lying")).toBe("none");
+      expect(seen("src/h.rs::i::lying")).toBe("none");
+    });
+
+    test("sync counts legacy markers as markers and not as invalid", () => {
+      const kept = issues.filter((i) => i.author.login.toLowerCase() === TRUSTED);
+      const all = kept.flatMap((i) => collectIssueMarkers(i, TRUSTED).markers);
+      const shaped = kept.flatMap((i) => [i.body, ...i.comments.map((c) => c.body)]).flatMap((t) => t.split("\n"));
+      const lawman = all.filter((m) => m.marker.fields.legacy === undefined).length;
+      const invalid = shaped.filter((l) => l.startsWith("<!-- lawman:")).length - lawman;
+      expect(all.length - lawman).toBe(4);
+      expect(sync().stdout.toString()).toContain(`markers=${all.length} invalid=${invalid} `);
+    });
+  });
+});
+
 describe("sync", () => {
   const PRECINCT = "main";
   const syncArgs = (extra: string[] = []) => ["sync", PRECINCT, "--author", TRUSTED, ...extra];
@@ -1548,11 +1693,12 @@ describe("sync", () => {
     const kept = issues.filter(mine);
     const found = kept.map((i) => collectIssueMarkers(i, TRUSTED));
     const markers = found.reduce((n, f) => n + f.markers.length, 0);
+    const legacy = found.flatMap((f) => f.markers).filter((m) => m.marker.fields.legacy !== undefined).length;
     const shaped = kept.flatMap(lines).filter((l) => l.startsWith("<!-- lawman:")).length;
     const r = sync(issues);
     expect(r.code).toBe(0);
     expect(r.out.trim()).toBe(
-      `issues=${kept.length} leads=${found.filter((f) => f.leadOrigin).length} markers=${markers} invalid=${shaped - markers} skipped=${issues.length - kept.length}`,
+      `issues=${kept.length} leads=${found.filter((f) => f.leadOrigin).length} markers=${markers} invalid=${shaped - (markers - legacy)} skipped=${issues.length - kept.length}`,
     );
     expect(query("SELECT count(*) AS n FROM issues")).toEqual([{ n: kept.length }]);
     expect(query("SELECT count(*) AS n FROM markers")).toEqual([{ n: markers }]);

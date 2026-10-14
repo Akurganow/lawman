@@ -763,6 +763,13 @@ const ID_PARTS = 3;
 const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
 const FENCE_CLOSE = /^ {0,3}(`{3,}|~{3,})\s*$/;
 const ORD_PAD = 6;
+const LEGACY_FORMS: { prefix: (m: RegExpMatchArray) => string; re: RegExp; role: (m: RegExpMatchArray) => string; value: number }[] = [
+  { re: /^<!-- police-fingerprint: (\S+) (.+?) -->$/, prefix: () => "police-fingerprint", role: (m) => m[1], value: 2 },
+  { re: /^<!-- (?!police-fingerprint)(\S+)-fingerprint: (.+?) -->$/, prefix: (m) => `${m[1]}-fingerprint`, role: (m) => m[1], value: 2 },
+  { re: /^<!-- repo-audit-routine:(.+?) -->$/, prefix: () => "repo-audit-routine", role: () => "repo", value: 1 },
+];
+const POLICE_SUFFIX = /-police$/;
+const DEPARTMENT_RENAMES: Record<string, string> = { abstraction: "abstractions" };
 
 function encodeBytes(bytes: Uint8Array): string {
   const text = Array.from(bytes, (b) => {
@@ -840,6 +847,23 @@ export function parseMarker(line: string): Marker | null {
   return { role: fields.role, stage: fields.stage, fields, raw: line };
 }
 
+// the legacy fingerprint lines are read only: nobody writes them any more
+function parseLegacy(line: string, createdAt: string): Marker | null {
+  if (Buffer.byteLength(line) > MARKER_MAX_BYTES) return null;
+  for (const form of LEGACY_FORMS) {
+    const m = line.match(form.re);
+    if (!m) continue;
+    const stripped = form.role(m).replace(POLICE_SUFFIX, "");
+    const department = DEPARTMENT_RENAMES[stripped] ?? stripped;
+    if (!NAME.test(department)) return null;
+    const value = m[form.value];
+    const fields: Record<string, string> = { role: "patrol", stage: "lead", department };
+    if (canonicalId(value)) fields.id = value;
+    return { role: "patrol", stage: "lead", fields: { ...fields, legacy: form.prefix(m), at: createdAt }, raw: line };
+  }
+  return null;
+}
+
 function openingFence(line: string): string | null {
   const m = line.match(FENCE_OPEN);
   return m && !(m[1][0] === "`" && m[2].includes("`")) ? m[1] : null;
@@ -876,7 +900,7 @@ export function extractMarkers(carrier: Carrier, trustedLogin: string): Found[] 
   const hidden = fencedLines(lines);
   const found: Found[] = [];
   lines.forEach((line, i) => {
-    const marker = hidden[i] ? null : parseMarker(line);
+    const marker = hidden[i] ? null : (parseMarker(line) ?? parseLegacy(line, carrier.createdAt));
     if (marker) found.push({ ord: `${carrier.createdAt}|${pad(carrier.rank)}|${pad(i + 1)}`, line: i + 1, marker });
   });
   return found;
@@ -978,7 +1002,7 @@ function storeIssue(db: Database, name: string, issue: SyncIssue, login: string,
   stats.issues++;
   stats.leads += leadOrigin ? 1 : 0;
   stats.markers += markers.length;
-  stats.invalid += markerShaped(issue) - markers.length;
+  stats.invalid += markerShaped(issue) - markers.filter((m) => m.marker.fields.legacy === undefined).length;
 }
 
 function replaceCache(db: Database, name: string, login: string, issues: SyncIssue[], reset: boolean): SyncStats {
