@@ -120,14 +120,14 @@ contract_version: 1
 
 ## Fence
 
-- Lint, type check and unit tests run on every pull request: .github/workflows/ci.yml
+- Lint, type check and unit tests run on every pull request: ci/checks.yml
 - The fence does not run the browser suite. A UI regression passes it.
 
 ## Regression proof
 
-- npm run lint
-- npm run typecheck
-- npm test
+- make lint
+- make typecheck
+- make test
 
 ## Not judged
 
@@ -136,12 +136,12 @@ none
 ## Execution
 
 - Run code only in a copy under the run directory. Never run it in the clone.
-- The tree expects Node 22 and the package manager named in package.json.
+- The tree expects the runtime version named in .runtime-version.
 
 ## Executor loads
 
-- .agents/skills/widget-api/SKILL.md
-- .agents/rules/testing.md
+- skills/widget-api/SKILL.md
+- rules/testing.md
 
 ## Precedents
 

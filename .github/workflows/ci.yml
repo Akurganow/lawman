@@ -1,0 +1,72 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: 1.4.2
+      - run: bun test
+      - run: bun build --compile --target=bun-linux-x64 src/journal.ts --outfile journal-smoke
+      - run: ./journal-smoke --version
+
+  fence:
+    runs-on: ubuntu-latest
+    env:
+      LAWMAN_FENCE_NAMES: ${{ secrets.LAWMAN_FENCE_NAMES }}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Select fenced paths
+        run: |
+          paths=""
+          for p in law departments skills/duty-desk skills/patrol; do
+            if [ -e "$p" ]; then paths="$paths $p"; fi
+          done
+          if [ -z "$paths" ]; then echo "no fenced paths"; exit 1; fi
+          echo "FENCE_PATHS=$paths" >> "$GITHUB_ENV"
+      - name: Class fence
+        run: |
+          grep -vE '^(#|[[:space:]]*$)' fence-patterns.txt > "$RUNNER_TEMP/fence.txt"
+          rc=0
+          hits=$(git grep -nIE -f "$RUNNER_TEMP/fence.txt" -- $FENCE_PATHS | cut -d: -f1,2; exit "${PIPESTATUS[0]}") || rc=$?
+          if [ "$rc" -gt 1 ]; then echo "fence scan error"; exit 2; fi
+          if [ "$rc" -eq 0 ]; then echo "$hits"; echo "class fence failed"; exit 1; fi
+          echo "class fence clean"
+      - name: Names fence
+        if: env.LAWMAN_FENCE_NAMES != ''
+        run: |
+          rc=0
+          hits=$(git grep -nIiE -e "$LAWMAN_FENCE_NAMES" -- $FENCE_PATHS | cut -d: -f1,2; exit "${PIPESTATUS[0]}") || rc=$?
+          if [ "$rc" -gt 1 ]; then echo "fence scan error"; exit 2; fi
+          if [ "$rc" -eq 0 ]; then echo "$hits"; echo "names fence failed"; exit 1; fi
+          echo "names fence clean"
+      - name: Names fence skipped
+        if: env.LAWMAN_FENCE_NAMES == ''
+        run: echo "names fence skipped"
+
+  leaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - name: Leak scan
+        run: |
+          rc=0
+          hits=$(git grep -nIE -e '/Users/[a-z]' -e '/home/[a-z]' -e 'gh[pousr]_[A-Za-z0-9]{20,}' -e 'github_pat_[A-Za-z0-9_]{20,}' -- . ':(exclude)fence-patterns.txt' ':(exclude).git' ':(exclude)node_modules' | cut -d: -f1,2; exit "${PIPESTATUS[0]}") || rc=$?
+          if [ "$rc" -gt 1 ]; then echo "leak scan error"; exit 2; fi
+          if [ "$rc" -eq 0 ]; then echo "$hits"; echo "leak scan failed"; exit 1; fi
+          echo "no leaks"
+
+  ignore:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+      - run: git check-ignore -q docs/gangsta/x
