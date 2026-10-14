@@ -4,9 +4,7 @@ on:
       - "v*"
 
 permissions:
-  contents: write
-  id-token: write
-  attestations: write
+  contents: read
 
 jobs:
   build:
@@ -43,6 +41,10 @@ jobs:
           if-no-files-found: error
 
   release:
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     needs: build
     runs-on: ubuntu-latest
     steps:
