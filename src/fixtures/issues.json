@@ -1,0 +1,446 @@
+[
+  {
+    "number": 1,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] Dead code in Foo::bar",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Dead code in Foo::bar.\n\n<!-- lawman: role=patrol stage=lead department=core id=src/my%20file.rs::Foo%3A%3Abar::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z of=42 -->",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "Review done.\n\n<!-- lawman: role=judge stage=return to=patrol round=2 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 2,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Marker inside a backtick fence",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Syntax example:\n\n```\n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n```\n",
+    "comments": []
+  },
+  {
+    "number": 3,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Marker inside a tilde fence",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Syntax example:\n\n~~~\n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n~~~\n",
+    "comments": []
+  },
+  {
+    "number": 4,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Four-backtick fence holds a three-backtick line",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "````\n```\n<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->\n```\n````\n<!-- lawman: role=judge stage=return to=patrol round=3 at=2026-10-14T10:05:00Z -->\n",
+    "comments": []
+  },
+  {
+    "number": 5,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Marker in the wrong position",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "    <!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n> <!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\nsee <!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z --> \n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z --> tail\n <!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n\t<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": []
+  },
+  {
+    "number": 6,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Marker from an untrusted author",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "bystander-fictional"
+    },
+    "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "bystander-fictional"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 7,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Trusted login differs in case",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "OCTOCAT-LAWMAN"
+    },
+    "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "Octocat-Lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 8,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Carrier order beats at",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T12:00:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=2 at=2026-10-14T08:00:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 9,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Comments are ordered by creation time",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "No marker here.\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T11:00:00Z"
+      },
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=2 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      },
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=3 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 10,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Line number breaks a tie inside one carrier",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Text.\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->\n\n<!-- lawman: role=judge stage=return to=patrol round=2 at=2026-10-14T10:05:00Z -->\n",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 11,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Non-canonical ids",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::Foo%3a%3abar::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T10:00:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      },
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=patrol stage=lead department=core id=src/%41.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->",
+        "createdAt": "2026-10-14T11:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 12,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Double hyphen in a value",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=patrol stage=lead department=core--api id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 13,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Duplicate key",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 round=2 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 14,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Marker over 1024 bytes",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=2 at=2026-10-14T10:05:00Z note=aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 15,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Hyphen runs in an id path",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a-%2Db.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a--b.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 16,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Unknown stage and keys",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Text.\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=curator stage=audit at=2026-10-14T10:05:00Z flavor=mint round_trip=3 -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 17,
+    "state": "CLOSED",
+    "stateReason": "COMPLETED",
+    "title": "Later markers never displace the lead origin",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": "2026-10-15T08:00:00Z",
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\n",
+    "comments": [
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->",
+        "createdAt": "2026-10-14T10:00:00Z"
+      },
+      {
+        "author": {
+          "login": "octocat-lawman"
+        },
+        "body": "<!-- lawman: role=patrol stage=lead department=core id=src/b.rs::g::dead-code sha=89abcdef0123456789abcdef0123456789abcdef at=2026-10-14T11:00:00Z -->",
+        "createdAt": "2026-10-14T11:00:00Z"
+      }
+    ]
+  },
+  {
+    "number": 18,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "CRLF line endings",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Text.\r\n\r\n<!-- lawman: role=patrol stage=lead department=core id=src/a.rs::f::dead-code sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:30:00Z -->\r\n",
+    "comments": []
+  },
+  {
+    "number": 19,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] slop: legacy police-fingerprint",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- police-fingerprint: slop-police tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying -->",
+    "comments": []
+  },
+  {
+    "number": 20,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] agent: legacy value with spaces",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- police-fingerprint: agent-police stage-comment-key file=.agents/x.md pass=reading -->",
+    "comments": []
+  },
+  {
+    "number": 21,
+    "state": "CLOSED",
+    "stateReason": "NOT_PLANNED",
+    "title": "[Lead] slop: legacy role-fingerprint",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": "2026-10-15T08:00:00Z",
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- slop-police-fingerprint: plugins/triz::principles-subitems-attributed-to-altshuller::lying -->",
+    "comments": []
+  },
+  {
+    "number": 22,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "[Lead] repo: legacy audit routine",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Legacy body.\n\n<!-- repo-audit-routine:D:plugins/howp/skills/howp/references/procedures.md:confidence-judgement-without-criterion -->",
+    "comments": []
+  },
+  {
+    "number": 23,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Legacy line inside a fence",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "octocat-lawman"
+    },
+    "body": "Syntax example:\n\n```\n<!-- police-fingerprint: slop-police src/f.rs::g::lying -->\n```\n",
+    "comments": []
+  },
+  {
+    "number": 24,
+    "state": "OPEN",
+    "stateReason": "",
+    "title": "Legacy line by another author",
+    "createdAt": "2026-10-14T09:00:00Z",
+    "closedAt": null,
+    "author": {
+      "login": "bystander-fictional"
+    },
+    "body": "<!-- police-fingerprint: slop-police src/h.rs::i::lying -->",
+    "comments": []
+  }
+]

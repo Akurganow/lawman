@@ -1,0 +1,23 @@
+# Classes of repository-specific text. The law and generic roles must match none of them.
+\.agents/
+\.claude/
+\btools/
+\bscripts/
+Package\.swift
+Cargo\.toml
+package\.json
+pyproject\.toml
+go\.mod
+Gemfile
+requirements\.txt
+\.github/workflows
+\bnpm\b
+\byarn\b
+\bpnpm\b
+\bcargo\b
+\bswift\b
+\bpip\b
+\bpoetry\b
+\bxcodebuild\b
+\bgradle\b
+\bmaven\b
