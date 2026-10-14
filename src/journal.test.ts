@@ -7,6 +7,9 @@ import pkg from "../package.json";
 import {
   EXIT,
   Fail,
+  BODY_MAX_BYTES,
+  CONSTITUTION_HEADINGS,
+  DEPARTMENT_HEADINGS,
   MARKER_MAX_BYTES,
   MIGRATIONS,
   canonicalId,
@@ -16,6 +19,8 @@ import {
   decodeIdPart,
   encodeIdPart,
   extractMarkers,
+  lintBody,
+  lintPage,
   now,
   open,
   parseMarker,
@@ -1956,6 +1961,377 @@ describe("leads, seen, cap and last", () => {
 
     test("a missing role exits 1", () => {
       expect(cmd("last", PRECINCT).code).toBe(1);
+    });
+  });
+});
+
+describe("lint-body", () => {
+  const TITLE = "[Lead] core: dead code";
+  const TOKEN = "ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2";
+  const FINE = ["Analysed commit: 0123456", "", "## What", "A function nobody calls.", ""];
+  const body = (...lines: string[]) => [...lines, lead()].join("\n");
+  const lintText = (text: string, title = TITLE) => lintBody(`${title}\n\n${text}`);
+  const reasonsOf = (...lines: string[]) => lintText(body(...lines));
+
+  test("a clean body passes", () => {
+    expect(reasonsOf(...FINE)).toEqual([]);
+  });
+
+  test("the marker may be followed by blank lines", () => {
+    expect(lintText(body(...FINE) + "\n\n  \n")).toEqual([]);
+  });
+
+  test("home directories, $HOME and installation roots are rejected with the body line", () => {
+    const leaks = [
+      "see /Users/someone/code",
+      "see /home/someone/code",
+      "see ~/code",
+      "run $HOME/bin",
+      "run ${HOME}/bin",
+      "tool at .lawman/bin/journal",
+      "tool at /opt/.lawman/bin",
+      "tool at .lawman",
+    ];
+    for (const leak of leaks) expect(reasonsOf("ok", leak)).toEqual(["2: home or installation path"]);
+  });
+
+  test("the precinct-local department directory is allowed, any other .lawman path is not", () => {
+    expect(reasonsOf("page at .lawman/departments/x.md")).toEqual([]);
+    expect(reasonsOf("page at tree/.lawman/departments/x.md")).toEqual([]);
+    expect(reasonsOf("page at .lawman/departments")).toEqual(["1: home or installation path"]);
+    expect(reasonsOf("page at .lawman/other/x.md")).toEqual(["1: home or installation path"]);
+    expect(reasonsOf("a name like not.lawman is no segment")).toEqual([]);
+  });
+
+  test("a segment that only resembles a home directory passes", () => {
+    expect(reasonsOf("src/Users/model.rs", "see https://example.org/x")).toEqual([]);
+  });
+
+  test("GitHub token shapes are rejected", () => {
+    const pat = "github_pat_" + "A1b2C3d4E5f6G7h8I9j0_k";
+    for (const secret of [TOKEN, pat, "gho_" + "x".repeat(20), "ghs_" + "y".repeat(30)]) {
+      expect(reasonsOf(`key ${secret}`)).toEqual(["1: GitHub token"]);
+    }
+    expect(reasonsOf("ghp_short")).toEqual([]);
+  });
+
+  test("image embeds and image tags are rejected", () => {
+    for (const line of ["![shot](https://example.org/a.png)", "<img src=x>", "<IMG src=x>", "<picture>"]) {
+      expect(reasonsOf(line)).toEqual(["1: image embed"]);
+    }
+  });
+
+  test("an @ mention is rejected outside code", () => {
+    expect(reasonsOf("thanks @someone")).toEqual(["1: @ mention"]);
+    expect(reasonsOf("mail a@b.example")).toEqual(["1: @ mention"]);
+    expect(reasonsOf("@7days")).toEqual(["1: @ mention"]);
+  });
+
+  test("an @ sign without a letter or digit after it passes", () => {
+    expect(reasonsOf("at @ sign, @-, @")).toEqual([]);
+  });
+
+  test("an @ inside a code span passes, one outside it does not", () => {
+    expect(reasonsOf("the `@Override` tag and ``@x`` too")).toEqual([]);
+    expect(reasonsOf("the `@Override` tag and @someone")).toEqual(["1: @ mention"]);
+    expect(reasonsOf("an unclosed `span @someone")).toEqual(["1: @ mention"]);
+  });
+
+  test("an @ inside a fenced block passes, other rules still apply there", () => {
+    expect(reasonsOf("```", "@Override", "```")).toEqual([]);
+    expect(reasonsOf("~~~~", "@Override", "~~~", "@someone", "~~~~")).toEqual([]);
+    expect(reasonsOf("```", "@Override", "```", "@someone")).toEqual(["4: @ mention"]);
+    expect(reasonsOf("```", "/home/someone/x", "```")).toEqual(["2: home or installation path"]);
+  });
+
+  test("one line can fail several rules, each named once and in a fixed order", () => {
+    expect(reasonsOf(`/home/someone ${TOKEN} @someone`)).toEqual([
+      "1: home or installation path",
+      "1: GitHub token",
+      "1: @ mention",
+    ]);
+  });
+
+  test("the output never holds the matched text", () => {
+    const text = reasonsOf(`/home/someone ${TOKEN} @someone ![x](y)`).join("\n");
+    for (const secret of ["someone", TOKEN, "![x]"]) expect(text).not.toContain(secret);
+  });
+
+  test("the last non-empty line must be a valid marker", () => {
+    const missing = lintText(FINE.join("\n"));
+    expect(missing).toEqual(["4: last line is not a valid marker"]);
+    const notLast = lintText([lead(), "trailing words"].join("\n"));
+    expect(notLast).toEqual(["2: last line is not a valid marker"]);
+    expect(lintText(lead().replace("role=patrol", "role=Patrol"))).toEqual(["1: last line is not a valid marker"]);
+  });
+
+  test("an empty body has no marker", () => {
+    expect(lintBody(`${TITLE}\n\n`)).toEqual(["1: last line is not a valid marker"]);
+    expect(lintBody(`${TITLE}\n`)).toEqual(["1: last line is not a valid marker"]);
+  });
+
+  test("the marker stage is not constrained", () => {
+    expect(lintText(ret())).toEqual([]);
+  });
+
+  test("a marker inside a fence at the end still counts as the last line", () => {
+    expect(lintText(["```", lead(), "```"].join("\n"))).toEqual(["3: last line is not a valid marker"]);
+  });
+
+  test("CRLF line ends are accepted", () => {
+    expect(lintBody(`${TITLE}\r\n\r\nok\r\n${lead()}\r\n`)).toEqual([]);
+  });
+
+  test("the size limit is 64 KB and counts bytes of the body", () => {
+    expect(BODY_MAX_BYTES).toBe(64 * 1024);
+    const room = BODY_MAX_BYTES - Buffer.byteLength("\n" + lead());
+    expect(lintText("x".repeat(room) + "\n" + lead())).toEqual([]);
+    expect(lintText("x".repeat(room + 1) + "\n" + lead())).toEqual([`1: body exceeds ${BODY_MAX_BYTES} bytes`]);
+    expect(lintText("é".repeat(BODY_MAX_BYTES / 2) + "\n" + lead())).toEqual([`1: body exceeds ${BODY_MAX_BYTES} bytes`]);
+  });
+
+  test("the title is checked with the same rules and reported as title", () => {
+    expect(lintText(body(...FINE), "")).toEqual(["title: empty title"]);
+    expect(lintText(body(...FINE), "x @someone")).toEqual(["title: @ mention"]);
+    expect(lintText(body(...FINE), "x /home/someone")).toEqual(["title: home or installation path"]);
+    expect(lintText(body(...FINE), `x ${TOKEN}`)).toEqual(["title: GitHub token"]);
+  });
+
+  test("a second line that is not blank is a title error and the body starts there", () => {
+    expect(lintBody(`${TITLE}\nfirst body line\n${lead()}`)).toEqual(["title: no blank line after the title"]);
+  });
+
+  describe("command", () => {
+    const feed = (input: string) =>
+      Bun.spawnSync(["bun", "src/journal.ts", "lint-body"], { cwd: ROOT, env: env(), stdin: Buffer.from(input) });
+
+    test("a clean body prints nothing and exits 0", () => {
+      const r = feed(`${TITLE}\n\n${body(...FINE)}\n`);
+      expect([r.exitCode, r.stdout.toString(), r.stderr.toString()]).toEqual([0, "", ""]);
+    });
+
+    test("rejected input prints one reason per line on stdout and exits 7", () => {
+      const r = feed(`${TITLE}\n\n${body("/home/someone", "@someone")}\n`);
+      expect(r.exitCode).toBe(EXIT.LINT_BODY);
+      expect(r.stdout.toString()).toBe("1: home or installation path\n2: @ mention\n");
+      expect(r.stderr.toString()).toBe("");
+    });
+
+    test("empty stdin is rejected with exit 7", () => {
+      const r = feed("");
+      expect(r.exitCode).toBe(7);
+      expect(r.stdout.toString()).toBe("title: empty title\n1: last line is not a valid marker\n");
+    });
+
+    test("arguments are a usage error that names the input format", () => {
+      const r = cli(["lint-body", "extra"]);
+      expect(r.code).toBe(1);
+      expect(r.err).toContain("title");
+      expect(r.err).toContain("blank line");
+    });
+  });
+});
+
+describe("lint-page", () => {
+  const pages = join(ROOT, "src", "fixtures", "pages");
+  const page = (name: string) => readFileSync(join(pages, name), "utf8");
+  const reasons = (name: string, kind: "constitution" | "department" = "constitution") => lintPage(kind, page(name)).reasons;
+
+  const headingsOf = (file: string) => {
+    const text = readFileSync(join(ROOT, "law", file), "utf8");
+    const block = text.split("\n## Headings, in order\n")[1].split("\n## ")[0];
+    return block.split("\n").filter((l) => l.startsWith("- ")).map((l) => l.slice(2));
+  };
+
+  test("the constant heading lists equal the contract blocks", () => {
+    expect(CONSTITUTION_HEADINGS).toEqual(headingsOf("constitution.md"));
+    expect(DEPARTMENT_HEADINGS).toEqual(headingsOf("departments.md"));
+    expect(CONSTITUTION_HEADINGS).toHaveLength(8);
+    expect(DEPARTMENT_HEADINGS).toHaveLength(9);
+  });
+
+  test("the constitution example passes and yields the department pairs", () => {
+    expect(lintPage("constitution", page("constitution-valid.md"))).toEqual({
+      reasons: [],
+      departments: [
+        ["abstraction", "docs/review/abstractions.md"],
+        ["dead-code", "docs/review/dead-code.md"],
+        ["docs-drift", "none"],
+      ],
+    });
+  });
+
+  test("the department example and the shipped abstractions page pass", () => {
+    expect(reasons("department-valid.md", "department")).toEqual([]);
+    const shipped = readFileSync(join(ROOT, "departments", "abstractions.md"), "utf8");
+    expect(lintPage("department", shipped, "abstractions").reasons).toEqual([]);
+  });
+
+  test("a missing heading is named", () => {
+    expect(reasons("constitution-missing-heading.md")).toEqual(['19: missing heading "Fence"']);
+  });
+
+  test("an extra heading is named", () => {
+    expect(reasons("constitution-extra-heading.md")).toEqual(['44: extra heading "Notes"']);
+  });
+
+  test("headings out of order are named at the first misplaced one", () => {
+    expect(reasons("constitution-wrong-order.md")).toEqual(['19: heading "Regression proof" is out of order, expected "Fence"']);
+  });
+
+  test("a repeated heading is extra", () => {
+    const text = page("constitution-valid.md") + "\n## Precedents\n\nnone\n";
+    expect(lintPage("constitution", text).reasons).toEqual(['49: extra heading "Precedents"']);
+  });
+
+  test("a wrong contract version is named at its line", () => {
+    expect(reasons("constitution-bad-version.md")).toEqual(["2: contract_version must be 1"]);
+  });
+
+  test("missing frontmatter, an unclosed one and a missing version are named", () => {
+    const body = page("constitution-valid.md").split("---\n")[2];
+    expect(lintPage("constitution", body).reasons).toEqual(["1: frontmatter missing or not closed"]);
+    expect(lintPage("constitution", "---\ncontract_version: 1\n" + body).reasons).toEqual([
+      "1: frontmatter missing or not closed",
+    ]);
+    expect(lintPage("constitution", "---\nother: 1\n---\n" + body).reasons).toEqual(["1: contract_version missing"]);
+  });
+
+  test("an empty section is named, none is accepted", () => {
+    expect(reasons("constitution-empty-section.md")).toEqual(['24: section "Regression proof" is empty, write none']);
+    const text = page("constitution-valid.md");
+    expect(lintPage("constitution", text.replace(/## Regression proof\n[\s\S]*?\n(?=## Not)/, "## Regression proof\n\nnone\n\n")).reasons).toEqual([]);
+  });
+
+  test("a heading inside a fence counts for neither the list nor a section", () => {
+    expect(reasons("constitution-fenced-heading.md")).toEqual(['48: missing heading "Precedents"']);
+    const text = page("constitution-valid.md").replace(
+      "## Fence\n",
+      "## Fence\n\n```\n## Bogus\n```\n",
+    );
+    expect(lintPage("constitution", text).reasons).toEqual([]);
+    const onlyFence = page("constitution-valid.md").replace(/## Not judged\n\nnone\n/, "## Not judged\n\n~~~\n## Execution\n~~~\n");
+    expect(lintPage("constitution", onlyFence).reasons).toEqual([]);
+  });
+
+  test("a deeper heading is not a section heading", () => {
+    const text = page("constitution-valid.md").replace("## Fence\n", "## Fence\n\n### Detail\n");
+    expect(lintPage("constitution", text).reasons).toEqual([]);
+  });
+
+  test("the constitution needs the title line before the first heading", () => {
+    const text = page("constitution-valid.md").replace("# Constitution of example/widgets\n", "# Widgets\n");
+    expect(lintPage("constitution", text).reasons).toEqual(['4: title line "# Constitution of <owner>/<repo>" missing']);
+    const late = page("constitution-valid.md").replace("# Constitution of example/widgets\n\n", "").replace("## Precedents", "# Constitution of a/b\n## Precedents");
+    expect(lintPage("constitution", late).reasons).toEqual(['4: title line "# Constitution of <owner>/<repo>" missing']);
+  });
+
+  test("a parent segment in a listed path is named", () => {
+    expect(reasons("constitution-dotdot.md")).toEqual(["10: path holds .."]);
+  });
+
+  test("leading slashes and backslashes are named in every path section", () => {
+    const text = page("constitution-valid.md")
+      .replace("- README.md\n", "- /etc/passwd\n- docs\\x.md\n")
+      .replace("- rules/testing.md", "- /rules/testing.md")
+      .replace("## Not judged\n\nnone", "## Not judged\n\n- a/../b\n")
+      .replace("judged by docs/review/dead-code.md", "judged by ../dead-code.md");
+    expect(lintPage("constitution", text).reasons.map((r) => r.replace(/^\d+: /, ""))).toEqual([
+      "path starts with a slash",
+      "path holds a backslash",
+      "path holds ..",
+      "path holds ..",
+      "path starts with a slash",
+    ]);
+  });
+
+  test("a quoted heading after a path is not part of the path", () => {
+    const text = page("constitution-valid.md").replace('"Module boundaries"', '"Wait... what"');
+    expect(lintPage("constitution", text).reasons).toEqual([]);
+  });
+
+  test("a department line of the wrong shape is named", () => {
+    expect(reasons("constitution-bad-department-line.md")).toEqual([
+      '17: department line must read "- <name>: judged by <path or none>"',
+    ]);
+    for (const bad of ["- x judged by none", "- x: judged by", "- x: judged by a b", "x: judged by none", "- X: judged by none", "- x:  judged by none"]) {
+      const text = page("constitution-valid.md").replace("- docs-drift: judged by none", bad);
+      expect(lintPage("constitution", text).reasons).toHaveLength(1);
+    }
+  });
+
+  test("a failing page yields no pairs", () => {
+    expect(lintPage("constitution", page("constitution-bad-version.md")).departments).toEqual([]);
+  });
+
+  test("a Departments section of none yields no pairs and passes", () => {
+    const text = page("constitution-valid.md").replace(/## Departments\n[\s\S]*?(?=## Fence)/, "## Departments\n\nnone\n\n");
+    expect(lintPage("constitution", text)).toEqual({ reasons: [], departments: [] });
+  });
+
+  test("a department page needs name and version, and the name must fit", () => {
+    const text = page("department-valid.md");
+    expect(lintPage("department", text.replace("name: fixtures\n", "")).reasons).toEqual(["1: name missing"]);
+    expect(lintPage("department", text.replace("name: fixtures", "name: Fixtures")).reasons).toEqual([
+      "2: name must match [a-z][a-z0-9-]*",
+    ]);
+    expect(lintPage("department", text.replace("contract_version: 1", "contract_version: 3")).reasons).toEqual([
+      "3: contract_version must be 1",
+    ]);
+  });
+
+  test("the expected name is compared only when given", () => {
+    const text = page("department-valid.md");
+    expect(lintPage("department", text, "fixtures").reasons).toEqual([]);
+    expect(lintPage("department", text, "other").reasons).toEqual(["2: name differs from the file name"]);
+    expect(lintPage("department", text).reasons).toEqual([]);
+  });
+
+  test("a department page uses its own heading list", () => {
+    expect(lintPage("department", page("constitution-valid.md")).reasons[0]).toContain("name missing");
+    expect(lintPage("constitution", page("department-valid.md")).reasons).toContain('5: extra heading "Mission"');
+  });
+
+  describe("command", () => {
+    const feed = (args: string[], input: string) => {
+      const r = Bun.spawnSync(["bun", "src/journal.ts", "lint-page", ...args], { cwd: ROOT, env: env(), stdin: Buffer.from(input) });
+      return { code: r.exitCode, out: r.stdout.toString(), err: r.stderr.toString() };
+    };
+
+    test("a valid constitution prints name TAB judged-by per department and exits 0", () => {
+      const r = feed(["constitution"], page("constitution-valid.md"));
+      expect(r).toEqual({
+        code: 0,
+        out: "abstraction\tdocs/review/abstractions.md\ndead-code\tdocs/review/dead-code.md\ndocs-drift\tnone\n",
+        err: "",
+      });
+    });
+
+    test("a valid department page prints nothing and exits 0", () => {
+      expect(feed(["department"], page("department-valid.md"))).toEqual({ code: 0, out: "", err: "" });
+    });
+
+    test("the shipped abstractions page passes through stdin", () => {
+      const shipped = readFileSync(join(ROOT, "departments", "abstractions.md"), "utf8");
+      expect(feed(["department", "--name", "abstractions"], shipped)).toEqual({ code: 0, out: "", err: "" });
+    });
+
+    test("reasons go to stdout, one per line, with exit 8", () => {
+      const r = feed(["constitution"], page("constitution-bad-version.md"));
+      expect(r).toEqual({ code: EXIT.LINT_PAGE, out: "2: contract_version must be 1\n", err: "" });
+    });
+
+    test("a name mismatch exits 8", () => {
+      const r = feed(["department", "--name", "other"], page("department-valid.md"));
+      expect([r.code, r.out]).toEqual([8, "2: name differs from the file name\n"]);
+    });
+
+    test("bad arguments are a usage error", () => {
+      for (const args of [[], ["page"], ["constitution", "--name", "x"], ["department", "--name"], ["department", "--name", "Bad"]]) {
+        const r = feed(args, "");
+        expect(r.code).toBe(1);
+        expect(r.out).toBe("");
+      }
     });
   });
 });
