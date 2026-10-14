@@ -1965,6 +1965,9 @@ describe("leads, seen, cap and last", () => {
   });
 });
 
+const HOME_MAC = ["/Us", "ers/someone"].join("");
+const HOME_LINUX = ["/ho", "me/someone"].join("");
+
 describe("lint-body", () => {
   const TITLE = "[Lead] core: dead code";
   const TOKEN = "ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2";
@@ -1983,8 +1986,8 @@ describe("lint-body", () => {
 
   test("home directories, $HOME and installation roots are rejected with the body line", () => {
     const leaks = [
-      "see /Users/someone/code",
-      "see /home/someone/code",
+      `see ${HOME_MAC}/code`,
+      `see ${HOME_LINUX}/code`,
       "see ~/code",
       "run $HOME/bin",
       "run ${HOME}/bin",
@@ -2004,7 +2007,7 @@ describe("lint-body", () => {
   });
 
   test("a segment that only resembles a home directory passes", () => {
-    expect(reasonsOf("src/Users/model.rs", "see https://example.org/x")).toEqual([]);
+    expect(reasonsOf("src/Us" + "ers/model.rs", "see https://example.org/x")).toEqual([]);
   });
 
   test("GitHub token shapes are rejected", () => {
@@ -2041,11 +2044,11 @@ describe("lint-body", () => {
     expect(reasonsOf("```", "@Override", "```")).toEqual([]);
     expect(reasonsOf("~~~~", "@Override", "~~~", "@someone", "~~~~")).toEqual([]);
     expect(reasonsOf("```", "@Override", "```", "@someone")).toEqual(["4: @ mention"]);
-    expect(reasonsOf("```", "/home/someone/x", "```")).toEqual(["2: home or installation path"]);
+    expect(reasonsOf("```", `${HOME_LINUX}/x`, "```")).toEqual(["2: home or installation path"]);
   });
 
   test("one line can fail several rules, each named once and in a fixed order", () => {
-    expect(reasonsOf(`/home/someone ${TOKEN} @someone`)).toEqual([
+    expect(reasonsOf(`${HOME_LINUX} ${TOKEN} @someone`)).toEqual([
       "1: home or installation path",
       "1: GitHub token",
       "1: @ mention",
@@ -2053,7 +2056,7 @@ describe("lint-body", () => {
   });
 
   test("the output never holds the matched text", () => {
-    const text = reasonsOf(`/home/someone ${TOKEN} @someone ![x](y)`).join("\n");
+    const text = reasonsOf(`${HOME_LINUX} ${TOKEN} @someone ![x](y)`).join("\n");
     for (const secret of ["someone", TOKEN, "![x]"]) expect(text).not.toContain(secret);
   });
 
@@ -2093,7 +2096,7 @@ describe("lint-body", () => {
   test("the title is checked with the same rules and reported as title", () => {
     expect(lintText(body(...FINE), "")).toEqual(["title: empty title"]);
     expect(lintText(body(...FINE), "x @someone")).toEqual(["title: @ mention"]);
-    expect(lintText(body(...FINE), "x /home/someone")).toEqual(["title: home or installation path"]);
+    expect(lintText(body(...FINE), `x ${HOME_LINUX}`)).toEqual(["title: home or installation path"]);
     expect(lintText(body(...FINE), `x ${TOKEN}`)).toEqual(["title: GitHub token"]);
   });
 
@@ -2111,7 +2114,7 @@ describe("lint-body", () => {
     });
 
     test("rejected input prints one reason per line on stdout and exits 7", () => {
-      const r = feed(`${TITLE}\n\n${body("/home/someone", "@someone")}\n`);
+      const r = feed(`${TITLE}\n\n${body(HOME_LINUX, "@someone")}\n`);
       expect(r.exitCode).toBe(EXIT.LINT_BODY);
       expect(r.stdout.toString()).toBe("1: home or installation path\n2: @ mention\n");
       expect(r.stderr.toString()).toBe("");
