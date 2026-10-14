@@ -7,14 +7,22 @@ import pkg from "../package.json";
 import {
   EXIT,
   Fail,
+  MARKER_MAX_BYTES,
   MIGRATIONS,
+  canonicalId,
   check,
+  collectIssueMarkers,
   dbPath,
+  decodeIdPart,
+  encodeIdPart,
+  extractMarkers,
   now,
   open,
+  parseMarker,
   pickNext,
   probeLine,
 } from "./journal";
+import issues from "./fixtures/issues.json";
 
 const ROOT = join(import.meta.dir, "..");
 const SRC = join(ROOT, "src", "journal.ts");
@@ -1060,5 +1068,439 @@ describe("source constraints", () => {
     for (const banned of ["spawn", "Bun.$", "child_process", "fetch(", "exec("]) {
       expect(src).not.toContain(banned);
     }
+  });
+});
+
+const TRUSTED = "octocat-lawman";
+const SHA = "0123456789abcdef0123456789abcdef01234567";
+const AT = "at=2026-10-14T09:30:00Z";
+const LEAD_ID = "src/a.rs::f::dead-code";
+const lead = (extra = "", id = LEAD_ID) =>
+  `<!-- lawman: role=patrol stage=lead department=core id=${id} sha=${SHA} ${AT}${extra} -->`;
+const ret = (extra = "") => `<!-- lawman: role=judge stage=return to=patrol round=1 ${AT}${extra} -->`;
+
+function collect(n: number) {
+  const issue = issues.find((i) => i.number === n)!;
+  return collectIssueMarkers(issue, TRUSTED);
+}
+
+const rounds = (n: number) => collect(n).markers.map((m) => m.marker.fields.round);
+
+function carrier(text: string, author = TRUSTED) {
+  return extractMarkers({ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author }, TRUSTED);
+}
+
+describe("parseMarker", () => {
+  test("a lead keeps role, stage, every field and the raw line", () => {
+    const line = lead(" of=42");
+    const m = parseMarker(line)!;
+    expect(m.role).toBe("patrol");
+    expect(m.stage).toBe("lead");
+    expect(m.raw).toBe(line);
+    expect(m.fields).toEqual({
+      role: "patrol",
+      stage: "lead",
+      department: "core",
+      id: LEAD_ID,
+      sha: SHA,
+      at: "2026-10-14T09:30:00Z",
+      of: "42",
+    });
+  });
+
+  test("a return needs to and a positive round without leading zeros", () => {
+    expect(parseMarker(ret())).not.toBeNull();
+    for (const bad of [
+      "<!-- lawman: role=judge stage=return round=1 at=2026-10-14T09:30:00Z -->",
+      "<!-- lawman: role=judge stage=return to=patrol at=2026-10-14T09:30:00Z -->",
+      "<!-- lawman: role=judge stage=return to=Patrol round=1 at=2026-10-14T09:30:00Z -->",
+      ret().replace("round=1", "round=0"),
+      ret().replace("round=1", "round=01"),
+      ret().replace("round=1", "round=1.5"),
+    ]) {
+      expect(parseMarker(bad)).toBeNull();
+    }
+  });
+
+  test("a lead needs role patrol, department, id and a lowercase 40 hex sha", () => {
+    expect(parseMarker(lead())).not.toBeNull();
+    expect(parseMarker(lead().replace("role=patrol", "role=judge"))).toBeNull();
+    expect(parseMarker(lead().replace(" department=core", ""))).toBeNull();
+    expect(parseMarker(lead().replace(` id=${LEAD_ID}`, ""))).toBeNull();
+    expect(parseMarker(lead().replace(` sha=${SHA}`, ""))).toBeNull();
+    expect(parseMarker(lead().replace(SHA, SHA.toUpperCase()))).toBeNull();
+    expect(parseMarker(lead().replace(SHA, SHA.slice(1)))).toBeNull();
+  });
+
+  test("of is a positive integer without leading zeros", () => {
+    expect(parseMarker(lead(" of=7"))).not.toBeNull();
+    for (const bad of ["0", "07", "-1", "x", "1.5"]) expect(parseMarker(lead(` of=${bad}`))).toBeNull();
+  });
+
+  test("at must have the UTC shape and role, stage and at are required", () => {
+    expect(parseMarker(ret().replace("2026-10-14T09:30:00Z", "2026-10-14 09:30:00Z"))).toBeNull();
+    expect(parseMarker(ret().replace("2026-10-14T09:30:00Z", "2026-10-14T09:30:00+00:00"))).toBeNull();
+    expect(parseMarker(ret().replace("role=judge ", ""))).toBeNull();
+    expect(parseMarker(ret().replace("stage=return ", ""))).toBeNull();
+    expect(parseMarker(ret().replace(` ${AT}`, ""))).toBeNull();
+  });
+
+  test("role and stage match their pattern", () => {
+    expect(parseMarker("<!-- lawman: role=Judge stage=x at=2026-10-14T09:30:00Z -->")).toBeNull();
+    expect(parseMarker("<!-- lawman: role=judge stage=_x at=2026-10-14T09:30:00Z -->")).toBeNull();
+    expect(parseMarker("<!-- lawman: role=judge-2 stage=x-y at=2026-10-14T09:30:00Z -->")).not.toBeNull();
+  });
+
+  test("the line shape is strict", () => {
+    const ok = "<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z -->";
+    expect(parseMarker(ok)).not.toBeNull();
+    for (const bad of [
+      ok.replace("<!-- ", "<!--"),
+      ok.replace(" -->", "-->"),
+      ok.replace(" -->", "  -->"),
+      ok.replace("role=judge stage", "role=judge  stage"),
+      ok.replace("<!-- lawman:", "<!-- lawman:  "),
+      ok.replace("role=judge", "role="),
+      ok.replace("role=judge", "Role=judge"),
+      ok.replace("role=judge", "role=jud>ge"),
+      ok.replace("role=judge", "role=ju dge"),
+      ok.replace("role=judge", "role=jüdge"),
+      `${ok}\r`,
+      `${ok} `,
+      ` ${ok}`,
+      `x ${ok}`,
+    ]) {
+      expect(parseMarker(bad)).toBeNull();
+    }
+  });
+
+  test("values allow letters, digits and . : _ / % + - and nothing else", () => {
+    const m = parseMarker("<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z v=aZ09.:_/%+-q -->")!;
+    expect(m.fields.v).toBe("aZ09.:_/%+-q");
+    for (const ch of ["~", "!", "=", "*", "(", ",", "'", "\\"]) {
+      expect(parseMarker(`<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z v=a${ch}b -->`)).toBeNull();
+    }
+  });
+
+  test("-- and :: are banned in values, except :: inside id", () => {
+    const base = "<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z";
+    expect(parseMarker(`${base} v=a--b -->`)).toBeNull();
+    expect(parseMarker(`${base} v=a::b -->`)).toBeNull();
+    expect(parseMarker(`${base} v=a:b -->`)).not.toBeNull();
+    expect(parseMarker(`${base} v=a-b-c -->`)).not.toBeNull();
+    expect(parseMarker(lead().replace("department=core", "department=a::b"))).toBeNull();
+  });
+
+  test("a duplicate key is invalid, also for names on the object prototype", () => {
+    expect(parseMarker(ret(" round=1"))).toBeNull();
+    const base = "<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z";
+    expect(parseMarker(`${base} constructor=a -->`)!.fields.constructor).toBe("a");
+    expect(parseMarker(`${base} constructor=a constructor=b -->`)).toBeNull();
+  });
+
+  test("unknown keys and stages are kept", () => {
+    const m = parseMarker("<!-- lawman: role=curator stage=audit at=2026-10-14T09:30:00Z flavor=mint k_2=x -->")!;
+    expect(m.stage).toBe("audit");
+    expect(m.fields.flavor).toBe("mint");
+    expect(m.fields.k_2).toBe("x");
+  });
+
+  test("the length limit counts bytes of the whole line", () => {
+    const head = "<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z note=";
+    const fill = (n: number) => head + "a".repeat(n - head.length - " -->".length) + " -->";
+    expect(MARKER_MAX_BYTES).toBe(1024);
+    expect(fill(1024).length).toBe(1024);
+    expect(parseMarker(fill(1024))).not.toBeNull();
+    expect(parseMarker(fill(1025))).toBeNull();
+  });
+
+  test("a non-ASCII byte never passes, and the byte count is not the character count", () => {
+    expect(parseMarker("<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z note=é -->")).toBeNull();
+  });
+
+  test("an id value must be canonical", () => {
+    expect(parseMarker(lead("", "src/my%20file.rs::Foo%3A%3Abar::dead-code"))).not.toBeNull();
+    expect(parseMarker(lead("", "src/a.rs::Foo%3a%3abar::dead-code"))).toBeNull();
+    expect(parseMarker(lead("", "src/%41.rs::f::dead-code"))).toBeNull();
+    expect(parseMarker(lead("", "src/a.rs::f"))).toBeNull();
+    expect(parseMarker(lead("", "src/a.rs::f::g::h"))).toBeNull();
+    expect(parseMarker(lead("", "::f::g"))).toBeNull();
+    expect(parseMarker(lead("", "src/a--b.rs::f::g"))).toBeNull();
+    expect(parseMarker(lead("", "src/a-%2Db.rs::f::g"))).not.toBeNull();
+  });
+});
+
+describe("id parts", () => {
+  const canonical: [string, string][] = [
+    ["src/a.rs", "src/a.rs"],
+    ["src/my file.rs", "src/my%20file.rs"],
+    ["Foo::bar", "Foo%3A%3Abar"],
+    ["a-b", "a-b"],
+    ["a--b", "a-%2Db"],
+    ["a---b", "a-%2D%2Db"],
+    ["a--b--c", "a-%2Db-%2Dc"],
+    ["--", "-%2D"],
+    ["é", "%C3%A9"],
+    ["100%", "100%25"],
+    ["a_b.c/d", "a_b.c/d"],
+  ];
+
+  test("encode and decode agree on canonical forms", () => {
+    for (const [plain, encoded] of canonical) {
+      expect(encodeIdPart(plain)).toBe(encoded);
+      expect(decodeIdPart(encoded)).toBe(plain);
+      expect(encodeIdPart(decodeIdPart(encoded)!)).toBe(encoded);
+    }
+  });
+
+  test("decode returns null for every non-canonical form", () => {
+    for (const bad of ["%3a", "%41", "a--b", "a%2D-b", "a-%2D-b", "%2", "%GG", "a b", "a:b", "", "a%2Db", "é"]) {
+      expect(decodeIdPart(bad)).toBeNull();
+    }
+  });
+
+  test("bytes outside UTF-8 are canonical but have no string form, and a BOM survives", () => {
+    expect(canonicalId("%E9::b::c")).toBe(true);
+    expect(decodeIdPart("%E9")).toBeNull();
+    expect(decodeIdPart("%EF%BB%BFa")).toBe("\uFEFFa");
+    expect(encodeIdPart("\uFEFFa")).toBe("%EF%BB%BFa");
+  });
+
+  test("canonicalId needs exactly three canonical parts", () => {
+    expect(canonicalId("src/my%20file.rs::Foo%3A%3Abar::dead-code")).toBe(true);
+    expect(canonicalId("a::b")).toBe(false);
+    expect(canonicalId("a::b::c::d")).toBe(false);
+    expect(canonicalId("a:::b::c")).toBe(false);
+    expect(canonicalId("a::%3a::c")).toBe(false);
+    expect(canonicalId("a::b::")).toBe(false);
+  });
+});
+
+describe("extractMarkers", () => {
+  test("ord sorts by carrier time, then rank, then line", () => {
+    const at = (createdAt: string, rank: number, text: string) =>
+      extractMarkers({ text, createdAt, rank, author: TRUSTED }, TRUSTED).map((m) => m.ord);
+    const ords = [
+      ...at("2026-10-14T10:00:00Z", 1, `${ret()}\n${ret()}`),
+      ...at("2026-10-14T10:00:00Z", 2, ret()),
+      ...at("2026-10-14T10:00:00Z", 10, ret()),
+      ...at("2026-10-14T11:00:00Z", 0, ret()),
+    ];
+    expect(ords).toEqual([...ords].sort());
+    expect(new Set(ords).size).toBe(ords.length);
+  });
+
+  test("lines are numbered from 1, CRLF is stripped once, blank lines count", () => {
+    const found = carrier(`text\r\n\r\n${ret()}\r\n`);
+    expect(found.map((f) => f.line)).toEqual([3]);
+    expect(found[0].marker.raw).toBe(ret());
+    expect(carrier(`${ret()}\r\r\n`)).toEqual([]);
+  });
+
+  test("an author is trusted ignoring ASCII case only", () => {
+    expect(carrier(ret(), "OCTOCAT-Lawman")).toHaveLength(1);
+    expect(carrier(ret(), "octocat-lawmaN")).toHaveLength(1);
+    expect(carrier(ret(), "someone-else")).toHaveLength(0);
+    expect(carrier(ret(), "")).toHaveLength(0);
+    expect(extractMarkers({ text: ret(), createdAt: "x", rank: 0, author: "" }, "")).toEqual([]);
+    expect(carrier(ret(), "octocat-lawman2")).toHaveLength(0);
+  });
+
+  test("a fence opens with 3+ backticks or tildes, indented up to 3 spaces", () => {
+    for (const open of ["```", "~~~", "   ```", "   ~~~", "`````", "```js", "~~~ a`b"]) {
+      expect(carrier(`${open}\n${ret()}\n`)).toEqual([]);
+    }
+    expect(carrier(`    \`\`\`\n${ret()}\n`)).toHaveLength(1);
+    expect(carrier(`\`\`\n${ret()}\n`)).toHaveLength(1);
+  });
+
+  test("a backtick fence with a backtick in its info string is no fence", () => {
+    expect(carrier(`\`\`\` a\`b\n${ret()}\n`)).toHaveLength(1);
+  });
+
+  test("a fence closes with the same char, at least as long, up to 3 spaces, only whitespace after", () => {
+    expect(carrier(`\`\`\`\n\`\`\`\n${ret()}\n`)).toHaveLength(1);
+    expect(carrier(`\`\`\`\n\`\`\`\`\n${ret()}\n`)).toHaveLength(1);
+    expect(carrier(`\`\`\`\n   \`\`\` \t\n${ret()}\n`)).toHaveLength(1);
+    expect(carrier(`\`\`\`\n~~~\n${ret()}\n`)).toHaveLength(0);
+    expect(carrier(`~~~~\n~~~\n${ret()}\n`)).toHaveLength(0);
+    expect(carrier(`\`\`\`\`\n\`\`\`\n${ret()}\n`)).toHaveLength(0);
+    expect(carrier(`\`\`\`\n    \`\`\`\n${ret()}\n`)).toHaveLength(0);
+    expect(carrier(`\`\`\`\n\`\`\` x\n${ret()}\n`)).toHaveLength(0);
+  });
+
+  test("an unclosed fence runs to the end and resets for the next carrier", () => {
+    expect(carrier(`${ret()}\n\`\`\`\n${ret()}\n${ret()}\n`)).toHaveLength(1);
+    expect(carrier(ret())).toHaveLength(1);
+  });
+
+  test("a marker line is not itself a fence opener and does not need a blank line", () => {
+    expect(carrier(`${ret()}\n${ret()}\n`)).toHaveLength(2);
+  });
+});
+
+describe("law examples", () => {
+  const law = readFileSync(join(ROOT, "law", "markers.md"), "utf8");
+  const examples = law.slice(law.indexOf("## Examples"));
+  const blocks = [...examples.matchAll(/^(`{3,})\n([\s\S]*?)\n\1$/gm)].map((m) => m[2]);
+
+  test("E1 and E2 are valid", () => {
+    const [e1, e2] = blocks[0].split("\n");
+    const m1 = parseMarker(e1)!;
+    expect(m1.fields.id).toBe("src/my%20file.rs::Foo%3A%3Abar::dead-code");
+    expect(decodeIdPart(m1.fields.id.split("::")[0])).toBe("src/my file.rs");
+    expect(decodeIdPart(m1.fields.id.split("::")[1])).toBe("Foo::bar");
+    expect(m1.fields.of).toBe("42");
+    expect(parseMarker(e2)!.fields.round).toBe("2");
+    expect(carrier(blocks[0]).map((f) => f.marker.stage)).toEqual(["lead", "return"]);
+  });
+
+  test("E3, E4 and E5 are invalid", () => {
+    const lines = blocks[1].split("\n");
+    expect(lines).toHaveLength(3);
+    for (const line of lines) expect(parseMarker(line)).toBeNull();
+    expect(carrier(blocks[1])).toEqual([]);
+  });
+
+  test("E6 is a valid marker that the fence hides", () => {
+    expect(blocks[2].startsWith("```\n")).toBe(true);
+    expect(parseMarker(blocks[2].split("\n")[1])).not.toBeNull();
+    expect(carrier(blocks[2])).toEqual([]);
+  });
+});
+
+describe("fixture issues", () => {
+  test("the fixture has the gh issue list shape", () => {
+    for (const i of issues) {
+      expect(Object.keys(i).sort()).toEqual(
+        ["author", "body", "closedAt", "comments", "createdAt", "number", "state", "stateReason", "title"],
+      );
+      expect(Object.keys(i.author)).toEqual(["login"]);
+    }
+  });
+
+  test("#1 a lead in the body and a return in a comment", () => {
+    const { markers, leadOrigin, newestByRole } = collect(1);
+    expect(markers.map((m) => m.marker.stage)).toEqual(["lead", "return"]);
+    expect(markers.map((m) => m.line)).toEqual([3, 3]);
+    expect(leadOrigin!.marker.fields.of).toBe("42");
+    expect(newestByRole.get("judge")!.marker.fields.round).toBe("2");
+    expect([...newestByRole.keys()].sort()).toEqual(["judge", "patrol"]);
+  });
+
+  test("#2 a marker in a backtick fence does not count", () => {
+    expect(collect(2).markers).toEqual([]);
+  });
+
+  test("#3 a marker in a tilde fence does not count", () => {
+    expect(collect(3).markers).toEqual([]);
+  });
+
+  test("#4 a three-backtick line does not close a four-backtick fence", () => {
+    expect(rounds(4)).toEqual(["3"]);
+  });
+
+  test("#5 indented, quoted, mid-line, trailing and leading-space markers do not count", () => {
+    expect(collect(5).markers).toEqual([]);
+  });
+
+  test("#6 an untrusted author counts for nothing, body or comment", () => {
+    const c = collect(6);
+    expect(c.markers).toEqual([]);
+    expect(c.leadOrigin).toBeNull();
+    expect(c.newestByRole.size).toBe(0);
+  });
+
+  test("#7 the trusted login is compared ignoring case", () => {
+    expect(collect(7).markers).toHaveLength(2);
+  });
+
+  test("#8 carrier order wins over at", () => {
+    const { markers, newestByRole } = collect(8);
+    expect(markers.map((m) => m.marker.fields.round)).toEqual(["1", "2"]);
+    expect(markers[0].marker.fields.at > markers[1].marker.fields.at).toBe(true);
+    expect(newestByRole.get("judge")!.marker.fields.round).toBe("2");
+  });
+
+  test("#9 comments are ranked by creation time with a stable tie-break", () => {
+    const c = collect(9);
+    expect(rounds(9)).toEqual(["2", "3", "1"]);
+    expect(c.newestByRole.get("judge")!.marker.fields.round).toBe("1");
+  });
+
+  test("#10 the line number orders markers inside one carrier", () => {
+    const c = collect(10);
+    expect(rounds(10)).toEqual(["1", "2"]);
+    expect(c.markers.map((m) => m.line)).toEqual([1, 3]);
+    expect(c.newestByRole.get("judge")!.marker.fields.round).toBe("2");
+  });
+
+  test("#11 non-canonical ids are dropped and displace nothing", () => {
+    const c = collect(11);
+    expect(c.markers).toHaveLength(1);
+    expect(c.newestByRole.get("patrol")).toBe(c.leadOrigin);
+  });
+
+  test("#12 a double hyphen in a value drops the marker", () => {
+    expect(rounds(12)).toEqual(["1"]);
+    expect(collect(12).leadOrigin).toBeNull();
+  });
+
+  test("#13 a duplicate key drops the marker and displaces nothing", () => {
+    const c = collect(13);
+    expect(rounds(13)).toEqual(["1"]);
+    expect(c.newestByRole.get("judge")!.marker.fields.round).toBe("1");
+  });
+
+  test("#14 a marker over 1024 bytes drops and displaces nothing", () => {
+    const comment = issues.find((i) => i.number === 14)!.comments[0].body;
+    expect(Buffer.byteLength(comment.split("\n").at(-1)!)).toBeGreaterThan(MARKER_MAX_BYTES);
+    expect(rounds(14)).toEqual(["1"]);
+  });
+
+  test("#15 a-%2Db is valid and a--b is not", () => {
+    const c = collect(15);
+    expect(c.markers).toHaveLength(1);
+    const id = c.leadOrigin!.marker.fields.id;
+    expect(id).toBe("src/a-%2Db.rs::f::dead-code");
+    expect(decodeIdPart(id.split("::")[0])).toBe("src/a--b.rs");
+  });
+
+  test("#16 an unknown stage with unknown keys is kept", () => {
+    const [m] = collect(16).markers;
+    expect(m.marker.role).toBe("curator");
+    expect(m.marker.stage).toBe("audit");
+    expect(m.marker.fields.flavor).toBe("mint");
+    expect(m.marker.fields.round_trip).toBe("3");
+  });
+
+  test("#17 a later marker of another role or a later lead never displaces the origin", () => {
+    const c = collect(17);
+    expect(c.markers.map((m) => `${m.marker.role}/${m.marker.stage}`)).toEqual([
+      "patrol/lead",
+      "judge/return",
+      "patrol/lead",
+    ]);
+    expect(c.leadOrigin).toBe(c.markers[0]);
+    expect(c.leadOrigin!.marker.fields.id).toBe(LEAD_ID);
+    expect(c.newestByRole.get("patrol")).toBe(c.markers[2]);
+    expect(c.newestByRole.get("judge")).toBe(c.markers[1]);
+  });
+
+  test("#18 CRLF line endings do not hide the last line", () => {
+    expect(collect(18).markers).toHaveLength(1);
+    expect(collect(18).markers[0].line).toBe(3);
+  });
+
+  test("the input order of comments does not matter", () => {
+    const issue = structuredClone(issues.find((i) => i.number === 9)!);
+    issue.comments.reverse();
+    const reversed = collectIssueMarkers(issue, TRUSTED).newestByRole.get("judge")!.marker.fields.round;
+    expect(reversed).toBe("1");
+  });
+
+  test("a null author or empty body does not throw", () => {
+    const base = { number: 1, author: null, body: "", createdAt: "2026-10-14T09:00:00Z", comments: [] };
+    expect(collectIssueMarkers(base, TRUSTED).markers).toEqual([]);
   });
 });

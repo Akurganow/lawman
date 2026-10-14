@@ -735,6 +735,158 @@ function status(args: string[]): void {
   });
 }
 
+export const MARKER_MAX_BYTES = 1024;
+
+export type Marker = { role: string; stage: string; fields: Record<string, string>; raw: string };
+export type Found = { ord: string; line: number; marker: Marker };
+type Carrier = { text: string; createdAt: string; rank: number; author: string };
+type GhAuthor = { login: string } | null;
+type GhIssue = {
+  number: number;
+  author: GhAuthor;
+  body: string;
+  createdAt: string;
+  comments: { author: GhAuthor; body: string; createdAt: string }[];
+};
+
+const KEY_VALUE = "[a-z][a-z0-9_]*=[A-Za-z0-9.:_/%+-]+";
+const MARKER_LINE = new RegExp(`^<!-- lawman: (${KEY_VALUE}(?: ${KEY_VALUE})*) -->$`);
+const NAME = /^[a-z][a-z0-9-]*$/;
+const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
+const POSITIVE = /^[1-9][0-9]*$/;
+const SHA_HEX = /^[0-9a-f]{40}$/;
+const ID_SAFE_BYTE = /[A-Za-z0-9._/-]/;
+const ID_PART = /^(?:[A-Za-z0-9._/-]|%[0-9A-F]{2})+$/;
+const ID_PARTS = 3;
+const FENCE_OPEN = /^ {0,3}(`{3,}|~{3,})(.*)$/;
+const FENCE_CLOSE = /^ {0,3}(`{3,}|~{3,})\s*$/;
+const ORD_PAD = 6;
+
+function encodeBytes(bytes: Uint8Array): string {
+  const text = Array.from(bytes, (b) => {
+    const ch = String.fromCharCode(b);
+    return ID_SAFE_BYTE.test(ch) ? ch : `%${b.toString(16).toUpperCase().padStart(2, "0")}`;
+  }).join("");
+  return text.replace(/-{2,}/g, (run) => `-${"%2D".repeat(run.length - 1)}`);
+}
+
+function decodeBytes(part: string): Uint8Array | null {
+  if (!ID_PART.test(part)) return null;
+  const bytes = Uint8Array.from(part.matchAll(/%([0-9A-F]{2})|./g), (m) =>
+    m[1] ? parseInt(m[1], 16) : m[0].charCodeAt(0),
+  );
+  return encodeBytes(bytes) === part ? bytes : null;
+}
+
+export function encodeIdPart(bytes: string): string {
+  return encodeBytes(new TextEncoder().encode(bytes));
+}
+
+// a canonical part that holds bytes outside UTF-8 has no string form
+export function decodeIdPart(part: string): string | null {
+  const bytes = decodeBytes(part);
+  if (bytes === null) return null;
+  try {
+    return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
+  } catch {
+    return null;
+  }
+}
+
+export function canonicalId(id: string): boolean {
+  const parts = id.split("::");
+  return parts.length === ID_PARTS && parts.every((p) => decodeBytes(p) !== null);
+}
+
+function readFields(body: string): Record<string, string> | null {
+  const fields: Record<string, string> = {};
+  for (const pair of body.split(" ")) {
+    const eq = pair.indexOf("=");
+    const key = pair.slice(0, eq);
+    if (Object.hasOwn(fields, key)) return null;
+    fields[key] = pair.slice(eq + 1);
+  }
+  return fields;
+}
+
+const matches = (re: RegExp, value: string | undefined) => value !== undefined && re.test(value);
+
+function validLead(f: Record<string, string>): boolean {
+  return (
+    f.role === "patrol" &&
+    Object.hasOwn(f, "department") &&
+    Object.hasOwn(f, "id") &&
+    matches(SHA_HEX, f.sha) &&
+    (!Object.hasOwn(f, "of") || POSITIVE.test(f.of))
+  );
+}
+
+function validFields(f: Record<string, string>): boolean {
+  if (!["role", "stage", "at"].every((k) => Object.hasOwn(f, k))) return false;
+  if (!NAME.test(f.role) || !NAME.test(f.stage) || !STAMP.test(f.at)) return false;
+  if (Object.entries(f).some(([k, v]) => v.includes("--") || (k !== "id" && v.includes("::")))) return false;
+  if (Object.hasOwn(f, "id") && !canonicalId(f.id)) return false;
+  if (f.stage === "lead") return validLead(f);
+  return f.stage !== "return" || (matches(NAME, f.to) && matches(POSITIVE, f.round));
+}
+
+export function parseMarker(line: string): Marker | null {
+  if (Buffer.byteLength(line) > MARKER_MAX_BYTES) return null;
+  const shape = line.match(MARKER_LINE);
+  const fields = shape && readFields(shape[1]);
+  if (!fields || !validFields(fields)) return null;
+  return { role: fields.role, stage: fields.stage, fields, raw: line };
+}
+
+function openingFence(line: string): string | null {
+  const m = line.match(FENCE_OPEN);
+  return m && !(m[1][0] === "`" && m[2].includes("`")) ? m[1] : null;
+}
+
+function closesFence(line: string, fence: string): boolean {
+  const m = line.match(FENCE_CLOSE);
+  return m !== null && m[1][0] === fence[0] && m[1].length >= fence.length;
+}
+
+// String.toLowerCase also folds non-ASCII letters, and logins are ASCII
+const asciiLower = (s: string) => s.replace(/[A-Z]/g, (c) => c.toLowerCase());
+
+const pad = (n: number) => String(n).padStart(ORD_PAD, "0");
+
+export function extractMarkers(carrier: Carrier, trustedLogin: string): Found[] {
+  if (trustedLogin === "" || asciiLower(carrier.author) !== asciiLower(trustedLogin)) return [];
+  const found: Found[] = [];
+  let fence: string | null = null;
+  const lines = carrier.text.split("\n");
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i].endsWith("\r") ? lines[i].slice(0, -1) : lines[i];
+    if (fence !== null) {
+      if (closesFence(line, fence)) fence = null;
+      continue;
+    }
+    fence = openingFence(line);
+    const marker = fence === null ? parseMarker(line) : null;
+    if (marker) found.push({ ord: `${carrier.createdAt}|${pad(carrier.rank)}|${pad(i + 1)}`, line: i + 1, marker });
+  }
+  return found;
+}
+
+const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+
+export function collectIssueMarkers(issue: GhIssue, trustedLogin: string) {
+  const comments = [...issue.comments].sort((a, b) => byText(a.createdAt, b.createdAt));
+  const markers = [issue, ...comments]
+    .flatMap((c, rank) =>
+      extractMarkers({ text: c.body ?? "", createdAt: c.createdAt, rank, author: c.author?.login ?? "" }, trustedLogin),
+    )
+    .sort((a, b) => byText(a.ord, b.ord));
+  return {
+    markers,
+    leadOrigin: markers.find((m) => m.marker.stage === "lead") ?? null,
+    newestByRole: new Map(markers.map((m) => [m.marker.role, m])),
+  };
+}
+
 export const COMMANDS: Record<string, Handler> = { probe, precinct, role, next, dispatch, tick, pause, alarm, status };
 
 export function main(argv: string[]): number {
