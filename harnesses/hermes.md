@@ -11,6 +11,10 @@ Terms used below:
 
 ## Making the skills visible
 
+Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to detect this harness.
+
+Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway.
+
 Hermes reads skills from `~/.hermes/skills/` and from extra directories listed in its config. Add the law clone's skills directory to `~/.hermes/config.yaml`:
 
 ```yaml
