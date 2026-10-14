@@ -26,6 +26,7 @@ type Env = Record<string, string | undefined>;
 type Handler = (args: string[]) => void;
 
 const BUSY_TIMEOUT_MS = 5000;
+const CLAIM_TTL_MS = 24 * 60 * 60 * 1000;
 
 export const MIGRATIONS: string[] = [
   `
@@ -116,13 +117,17 @@ export function checkEnv(env: Env = process.env): void {
   }
 }
 
+function isoSeconds(date: Date): string {
+  return date.toISOString().slice(0, 19) + "Z";
+}
+
 export function now(env: Env = process.env): string {
   checkEnv(env);
   const raw = envSet(env, "LAWMAN_NOW") ? new Date(env.LAWMAN_NOW!) : new Date();
   if (Number.isNaN(raw.getTime())) {
     throw new Fail(EXIT.USAGE, `LAWMAN_NOW is not a timestamp: ${JSON.stringify(env.LAWMAN_NOW)}`);
   }
-  return raw.toISOString().slice(0, 19) + "Z";
+  return isoSeconds(raw);
 }
 
 export function dbPath(env: Env = process.env, execPath: string = process.execPath): string {
@@ -220,16 +225,18 @@ function usage(text: string): Fail {
   return new Fail(EXIT.USAGE, `usage: journal ${text}`);
 }
 
-function parseArgs(args: string[], positional: number, names: string[], text: string) {
+function parseArgs(args: string[], positional: number, names: string[], text: string, optional: string[] = []) {
   const pos = args.slice(0, positional);
   const rest = args.slice(positional);
   const opt: Record<string, string> = {};
-  if (pos.length < positional || rest.length !== names.length * 2) throw usage(text);
+  const allowed = [...names, ...optional];
+  if (pos.length < positional || rest.length % 2 !== 0 || rest.length > allowed.length * 2) throw usage(text);
   for (let i = 0; i < rest.length; i += 2) {
     const name = rest[i].slice(2);
-    if (!rest[i].startsWith("--") || !names.includes(name) || name in opt) throw usage(text);
+    if (!rest[i].startsWith("--") || !allowed.includes(name) || name in opt) throw usage(text);
     opt[name] = rest[i + 1];
   }
+  if (names.some((name) => !(name in opt))) throw usage(text);
   return { pos, opt };
 }
 
@@ -362,7 +369,80 @@ function next(args: string[]): void {
   });
 }
 
-export const COMMANDS: Record<string, Handler> = { probe, precinct, role, next };
+const DISPATCH_USAGE =
+  "dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>|close <id> --outcome <token>>";
+
+function dispatchAdd(db: Database, args: string[]): void {
+  const { opt } = parseArgs(args, 0, ["precinct", "role"], DISPATCH_USAGE, ["department", "issue"]);
+  const precinctName = check("precinct", opt.precinct);
+  const roleName = check("role", opt.role);
+  const department = opt.department === undefined ? null : check("role", opt.department);
+  const issue = opt.issue === undefined ? null : count(opt.issue, "issue", 1);
+  if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(precinctName)) {
+    throw new Fail(EXIT.USAGE, `unknown precinct: ${precinctName}`);
+  }
+  try {
+    const r = db.run("INSERT INTO dispatches (at, precinct, role, department, issue) VALUES (?, ?, ?, ?, ?)", [
+      now(),
+      precinctName,
+      roleName,
+      department,
+      issue,
+    ]);
+    out(Number(r.lastInsertRowid));
+  } catch (e) {
+    if (!isConstraint(e)) throw e;
+    throw new Fail(EXIT.DUPLICATE_ORDER, `open order already exists: ${precinctName} ${roleName} ${issue ?? ""}`.trimEnd());
+  }
+}
+
+type Taken = { id: number; precinct: string; repo: string; department: string | null; issue: number | null };
+
+function dispatchTake(db: Database, args: string[]): void {
+  const { opt } = parseArgs(args, 0, ["role"], DISPATCH_USAGE);
+  const roleName = check("role", opt.role);
+  const stamp = now();
+  const stale = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
+  const order = inTransaction(db, () => {
+    const row = db
+      .query(
+        `SELECT d.id, d.precinct, p.repo, d.department, d.issue FROM dispatches d
+         JOIN precincts p ON p.name = d.precinct
+         WHERE d.role = ? AND d.outcome IS NULL AND (d.taken_at IS NULL OR d.taken_at < ?)
+         ORDER BY d.at, d.id LIMIT 1`,
+      )
+      .get(roleName, stale) as Taken | null;
+    if (row) db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [stamp, row.id]);
+    return row;
+  });
+  if (order) out(order.id, order.precinct, order.repo, order.department ?? "", order.issue ?? "");
+}
+
+function dispatchClose(db: Database, args: string[]): void {
+  const { pos, opt } = parseArgs(args, 1, ["outcome"], DISPATCH_USAGE);
+  const id = count(pos[0], "id", 1);
+  const outcome = check("outcome", opt.outcome);
+  const changed = db.run("UPDATE dispatches SET outcome = ?, closed_at = ? WHERE id = ? AND outcome IS NULL", [
+    outcome,
+    now(),
+    id,
+  ]).changes;
+  if (changed === 0) throw new Fail(EXIT.USAGE, `no open order with id ${id}`);
+}
+
+const DISPATCH_COMMANDS: Record<string, (db: Database, args: string[]) => void> = {
+  add: dispatchAdd,
+  take: dispatchTake,
+  close: dispatchClose,
+};
+
+function dispatch(args: string[]): void {
+  const [sub, ...rest] = args;
+  if (sub === undefined || !Object.hasOwn(DISPATCH_COMMANDS, sub)) throw usage(DISPATCH_USAGE);
+  withDb((db) => DISPATCH_COMMANDS[sub](db, rest));
+}
+
+export const COMMANDS: Record<string, Handler> = { probe, precinct, role, next, dispatch };
 
 export function main(argv: string[]): number {
   try {

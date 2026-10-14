@@ -486,6 +486,155 @@ describe("next", () => {
   });
 });
 
+describe("dispatch", () => {
+  const T0 = "2026-04-01T00:00:00Z";
+  const HOUR_MS = 3600 * 1000;
+  const later = (hours: number, seconds = 0) =>
+    new Date(Date.parse(T0) + hours * HOUR_MS + seconds * 1000).toISOString().replace(".000Z", "Z");
+  const at = (clock: string, args: string[]) => cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock });
+  const add = (precinct: string, role = "patrol", extra: string[] = [], clock = T0) =>
+    at(clock, ["dispatch", "add", "--precinct", precinct, "--role", role, ...extra]);
+  const take = (clock = T0, role = "patrol") => at(clock, ["dispatch", "take", "--role", role]);
+
+  test("add prints an integer id and a duplicate open order exits 2 with one stderr line", () => {
+    addPrecincts({ a: 1 });
+    const first = add("a");
+    expect(first.code).toBe(0);
+    expect(first.out).toMatch(/^\d+\n$/);
+    const dup = add("a");
+    expect(dup.code).toBe(2);
+    expect(dup.out).toBe("");
+    expect(dup.err.trim().split("\n")).toHaveLength(1);
+  });
+
+  test("orders for different issues coexist, a duplicate issue exits 2, issue and precinct level do not block each other", () => {
+    addPrecincts({ a: 1 });
+    expect(add("a", "patrol", ["--issue", "5"]).code).toBe(0);
+    expect(add("a", "patrol", ["--issue", "6"]).code).toBe(0);
+    expect(add("a", "patrol", ["--issue", "5"]).code).toBe(2);
+    expect(add("a").code).toBe(0);
+    expect(add("a").code).toBe(2);
+    addPrecincts({ b: 1 });
+    expect(add("b").code).toBe(0);
+    expect(add("b", "patrol", ["--issue", "5"]).code).toBe(0);
+  });
+
+  test("add rejects bad input with exit 1", () => {
+    addPrecincts({ a: 1 });
+    const bad = [
+      ["--precinct", "missing", "--role", "patrol"],
+      ["--precinct", "a", "--role", "Patrol"],
+      ["--precinct", "a", "--role", "patrol", "--department", "Bad Dept"],
+      ["--precinct", "a", "--role", "patrol", "--issue", "0"],
+      ["--precinct", "a", "--role", "patrol", "--issue", "x"],
+      ["--precinct", "a", "--role", "patrol", "--issue", "1", "--issue", "2"],
+      ["--precinct", "a"],
+      ["--role", "patrol"],
+    ];
+    for (const args of bad) expect([args, at(T0, ["dispatch", "add", ...args]).code]).toEqual([args, 1]);
+    expect(at(T0, ["dispatch"]).code).toBe(1);
+    expect(at(T0, ["dispatch", "bogus"]).code).toBe(1);
+  });
+
+  test("add stores the clock time, the department and the issue", () => {
+    addPrecincts({ a: 1 });
+    add("a", "patrol", ["--department", "billing", "--issue", "9"], "2026-04-01T05:06:07Z");
+    const db = open(dbFile);
+    expect(db.query("SELECT at, department, issue, taken_at, outcome FROM dispatches").all()).toEqual([
+      { at: "2026-04-01T05:06:07Z", department: "billing", issue: 9, taken_at: null, outcome: null },
+    ]);
+    db.close();
+  });
+
+  test("take prints id, precinct, repo, department and issue, empty for NULL", () => {
+    addPrecincts({ a: 1 });
+    const id = add("a", "patrol", ["--department", "billing", "--issue", "9"]).out.trim();
+    expect(take().out).toBe(`${id}\ta\to/a\tbilling\t9\n`);
+    addPrecincts({ b: 1 });
+    const second = add("b").out.trim();
+    expect(take().out).toBe(`${second}\tb\to/b\t\t\n`);
+  });
+
+  test("take prints nothing and exits 0 when no order is open for the role", () => {
+    addPrecincts({ a: 1 });
+    expect(take()).toMatchObject({ code: 0, out: "" });
+    add("a", "duty-desk");
+    expect(take()).toMatchObject({ code: 0, out: "" });
+    expect(take(T0, "Bad").code).toBe(1);
+  });
+
+  test("take returns the oldest open order first", () => {
+    addPrecincts({ a: 1, b: 1 });
+    const older = add("b", "patrol", [], later(0)).out.trim();
+    const newer = add("a", "patrol", [], later(1)).out.trim();
+    expect(take(later(2)).out.split("\t")[0]).toBe(older);
+    expect(take(later(2)).out.split("\t")[0]).toBe(newer);
+    expect(take(later(2)).out).toBe("");
+  });
+
+  test("two concurrent takes hand the single order to exactly one", async () => {
+    addPrecincts({ a: 1 });
+    add("a");
+    const spawn = () =>
+      Bun.spawn(["bun", "src/journal.ts", "dispatch", "take", "--role", "patrol"], {
+        cwd: ROOT,
+        env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: T0 }),
+        stdout: "pipe",
+        stderr: "pipe",
+      });
+    const procs = [spawn(), spawn()];
+    const codes = await Promise.all(procs.map((p) => p.exited));
+    const outs = await Promise.all(procs.map((p) => new Response(p.stdout).text()));
+    expect(codes).toEqual([0, 0]);
+    expect(outs.filter((o) => o !== "")).toHaveLength(1);
+  });
+
+  test("a taken order is reclaimed only after 24 hours", () => {
+    addPrecincts({ a: 1 });
+    const id = add("a").out.trim();
+    expect(take(T0).out).not.toBe("");
+    expect(take(later(0, 1)).out).toBe("");
+    expect(take(later(23, 3599)).out).toBe("");
+    expect(take(later(24)).out).toBe("");
+    expect(take(later(24, 1)).out.split("\t")[0]).toBe(id);
+    expect(take(later(24, 2)).out).toBe("");
+  });
+
+  test("close sets the outcome and closing time, and the pair can be ordered again", () => {
+    addPrecincts({ a: 1 });
+    const id = add("a").out.trim();
+    expect(at(later(1), ["dispatch", "close", id, "--outcome", "filed"])).toMatchObject({ code: 0, out: "" });
+    const db = open(dbFile);
+    expect(db.query("SELECT outcome, closed_at FROM dispatches WHERE id = ?").get(Number(id))).toEqual({
+      outcome: "filed",
+      closed_at: later(1),
+    });
+    db.close();
+    expect(take(later(2)).out).toBe("");
+    expect(add("a").code).toBe(0);
+  });
+
+  test("close rejects a bad token, an unknown id and an already closed order with exit 1", () => {
+    addPrecincts({ a: 1 });
+    const id = add("a").out.trim();
+    expect(at(T0, ["dispatch", "close", id, "--outcome", "bogus-token"]).code).toBe(1);
+    expect(at(T0, ["dispatch", "close", "9999", "--outcome", "filed"]).code).toBe(1);
+    expect(at(T0, ["dispatch", "close", "x", "--outcome", "filed"]).code).toBe(1);
+    expect(at(T0, ["dispatch", "close", id, "--outcome", "filed"]).code).toBe(0);
+    const again = at(T0, ["dispatch", "close", id, "--outcome", "failed"]);
+    expect(again.code).toBe(1);
+    expect(again.err.trim().split("\n")).toHaveLength(1);
+  });
+
+  test("next skips a precinct with an open order and admits it again after close", () => {
+    addPrecincts({ a: 1 });
+    const id = add("a").out.trim();
+    expect(run(["next", "--role", "patrol"]).out).toBe("");
+    at(T0, ["dispatch", "close", id, "--outcome", "silent"]);
+    expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
+  });
+});
+
 describe("source constraints", () => {
   test("the journal never starts processes or touches the network", () => {
     const src = readFileSync(SRC, "utf8");
