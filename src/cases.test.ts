@@ -6,9 +6,11 @@ import {
 	caseMark,
 	charge,
 	decline,
+	issues,
 	lead,
 	returnTo,
 	SHA,
+	seed,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
@@ -16,7 +18,12 @@ import {
 tempDb();
 
 type Comment = [createdAt: string, body: string];
-type Spec = { body?: string[]; comments?: Comment[]; state?: string };
+type Spec = {
+	body?: string[];
+	comments?: Comment[];
+	state?: string;
+	createdAt?: string;
+};
 
 const T = (hour: number) =>
 	`2026-10-14T${String(hour).padStart(2, "0")}:00:00Z`;
@@ -27,7 +34,7 @@ function put(specs: Record<number, Spec>) {
 		state: s.state ?? "OPEN",
 		stateReason: null,
 		title: `issue ${n}`,
-		createdAt: T(9),
+		createdAt: s.createdAt ?? T(9),
 		closedAt: null,
 		author: { login: TRUSTED },
 		body: (s.body ?? []).join("\n"),
@@ -224,5 +231,126 @@ describe("case: failures", () => {
 		expect(call(BASE, ["case", "main"]).code).toBe(1);
 		expect(call(BASE, ["case", "main", "x"]).code).toBe(1);
 		expect(call(BASE, ["case", "main", "0"]).code).toBe(1);
+	});
+});
+
+describe("due", () => {
+	const due = (role: string) => {
+		const r = call(BASE, ["due", "--role", role]);
+		expect(r.code).toBe(0);
+		return r.out;
+	};
+	const order = (role: string, issue: number, at: string, open = false) =>
+		seed((db) =>
+			db.run(
+				"INSERT INTO dispatches (at, precinct, role, issue, outcome) VALUES (?, 'main', ?, ?, ?)",
+				[at, role, issue, open ? null : "ok"],
+			),
+		);
+
+	test("an empty journal has nothing due", () => {
+		expect(due("investigation")).toBe("");
+		expect(due("prosecutor")).toBe("");
+	});
+
+	test("a lead without a case is due for the investigation", () => {
+		put({ 3: { body: [lead()] } });
+		expect(due("investigation")).toBe("main\t3\n");
+		expect(due("prosecutor")).toBe("");
+	});
+
+	test("a case without a decision is due for the prosecutor", () => {
+		put({ 3: { body: [lead()], comments: [[T(10), caseMark()]] } });
+		expect(due("prosecutor")).toBe("main\t3\n");
+		expect(due("investigation")).toBe("");
+	});
+
+	test("a charge or a decline leaves nothing due", () => {
+		put({
+			1: {
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), charge()],
+				],
+			},
+			2: {
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), decline()],
+				],
+			},
+		});
+		expect(due("investigation")).toBe("");
+		expect(due("prosecutor")).toBe("");
+	});
+
+	test("a closed issue leaves nothing due", () => {
+		put({ 1: { state: "CLOSED", body: [lead()] } });
+		expect(due("investigation")).toBe("");
+	});
+
+	test("a precinct of weight zero leaves nothing due", () => {
+		put({ 1: { body: [lead()] } });
+		expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(
+			0,
+		);
+		expect(due("investigation")).toBe("");
+	});
+
+	test("an open order of the role silences the role only", () => {
+		put({
+			1: { body: [lead()] },
+			2: { body: [lead()], comments: [[T(10), caseMark()]] },
+		});
+		order("investigation", 1, T(8), true);
+		expect(due("investigation")).toBe("");
+		expect(due("prosecutor")).toBe("main\t2\n");
+	});
+
+	test("an issue never ordered comes before one with an old order", () => {
+		put({ 1: { body: [lead()] }, 2: { body: [lead()] } });
+		order("investigation", 1, T(8));
+		expect(due("investigation")).toBe("main\t2\n");
+	});
+
+	test("the oldest last order comes first", () => {
+		put({ 1: { body: [lead()] }, 2: { body: [lead()] } });
+		order("investigation", 1, T(8));
+		order("investigation", 1, T(12));
+		order("investigation", 2, T(10));
+		expect(due("investigation")).toBe("main\t2\n");
+	});
+
+	test("an order of another role does not count", () => {
+		put({ 1: { body: [lead()] }, 2: { body: [lead()] } });
+		order("prosecutor", 2, T(8));
+		order("investigation", 1, T(8));
+		expect(due("investigation")).toBe("main\t2\n");
+	});
+
+	test("never-ordered issues sort by creation date, then number", () => {
+		put({
+			1: { body: [lead()], createdAt: T(12) },
+			2: { body: [lead()], createdAt: T(10) },
+			3: { body: [lead()], createdAt: T(10) },
+		});
+		expect(due("investigation")).toBe("main\t2\n");
+	});
+
+	test("a lead origin of the fingerprint form is due", () => {
+		const fixture = issues.filter((i) => i.number === 19);
+		const r = call(
+			BASE,
+			["sync", "main", "--author", TRUSTED],
+			JSON.stringify(fixture),
+		);
+		expect(r.code).toBe(0);
+		expect(due("investigation")).toBe("main\t19\n");
+	});
+
+	test("a missing role exits 1", () => {
+		expect(call(BASE, ["due"]).code).toBe(1);
 	});
 });
