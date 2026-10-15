@@ -86,7 +86,7 @@ Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for 
 bash -o pipefail -c 'gh issue list -R <repo> --author <login> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>'
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. Never pass `--reset`. An order written on a stale cache can name an issue that is already closed.
+The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed.
 
 2.2. Run `bin/journal due --role investigation`.
 
