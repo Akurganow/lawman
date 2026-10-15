@@ -190,7 +190,7 @@ A tip that differs from `<sha>` is one line of fact in the decision. It is never
 
 Only for `decline`. Run it after the read-back and before the sync. For `charge` and `return`, go to step 11.
 
-1. Close the issue. Use `not planned` for `not confirmed`, `recorded reason` and `duplicate`. Use `completed` for `gone at <tip>`.
+1. Close the issue with the reason the law's Closure classes subsection gives for the class: `completed` for `gone at <tip>`, `not planned` for the other three.
    ```
    gh issue close <n> -R <owner/repo> --reason "not planned"
    gh issue close <n> -R <owner/repo> --reason completed
@@ -234,7 +234,7 @@ Analysed commit: <sha>
 Tip at decision: <tip sha>
 
 ## Decision
-<one sentence: charge, return or decline. For decline, its class: not confirmed, recorded reason, duplicate or gone at <tip>>
+<one sentence: charge, return or decline. For decline, its class from the law's Closure classes subsection>
 
 ## Grounds
 <each ground points at an exhibit of the case, re-read at <sha>>
