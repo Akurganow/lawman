@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, T, withLead } from "./cases-fixture";
+import { need, needOnly, put, withLead } from "./cases-fixture";
 import {
 	addPrecincts,
 	caseMark,
