@@ -53,6 +53,8 @@ Send the report from the Report section on stdin. Add `--precinct` as soon as a 
 
 If `tick end` itself fails, answer `journal unavailable: <stderr>` and stop.
 
+Send the report through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first seven characters of the sha>`, or `LAWMAN_<id>` before a sha is known. A report line equal to the delimiter would end the heredoc early and run the rest as commands. Check that no line equals it before sending.
+
 ### Step 0: Guards
 
 0.1. Run `bin/journal probe --schema 2`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
@@ -179,11 +181,11 @@ Blockers: <outcome token and reason, with the first line the check printed if an
 Example, for a skipped precinct:
 
 ```
-bin/journal tick end <id> --outcome skipped-no-constitution --precinct <name> <<'REPORT'
+bin/journal tick end <id> --outcome skipped-no-constitution --precinct <name> <<'LAWMAN_<id>'
 Coverage: precinct <name>, no commit read, no order.
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.
 Blockers: skipped-no-constitution. The main branch has no LAWMAN.md.
-REPORT
+LAWMAN_<id>
 ```

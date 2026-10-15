@@ -37,6 +37,7 @@ Never open an issue body or an issue comment. The sync pipe sends the tracker JS
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `diff --quiet`, `status --porcelain`, `worktree add`, `worktree remove` and `worktree prune`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - Read a precinct file only through `git -C precincts/<p> show <sha>:<path>`. Run the mode check first: `git -C precincts/<p> ls-tree <sha> -- <path>` must print one line whose mode is `100644` or `100755`. Mode `120000` is a symbolic link and is refused. No output means the path is missing. Each step names the outcome of a refusal.
 - Search the tree only with `git -C <tree> grep` and `git -C <tree> ls-files`. Count their output with `wc -l`.
+- Send multi-line text to a command only through a quoted heredoc whose delimiter is `LAWMAN_<tick id>_<first seven characters of the sha>`, written as `<delimiter>` below. A line of the text equal to the delimiter would end the heredoc early and run the rest as commands. Before each heredoc, check that no line of the text equals the delimiter; if one does, do not send the text, and end the tick with `failed`.
 
 ## Tick
 
@@ -202,18 +203,18 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 1. Compose the title and the body from the Lead format section.
 2. Lint them. Send the title, a blank line and the body on stdin.
    ```
-   bin/journal lint-body <<'EOF'
+   bin/journal lint-body <<'<delimiter>'
    <title>
 
    <body>
-   EOF
+   <delimiter>
    ```
    Exit 7: do not file this lead. File nothing more in this tick. Finish the report and end with `stopped-lint`.
 3. Create the issue. Add no label. Send the body on stdin.
    ```
-   gh issue create -R <owner/repo> --title '<title>' --body-file - <<'EOF'
+   gh issue create -R <owner/repo> --title '<title>' --body-file - <<'<delimiter>'
    <body>
-   EOF
+   <delimiter>
    ```
    The output is the issue URL. Its last path part is the number. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. A failure without a reply can leave an issue behind. The next sync finds it by its marker.
 4. Read the issue back. The author must equal `<login>`, ignoring ASCII case. The last line must equal the marker you sent. A mismatch, or a failed read, gives `stopped-readback`.
@@ -232,9 +233,9 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
    ```
 2. End the tick. Send the report on stdin. Pass the order id, so the order closes with the same outcome. Without an order, leave out `--precinct`, `--department` and `--dispatch`.
    ```
-   bin/journal tick end <tick id> --outcome <token> --precinct <p> --department <d> --dispatch <order id> <<'REPORT'
+   bin/journal tick end <tick id> --outcome <token> --precinct <p> --department <d> --dispatch <order id> <<'<delimiter>'
    <report>
-   REPORT
+   <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 3. Answer. Print every `ALARM` line verbatim first. Then:

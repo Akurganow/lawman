@@ -123,22 +123,22 @@ Run this step after the first precinct is in the journal. The precinct reference
 1. List the scheduled jobs with the list command the page gives.
 2. Skip a job whose name is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the duty desk model and the patrol model, and wait for the answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
-5. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for the duty desk and `15 9 * * *` for the patrol, in the machine's local time.
-6. Show both create commands to the developer, and wait for a yes.
-7. Create the duty desk job with the create form the page gives:
+4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for the duty desk and `15 9 * * *` for the patrol, in the machine's local time.
+5. Show both create commands to the developer, and wait for a yes.
+6. Create the duty desk job with the create form the page gives:
 
 ```
 <create command from the page> "<duty desk cron expression>" "Duty desk tick." --name duty-desk --skill duty-desk --workdir <installation> --model <duty desk model> --deliver <deliver>
 ```
 
-8. Create the patrol job the same way:
+7. Create the patrol job the same way:
 
 ```
 <create command from the page> "<patrol cron expression>" "Patrol tick." --name patrol --skill patrol --workdir <installation> --model <patrol model> --deliver <deliver>
 ```
 
-9. List the jobs again, and stop if either job is missing.
-10. Tell the developer that the install is complete.
+8. List the jobs again, and stop if either job is missing.
+9. Tell the developer that the install is complete.
 
 | Interval | Cron expression |
 | :-- | :-- |

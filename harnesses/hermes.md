@@ -104,7 +104,7 @@ An alarm line in an answer defeats silence. The answer is then delivered, as the
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-The probe delivered a report to `telegram` through a gateway run as a launchd service. The owner confirms receipt. A role cannot see whether a message arrived.
+The probe delivered a report to a messaging platform through a running gateway. The developer confirms receipt. A role cannot see whether a message arrived.
 
 ## Isolation
 
@@ -136,8 +136,6 @@ The setting is global. It also limits the developer's other cron jobs. Ask befor
 - At 80% of the budget Hermes injects one wrap-up notice into the newest tool result.
 - The docs do not state what happens at full expiry.
 - The docs do not state whether it applies to cron runs. They say LLM-driven cron jobs run on a separate inactivity budget, and they give no default for it.
-
-Set it below the journal's 24-hour order reclaim, so a stuck run ends before its order is taken back. For a single run use `hermes chat --run-budget <seconds>`.
 
 ### Model and money
 
