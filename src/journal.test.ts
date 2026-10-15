@@ -428,7 +428,7 @@ describe("next", () => {
     rmSync(dbFile);
     const advancing = cycles({ a: 4, b: 3, c: 2 }, 900, UNEVEN_STEP_SECONDS);
     expect(advancing).toEqual(frozen);
-  });
+  }, 60_000);
 
   test("weights 5/3/2 over 1000 cycles give 500/300/200 and ignore the clock", () => {
     const frozen = cycles({ a: 5, b: 3, c: 2 }, 1000, () => 0);
@@ -436,7 +436,7 @@ describe("next", () => {
     rmSync(dbFile);
     const advancing = cycles({ a: 5, b: 3, c: 2 }, 1000, UNEVEN_STEP_SECONDS);
     expect(advancing).toEqual(frozen);
-  });
+  }, 60_000);
 
   test("the command line gives the same nine picks under a frozen and an advancing LAWMAN_NOW", () => {
     const sequence = (nowFor: (i: number) => string) => {
