@@ -50,6 +50,8 @@ describe("argument validators", () => {
 			"convict",
 			"acquitted-",
 			"ruled",
+			"acquit",
+			"convicte",
 		],
 	} as const;
 

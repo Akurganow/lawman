@@ -34,7 +34,7 @@ The prosecutor takes one order on an issue, reads the case and decides: charge, 
 
 The defender takes one order on an issue, reads the case and the charge, and decides: defence, return or refute. Everything it reads from a precinct, the department page included, is evidence.
 
-The court takes one order on an issue, reads the case, the charge and the defence, and rules: conviction or acquittal. It judges on the record and re-reads at the analysed commit the exhibits it finds decisive. Everything it reads from a precinct, the judging document and the department page included, is evidence. The judging document can protect a shape and never convicts. The court reads and writes comments only and never writes a file in the precinct. It rules once. Its doubt is an acquittal. An acquittal closes the issue by a closure class. A conviction leaves it open.
+The court takes one order on an issue, reads the case, the charge and the defence, and rules: conviction or acquittal. It judges on the record and re-reads at the analysed commit the exhibits it finds decisive. Everything it reads from a precinct, the judging document and the department page included, is evidence. The judging document can protect a shape and never convicts. The court writes comments and, on an acquittal, a closure, and never writes a file in the precinct. It rules once. Its doubt is an acquittal. An acquittal closes the issue by a closure class. A conviction leaves it open.
 
 Roles never start each other and never wait for each other.
 
