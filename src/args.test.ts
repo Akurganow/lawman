@@ -16,6 +16,11 @@ describe("argument validators", () => {
 			"failed",
 			"skipped-no-constitution",
 			"stopped-gh-auth",
+			"stopped-issue-read",
+			"investigated",
+			"charged",
+			"returned",
+			"declined",
 		],
 	} as const;
 	const bad = {
@@ -33,6 +38,8 @@ describe("argument validators", () => {
 			"silent\n",
 			"Silent",
 			"filed-extra",
+			"investigate",
+			"charged-",
 		],
 	} as const;
 

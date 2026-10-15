@@ -379,4 +379,14 @@ describe("law examples", () => {
 		expect(parseMarker(must(block.split("\n")[1]))).not.toBeNull();
 		expect(carrier(block)).toEqual([]);
 	});
+
+	test("E7, E8 and E9 are valid", () => {
+		const lines = must(blocks[3]).split("\n");
+		expect(lines).toHaveLength(3);
+		expect(lines.map((l) => must(parseMarker(l)))).toMatchObject([
+			{ role: "investigation", stage: "case" },
+			{ role: "prosecutor", stage: "charge" },
+			{ role: "prosecutor", stage: "decline" },
+		]);
+	});
 });
