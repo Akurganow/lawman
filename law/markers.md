@@ -88,7 +88,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-These markers are defined. In every one, `sha` is 40 lowercase hex digits of the analysed commit.
+These markers are defined. A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none.
 
 Patrol lead, the last line of the body of the issue the patrol files:
 
@@ -141,6 +141,18 @@ Refute, the last line of the defence comment the defender writes:
 <!-- lawman: role=defender stage=refute at=<UTC> -->
 ```
 
+Conviction, the last line of the ruling comment the court writes:
+
+```
+<!-- lawman: role=court stage=conviction sha=<40 hex> at=<UTC> -->
+```
+
+Acquittal, the last line of the ruling comment the court writes:
+
+```
+<!-- lawman: role=court stage=acquittal at=<UTC> -->
+```
+
 A stage not defined here is parsed and kept.
 
 ## Examples
@@ -183,4 +195,11 @@ Valid. `E10` is a defence, `E11` a refute.
 ```
 <!-- lawman: role=defender stage=defence sha=4f1c9a2b7d3e58061a9c4e7b2d0f3a6c8e5b1d94 at=2026-10-15T08:20:00Z -->
 <!-- lawman: role=defender stage=refute at=2026-10-15T08:40:00Z -->
+```
+
+Valid. `E12` is a conviction, `E13` an acquittal.
+
+```
+<!-- lawman: role=court stage=conviction sha=7e3a91c5d0b842f6a1e9c37d58b20f4a6c1e9d37 at=2026-10-16T10:00:00Z -->
+<!-- lawman: role=court stage=acquittal at=2026-10-16T10:30:00Z -->
 ```

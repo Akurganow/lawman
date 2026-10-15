@@ -22,7 +22,7 @@ describe("case: defender stage", () => {
 
 	test.each([
 		["a charge with no defender marker needs the defender", [], "defender"],
-		["a defence after the charge needs nobody", [defence()], "none"],
+		["a defence after the charge needs the court", [defence()], "court"],
 		[
 			"a refute after the charge on an open issue needs nobody",
 			[refute()],

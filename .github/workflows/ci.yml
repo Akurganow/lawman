@@ -30,7 +30,7 @@ jobs:
       - name: Select fenced paths
         run: |
           paths=""
-          for p in law departments skills/duty-desk skills/patrol skills/investigation skills/prosecutor skills/defender; do
+          for p in law departments skills/duty-desk skills/patrol skills/investigation skills/prosecutor skills/defender skills/court; do
             if [ -e "$p" ]; then paths="$paths $p"; fi
           done
           if [ -z "$paths" ]; then echo "no fenced paths"; exit 1; fi

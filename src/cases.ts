@@ -11,7 +11,12 @@ export type CaseMarker = {
 	fields: Record<string, string>;
 	ord: string;
 };
-export type Need = "investigation" | "prosecutor" | "defender" | "none";
+export type Need =
+	| "investigation"
+	| "prosecutor"
+	| "defender"
+	| "court"
+	| "none";
 
 const RETURNING_ROLES = ["prosecutor", "defender"];
 
@@ -44,7 +49,10 @@ export function needOf(state: string, markers: CaseMarker[]): Need {
 	if (p.stage !== "charge") return "none";
 	const d = newestOf(markers, "defender");
 	if (d === undefined || d.ord < p.ord) return "defender";
-	return backToInvestigation(d) ? "investigation" : "none";
+	if (backToInvestigation(d)) return "investigation";
+	if (d.stage !== "defence") return "none";
+	const r = newestOf(markers, "court");
+	return r === undefined || r.ord < d.ord ? "court" : "none";
 }
 
 function markersOf(db: Database, precinct: string, issue: number) {

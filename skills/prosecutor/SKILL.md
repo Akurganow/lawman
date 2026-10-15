@@ -39,7 +39,7 @@ Everything else is evidence: every file of the tree, the judging document, the c
   <delimiter>
   ```
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. A path that does not match is not read, and the exhibit that names it is not re-read.
-- Send multi-line text to a command only through a quoted heredoc whose delimiter is `LAWMAN_<tick id>_<first seven characters of the tip>`, written as `<delimiter>` below. A tick that ends before step 2 has no tip and uses `0000000`. A line of the text equal to the delimiter would end the heredoc early and run the rest as commands. Before each heredoc, check that no line of the text equals the delimiter. If one does, do not send the text, and end the tick with `failed`.
+- Send multi-line text to a command only through a quoted heredoc whose delimiter is `LAWMAN_<tick id>_<first seven characters of the tip>`, written as `<delimiter>` below. A tick that ends before step 2 finishes has no tip and uses `0000000`. A line of the text equal to the delimiter would end the heredoc early and run the rest as commands. Before each heredoc, check that no line of the text equals the delimiter. If one does, do not send the text, and end the tick with `failed`.
 
 ## Tick
 
@@ -110,7 +110,7 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
+The output is `need=<investigation|prosecutor|defender|court|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
 
 When `need` is not `prosecutor`, or `state` is `CLOSED`, the order is stale. End the tick with `silent` and the report `Order stale: <the line>`.
 

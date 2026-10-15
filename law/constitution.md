@@ -76,7 +76,7 @@ Skills and rules of this repository that an executor loads before it changes cod
 ### Precedents
 
 Settled questions. One per line: `- <YYYY-MM-DD> #<n>: <ruling>`.
-The court appends amendments here. Numbers never repeat.
+A court ruling carries a line in the form above, without its number. A later role, not performed in this release, assigns the number and appends the line here. Numbers never repeat.
 
 ## Path rules
 
