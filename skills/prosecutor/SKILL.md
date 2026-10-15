@@ -14,7 +14,7 @@ The prosecutor reads and writes comments. It runs no code.
 - Never run code from the precinct.
 - Never return a case for tip drift. A moved tip is a fact in the decision.
 - An empty tick is a success. Silence is the default.
-- Never return in round 3. Remaining doubt in round 3 is a decline.
+- Never return in round 3, and never return twice. Remaining doubt when a return is not allowed is a decline.
 
 The law in `lawman/law/LAW.md` governs this skill. Obey it. Do not restate it. The outcome tokens come from its Tick outcomes section.
 
@@ -110,11 +110,11 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|none> round=<n> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
+The output is `need=<investigation|prosecutor|defender|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
 
 When `need` is not `prosecutor`, or `state` is `CLOSED`, the order is stale. End the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `department` and `sha`. The `sha` is the analysed commit for every step below.
+Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed commit for every step below.
 
 ### Step 5: read the rules
 
@@ -129,7 +129,7 @@ Keep `round`, `department` and `sha`. The `sha` is the analysed commit for every
    - Any other exit 8: `skipped-bad-constitution`.
 2. A printed line is `<name><TAB><judged by>`. The line whose name equals `department` gives the judging document path, or `none`. No line for the department means no judging document.
 3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence.
-4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason.
+4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law's Evidence section defines it.
 
 ### Step 6: read the issue
 
@@ -153,14 +153,10 @@ The case is the newest comment by `<login>`, ignoring ASCII case, whose last lin
 Decide one of three. The tick outcome equals the decision.
 
 - `charge`: the claim is established and every ground is an exhibit you re-read. The issue stays open. Outcome `charged`.
-- `return`: one precise question for investigation. Allowed only when `round` is less than 3. Outcome `returned`.
-- `decline`: outcome `declined`. Pick the class:
-  - `not confirmed`: the exhibits do not establish the claim.
-  - `recorded reason`: a Precedents entry or a recorded answer in the judging document settles it.
-  - `duplicate`: another case holds the same finding.
-  - `gone at <tip>`: the defect is gone at a later commit.
+- `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `prosecutor`. Outcome `returned`.
+- `decline`: outcome `declined`. The decline names one of the law's closure classes, as its "Closure classes" subsection defines them.
 
-In round 3, any remaining doubt is a decline.
+When a return is not allowed, in round 3 or after an earlier return of the prosecutor, any remaining doubt is a decline.
 
 A tip that differs from `<sha>` is one line of fact in the decision. It is never a reason to return.
 
@@ -194,7 +190,7 @@ A tip that differs from `<sha>` is one line of fact in the decision. It is never
 
 Only for `decline`. Run it after the read-back and before the sync. For `charge` and `return`, go to step 11.
 
-1. Close the issue. Use `not planned` for `not confirmed`, `recorded reason` and `duplicate`. Use `completed` for `gone at <tip>`.
+1. Close the issue with the reason the law's Closure classes subsection gives for the class: `completed` for `gone at <tip>`, `not planned` for the other three.
    ```
    gh issue close <n> -R <owner/repo> --reason "not planned"
    gh issue close <n> -R <owner/repo> --reason completed
@@ -238,7 +234,7 @@ Analysed commit: <sha>
 Tip at decision: <tip sha>
 
 ## Decision
-<one sentence: charge, return or decline. For decline, its class: not confirmed, recorded reason, duplicate or gone at <tip>>
+<one sentence: charge, return or decline. For decline, its class from the law's Closure classes subsection>
 
 ## Grounds
 <each ground points at an exhibit of the case, re-read at <sha>>

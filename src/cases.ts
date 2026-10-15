@@ -11,7 +11,9 @@ export type CaseMarker = {
 	fields: Record<string, string>;
 	ord: string;
 };
-export type Need = "investigation" | "prosecutor" | "none";
+export type Need = "investigation" | "prosecutor" | "defender" | "none";
+
+const RETURNING_ROLES = ["prosecutor", "defender"];
 
 const newest = (markers: CaseMarker[]) =>
 	markers.reduce<CaseMarker | undefined>(
@@ -20,22 +22,29 @@ const newest = (markers: CaseMarker[]) =>
 	);
 
 const backToInvestigation = (m: CaseMarker) =>
-	m.role === "prosecutor" &&
+	RETURNING_ROLES.includes(m.role) &&
 	m.stage === "return" &&
 	m.fields.to === "investigation";
 
+const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
+	newest(
+		markers.filter(
+			(m) => m.role === role && (stage === undefined || m.stage === stage),
+		),
+	);
+
 export function needOf(state: string, markers: CaseMarker[]): Need {
 	if (state === "CLOSED") return "none";
-	const c = newest(
-		markers.filter((m) => m.role === "investigation" && m.stage === "case"),
-	);
-	const p = newest(markers.filter((m) => m.role === "prosecutor"));
-	if (
-		c === undefined ||
-		(p !== undefined && p.ord > c.ord && backToInvestigation(p))
-	)
+	const c = newestOf(markers, "investigation", "case");
+	if (c === undefined) return "investigation";
+	const p = newestOf(markers, "prosecutor");
+	if (p !== undefined && p.ord > c.ord && backToInvestigation(p))
 		return "investigation";
-	return p === undefined || p.ord < c.ord ? "prosecutor" : "none";
+	if (p === undefined || p.ord < c.ord) return "prosecutor";
+	if (p.stage !== "charge") return "none";
+	const d = newestOf(markers, "defender");
+	if (d === undefined || d.ord < p.ord) return "defender";
+	return backToInvestigation(d) ? "investigation" : "none";
 }
 
 function markersOf(db: Database, precinct: string, issue: number) {
@@ -65,12 +74,13 @@ export function caseCommand(args: string[]): void {
 		if (origin === null)
 			throw new Fail(EXIT.USAGE, `no lead origin for ${name} #${issue}`);
 		const markers = markersOf(db, name, Number(issue));
-		const sha = newest(
-			markers.filter((m) => m.role === "investigation" && m.stage === "case"),
-		)?.fields.sha;
-		const round = markers.filter(backToInvestigation).length + 1;
+		const sha = newestOf(markers, "investigation", "case")?.fields.sha;
+		const returns = markers.filter(backToInvestigation);
+		const returned = RETURNING_ROLES.filter((r) =>
+			returns.some((m) => m.role === r),
+		);
 		out(
-			`need=${needOf(origin.state, markers)} round=${round} department=${origin.department ?? "-"} sha=${sha ?? "-"} state=${origin.state}`,
+			`need=${needOf(origin.state, markers)} round=${returns.length + 1} returned=${returned.join(",") || "-"} department=${origin.department ?? "-"} sha=${sha ?? "-"} state=${origin.state}`,
 		);
 	});
 }
