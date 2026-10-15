@@ -106,13 +106,13 @@ Case, the last line of the case comment the investigation writes:
 <!-- lawman: role=investigation stage=case sha=<40 hex> at=<UTC> -->
 ```
 
-Charge, written by the prosecutor:
+Charge, the last line of the decision comment the prosecutor writes:
 
 ```
 <!-- lawman: role=prosecutor stage=charge sha=<40 hex> at=<UTC> -->
 ```
 
-Return:
+Return, the last line of the comment that returns a case:
 
 ```
 <!-- lawman: role=<role> stage=return to=<role> round=<n> at=<UTC> -->
@@ -123,7 +123,7 @@ Return:
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
 - The prosecutor writes it with `to=investigation` and `round` equal to the round in which it returns.
 
-Decline, written by the prosecutor:
+Decline, the last line of the decision comment the prosecutor writes:
 
 ```
 <!-- lawman: role=prosecutor stage=decline at=<UTC> -->

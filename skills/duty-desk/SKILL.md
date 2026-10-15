@@ -165,7 +165,7 @@ Run `bin/journal dispatch add --precinct <name> --role patrol --department <d>`.
 
 ### Step 9: End with the orders
 
-Run `bin/journal tick end <id> --outcome ordered [--precinct <name> --department <d>]` with the report on stdin. Pass the flags when step 8 wrote a patrol order. Do not close any order. Each role takes its own order and closes it.
+Run `bin/journal tick end <id> --outcome <token> [--precinct <name> --department <d>]` with the report on stdin. The token follows the Tick rules above: `ordered` when any order was written, otherwise the `skipped-*` token or `silent`. Pass the flags when step 8 wrote a patrol order. Do not close any order. Each role takes its own order and closes it.
 
 ## Catch-up runs
 

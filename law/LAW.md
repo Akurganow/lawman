@@ -180,7 +180,7 @@ The outcome of a tick is one token from this grammar, taken from the role's own 
 - `filed`: patrol filed at least one lead.
 - `capped`: patrol found cap 0 and ended before analysis.
 - `failed`: the role says it could not finish, and no external cause explains it.
-- `skipped-<slug>`: the precinct or the department cannot be worked now. No order is written. The slot is spent. Other precincts are not blocked.
+- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for it, and a role that took an order closes it with this outcome. The slot is spent. Other precincts are not blocked.
 - `stopped-<slug>`: an external cause stopped the tick.
 
 A slug is `[a-z0-9-]+`. These are the slugs of this release:

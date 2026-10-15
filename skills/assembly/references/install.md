@@ -96,7 +96,7 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 ## Step 7. Check the turn limit
 
 1. Read the harness's per-session turn limit with the read command the page gives.
-2. A patrol tick needs more than 60 turns. If the limit is below the number the page names, show the developer the set command the page gives and ask them to raise it or lift it; do not change it yourself.
+2. A patrol or investigation tick needs more than 60 turns. If the limit is below the number the page names, show the developer the set command the page gives and ask them to raise it or lift it; do not change it yourself.
 
 ## Step 8. Write the config
 
