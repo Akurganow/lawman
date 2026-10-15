@@ -235,7 +235,7 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 3. Answer. Print every `ALARM` line verbatim first. Then:
-   - For `filed`, `failed` or a `stopped-*` token, add the report.
+   - For `failed` or a `stopped-*` token, add the report.
    - For any other outcome with no `ALARM` line, answer `[SILENT]`.
    - With an `ALARM` line, never answer `[SILENT]`.
 

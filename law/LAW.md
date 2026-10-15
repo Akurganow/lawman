@@ -40,7 +40,7 @@ A run that files nothing is a successful run. In a healthy precinct it is the co
 
 Five merely plausible leads teach the reader to ignore all of them. The one real finding is ignored with them. When in doubt, the doubt goes in the report, never in the tracker.
 
-Whether an empty tick delivers anything is governed by the harness page, not by this file. Alarm lines in a reply always count as content (see "Alarms and their repetition").
+A successful tick, empty or not, answers the harness page's silence token. Its report lives in the journal. Only alarm lines, a failure and a stop are delivered to the owner. Alarm lines in a reply always count as content (see "Alarms and their repetition").
 
 ## Evidence
 

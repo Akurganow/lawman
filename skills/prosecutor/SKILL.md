@@ -219,8 +219,8 @@ For all three decisions, run the pipe of step 3 again, so the journal sees the n
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 2. Answer. Print every `ALARM` line verbatim first. Then:
-   - For `charged`, `returned`, `declined`, `failed` or a `stopped-*` token, add the report.
-   - For `silent` or a `skipped-*` token with no `ALARM` line, answer `[SILENT]`.
+   - For `failed` or a `stopped-*` token, add the report.
+   - For any other outcome with no `ALARM` line, answer `[SILENT]`.
    - With an `ALARM` line, never answer `[SILENT]`.
 
 ## Alarm
