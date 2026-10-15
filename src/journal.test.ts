@@ -1201,7 +1201,7 @@ describe("parseMarker", () => {
   test("a duplicate key is invalid, also for names on the object prototype", () => {
     expect(parseMarker(ret(" round=1"))).toBeNull();
     const base = "<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z";
-    expect(parseMarker(`${base} constructor=a -->`)!.fields.constructor).toBe("a");
+    expect(parseMarker(`${base} constructor=a -->`)!.fields).toHaveProperty("constructor", "a");
     expect(parseMarker(`${base} constructor=a constructor=b -->`)).toBeNull();
   });
 
@@ -1445,7 +1445,7 @@ describe("fixture issues", () => {
   test("#11 non-canonical ids are dropped and displace nothing", () => {
     const c = collect(11);
     expect(c.markers).toHaveLength(1);
-    expect(c.newestByRole.get("patrol")).toBe(c.leadOrigin);
+    expect(c.newestByRole.get("patrol")).toBe(c.leadOrigin!);
   });
 
   test("#12 a double hyphen in a value drops the marker", () => {
