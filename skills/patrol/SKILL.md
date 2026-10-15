@@ -227,6 +227,7 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 1. If step 5 created the tree, remove it. Keep the status output for Blockers. A failed remove goes to Blockers.
    ```
    git -C precincts/<p> worktree remove --force ../../runs/<tick id>/tree
+   rmdir runs/<tick id>
    git -C precincts/<p> status --porcelain
    ```
 2. End the tick. Send the report on stdin. Pass the order id, so the order closes with the same outcome. Without an order, leave out `--precinct`, `--department` and `--dispatch`.
