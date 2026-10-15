@@ -121,11 +121,10 @@ agent:
 
 Finish this step before the developer adds a precinct.
 
-1. Ask the developer for the duty desk interval in minutes, and wait for the answer.
-2. Ask the developer for the patrol interval in minutes, and wait for the answer.
-3. Run `bin/journal role set duty-desk --every <minutes>`, and stop if it fails.
-4. Run `bin/journal role set patrol --every <minutes>`, and stop if it fails.
-5. Tell the developer to add the first precinct next, because step 10 runs after it.
+1. Propose the default: both roles once a day, 1440 minutes, the duty desk at 09:00 local time and the patrol at 09:15 so that the order is taken the same day. Ask the developer to accept it or name other intervals, and wait for the answer.
+2. Run `bin/journal role set duty-desk --every <minutes>`, and stop if it fails.
+3. Run `bin/journal role set patrol --every <minutes>`, and stop if it fails.
+4. Tell the developer to add the first precinct next, because step 10 runs after it.
 
 ## Step 10. Create the scheduled jobs
 
@@ -133,9 +132,8 @@ Run this step after the first precinct is in the journal. The precinct reference
 
 1. List the scheduled jobs with the list command the page gives.
 2. Skip a job whose name is already listed, and tell the developer which ones you skipped.
-3. Ask the developer for the duty desk model, and wait for the answer.
-4. Ask the developer for the patrol model, and wait for the answer.
-5. Build each cron expression from its interval with the table below.
+3. Ask the developer for the duty desk model and the patrol model, and wait for the answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
+5. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for the duty desk and `15 9 * * *` for the patrol, in the machine's local time.
 6. Show both create commands to the developer, and wait for a yes.
 7. Create the duty desk job with the create form the page gives:
 
