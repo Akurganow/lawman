@@ -127,6 +127,8 @@ The setting is global. It also limits the developer's other cron jobs. Ask befor
 
 ### Time
 
+`agent.max_turns` caps the tool turns of one session, cron sessions included. Read it with `hermes config get agent.max_turns`. A patrol tick spends more than 60 turns on its mechanical steps and the sweep, so a limit of 60 stops it before it closes the tick; set at least 300 with `hermes config set agent.max_turns 300`, or lift the cap with `hermes config unset agent.max_turns`. This is the developer's setting; the assembly only reads it and asks.
+
 `agent.run_budget_seconds` is a wall-clock budget per run, global for every session of the harness. Lawman does not set it: a hung tick is caught by the journal's tick-hung alarm and the 24-hour order reclaim. A developer who wants a harness-level cap sets it themselves with `hermes config set agent.run_budget_seconds <seconds>`.
 
 - It applies to each conversation run, and it resets on each user message.

@@ -94,11 +94,12 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 5. Tell the developer to write the value where the page says, and never to paste it into this session.
 6. Repeat this step after the developer confirms.
 
-## Step 7. Check parallelism
+## Step 7. Check parallelism and the turn limit
 
 1. Read the harness's parallelism setting with the read command the page gives. Lawman changes no harness setting of its own.
 2. If the harness has a cap and it is below the number of Lawman roles (2), tell the developer that one role will wait for the other, and let them decide. Never raise or lower the cap yourself.
 3. Tell the developer that the page states no spend cap, so only the model and the interval limit spend, and that a hung tick is caught by the journal's own alarm and the order reclaim, not by a harness setting.
+4. Read the harness's per-session turn limit with the read command the page gives. A patrol tick needs more than 60 turns. If the limit is below the number the page names, show the developer the set command the page gives and ask them to raise it or lift it; do not change it yourself.
 
 ## Step 8. Write the config
 
