@@ -4,23 +4,23 @@ import { dirname, join } from "node:path";
 import pkg from "../package.json";
 
 export const EXIT = {
-  OK: 0,
-  USAGE: 1,
-  DUPLICATE_ORDER: 2,
-  SYNC_LIMIT: 3,
-  SYNC_INPUT: 4,
-  SCHEMA: 6,
-  LINT_BODY: 7,
-  LINT_PAGE: 8,
+	OK: 0,
+	USAGE: 1,
+	DUPLICATE_ORDER: 2,
+	SYNC_LIMIT: 3,
+	SYNC_INPUT: 4,
+	SCHEMA: 6,
+	LINT_BODY: 7,
+	LINT_PAGE: 8,
 } as const;
 
 export class Fail extends Error {
-  constructor(
-    readonly code: number,
-    message: string,
-  ) {
-    super(message);
-  }
+	constructor(
+		readonly code: number,
+		message: string,
+	) {
+		super(message);
+	}
 }
 
 type Env = Record<string, string | undefined>;
@@ -32,7 +32,7 @@ export const CLAIM_TTL_MS = 24 * HOUR_MS;
 export const LEAD_PREFIX = "[Lead]";
 
 export const MIGRATIONS: string[] = [
-  `
+	`
   CREATE TABLE precincts (
     name      TEXT PRIMARY KEY,
     repo      TEXT NOT NULL UNIQUE,
@@ -93,7 +93,7 @@ export const MIGRATIONS: string[] = [
     raw        TEXT NOT NULL,
     PRIMARY KEY (precinct, issue, ord));
   `,
-  `
+	`
   CREATE TABLE pauses (
     id         INTEGER PRIMARY KEY,
     started_at TEXT NOT NULL,
@@ -102,151 +102,186 @@ export const MIGRATIONS: string[] = [
   `,
 ];
 
-function envSet(env: Env, name: string): boolean {
-  return env[name] !== undefined && env[name] !== "";
-}
+const envValue = (env: Env, name: string): string | undefined =>
+	env[name] || undefined;
+const envSet = (env: Env, name: string) => envValue(env, name) !== undefined;
 
 export function checkEnv(env: Env = process.env): void {
-  if (envSet(env, "LAWMAN_NOW") && !envSet(env, "LAWMAN_DB")) {
-    throw new Fail(EXIT.USAGE, "LAWMAN_NOW requires LAWMAN_DB");
-  }
+	if (envSet(env, "LAWMAN_NOW") && !envSet(env, "LAWMAN_DB")) {
+		throw new Fail(EXIT.USAGE, "LAWMAN_NOW requires LAWMAN_DB");
+	}
 }
 
 export function isoSeconds(date: Date): string {
-  return date.toISOString().slice(0, 19) + "Z";
+	return `${date.toISOString().slice(0, 19)}Z`;
 }
 
 export function now(env: Env = process.env): string {
-  checkEnv(env);
-  const raw = envSet(env, "LAWMAN_NOW") ? new Date(env.LAWMAN_NOW!) : new Date();
-  if (Number.isNaN(raw.getTime())) {
-    throw new Fail(EXIT.USAGE, `LAWMAN_NOW is not a timestamp: ${JSON.stringify(env.LAWMAN_NOW)}`);
-  }
-  return isoSeconds(raw);
+	checkEnv(env);
+	const stamp = envValue(env, "LAWMAN_NOW");
+	const raw = stamp === undefined ? new Date() : new Date(stamp);
+	if (Number.isNaN(raw.getTime())) {
+		throw new Fail(
+			EXIT.USAGE,
+			`LAWMAN_NOW is not a timestamp: ${JSON.stringify(stamp)}`,
+		);
+	}
+	return isoSeconds(raw);
 }
 
-export function dbPath(env: Env = process.env, execPath: string = process.execPath): string {
-  return envSet(env, "LAWMAN_DB") ? env.LAWMAN_DB! : join(dirname(dirname(execPath)), "journal.sqlite");
+export function dbPath(
+	env: Env = process.env,
+	execPath: string = process.execPath,
+): string {
+	return (
+		envValue(env, "LAWMAN_DB") ??
+		join(dirname(dirname(execPath)), "journal.sqlite")
+	);
 }
 
 function userVersion(db: Database): number {
-  return (db.query("PRAGMA user_version").get() as { user_version: number }).user_version;
+	return (db.query("PRAGMA user_version").get() as { user_version: number })
+		.user_version;
 }
 
 function tooNew(found: number): Fail {
-  return new Fail(EXIT.SCHEMA, `database schema ${found} is newer than this binary (${MIGRATIONS.length})`);
+	return new Fail(
+		EXIT.SCHEMA,
+		`database schema ${found} is newer than this binary (${MIGRATIONS.length})`,
+	);
 }
 
 function migrate(db: Database): void {
-  const seen = userVersion(db);
-  if (seen > MIGRATIONS.length) throw tooNew(seen);
-  if (seen === MIGRATIONS.length) return;
-  db.run("BEGIN IMMEDIATE");
-  try {
-    // another process may have migrated while this one waited for the write lock
-    const current = userVersion(db);
-    if (current > MIGRATIONS.length) throw tooNew(current);
-    for (let v = current; v < MIGRATIONS.length; v++) db.run(MIGRATIONS[v]);
-    db.run(`PRAGMA user_version = ${MIGRATIONS.length}`);
-    db.run("COMMIT");
-  } catch (e) {
-    db.run("ROLLBACK");
-    throw e;
-  }
+	const seen = userVersion(db);
+	if (seen > MIGRATIONS.length) throw tooNew(seen);
+	if (seen === MIGRATIONS.length) return;
+	db.run("BEGIN IMMEDIATE");
+	try {
+		// another process may have migrated while this one waited for the write lock
+		const current = userVersion(db);
+		if (current > MIGRATIONS.length) throw tooNew(current);
+		for (const sql of MIGRATIONS.slice(current)) db.run(sql);
+		db.run(`PRAGMA user_version = ${MIGRATIONS.length}`);
+		db.run("COMMIT");
+	} catch (e) {
+		db.run("ROLLBACK");
+		throw e;
+	}
 }
 
 function enableWal(db: Database): void {
-  // switching to WAL can fail at once with SQLITE_BUSY when processes race on a new file
-  const deadline = Date.now() + BUSY_TIMEOUT_MS;
-  for (;;) {
-    try {
-      db.run("PRAGMA journal_mode = WAL");
-      return;
-    } catch (e) {
-      if ((e as { code?: string }).code !== "SQLITE_BUSY" || Date.now() > deadline) throw e;
-      Bun.sleepSync(10);
-    }
-  }
+	// switching to WAL can fail at once with SQLITE_BUSY when processes race on a new file
+	const deadline = Date.now() + BUSY_TIMEOUT_MS;
+	for (;;) {
+		try {
+			db.run("PRAGMA journal_mode = WAL");
+			return;
+		} catch (e) {
+			if (
+				(e as { code?: string }).code !== "SQLITE_BUSY" ||
+				Date.now() > deadline
+			)
+				throw e;
+			Bun.sleepSync(10);
+		}
+	}
 }
 
 export function open(path: string = dbPath()): Database {
-  const db = new Database(path);
-  try {
-    db.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
-    enableWal(db);
-    db.run("PRAGMA foreign_keys = ON");
-    migrate(db);
-  } catch (e) {
-    db.close();
-    throw e;
-  }
-  return db;
+	const db = new Database(path);
+	try {
+		db.run(`PRAGMA busy_timeout = ${BUSY_TIMEOUT_MS}`);
+		enableWal(db);
+		db.run("PRAGMA foreign_keys = ON");
+		migrate(db);
+	} catch (e) {
+		db.close();
+		throw e;
+	}
+	return db;
 }
 
 export function probeLine(db: Database): string {
-  db.run("BEGIN IMMEDIATE");
-  try {
-    db.run("INSERT INTO roles (name, every_minutes) VALUES ('probe', 1)");
-  } finally {
-    db.run("ROLLBACK");
-  }
-  const mode = (db.query("PRAGMA journal_mode").get() as { journal_mode: string }).journal_mode;
-  return `journal ${pkg.version} schema ${userVersion(db)} ${mode}`;
+	db.run("BEGIN IMMEDIATE");
+	try {
+		db.run("INSERT INTO roles (name, every_minutes) VALUES ('probe', 1)");
+	} finally {
+		db.run("ROLLBACK");
+	}
+	const mode = (
+		db.query("PRAGMA journal_mode").get() as { journal_mode: string }
+	).journal_mode;
+	return `journal ${pkg.version} schema ${userVersion(db)} ${mode}`;
 }
 
 export function probe(args: string[]): void {
-  if (envSet(process.env, "LAWMAN_DB") || envSet(process.env, "LAWMAN_NOW")) {
-    throw new Fail(EXIT.USAGE, "probe refuses LAWMAN_DB and LAWMAN_NOW: unset them");
-  }
-  if (args.length > 0 && !(args.length === 2 && args[0] === "--schema" && /^\d+$/.test(args[1]))) {
-    throw new Fail(EXIT.USAGE, "usage: journal probe [--schema N]");
-  }
-  if (args.length === 2 && Number(args[1]) > MIGRATIONS.length) {
-    throw new Fail(EXIT.SCHEMA, `schema ${args[1]} is newer than this binary (${MIGRATIONS.length})`);
-  }
-  const db = open();
-  try {
-    out(probeLine(db));
-  } finally {
-    db.close();
-  }
+	if (envSet(process.env, "LAWMAN_DB") || envSet(process.env, "LAWMAN_NOW")) {
+		throw new Fail(
+			EXIT.USAGE,
+			"probe refuses LAWMAN_DB and LAWMAN_NOW: unset them",
+		);
+	}
+	const [flag, schema] = args;
+	if (
+		args.length > 0 &&
+		!(
+			args.length === 2 &&
+			flag === "--schema" &&
+			schema !== undefined &&
+			/^\d+$/.test(schema)
+		)
+	) {
+		throw new Fail(EXIT.USAGE, "usage: journal probe [--schema N]");
+	}
+	if (schema !== undefined && Number(schema) > MIGRATIONS.length) {
+		throw new Fail(
+			EXIT.SCHEMA,
+			`schema ${schema} is newer than this binary (${MIGRATIONS.length})`,
+		);
+	}
+	const db = open();
+	try {
+		out(probeLine(db));
+	} finally {
+		db.close();
+	}
 }
 
 export function out(...fields: (string | number)[]): void {
-  process.stdout.write(fields.join("\t") + "\n");
+	process.stdout.write(`${fields.join("\t")}\n`);
 }
 
 export function inTransaction<T>(db: Database, body: () => T): T {
-  db.run("BEGIN IMMEDIATE");
-  try {
-    const result = body();
-    db.run("COMMIT");
-    return result;
-  } catch (e) {
-    db.run("ROLLBACK");
-    throw e;
-  }
+	db.run("BEGIN IMMEDIATE");
+	try {
+		const result = body();
+		db.run("COMMIT");
+		return result;
+	} catch (e) {
+		db.run("ROLLBACK");
+		throw e;
+	}
 }
 
 export function withDb(body: (db: Database) => void): void {
-  const db = open();
-  try {
-    body(db);
-  } finally {
-    db.close();
-  }
+	const db = open();
+	try {
+		body(db);
+	} finally {
+		db.close();
+	}
 }
 
 export function isConstraint(e: unknown): boolean {
-  return String((e as { code?: string }).code).startsWith("SQLITE_CONSTRAINT");
+	return String((e as { code?: string }).code).startsWith("SQLITE_CONSTRAINT");
 }
 
 export function readStdin(): string {
-  try {
-    return readFileSync(0, "utf8");
-  } catch {
-    return "";
-  }
+	try {
+		return readFileSync(0, "utf8");
+	} catch {
+		return "";
+	}
 }
 
 export const LEAD_ORIGIN_FROM = `FROM issues i

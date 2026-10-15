@@ -1,44 +1,78 @@
 import { EXIT, Fail } from "./db";
 
 const PATTERNS = {
-  precinct: /^[a-z][a-z0-9-]*$/,
-  role: /^[a-z][a-z0-9-]*$/,
-  department: /^[a-z][a-z0-9-]*$/,
-  repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
-  login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
-  outcome: /^(silent|ordered|filed|capped|failed|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
+	precinct: /^[a-z][a-z0-9-]*$/,
+	role: /^[a-z][a-z0-9-]*$/,
+	department: /^[a-z][a-z0-9-]*$/,
+	repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
+	login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
+	outcome:
+		/^(silent|ordered|filed|capped|failed|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
 
 export function check(kind: keyof typeof PATTERNS, value: string): string {
-  if (!PATTERNS[kind].test(value)) {
-    throw new Fail(EXIT.USAGE, `invalid ${kind}: ${JSON.stringify(value)}`);
-  }
-  return value;
+	if (!PATTERNS[kind].test(value)) {
+		throw new Fail(EXIT.USAGE, `invalid ${kind}: ${JSON.stringify(value)}`);
+	}
+	return value;
 }
 
 export function usage(text: string): Fail {
-  return new Fail(EXIT.USAGE, `usage: journal ${text}`);
+	return new Fail(EXIT.USAGE, `usage: journal ${text}`);
 }
 
-export function parseArgs(args: string[], positional: number, names: string[], text: string, optional: string[] = []) {
-  const pos = args.slice(0, positional);
-  const rest = args.slice(positional);
-  const opt: Record<string, string> = {};
-  const allowed = [...names, ...optional];
-  if (pos.length < positional || rest.length % 2 !== 0 || rest.length > allowed.length * 2) throw usage(text);
-  for (let i = 0; i < rest.length; i += 2) {
-    const name = rest[i].slice(2);
-    if (!rest[i].startsWith("--") || !allowed.includes(name) || name in opt) throw usage(text);
-    opt[name] = rest[i + 1];
-  }
-  if (names.some((name) => !(name in opt))) throw usage(text);
-  return { pos, opt };
+type Parsed<P extends 0 | 1, N extends string, O extends string> = {
+	pos: P extends 1 ? [string] : [];
+	opt: Record<N, string> & Partial<Record<O, string>>;
+};
+
+export function parseArgs<
+	P extends 0 | 1,
+	N extends string,
+	O extends string = never,
+>(
+	args: string[],
+	positional: P,
+	names: N[],
+	text: string,
+	optional: O[] = [],
+): Parsed<P, N, O> {
+	const pos = args.slice(0, positional);
+	const rest = args.slice(positional);
+	const opt: Record<string, string> = {};
+	const allowed: string[] = [...names, ...optional];
+	if (
+		pos.length < positional ||
+		rest.length % 2 !== 0 ||
+		rest.length > allowed.length * 2
+	)
+		throw usage(text);
+	for (let i = 0; i < rest.length; i += 2) {
+		const flag = rest[i];
+		const value = rest[i + 1];
+		if (flag === undefined || value === undefined) throw usage(text);
+		const name = flag.slice(2);
+		if (!flag.startsWith("--") || !allowed.includes(name) || name in opt)
+			throw usage(text);
+		opt[name] = value;
+	}
+	if (names.some((name) => !(name in opt))) throw usage(text);
+	return { pos, opt } as Parsed<P, N, O>;
+}
+
+export function pick<T>(
+	table: Record<string, T>,
+	key: string | undefined,
+): T | undefined {
+	return key !== undefined && Object.hasOwn(table, key)
+		? table[key]
+		: undefined;
 }
 
 export function count(value: string, label: string, min: number): number {
-  const n = Number(value);
-  if (!/^\d+$/.test(value) || !Number.isSafeInteger(n) || n < min) {
-    throw new Fail(EXIT.USAGE, `invalid ${label}: ${JSON.stringify(value)}`);
-  }
-  return n;
+	const n = Number(value);
+	if (!/^\d+$/.test(value) || !Number.isSafeInteger(n) || n < min) {
+		throw new Fail(EXIT.USAGE, `invalid ${label}: ${JSON.stringify(value)}`);
+	}
+	return n;
 }

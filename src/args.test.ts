@@ -3,36 +3,54 @@ import { check } from "./args";
 import { EXIT, Fail } from "./db";
 
 describe("argument validators", () => {
-  const good = {
-    precinct: ["a", "widgets-api", "x1-y2"],
-    role: ["patrol", "duty-desk", "a1"],
-    repo: ["o/r", "Some-Org/repo.name_1", "a.b/c-d"],
-    login: ["a", "octo-cat", "A1", "a".repeat(39)],
-    outcome: ["silent", "ordered", "filed", "capped", "failed", "skipped-no-constitution", "stopped-gh-auth"],
-  } as const;
-  const bad = {
-    precinct: ["", "A", "1a", "-a", "a_b", "a b", "a\n", "a/b"],
-    role: ["", "Patrol", "9", "a.b", "a\nb"],
-    repo: ["", "o", "o/", "/r", "o/r/x", "o r/x", "o/r\n", "o/r;ls"],
-    login: ["", "-a", "a-", "a--b-", "a_b", "a".repeat(40), "a b", "a\n"],
-    outcome: ["", "done", "skipped", "skipped-", "skipped-A", "stopped-x y", "silent\n", "Silent", "filed-extra"],
-  } as const;
+	const good = {
+		precinct: ["a", "widgets-api", "x1-y2"],
+		role: ["patrol", "duty-desk", "a1"],
+		repo: ["o/r", "Some-Org/repo.name_1", "a.b/c-d"],
+		login: ["a", "octo-cat", "A1", "a".repeat(39)],
+		outcome: [
+			"silent",
+			"ordered",
+			"filed",
+			"capped",
+			"failed",
+			"skipped-no-constitution",
+			"stopped-gh-auth",
+		],
+	} as const;
+	const bad = {
+		precinct: ["", "A", "1a", "-a", "a_b", "a b", "a\n", "a/b"],
+		role: ["", "Patrol", "9", "a.b", "a\nb"],
+		repo: ["", "o", "o/", "/r", "o/r/x", "o r/x", "o/r\n", "o/r;ls"],
+		login: ["", "-a", "a-", "a--b-", "a_b", "a".repeat(40), "a b", "a\n"],
+		outcome: [
+			"",
+			"done",
+			"skipped",
+			"skipped-",
+			"skipped-A",
+			"stopped-x y",
+			"silent\n",
+			"Silent",
+			"filed-extra",
+		],
+	} as const;
 
-  for (const kind of Object.keys(good) as (keyof typeof good)[]) {
-    test(`${kind} accepts valid values`, () => {
-      for (const v of good[kind]) expect(check(kind, v)).toBe(v);
-    });
+	for (const kind of Object.keys(good) as (keyof typeof good)[]) {
+		test(`${kind} accepts valid values`, () => {
+			for (const v of good[kind]) expect(check(kind, v)).toBe(v);
+		});
 
-    test(`${kind} rejects invalid values with the usage code`, () => {
-      for (const v of bad[kind]) {
-        try {
-          check(kind, v);
-          throw new Error(`accepted ${JSON.stringify(v)}`);
-        } catch (e) {
-          expect(e).toBeInstanceOf(Fail);
-          expect((e as Fail).code).toBe(EXIT.USAGE);
-        }
-      }
-    });
-  }
+		test(`${kind} rejects invalid values with the usage code`, () => {
+			for (const v of bad[kind]) {
+				try {
+					check(kind, v);
+					throw new Error(`accepted ${JSON.stringify(v)}`);
+				} catch (e) {
+					expect(e).toBeInstanceOf(Fail);
+					expect((e as Fail).code).toBe(EXIT.USAGE);
+				}
+			}
+		});
+	}
 });
