@@ -174,51 +174,25 @@ describe("dispatch", () => {
 		expect(take(later(24, 2)).out).toBe("");
 	});
 
-	test("close sets the outcome and closing time, and the pair can be ordered again", () => {
+	test("close is a usage error and leaves the order open", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
-		expect(
-			at(later(1), ["dispatch", "close", id, "--outcome", "filed"]),
-		).toMatchObject({ code: 0, out: "" });
+		const r = at(T0, ["dispatch", "close", id, "--outcome", "filed"]);
+		expect(r.code).toBe(1);
+		expect(r.out).toBe("");
 		const db = open(dbFile);
 		expect(
-			db
-				.query("SELECT outcome, closed_at FROM dispatches WHERE id = ?")
-				.get(Number(id)),
-		).toEqual({
-			outcome: "filed",
-			closed_at: later(1),
-		});
+			db.query("SELECT outcome FROM dispatches WHERE id = ?").get(Number(id)),
+		).toEqual({ outcome: null });
 		db.close();
-		expect(take(later(2)).out).toBe("");
-		expect(add("a").code).toBe(0);
 	});
 
-	test("close rejects a bad token, an unknown id and an already closed order with exit 1", () => {
-		addPrecincts({ a: 1 });
-		const id = add("a").out.trim();
-		expect(
-			at(T0, ["dispatch", "close", id, "--outcome", "bogus-token"]).code,
-		).toBe(1);
-		expect(
-			at(T0, ["dispatch", "close", "9999", "--outcome", "filed"]).code,
-		).toBe(1);
-		expect(at(T0, ["dispatch", "close", "x", "--outcome", "filed"]).code).toBe(
-			1,
-		);
-		expect(at(T0, ["dispatch", "close", id, "--outcome", "filed"]).code).toBe(
-			0,
-		);
-		const again = at(T0, ["dispatch", "close", id, "--outcome", "failed"]);
-		expect(again.code).toBe(1);
-		expect(again.err.trim().split("\n")).toHaveLength(1);
-	});
-
-	test("next skips a precinct with an open order and admits it again after close", () => {
+	test("next skips a precinct with an open order and admits it again after tick end closes it", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
 		expect(run(["next", "--role", "patrol"]).out).toBe("");
-		at(T0, ["dispatch", "close", id, "--outcome", "silent"]);
+		const tick = at(T0, ["tick", "start", "--role", "patrol"]).out.trim();
+		at(T0, ["tick", "end", tick, "--outcome", "silent", "--dispatch", id]);
 		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
 	});
 });

@@ -2,7 +2,7 @@
 
 Lawman roles record state as HTML-comment markers in GitHub issue bodies and comments. Labels carry no state. The journal parses markers deterministically.
 
-This file is the single definition of the grammar. The journal parser and its test fixture match it exactly.
+This file is the single definition of the grammar. The journal parser checks the fields of `lead` and `return`. For other stages it keeps the values as they are. The test fixture mirrors the examples below.
 
 ## Line shape
 
@@ -88,7 +88,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-This release defines exactly two markers.
+These markers are defined. In every one, `sha` is 40 lowercase hex digits of the analysed commit.
 
 Patrol lead, the last line of the body of the issue the patrol files:
 
@@ -96,11 +96,23 @@ Patrol lead, the last line of the body of the issue the patrol files:
 <!-- lawman: role=patrol stage=lead department=<name> id=<path>::<symbol>::<kind> sha=<40 hex> at=<UTC> [of=<issue number>] -->
 ```
 
-- `department` is a value token. `id` follows "The `id` value". `sha` is 40 lowercase hex digits.
+- `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
 
-Return:
+Case, the last line of the case comment the investigation writes:
+
+```
+<!-- lawman: role=investigation stage=case sha=<40 hex> at=<UTC> -->
+```
+
+Charge, the last line of the decision comment the prosecutor writes:
+
+```
+<!-- lawman: role=prosecutor stage=charge sha=<40 hex> at=<UTC> -->
+```
+
+Return, the last line of the comment that returns a case:
 
 ```
 <!-- lawman: role=<role> stage=return to=<role> round=<n> at=<UTC> -->
@@ -109,8 +121,15 @@ Return:
 - `to` matches `[a-z][a-z0-9-]*`.
 - `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
+- The prosecutor writes it with `to=investigation` and `round` equal to the round in which it returns.
 
-No other stage is reserved. Each future stage arrives with its own release and contract version.
+Decline, the last line of the decision comment the prosecutor writes:
+
+```
+<!-- lawman: role=prosecutor stage=decline at=<UTC> -->
+```
+
+A stage not defined here is parsed and kept.
 
 ## Examples
 
@@ -138,3 +157,11 @@ Invalid, in this order. `E3`: duplicate key `round`. `E4`: `--` in `department`.
 <!-- lawman: role=judge stage=return to=patrol round=1 at=2026-10-14T10:05:00Z -->
 ```
 ````
+
+Valid. `E7` is a case, `E8` a charge, `E9` a decline.
+
+```
+<!-- lawman: role=investigation stage=case sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->
+<!-- lawman: role=prosecutor stage=charge sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:30:00Z -->
+<!-- lawman: role=prosecutor stage=decline at=2026-10-14T11:30:00Z -->
+```

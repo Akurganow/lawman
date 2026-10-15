@@ -7,7 +7,7 @@ const PATTERNS = {
 	repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
 	login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
 	outcome:
-		/^(silent|ordered|filed|capped|failed|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
+		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
 
 export function check(kind: keyof typeof PATTERNS, value: string): string {

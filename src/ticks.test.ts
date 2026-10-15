@@ -130,7 +130,17 @@ describe("ticks and pauses", () => {
 				"--role",
 				"patrol",
 			]).out.trim();
-			call(BASE, ["dispatch", "close", order, "--outcome", "silent"]);
+			const first = call(BASE, [
+				"tick",
+				"start",
+				"--role",
+				"patrol",
+			]).out.trim();
+			call(
+				BASE,
+				["tick", "end", first, "--outcome", "silent", "--dispatch", order],
+				"report",
+			);
 			const id = call(BASE, ["tick", "start", "--role", "patrol"]).out.trim();
 			for (const dispatch of ["9999", order]) {
 				const r = call(
@@ -140,9 +150,9 @@ describe("ticks and pauses", () => {
 				);
 				expect(r.code).toBe(1);
 				expect(r.err.trim().split("\n")).toHaveLength(1);
-				expect(rows("SELECT ended_at, outcome, report FROM ticks")).toEqual([
-					{ ended_at: null, outcome: null, report: null },
-				]);
+				expect(
+					rows(`SELECT ended_at, outcome, report FROM ticks WHERE id = ${id}`),
+				).toEqual([{ ended_at: null, outcome: null, report: null }]);
 			}
 		});
 

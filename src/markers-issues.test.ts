@@ -345,13 +345,20 @@ describe("legacy fingerprints", () => {
 			expect(sync().exitCode).toBe(0);
 		});
 
-		test("leads lists the four with their departments and ids", () => {
-			expect(legacyRows(rows(["leads", PRECINCT, "--state", "all"]))).toEqual([
+		test("leads lists the open ones with their departments and ids, seen finds the closed one", () => {
+			expect(legacyRows(rows(["leads", PRECINCT]))).toEqual([
 				"19|OPEN||slop|tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
 				"20|OPEN||agent|",
-				"21|CLOSED|NOT_PLANNED|slop|plugins/triz::principles-subitems-attributed-to-altshuller::lying",
 				"22|OPEN||repo|",
 			]);
+			expect(
+				run([
+					"seen",
+					PRECINCT,
+					"--id",
+					"plugins/triz::principles-subitems-attributed-to-altshuller::lying",
+				]).out.trim(),
+			).toBe("declined #21");
 		});
 
 		test("cap counts the open legacy leads of a department", () => {

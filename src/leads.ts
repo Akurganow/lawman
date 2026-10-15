@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { check, parseArgs, usage } from "./args";
+import { check, parseArgs } from "./args";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, LEAD_PREFIX, out, withDb } from "./db";
 import { canonicalId } from "./markers";
 
@@ -9,7 +9,7 @@ export const CAP_TABLE: { upTo: number | null; cap: number }[] = [
 	{ upTo: null, cap: 0 },
 ];
 
-const LEADS_USAGE = "leads <precinct> [--department <d>] [--state open|all]";
+const LEADS_USAGE = "leads <precinct> [--department <d>]";
 const SEEN_USAGE = "seen <precinct> --id <path::symbol::kind>";
 const CAP_USAGE = "cap <precinct> --department <d>";
 const LAST_USAGE = "last <precinct> --role <role>";
@@ -34,19 +34,14 @@ function leadOrigins(db: Database, name: string): Origin[] {
 }
 
 export function leads(args: string[]): void {
-	const { pos, opt } = parseArgs(args, 1, [], LEADS_USAGE, [
-		"department",
-		"state",
-	]);
+	const { pos, opt } = parseArgs(args, 1, [], LEADS_USAGE, ["department"]);
 	const name = check("precinct", pos[0]);
 	const department =
 		opt.department === undefined ? null : check("department", opt.department);
-	const state = opt.state ?? "open";
-	if (state !== "open" && state !== "all") throw usage(LEADS_USAGE);
 	withDb((db) => {
 		for (const o of leadOrigins(db, name)) {
 			if (
-				(state === "open" && o.state !== "OPEN") ||
+				o.state !== "OPEN" ||
 				(department !== null && o.department !== department)
 			)
 				continue;

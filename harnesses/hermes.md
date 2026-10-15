@@ -41,7 +41,7 @@ hermes cron run <role>
 
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
 - The job runs inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run.
-- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open until the duty desk alarm reclaims it or the operator ends it with `bin/journal tick end`.
+- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end`.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <role>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
@@ -110,7 +110,7 @@ The probe delivered a report to a messaging platform through a running gateway. 
 
 The working directory of every job is the installation. It is never a precinct clone.
 
-This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt. File and terminal tools also start there. A precinct's agent files, hooks and project context must not become the session's project. So roles reach a precinct by path, through the journal's commands, and never by changing directory into it.
+This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt. File and terminal tools also start there. A precinct's agent files, hooks and project context must not become the session's project. So roles reach a precinct by path, through the journal's commands, and never by changing directory into it. A subshell that changes into a copy under the run directory for one command does not change the session's project.
 
 Hermes has no equivalent of a "bare" mode that suits a Lawman tick. The docs for `hermes chat` list `--ignore-rules`, `--ignore-user-config` and `--safe-mode`. They do not describe a bare mode. `--ignore-rules` also drops preloaded skills, so it cannot be combined with `-s`. The docs state none of these flags for `hermes cron create`. Isolation rests on the working directory alone.
 
@@ -118,30 +118,13 @@ Cron sessions cannot create cron jobs. The docs say cron management tools are di
 
 ## Budget and token
 
-### Parallelism
+### Turns
 
-`cron.max_parallel_jobs` caps total cron concurrency. Unset, it is `null`: no cap. Read it with `hermes config get cron.max_parallel_jobs`. Lawman sets no cap; if the developer set one below 2, one Lawman role waits for the other. Settings are written with `hermes config set <key> <value>` and removed with `hermes config unset <key>`, never by editing the file; `hermes config get <key>` reads the resolved value.
+`agent.max_turns` is the iteration budget per conversation turn. The docs state it is unlimited by default. A positive integer caps it. On exhaustion Hermes sends one wrap-up message and allows a single grace call. The docs name no per-job or per-session override, so this is a global setting of the developer. A patrol or investigation tick spends more than 60 iterations on its mechanical steps and the sweep, so a cap of 60 stops it before the tick closes. Read it with `hermes config get agent.max_turns`. The developer raises it with `hermes config set agent.max_turns <n>` or lifts it with `hermes config unset agent.max_turns`. The assembly only reads it and asks. Settings are written with `hermes config set <key> <value>` and removed with `hermes config unset <key>`, never by editing the file; `hermes config get <key>` reads the resolved value.
 
-The setting is global. It also limits the developer's other cron jobs. Ask before changing it, and say so.
+### Money
 
-### Time
-
-`agent.max_turns` is the iteration budget per conversation turn. The docs state it is unlimited by default; a positive integer caps it, and on exhaustion Hermes sends one wrap-up message and allows a single grace call. The docs name no per-job or per-session override, so this is a global setting of the developer. A patrol tick spends more than 60 iterations on its mechanical steps and the sweep, so a cap of 60 stops it before the tick closes. Read it with `hermes config get agent.max_turns`; the developer raises it with `hermes config set agent.max_turns 300` or lifts it with `hermes config unset agent.max_turns`. The assembly only reads it and asks.
-
-`agent.run_budget_seconds` is a wall-clock budget per run, global for every session of the harness. Lawman does not set it: a hung tick is caught by the journal's tick-hung alarm and the 24-hour order reclaim. A developer who wants a harness-level cap sets it themselves with `hermes config set agent.run_budget_seconds <seconds>`.
-
-- It applies to each conversation run, and it resets on each user message.
-- The docs do not call it per job or global.
-- It is off by default (`null`).
-- At 80% of the budget Hermes injects one wrap-up notice into the newest tool result.
-- The docs do not state what happens at full expiry.
-- The docs do not state whether it applies to cron runs. They say LLM-driven cron jobs run on a separate inactivity budget, and they give no default for it.
-
-### Model and money
-
-The model is chosen per job with `--model`. Each role has its own model.
-
-The docs state no spend cap in money, for cron or for config. Nothing in Hermes stops spend. Only the model choice, the interval and the time budget limit it.
+The model is chosen per job with `--model`. Each role has its own model. The docs state no spend cap in money, for cron or for config, so only the model choice and the interval limit spend.
 
 ### The token
 

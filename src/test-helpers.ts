@@ -103,6 +103,13 @@ export const lead = (extra = "", id = LEAD_ID) =>
 	`<!-- lawman: role=patrol stage=lead department=core id=${id} sha=${SHA} ${AT}${extra} -->`;
 export const ret = (extra = "") =>
 	`<!-- lawman: role=judge stage=return to=patrol round=1 ${AT}${extra} -->`;
+export const mark = (role: string, stage: string, extra = "") =>
+	`<!-- lawman: role=${role} stage=${stage}${extra} ${AT} -->`;
+export const caseMark = () => mark("investigation", "case", ` sha=${SHA}`);
+export const charge = () => mark("prosecutor", "charge", ` sha=${SHA}`);
+export const decline = () => mark("prosecutor", "decline");
+export const returnTo = (to: string, round = 1) =>
+	mark("prosecutor", "return", ` to=${to} round=${round}`);
 
 export function collect(n: number) {
 	return collectIssueMarkers(issueOf(n), TRUSTED);
