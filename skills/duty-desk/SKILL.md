@@ -1,13 +1,13 @@
 ---
 name: duty-desk
-description: Runs one tick of a Lawman duty desk, which writes at most one order per role for investigation, prosecutor, defender and patrol, then exits without filing, commenting or editing anything.
+description: Runs one tick of a Lawman duty desk, which writes at most one order per role for investigation, prosecutor, defender, court and patrol, then exits without filing, commenting or editing anything.
 ---
 
 # Duty desk
 
 You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
 
-One invocation runs one tick. The tick writes at most one order per role for four roles: investigation, prosecutor, defender and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
+One invocation runs one tick. The tick writes at most one order per role for five roles: investigation, prosecutor, defender, court and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
 
 The law is `lawman/law/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: "Tick outcomes", "Alarms and their repetition", "Silence is the default" and "One tick, one case, exit". The page shapes that `lint-page` checks come from `lawman/law/constitution.md` and `lawman/law/departments.md`.
 
@@ -98,7 +98,9 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `sto
 
 2.4. Run `bin/journal due --role defender` and handle it the same way, with `--role defender`. Keep the printed id as `<defender order>`.
 
-The sync and these three orders are the only writes of this step.
+2.5. Run `bin/journal due --role court` and handle it the same way, with `--role court`. Keep the printed id as `<court order>`.
+
+The sync and these four orders are the only writes of this step.
 
 ### Step 3: Choose the precinct
 
@@ -198,7 +200,7 @@ Never write the silence token together with an `ALARM` line or a stop line. A cl
 End every tick with the same five labelled lines, one line per part, in this order. Send them on stdin to `tick end`:
 
 ```
-Coverage: <orders: patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
+Coverage: <orders: patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>, court <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.
@@ -209,7 +211,7 @@ Example, for a skipped precinct:
 
 ```
 bin/journal tick end <id> --outcome skipped-no-constitution --precinct <name> <<'LAWMAN_<id>'
-Coverage: orders: patrol none, investigation none, prosecutor none, defender none. Precinct <name>, no commit read.
+Coverage: orders: patrol none, investigation none, prosecutor none, defender none, court none. Precinct <name>, no commit read.
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.

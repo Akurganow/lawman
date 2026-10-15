@@ -109,7 +109,7 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 Finish this step before the developer adds a precinct.
 
 1. List the role folders: every folder `lawman/skills/*/` other than `assembly`. In the roles mode, keep only the roles without a job.
-2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00. Ask the developer to accept it or name other times and intervals, and wait for the answer.
+2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15. Ask the developer to accept it or name other times and intervals, and wait for the answer.
 3. For each role folder, run `bin/journal role set <role> --every <minutes>`, and stop if it fails.
 4. Outside the roles mode, tell the developer to add the first precinct next, because step 10 runs after it.
 
@@ -120,7 +120,7 @@ Run this step after the first precinct is in the journal. The precinct reference
 1. List the scheduled jobs with the list command the page gives.
 2. Skip a job whose name is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the model of each role without a job, one role at a time, and wait for each answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
-4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor and `0 10 * * *` for defender, in the machine's local time.
+4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court, in the machine's local time.
 5. Show every create command to the developer, and wait for a yes.
 6. Create one job per role folder without a job, with the create form the page gives:
 
