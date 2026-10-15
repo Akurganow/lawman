@@ -121,7 +121,7 @@ Cron sessions cannot create cron jobs. The docs say cron management tools are di
 
 ### Parallelism
 
-`cron.max_parallel_jobs` limits total cron concurrency. The docs state no default. Set it to at least the number of Lawman roles, so one role never waits for the other.
+`cron.max_parallel_jobs` caps total cron concurrency. Unset, it is `null`: no cap. Read it with `hermes config get cron.max_parallel_jobs`. Lawman sets no cap; if the developer set one below 2, one Lawman role waits for the other. Settings are written with `hermes config set <key> <value>` and removed with `hermes config unset <key>`, never by editing the file; `hermes config get <key>` reads the resolved value.
 
 The setting is global. It also limits the developer's other cron jobs. Ask before changing it, and say so.
 
