@@ -211,23 +211,6 @@ export function alarm(args: string[]): void {
 	});
 }
 
-function statusPrecincts(db: Database): string[] {
-	const rows = db
-		.query(
-			"SELECT name, weight, credit, synced_at FROM precincts ORDER BY name",
-		)
-		.all() as {
-		name: string;
-		weight: number;
-		credit: number;
-		synced_at: string | null;
-	}[];
-	return rows.map(
-		(r) =>
-			`precinct ${r.name} weight=${r.weight} credit=${r.credit} synced=${r.synced_at ?? "never"}`,
-	);
-}
-
 function statusOrders(db: Database): string[] {
 	const rows = db
 		.query(
@@ -307,7 +290,6 @@ export function status(args: string[]): void {
 	if (args.length > 0) throw usage("status");
 	withDb((db) => {
 		const sections = [
-			statusPrecincts,
 			statusOrders,
 			statusTicks,
 			statusAlarms,

@@ -21,7 +21,7 @@ Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session prob
 ## Step 3. Pause the ticks
 
 1. Run `bin/journal pause set`, and stop if it reports an open pause, showing the message without clearing that pause.
-2. Pause the `duty-desk` and `patrol` jobs with the pause command the harness page gives.
+2. Pause every scheduler job whose name equals a folder under `lawman/skills/`, with the pause command the harness page gives. Take the job names from the list command the page gives.
 3. Run `bin/journal status`, and repeat it until no line contains `running since`, checking at most ten times, one minute apart.
 4. Stop if a tick still runs, and tell the developer which role runs.
 
@@ -52,13 +52,14 @@ Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session prob
 1. Run install step 6 again, which records `trusted_login` and checks the token.
 2. Set `law_commit` to `git -C lawman rev-parse HEAD`, `release_tag` to `<target>` and `journal_sha256` to the sum from install step 5, item 14, and keep the other keys.
 3. Write `config.yaml`, and read it back.
-4. Resume the `duty-desk` and `patrol` jobs with the resume command the harness page gives.
+4. Resume every scheduler job whose name equals a folder under `lawman/skills/`, with the resume command the harness page gives. Take the job names from the list command the page gives.
 5. Run `bin/journal pause clear`.
 6. Tell the developer the new tag and the changes from step 1.
+7. If a folder under `lawman/skills/` other than `assembly` has no job in the scheduler's list, tell the developer to run the assembly again, which enters the roles mode.
 
 ## Failure
 
-Before the backup, which is steps 1 to 3, resume the `duty-desk` and `patrol` jobs, and run `bin/journal pause clear` only when step 3.1 set the pause. Then tell the developer what failed, and stop.
+Before the backup, which is steps 1 to 3, resume every scheduler job whose name equals a folder under `lawman/skills/`, and run `bin/journal pause clear` only when step 3.1 set the pause. Then tell the developer what failed, and stop.
 
 After the backup, which is steps 4 to 7: roll back.
 
@@ -67,6 +68,6 @@ After the backup, which is steps 4 to 7: roll back.
 3. Run `cp -p backups/<stamp>/journal bin/journal`.
 4. Run `git -C lawman checkout <old release_tag>`, using the value noted in step 1.
 5. When step 7.3 wrote `config.yaml`, write back the old `law_commit`, `release_tag` and `journal_sha256`.
-6. Resume the `duty-desk` and `patrol` jobs with the resume command the harness page gives.
+6. Resume every scheduler job whose name equals a folder under `lawman/skills/`, with the resume command the harness page gives.
 7. Run `bin/journal pause clear`.
 8. Tell the developer which step failed, what the cause was, and that the installation runs the old tag.

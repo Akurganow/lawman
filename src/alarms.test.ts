@@ -318,7 +318,7 @@ describe("alarms and status", () => {
 	});
 
 	describe("status", () => {
-		test("prints every precinct, open orders, last ticks, alarms, leads and the pause", () => {
+		test("prints open orders, last ticks, alarms, leads and the pause", () => {
 			seed((db) => {
 				precinct(db, "alpha");
 				precinct(db, "beta");
@@ -356,10 +356,7 @@ describe("alarms and status", () => {
 			const r = call(later(62), ["status"]);
 			expect(r.code).toBe(0);
 			const lines = r.out.trim().split("\n");
-			expect(lines).toContain(
-				`precinct alpha weight=1 credit=0 synced=${BASE}`,
-			);
-			expect(lines).toContain("precinct beta weight=1 credit=0 synced=never");
+			expect(lines.filter((l) => l.startsWith("precinct "))).toEqual([]);
 			expect(lines.filter((l) => l.startsWith("order "))).toHaveLength(1);
 			expect(lines).toContain(
 				`order 1 alpha patrol billing - since ${BASE} untaken`,
@@ -376,10 +373,10 @@ describe("alarms and status", () => {
 			expect(lines).toContain(`pause since ${later(61)}`);
 		});
 
-		test("prints precincts and zero leads on an empty journal and rejects arguments", () => {
+		test("prints no precincts and zero leads on an empty journal and rejects arguments", () => {
 			seed((db) => precinct(db, "solo"));
 			const r = call(BASE, ["status"]);
-			expect(r.out).toContain("precinct solo weight=1 credit=0 synced=never");
+			expect(r.out).not.toContain("precinct ");
 			expect(r.out).toContain("leads 0");
 			expect(r.out).not.toContain("pause");
 			expect(call(BASE, ["status", "x"]).code).toBe(1);

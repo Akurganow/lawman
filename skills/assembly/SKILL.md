@@ -22,7 +22,8 @@ Read `<installation>/config.yaml`. Take the first mode that holds.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `config.yaml` exists and `law_commit` or `release_tag` differs from the law clone, update by reading `references/update.md`.
-3. Otherwise, run the precinct mode by reading `references/precinct.md`.
+3. If `config.yaml` matches the law clone, and a folder `lawman/skills/<role>/` other than `assembly` has no job in the scheduler's job list, add the roles. Get the list with the list command the harness page gives. Run install steps 9 and 10 from `references/install.md` for those roles only.
+4. Otherwise, run the precinct mode by reading `references/precinct.md`.
 
 The law clone's values are `git -C lawman rev-parse HEAD` and `git -C lawman describe --tags --exact-match`. A failing `describe` counts as a difference.
 
@@ -54,14 +55,13 @@ release_repo: <owner>/<repo> of the release
 journal_sha256: <sha256 of bin/journal>
 trusted_login: <login the scheduled session reports>
 deliver: <delivery platform>
-wide_token_acknowledged: true or false
 ```
 
 Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys.
 
 ## Reference files
 
-- `references/install.md`: install steps 1 to 10, in order.
+- `references/install.md`: install steps 1 to 10, in order. The roles mode runs steps 9 and 10 only.
 - `references/precinct.md`: add a precinct, re-check one, or raise a weight.
 - `references/update.md`: move the installation to a new release tag, with rollback.
 

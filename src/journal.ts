@@ -1,6 +1,7 @@
 import pkg from "../package.json";
 import { alarm, status } from "./alarms";
 import { pick } from "./args";
+import { caseCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { dispatch, tick } from "./dispatch";
 import { cap, last, leads, seen } from "./leads";
@@ -60,6 +61,7 @@ export const COMMANDS: Record<string, Handler> = {
 	seen,
 	cap,
 	last,
+	case: caseCommand,
 	"lint-body": lintBodyCommand,
 	"lint-page": lintPageCommand,
 };

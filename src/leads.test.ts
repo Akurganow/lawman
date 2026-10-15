@@ -93,30 +93,20 @@ describe("leads, seen, cap and last", () => {
 			]);
 		});
 
-		test("--state all adds closed issues with their reason", () => {
-			const r = cmd("leads", PRECINCT, "--state", "all");
-			expect(lines(r).map((l) => l.split("\t").slice(0, 3).join(" "))).toEqual([
-				"1 OPEN ",
-				"2 CLOSED NOT_PLANNED",
-				"3 OPEN ",
-			]);
-		});
-
 		test("--department filters by the origin department", () => {
 			expect(
 				lines(cmd("leads", PRECINCT, "--department", "core")).map(
 					(l) => l.split("\t")[0],
 				),
 			).toEqual(["3"]);
-			expect(
-				lines(
-					cmd("leads", PRECINCT, "--department", "core", "--state", "all"),
-				).map((l) => l.split("\t")[0]),
-			).toEqual(["2", "3"]);
 		});
 
-		test("an unknown state or a missing precinct exits 1", () => {
-			expect(cmd("leads", PRECINCT, "--state", "closed").code).toBe(1);
+		test("--state, a missing precinct or a malformed department exits 1", () => {
+			for (const state of ["open", "all"]) {
+				const r = cmd("leads", PRECINCT, "--state", state);
+				expect(r.code).toBe(1);
+				expect(r.out).toBe("");
+			}
 			expect(cmd("leads").code).toBe(1);
 			expect(cmd("leads", PRECINCT, "--department", "Bad Dept").code).toBe(1);
 		});

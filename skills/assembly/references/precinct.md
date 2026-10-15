@@ -78,7 +78,7 @@ The write probe runs under the owner's login. It shows the owner's write access.
 
 38. When install step 6 skipped the permission line, repeat install step 6 for this repository before the weight rises.
 39. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
-40. When this is the first precinct and the scheduled jobs are not listed, run install step 10 now.
+40. When this is the first precinct and the scheduled jobs of the roles are not listed, run install step 10 now.
 41. Tell the developer to return after the pull request merges, and that the weight stays at 0 until then.
 
 ## Re-check a precinct

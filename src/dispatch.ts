@@ -14,7 +14,7 @@ import {
 } from "./db";
 
 const DISPATCH_USAGE =
-	"dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>|close <id> --outcome <token>>";
+	"dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>>";
 
 function dispatchAdd(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["precinct", "role"], DISPATCH_USAGE, [
@@ -91,18 +91,12 @@ function closeOrder(db: Database, id: number, outcome: string): void {
 	if (changed === 0) throw new Fail(EXIT.USAGE, `no open order with id ${id}`);
 }
 
-function dispatchClose(db: Database, args: string[]): void {
-	const { pos, opt } = parseArgs(args, 1, ["outcome"], DISPATCH_USAGE);
-	closeOrder(db, count(pos[0], "id", 1), check("outcome", opt.outcome));
-}
-
 const DISPATCH_COMMANDS: Record<
 	string,
 	(db: Database, args: string[]) => void
 > = {
 	add: dispatchAdd,
 	take: dispatchTake,
-	close: dispatchClose,
 };
 
 export function dispatch(args: string[]): void {
