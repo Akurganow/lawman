@@ -111,6 +111,7 @@ export const MIGRATIONS: string[] = [
 const PATTERNS = {
   precinct: /^[a-z][a-z0-9-]*$/,
   role: /^[a-z][a-z0-9-]*$/,
+  department: /^[a-z][a-z0-9-]*$/,
   repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
   login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
   outcome: /^(silent|ordered|filed|capped|failed|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
@@ -392,7 +393,7 @@ function dispatchAdd(db: Database, args: string[]): void {
   const { opt } = parseArgs(args, 0, ["precinct", "role"], DISPATCH_USAGE, ["department", "issue"]);
   const precinctName = check("precinct", opt.precinct);
   const roleName = check("role", opt.role);
-  const department = opt.department === undefined ? null : check("role", opt.department);
+  const department = opt.department === undefined ? null : check("department", opt.department);
   const issue = opt.issue === undefined ? null : count(opt.issue, "issue", 1);
   if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(precinctName)) {
     throw new Fail(EXIT.USAGE, `unknown precinct: ${precinctName}`);
@@ -482,7 +483,7 @@ function tickEnd(db: Database, args: string[]): void {
   const id = count(pos[0], "id", 1);
   const outcome = check("outcome", opt.outcome);
   const precinctName = opt.precinct === undefined ? null : check("precinct", opt.precinct);
-  const department = opt.department === undefined ? null : check("role", opt.department);
+  const department = opt.department === undefined ? null : check("department", opt.department);
   const order = opt.dispatch === undefined ? null : count(opt.dispatch, "dispatch", 1);
   const report = readStdin();
   inTransaction(db, () => {
@@ -546,10 +547,11 @@ function ageMs(clock: Clock, since: string): number {
 
 function orderUntaken(db: Database, clock: Clock): Candidate[] {
   const open = db
-    .query("SELECT id, precinct, role, at FROM dispatches WHERE outcome IS NULL AND taken_at IS NULL")
-    .all() as { id: number; precinct: string; role: string; at: string }[];
+    .query("SELECT id, precinct, role, at, taken_at FROM dispatches WHERE outcome IS NULL")
+    .all() as { id: number; precinct: string; role: string; at: string; taken_at: string | null }[];
+  const limit = (o: { taken_at: string | null }) => ORDER_UNTAKEN_MS + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
   return open
-    .filter((o) => ageMs(clock, o.at) > ORDER_UNTAKEN_MS)
+    .filter((o) => ageMs(clock, o.taken_at ?? o.at) > limit(o))
     .map((o) => ({ kind: "order-untaken", ref: String(o.id), detail: `${o.precinct} ${o.role} ordered ${o.at}` }));
 }
 
@@ -582,9 +584,9 @@ function tickFailing(db: Database): Candidate[] {
   const failing = db
     .query(
       `WITH ranked AS (
-         SELECT role, precinct, outcome,
-                ROW_NUMBER() OVER (PARTITION BY role, precinct ORDER BY ended_at DESC, id DESC) AS n
-         FROM ticks WHERE ended_at IS NOT NULL AND precinct IS NOT NULL)
+         SELECT role, COALESCE(precinct, '-') AS precinct, outcome,
+                ROW_NUMBER() OVER (PARTITION BY role, COALESCE(precinct, '-') ORDER BY ended_at DESC, id DESC) AS n
+         FROM ticks WHERE ended_at IS NOT NULL)
        SELECT role, precinct FROM ranked WHERE n <= ${TICK_FAILING_RUN}
        GROUP BY role, precinct
        HAVING count(*) = ${TICK_FAILING_RUN}
@@ -1073,6 +1075,7 @@ const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
 const CODE_SPAN = /(`+).+?\1/g;
 const MENTION = /@[A-Za-z0-9]/;
+const TITLE_SHELL = /['`$\\]/;
 
 const BODY_RULES: [string, RegExp][] = [
   [
@@ -1101,13 +1104,15 @@ export function lintBody(input: string): string[] {
   const titled = lines.length > 1 && lines[1] !== "";
   const reasons = lineReasons(lines[0], false).map((r) => `title: ${r}`);
   if (lines[0].trim() === "") reasons.push("title: empty title");
+  if (TITLE_SHELL.test(lines[0])) reasons.push("title: shell character");
   if (titled) reasons.push("title: no blank line after the title");
   const body = lines.slice(titled ? 1 : 2);
   if (Buffer.byteLength(body.join("\n")) > BODY_MAX_BYTES) reasons.push(`1: body exceeds ${BODY_MAX_BYTES} bytes`);
   const fenced = fencedLines(body);
   body.forEach((line, i) => reasons.push(...lineReasons(line, fenced[i]).map((r) => `${i + 1}: ${r}`)));
   const lastText = body.findLastIndex((l) => l.trim() !== "");
-  if (lastText < 0 || !parseMarker(body[lastText])) reasons.push(`${Math.max(lastText, 0) + 1}: last line is not a valid marker`);
+  if (lastText >= 0 && fenced[lastText]) reasons.push(`${lastText + 1}: last line is inside a fenced block`);
+  else if (lastText < 0 || !parseMarker(body[lastText])) reasons.push(`${Math.max(lastText, 0) + 1}: last line is not a valid marker`);
   return reasons;
 }
 
@@ -1229,7 +1234,7 @@ function lintPageCommand(args: string[]): number {
   const { pos, opt } = parseArgs(args, 1, [], LINT_PAGE_USAGE, ["name"]);
   const kind = pos[0];
   if (!Object.hasOwn(PAGE_HEADINGS, kind) || (opt.name !== undefined && kind !== "department")) throw usage(LINT_PAGE_USAGE);
-  const expected = opt.name === undefined ? undefined : check("role", opt.name);
+  const expected = opt.name === undefined ? undefined : check("department", opt.name);
   const page = lintPage(kind, readStdin(), expected);
   for (const reason of page.reasons) out(reason);
   for (const [name, judgedBy] of page.departments) out(name, judgedBy);
@@ -1262,7 +1267,7 @@ function leadOrigins(db: Database, name: string): Origin[] {
 function leads(args: string[]): void {
   const { pos, opt } = parseArgs(args, 1, [], LEADS_USAGE, ["department", "state"]);
   const name = check("precinct", pos[0]);
-  const department = opt.department === undefined ? null : check("role", opt.department);
+  const department = opt.department === undefined ? null : check("department", opt.department);
   const state = opt.state ?? "open";
   if (state !== "open" && state !== "all") throw usage(LEADS_USAGE);
   withDb((db) => {
@@ -1313,7 +1318,7 @@ function brokenCount(db: Database, name: string, department: string): number {
 function cap(args: string[]): void {
   const { pos, opt } = parseArgs(args, 1, ["department"], CAP_USAGE);
   const name = check("precinct", pos[0]);
-  const department = check("role", opt.department);
+  const department = check("department", opt.department);
   withDb((db) => {
     const origins = leadOrigins(db, name).filter((o) => o.state === "OPEN" && o.department === department);
     const open = origins.length + brokenCount(db, name, department);
@@ -1352,9 +1357,8 @@ export function main(argv: string[]): number {
     }
     return EXIT.OK;
   } catch (e) {
-    if (!(e instanceof Fail)) throw e;
-    process.stderr.write(`journal: ${e.message}\n`);
-    return e.code;
+    process.stderr.write(`journal: ${e instanceof Error ? e.message : String(e)}\n`);
+    return e instanceof Fail ? e.code : EXIT.USAGE;
   }
 }
 

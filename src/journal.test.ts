@@ -207,6 +207,14 @@ describe("cli", () => {
     const r = cli(["--version"], { LAWMAN_DB: dbFile, LAWMAN_NOW: "2026-01-01T00:00:00Z" });
     expect(r.code).toBe(0);
   });
+
+  test("an unexpected error prints one journal line without a stack or source path", () => {
+    const r = cli(["alarm"], { LAWMAN_DB: join(dir, "missing", "journal.sqlite"), LAWMAN_NOW: "2026-01-01T00:00:00Z" });
+    expect(r.code).toBe(1);
+    expect(r.err.trim().split("\n")).toHaveLength(1);
+    expect(r.err).toStartWith("journal: ");
+    expect(r.err).not.toMatch(/\/src\/journal\.ts/);
+  });
 });
 
 describe("probe", () => {
@@ -274,7 +282,7 @@ describe("paths and clock", () => {
 
 describe("argument validators", () => {
   const good = {
-    precinct: ["a", "ai-plugins", "x1-y2"],
+    precinct: ["a", "widgets-api", "x1-y2"],
     role: ["patrol", "duty-desk", "a1"],
     repo: ["o/r", "Some-Org/repo.name_1", "a.b/c-d"],
     login: ["a", "octo-cat", "A1", "a".repeat(39)],
@@ -828,7 +836,15 @@ describe("ticks, pauses, alarms and status", () => {
         db.run("INSERT INTO dispatches (at, precinct, role, taken_at) VALUES (?, 'a', 'patrol', ?)", [BASE, BASE]);
         db.run("INSERT INTO dispatches (at, precinct, role, outcome) VALUES (?, 'a', 'duty-desk', 'silent')", [BASE]);
       });
-      expect(alarm(later(100)).out).toBe("");
+      expect(alarm(later(72)).out).toBe("");
+    });
+
+    test("a taken order whose claim expired alarms 48 hours after the claim TTL", () => {
+      seed((db) => precinct(db, "a"));
+      expect(call(BASE, ["dispatch", "add", "--precinct", "a", "--role", "patrol"]).code).toBe(0);
+      expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(0);
+      expect(alarm(later(72)).out).toBe("");
+      expect(alarm(later(72, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
     });
 
     test("tick-hung fires after 2 hours and not before", () => {
@@ -891,14 +907,26 @@ describe("ticks, pauses, alarms and status", () => {
       expect(rows("SELECT cleared_at FROM alarms")).toEqual([{ cleared_at: later(6) }]);
     });
 
-    test("unended ticks and ticks without a precinct do not count towards tick-failing", () => {
+    test("unended ticks do not count towards tick-failing", () => {
       seed((db) => {
         tick(db, "patrol", later(0), later(0, 60), "failed", "a");
         tick(db, "patrol", later(1), later(1, 60), "failed", "a");
         tick(db, "patrol", later(2), null, null, "a");
-        for (let i = 3; i < 6; i++) tick(db, "patrol", later(i), later(i, 60), "stopped-sync");
+        tick(db, "patrol", later(3), later(3, 60), "stopped-sync");
+        tick(db, "patrol", later(4), later(4, 60), "stopped-sync");
       });
       expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
+    });
+
+    test("three stopped ticks without a precinct raise tick-failing under role/-", () => {
+      seed((db) => {
+        tick(db, "patrol", later(0), later(0, 60), "stopped-law-drift");
+        tick(db, "patrol", later(1), later(1, 60), "stopped-dirty-law");
+        tick(db, "patrol", later(2), later(2, 60), "stopped-gh-auth");
+      });
+      const r = alarm(later(3));
+      expect(r.out).toMatch(/^ALARM tick-failing patrol\/- .+\n$/);
+      expect(r.out.trim().split("\n")).toHaveLength(1);
     });
 
     test("broken-lead fires for a [Lead] issue without a lead marker", () => {
@@ -2045,6 +2073,19 @@ describe("leads, seen, cap and last", () => {
       expect(cmd("cap", PRECINCT).code).toBe(1);
     });
 
+    test("a malformed department exits 1 and the error names the department", () => {
+      const r = cmd("cap", PRECINCT, "--department", "Bad Dept");
+      expect(r.code).toBe(1);
+      expect(r.err).toContain("department");
+    });
+
+    test("the sync ceiling equals the number in the law", () => {
+      const law = readFileSync(join(ROOT, "law", "LAW.md"), "utf8");
+      const m = law.match(/^The sync ceiling is (\d+) records\./m);
+      expect(m).not.toBeNull();
+      expect(SYNC_LIMIT).toBe(Number(m![1]));
+    });
+
     test("the code table equals the table in the law", () => {
       const law = readFileSync(join(ROOT, "law", "LAW.md"), "utf8").split("\n");
       const head = law.findIndex((l) => l === "| Open leads of the department on the precinct | Maximum filings per tick |");
@@ -2223,8 +2264,8 @@ describe("lint-body", () => {
     expect(lintText(ret())).toEqual([]);
   });
 
-  test("a marker inside a fence at the end still counts as the last line", () => {
-    expect(lintText(["```", lead(), "```"].join("\n"))).toEqual(["3: last line is not a valid marker"]);
+  test("a marker inside a closed fence at the end is rejected by the fence", () => {
+    expect(lintText(["```", lead(), "```"].join("\n"))).toEqual(["3: last line is inside a fenced block"]);
   });
 
   test("CRLF line ends are accepted", () => {
@@ -2246,6 +2287,11 @@ describe("lint-body", () => {
     expect(lintText(body(...FINE), `x ${TOKEN}`)).toEqual(["title: GitHub token"]);
   });
 
+  test("a title with a shell character is rejected, the body is not", () => {
+    for (const c of ["'", "`", "$", "\\"]) expect(lintText(body(...FINE), `x ${c} y`)).toEqual(["title: shell character"]);
+    expect(lintText(body("call `f()` costs $1 and 'x'", ...FINE))).toEqual([]);
+  });
+
   test("a second line that is not blank is a title error and the body starts there", () => {
     expect(lintBody(`${TITLE}\nfirst body line\n${lead()}`)).toEqual(["title: no blank line after the title"]);
   });
@@ -2264,6 +2310,12 @@ describe("lint-body", () => {
       expect(r.exitCode).toBe(EXIT.LINT_BODY);
       expect(r.stdout.toString()).toBe("1: home or installation path\n2: @ mention\n");
       expect(r.stderr.toString()).toBe("");
+    });
+
+    test("a marker after an unclosed fence is rejected with exit 7", () => {
+      const r = feed(`${TITLE}\n\ntext\n\`\`\`\n${lead()}\n`);
+      expect(r.exitCode).toBe(EXIT.LINT_BODY);
+      expect(r.stdout.toString()).toBe("3: last line is inside a fenced block\n");
     });
 
     test("empty stdin is rejected with exit 7", () => {
