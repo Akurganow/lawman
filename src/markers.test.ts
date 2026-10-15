@@ -14,9 +14,11 @@ import {
 	carrier,
 	LEAD_ID,
 	lead,
+	mark,
 	must,
 	ROOT,
 	ret,
+	returnTo,
 	SHA,
 	TRUSTED,
 } from "./test-helpers";
@@ -51,6 +53,16 @@ describe("parseMarker", () => {
 		]) {
 			expect(parseMarker(bad)).toBeNull();
 		}
+	});
+
+	test("a defender return needs to and round as well", () => {
+		expect(
+			parseMarker(returnTo("investigation", 1, "defender")),
+		).not.toBeNull();
+		expect(parseMarker(mark("defender", "return", " round=1"))).toBeNull();
+		expect(
+			parseMarker(mark("defender", "return", " to=investigation")),
+		).toBeNull();
 	});
 
 	test("a lead needs role patrol, department, id and a lowercase 40 hex sha", () => {
@@ -387,6 +399,29 @@ describe("law examples", () => {
 			{ role: "investigation", stage: "case" },
 			{ role: "prosecutor", stage: "charge" },
 			{ role: "prosecutor", stage: "decline" },
+		]);
+	});
+
+	test("E10 and E11 are valid", () => {
+		const lines = must(blocks[4]).split("\n");
+		expect(lines).toHaveLength(2);
+		const found = lines.map((l) => must(parseMarker(l)));
+		expect(found).toMatchObject([
+			{ role: "defender", stage: "defence" },
+			{ role: "defender", stage: "refute" },
+		]);
+		expect(found.map((m) => m.fields)).toEqual([
+			{
+				role: "defender",
+				stage: "defence",
+				sha: "4f1c9a2b7d3e58061a9c4e7b2d0f3a6c8e5b1d94",
+				at: "2026-10-15T08:20:00Z",
+			},
+			{
+				role: "defender",
+				stage: "refute",
+				at: "2026-10-15T08:40:00Z",
+			},
 		]);
 	});
 });

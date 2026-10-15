@@ -121,12 +121,24 @@ Return, the last line of the comment that returns a case:
 - `to` matches `[a-z][a-z0-9-]*`.
 - `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
-- The prosecutor writes it with `to=investigation` and `round` equal to the round in which it returns.
+- The prosecutor and the defender write it, both with `to=investigation` and `round` equal to the round in which it returns.
 
 Decline, the last line of the decision comment the prosecutor writes:
 
 ```
 <!-- lawman: role=prosecutor stage=decline at=<UTC> -->
+```
+
+Defence, the last line of the defence comment the defender writes:
+
+```
+<!-- lawman: role=defender stage=defence sha=<40 hex> at=<UTC> -->
+```
+
+Refute, the last line of the defence comment the defender writes:
+
+```
+<!-- lawman: role=defender stage=refute at=<UTC> -->
 ```
 
 A stage not defined here is parsed and kept.
@@ -164,4 +176,11 @@ Valid. `E7` is a case, `E8` a charge, `E9` a decline.
 <!-- lawman: role=investigation stage=case sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->
 <!-- lawman: role=prosecutor stage=charge sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:30:00Z -->
 <!-- lawman: role=prosecutor stage=decline at=2026-10-14T11:30:00Z -->
+```
+
+Valid. `E10` is a defence, `E11` a refute.
+
+```
+<!-- lawman: role=defender stage=defence sha=4f1c9a2b7d3e58061a9c4e7b2d0f3a6c8e5b1d94 at=2026-10-15T08:20:00Z -->
+<!-- lawman: role=defender stage=refute at=2026-10-15T08:40:00Z -->
 ```
