@@ -125,7 +125,7 @@ A candidate analysed at an older commit can be false by the time it is filed. Im
 
 A candidate whose evidence paths changed is dropped. The report gets one line saying so.
 
-The journal's cache is refreshed only when a role syncs. A new lead is visible to the duty desk after the next sync on that precinct. This delay is accepted.
+The journal's cache is refreshed when a role syncs. The duty desk syncs every precinct with a weight above zero before it writes stage orders, so an order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
 
 ## The cap table
 
