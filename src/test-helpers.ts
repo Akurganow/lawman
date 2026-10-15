@@ -112,6 +112,8 @@ export const returnTo = (to: string, round = 1, role = "prosecutor") =>
 	mark(role, "return", ` to=${to} round=${round}`);
 export const defence = () => mark("defender", "defence", ` sha=${SHA}`);
 export const refute = () => mark("defender", "refute");
+export const conviction = () => mark("court", "conviction", ` sha=${SHA}`);
+export const acquittal = () => mark("court", "acquittal");
 
 export function collect(n: number) {
 	return collectIssueMarkers(issueOf(n), TRUSTED);
