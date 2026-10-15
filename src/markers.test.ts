@@ -424,4 +424,16 @@ describe("law examples", () => {
 			},
 		]);
 	});
+
+	test("E12 and E13 are valid", () => {
+		const lines = must(blocks[5]).split("\n");
+		expect(lines).toHaveLength(2);
+		const found = lines.map((l) => must(parseMarker(l)));
+		expect(found).toMatchObject([
+			{ role: "court", stage: "conviction" },
+			{ role: "court", stage: "acquittal" },
+		]);
+		expect(must(found[0]).fields.sha).toMatch(/^[0-9a-f]{40}$/);
+		expect(must(found[1]).fields).not.toHaveProperty("sha");
+	});
 });

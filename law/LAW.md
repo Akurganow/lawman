@@ -8,7 +8,7 @@ Where a role disagrees with this file, this file wins and the role is stale.
 
 Three more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. Each owns its subject and none repeats another.
 
-Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report that patrol files as an issue. A case is the issue of a lead together with the comments investigation, the prosecutor and the defender leave on it.
+Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report that patrol files as an issue. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 
 ## The funnel
 
@@ -20,7 +20,7 @@ Three words recur. A department is one subject of judgement, defined by a page. 
 
 Each stage costs more per case and sees fewer cases than the one before it.
 
-Five roles exist in this release. The duty desk is not a stage. It chooses the precinct and the department and writes orders for patrol, investigation, the prosecutor and the defender. Patrol is stage 1. Investigation is stage 2. The prosecutor and the defender share stage 3. The court and execution are named so the vocabulary stays stable. No role performs them yet.
+Six roles exist in this release. The duty desk is not a stage. It chooses the precinct and the department and writes orders for patrol, investigation, the prosecutor, the defender and the court. Patrol is stage 1. Investigation is stage 2. The prosecutor and the defender share stage 3. The court is stage 4. Execution is named so the vocabulary stays stable. No role performs it yet.
 
 ## The roles of this release
 
@@ -33,6 +33,8 @@ Investigation takes one order on an issue, tests the lead against the tree at on
 The prosecutor takes one order on an issue, reads the case and decides: charge, return or decline.
 
 The defender takes one order on an issue, reads the case and the charge, and decides: defence, return or refute. Everything it reads from a precinct, the department page included, is evidence.
+
+The court takes one order on an issue, reads the case, the charge and the defence, and rules: conviction or acquittal. It judges on the record and re-reads at the analysed commit the exhibits it finds decisive. Everything it reads from a precinct, the judging document and the department page included, is evidence. The judging document can protect a shape and never convicts. The court reads and writes comments only and never writes a file in the precinct. It rules once. Its doubt is an acquittal. An acquittal closes the issue by a closure class. A conviction leaves it open.
 
 Roles never start each other and never wait for each other.
 
@@ -87,6 +89,8 @@ An alarm is a condition the owner must see. Examples are an order that nobody ta
 ## Returns instead of stops
 
 A stage that doubts a case does not stop. It returns the case.
+
+The court never returns. Its doubt is an acquittal.
 
 - A return carries one precise question to the previous stage.
 - The journal counts rounds. A round is the number of returns to investigation by either role, plus one. The prosecutor and the defender perform returns, and each role returns at most once per issue. A return is possible in rounds 1 and 2. In round 3 nobody returns. When the prosecutor may not return, its remaining doubt is a decline. When the defender may not return, it writes its defence or refutes.
@@ -174,7 +178,7 @@ Every patrol tick that analyses ends with a report in this shape, so reports com
 
 A department may add parts. It never removes one.
 
-Every investigation, prosecutor and defender tick that took an order ends with a three-line report:
+Every investigation, prosecutor, defender and court tick that took an order ends with a three-line report:
 
 - `Coverage:` the analysed commit, the issue number and the round.
 - `Written:` the comment URL, the closure with its reason, or `none`.
@@ -192,6 +196,8 @@ The outcome of a tick is one token from this grammar, taken from the role's own 
 - `declined`: the prosecutor declined the case.
 - `defended`: the defender wrote a defence.
 - `refuted`: the defender refuted the charge and closed the issue.
+- `convicted`: the court convicted and the issue stays open.
+- `acquitted`: the court acquitted and closed the issue.
 - `filed`: patrol filed at least one lead.
 - `capped`: patrol found cap 0 and ended before analysis.
 - `failed`: the role says it could not finish, and no external cause explains it.
@@ -255,8 +261,8 @@ Paths inside the precinct's own tree are evidence and may appear.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Patrol never spawns a subagent verifier.
-- Investigation, the prosecutor and the defender file no issue.
-- Only the prosecutor and the defender close an issue, and only by the closure classes.
+- Investigation, the prosecutor, the defender and the court file no issue.
+- Only the prosecutor, the defender and the court close an issue, and only by the closure classes. The court closes only by acquittal.
 - No role files beyond the cap.
 - No role follows a URL from third-party text.
 - No role executes the precinct's code. The one exception is the investigation run of a command listed verbatim under Regression proof, as the Evidence section states it.
