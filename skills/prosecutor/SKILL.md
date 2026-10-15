@@ -14,7 +14,7 @@ The prosecutor reads and writes comments. It runs no code.
 - Never run code from the precinct.
 - Never return a case for tip drift. A moved tip is a fact in the decision.
 - An empty tick is a success. Silence is the default.
-- Never return in round 3. Remaining doubt in round 3 is a decline.
+- Never return in round 3, and never return twice. Remaining doubt when a return is not allowed is a decline.
 
 The law in `lawman/law/LAW.md` governs this skill. Obey it. Do not restate it. The outcome tokens come from its Tick outcomes section.
 
@@ -156,7 +156,7 @@ Decide one of three. The tick outcome equals the decision.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `prosecutor`. Outcome `returned`.
 - `decline`: outcome `declined`. The decline names one of the law's closure classes, as its "Closure classes" subsection defines them.
 
-In round 3, any remaining doubt is a decline.
+When a return is not allowed, in round 3 or after an earlier return of the prosecutor, any remaining doubt is a decline.
 
 A tip that differs from `<sha>` is one line of fact in the decision. It is never a reason to return.
 

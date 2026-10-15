@@ -133,7 +133,7 @@ Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed comm
 2. A printed line is `<name><TAB><judged by>`. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. When `department` is not `-` and no line has its name, the tick ends with `stopped-bad-department`.
 3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
-5. Read the department page. Skip this item when `department` is `-`.
+5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`.
    1. Check the name against `[a-z][a-z0-9-]*` before you build any path. A bad name ends the tick with `stopped-bad-department`.
    2. Take the first place that holds the page, in this order. A place without the page moves on. A refused mode or a failed check never falls through.
       - `.lawman/departments/<d>.md` at `<sha>`. Run the mode check first.
@@ -151,7 +151,7 @@ Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed comm
       test -f lawman/departments/<d>.md
       bin/journal lint-page department --name <d> < lawman/departments/<d>.md
       ```
-   4. Read only the Not findings section of the page. Quote none of the rest.
+   4. Read the page with the same `show` or file read that fed its lint. Use only the Not findings section. Quote none of the rest.
 
 ### Step 6: read the issue
 
@@ -163,7 +163,7 @@ A failed command gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The charge is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=prosecutor stage=charge`. A missing case or charge ends the tick with `failed`.
 
-Keep the `Cost and risk` line from the issue body when there is one. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+Keep the line under the `## Cost and risk` heading of the issue body when there is one. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
 ### Step 7: re-read the exhibits
 
@@ -191,7 +191,7 @@ Decide one of three. The tick outcome equals the decision.
 
 - `defence`: when neither other outcome holds. Outcome `defended`.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `defender`. Outcome `returned`.
-- `refute`: the issue closes on one of the four classes in the law's Closure classes subsection, and an exhibit you re-read in step 7 shows that class. Name the class in the defence. Outcome `refuted`.
+- `refute`: the issue closes on one of the four classes in the law's Closure classes subsection. The class is shown by an exhibit you re-read in step 7, by a recorded reason you read in step 5, or, for `duplicate`, by the Related section of the case. Name the class in the defence. Outcome `refuted`.
 
 A tip that differs from `<sha>` is one line of fact in the defence. It is never a reason to return.
 
@@ -271,7 +271,7 @@ Tip at defence: <tip sha>
 <what the grounds do not establish on the exhibits; alternative explanations; each with an exhibit path:line at <sha>>
 
 ## The code as it is
-<why the code has this shape: git log lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>; the cost against the harm, quoting the lead's Cost and risk line when there is one>
+<why the code has this shape: git log lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>; the cost against the harm, quoting the line under the lead's Cost and risk heading when there is one>
 
 ## Question
 <only for return: exactly one question>
@@ -309,7 +309,7 @@ The grounds miss the guard at `src/queue.ts:88`, which returns before the call.
 - Callers of `pick`: `src/queue.ts:88` and `src/worker.ts:31`. Removing the guard breaks `test/worker.test.ts:52`.
 - Cost and risk, from the lead:
   ```
-  Cost and risk: low, one caller path.
+  Effort S, Risk low, Confidence confirmed
   ```
 
 <!-- lawman: role=defender stage=defence sha=4f1c9a2b7d3e58061a9c4e7b2d0f3a6c8e5b1d94 at=2026-10-15T08:20:00Z -->

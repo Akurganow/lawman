@@ -89,7 +89,7 @@ An alarm is a condition the owner must see. Examples are an order that nobody ta
 A stage that doubts a case does not stop. It returns the case.
 
 - A return carries one precise question to the previous stage.
-- The journal counts rounds. A round is the number of returns to investigation by either role, plus one. The prosecutor and the defender perform returns, and each role returns at most once per issue. A return is possible in rounds 1 and 2. In round 3 nobody returns. The prosecutor's remaining doubt is a decline, and the defender writes its defence or refutes.
+- The journal counts rounds. A round is the number of returns to investigation by either role, plus one. The prosecutor and the defender perform returns, and each role returns at most once per issue. A return is possible in rounds 1 and 2. In round 3 nobody returns. When the prosecutor may not return, its remaining doubt is a decline. When the defender may not return, it writes its defence or refutes.
 - No case has a fourth round.
 - A stop is only for an external cause outside the case: a failed credential, a failed fetch, a rate limit, a drifted installation.
 - A stop ends the tick. It never ends the case. A hard or ambiguous case is a return or a drop, never a stop.
