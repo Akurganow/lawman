@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import { BASE, call, TRUSTED } from "./test-helpers";
+import { BASE, call, lead, TRUSTED } from "./test-helpers";
 
 export type Comment = [createdAt: string, body: string];
 export type Spec = {
@@ -42,3 +42,8 @@ export const need = (n: number) => {
 	return r.out.trim();
 };
 export const needOnly = (n: number) => need(n).split(" ")[0];
+
+export const withLead = (...comments: string[]): Spec => ({
+	body: [lead()],
+	comments: comments.map((body, i): Comment => [T(10 + i), body]),
+});
