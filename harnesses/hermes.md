@@ -15,7 +15,7 @@ Detection: `hermes --version` prints the installed version and exits 0. The asse
 
 Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway.
 
-Hermes reads skills from `~/.hermes/skills/` and from extra directories listed in its config. Add the law clone's skills directory to `~/.hermes/config.yaml`:
+Hermes reads skills from `~/.hermes/skills/` and from extra directories listed in its config. Add the law clone's skills directory with the harness's own editor, `hermes config edit`, under the `skills` section (the value is a list, which `hermes config set` does not take):
 
 ```yaml
 skills:
