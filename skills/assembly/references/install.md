@@ -94,12 +94,11 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 5. Tell the developer to write the value where the page says, and never to paste it into this session.
 6. Repeat this step after the developer confirms.
 
-## Step 7. Check parallelism and set the time budget
+## Step 7. Check parallelism
 
-1. Read the harness's parallelism setting with the read command the page gives. Lawman sets no cap of its own.
+1. Read the harness's parallelism setting with the read command the page gives. Lawman changes no harness setting of its own.
 2. If the harness has a cap and it is below the number of Lawman roles (2), tell the developer that one role will wait for the other, and let them decide. Never raise or lower the cap yourself.
-3. Propose a time budget per run below the journal's 24-hour order reclaim, for example 3600 seconds, with the set command the page gives. Warn that the page states no spend cap, so only the model, the interval and the time budget limit spend, and that the time budget applies to every session of the harness.
-4. Ask the developer to confirm, then apply the time budget with that command. Stop if the developer does not confirm.
+3. Tell the developer that the page states no spend cap, so only the model and the interval limit spend, and that a hung tick is caught by the journal's own alarm and the order reclaim, not by a harness setting.
 
 ## Step 8. Write the config
 

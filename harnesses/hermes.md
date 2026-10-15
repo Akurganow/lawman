@@ -127,7 +127,7 @@ The setting is global. It also limits the developer's other cron jobs. Ask befor
 
 ### Time
 
-`agent.run_budget_seconds` is a wall-clock budget. The docs give this scope:
+`agent.run_budget_seconds` is a wall-clock budget per run, global for every session of the harness. Lawman does not set it: a hung tick is caught by the journal's tick-hung alarm and the 24-hour order reclaim. A developer who wants a harness-level cap sets it themselves with `hermes config set agent.run_budget_seconds <seconds>`.
 
 - It applies to each conversation run, and it resets on each user message.
 - The docs do not call it per job or global.
