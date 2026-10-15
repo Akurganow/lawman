@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { need, needOnly, put, T } from "./cases-fixture";
 import {
 	addPrecincts,
 	BASE,
@@ -6,8 +7,10 @@ import {
 	caseMark,
 	charge,
 	decline,
+	defence,
 	issues,
 	lead,
+	refute,
 	returnTo,
 	SHA,
 	seed,
@@ -16,48 +19,6 @@ import {
 } from "./test-helpers";
 
 tempDb();
-
-type Comment = [createdAt: string, body: string];
-type Spec = {
-	body?: string[];
-	comments?: Comment[];
-	state?: string;
-	createdAt?: string;
-};
-
-const T = (hour: number) =>
-	`2026-10-14T${String(hour).padStart(2, "0")}:00:00Z`;
-
-function put(specs: Record<number, Spec>) {
-	const data = Object.entries(specs).map(([n, s]) => ({
-		number: Number(n),
-		state: s.state ?? "OPEN",
-		stateReason: null,
-		title: `issue ${n}`,
-		createdAt: s.createdAt ?? T(9),
-		closedAt: null,
-		author: { login: TRUSTED },
-		body: (s.body ?? []).join("\n"),
-		comments: (s.comments ?? []).map(([createdAt, body]) => ({
-			author: { login: TRUSTED },
-			body,
-			createdAt,
-		})),
-	}));
-	const r = call(
-		BASE,
-		["sync", "main", "--author", TRUSTED],
-		JSON.stringify(data),
-	);
-	expect(r.code).toBe(0);
-}
-
-const need = (n: number) => {
-	const r = call(BASE, ["case", "main", String(n)]);
-	expect(r.code).toBe(0);
-	return r.out.trim();
-};
-const needOnly = (n: number) => need(n).split(" ")[0];
 
 beforeEach(() => addPrecincts({ main: 1 }));
 
@@ -72,7 +33,7 @@ describe("case: stage", () => {
 		expect(needOnly(1)).toBe("need=prosecutor");
 	});
 
-	test("a charge after the case ends the work", () => {
+	test("a charge after the case needs the defender", () => {
 		put({
 			1: {
 				body: [lead()],
@@ -82,7 +43,7 @@ describe("case: stage", () => {
 				],
 			},
 		});
-		expect(needOnly(1)).toBe("need=none");
+		expect(needOnly(1)).toBe("need=defender");
 	});
 
 	test("a decline after the case ends the work", () => {
@@ -141,7 +102,7 @@ describe("case: stage", () => {
 	test("a closed issue needs nobody", () => {
 		put({ 1: { state: "CLOSED", body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=none round=1 department=core sha=- state=CLOSED",
+			"need=none round=1 returned=- department=core sha=- state=CLOSED",
 		);
 	});
 
@@ -159,7 +120,7 @@ describe("case: stage", () => {
 				comments: [[T(10), returnTo("investigation")]],
 			},
 		});
-		expect(needOnly(1)).toBe("need=none");
+		expect(needOnly(1)).toBe("need=defender");
 		expect(needOnly(2)).toBe("need=investigation");
 	});
 });
@@ -197,14 +158,14 @@ describe("case: round, department, sha", () => {
 	test("the line carries the department of the lead origin and the sha of the newest case", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), caseMark()]] } });
 		expect(need(1)).toBe(
-			`need=prosecutor round=1 department=core sha=${SHA} state=OPEN`,
+			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN`,
 		);
 	});
 
 	test("without a case the sha is a dash", () => {
 		put({ 1: { body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=investigation round=1 department=core sha=- state=OPEN",
+			"need=investigation round=1 returned=- department=core sha=- state=OPEN",
 		);
 	});
 });
@@ -265,7 +226,7 @@ describe("due", () => {
 		expect(due("investigation")).toBe("");
 	});
 
-	test("a charge or a decline leaves nothing due", () => {
+	test("a charge leaves nothing due for the earlier roles, a decline nothing at all", () => {
 		put({
 			1: {
 				body: [lead()],
@@ -284,6 +245,50 @@ describe("due", () => {
 		});
 		expect(due("investigation")).toBe("");
 		expect(due("prosecutor")).toBe("");
+	});
+
+	test("a charged open case is due for the defender only", () => {
+		put({
+			1: {
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), charge()],
+				],
+			},
+		});
+		expect(due("defender")).toBe("main\t1\n");
+		expect(due("prosecutor")).toBe("");
+	});
+
+	test("a defended, refuted or closed case is not due for the defender", () => {
+		put({
+			1: {
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), charge()],
+					[T(12), defence()],
+				],
+			},
+			2: {
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), charge()],
+					[T(12), refute()],
+				],
+			},
+			3: {
+				state: "CLOSED",
+				body: [lead()],
+				comments: [
+					[T(10), caseMark()],
+					[T(11), charge()],
+				],
+			},
+		});
+		expect(due("defender")).toBe("");
 	});
 
 	test("a closed issue leaves nothing due", () => {

@@ -108,8 +108,10 @@ export const mark = (role: string, stage: string, extra = "") =>
 export const caseMark = () => mark("investigation", "case", ` sha=${SHA}`);
 export const charge = () => mark("prosecutor", "charge", ` sha=${SHA}`);
 export const decline = () => mark("prosecutor", "decline");
-export const returnTo = (to: string, round = 1) =>
-	mark("prosecutor", "return", ` to=${to} round=${round}`);
+export const returnTo = (to: string, round = 1, role = "prosecutor") =>
+	mark(role, "return", ` to=${to} round=${round}`);
+export const defence = () => mark("defender", "defence", ` sha=${SHA}`);
+export const refute = () => mark("defender", "refute");
 
 export function collect(n: number) {
 	return collectIssueMarkers(issueOf(n), TRUSTED);
