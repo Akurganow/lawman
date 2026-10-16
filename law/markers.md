@@ -88,7 +88,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-These markers are defined. A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none.
+These markers are defined. A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` carry none either.
 
 Patrol lead, the last line of the body of the issue the patrol files:
 
@@ -153,6 +153,18 @@ Acquittal, the last line of the ruling comment the court writes:
 <!-- lawman: role=court stage=acquittal at=<UTC> -->
 ```
 
+Entry, the last line of the comment the clerk writes after it opens a precedent pull request:
+
+```
+<!-- lawman: role=clerk stage=entry at=<UTC> -->
+```
+
+No-entry, the last line of the comment the clerk writes when the ruling holds no valid precedent line:
+
+```
+<!-- lawman: role=clerk stage=no-entry at=<UTC> -->
+```
+
 A stage not defined here is parsed and kept.
 
 ## Examples
@@ -202,4 +214,11 @@ Valid. `E12` is a conviction, `E13` an acquittal.
 ```
 <!-- lawman: role=court stage=conviction sha=7e3a91c5d0b842f6a1e9c37d58b20f4a6c1e9d37 at=2026-10-16T10:00:00Z -->
 <!-- lawman: role=court stage=acquittal at=2026-10-16T10:30:00Z -->
+```
+
+Valid. `E14` is an entry, `E15` a no-entry.
+
+```
+<!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=no-entry at=2026-10-16T11:00:00Z -->
 ```

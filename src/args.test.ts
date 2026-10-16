@@ -25,6 +25,7 @@ describe("argument validators", () => {
 			"refuted",
 			"convicted",
 			"acquitted",
+			"recorded",
 		],
 	} as const;
 	const bad = {
@@ -52,6 +53,8 @@ describe("argument validators", () => {
 			"ruled",
 			"acquit",
 			"convicte",
+			"recorded-x",
+			"record",
 		],
 	} as const;
 

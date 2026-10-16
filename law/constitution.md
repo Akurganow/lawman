@@ -76,7 +76,8 @@ Skills and rules of this repository that an executor loads before it changes cod
 ### Precedents
 
 Settled questions. One per line: `- <YYYY-MM-DD> #<n>: <ruling>`.
-A court ruling carries a line in the form above, without its number. A later role, not performed in this release, assigns the number and appends the line here. Numbers never repeat.
+A line from a court ruling ends with a link to the ruling comment, in parentheses: `- <YYYY-MM-DD> #<n>: <ruling> (<link to the ruling comment>)`. An owner's amendment line may have no link.
+A court ruling carries a line in the form above, without its number and without its link. The clerk assigns the number, adds the link and opens a pull request. The number is one more than the highest in the section, and the first is 1. The owner merges the pull request. Numbers never repeat.
 
 ## Path rules
 
@@ -145,6 +146,6 @@ none
 
 ## Precedents
 
-- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it.
+- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it. (https://github.com/example/widgets/issues/7#issuecomment-1048576301)
 - 2026-09-20 #2: Duplicate fixtures under test/data are accepted debt. Each test file owns its copy.
 ````

@@ -2,8 +2,6 @@
 
 Use this reference when `config.yaml` no longer matches the law clone. Update moves the installation to one release tag. It pauses the ticks while it works. A failure after the backup restores the installation.
 
-Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session probe in install step 6.
-
 ## Step 1. Choose the target and show the change
 
 1. Note the current `law_commit`, `release_tag` and `journal_sha256` from `config.yaml`, because the rollback needs them.
@@ -40,7 +38,7 @@ Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session prob
 
 ## Step 6. Check the precincts
 
-1. Run `bin/journal precinct list`, then `env -u GH_TOKEN git -C precincts/<name> fetch origin` for each precinct, and stop if a fetch fails.
+1. Run `bin/journal precinct list`, then `git -C precincts/<name> fetch origin` for each precinct, and stop if a fetch fails.
 2. Run `git -C precincts/<name> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution` for each precinct.
 3. When the file's `contract_version` is lower than the new contract version `<n>`, draft an amendment.
 4. Draft the amendment with steps 6 to 25 of the add path in `references/precinct.md`, on the branch `lawman/constitution-v<n>`, and never merge its pull request.
@@ -49,7 +47,7 @@ Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session prob
 
 ## Step 7. Measure and record
 
-1. Run install step 6 again, which records `trusted_login` and checks the token.
+1. Run install step 6 again, which records `trusted_login`.
 2. Set `law_commit` to `git -C lawman rev-parse HEAD`, `release_tag` to `<target>` and `journal_sha256` to the sum from install step 5, item 14, and keep the other keys.
 3. Write `config.yaml`, and read it back.
 4. Resume every scheduler job whose name equals a folder under `lawman/skills/`, with the resume command the harness page gives. Take the job names from the list command the page gives.

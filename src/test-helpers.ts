@@ -114,6 +114,8 @@ export const defence = () => mark("defender", "defence", ` sha=${SHA}`);
 export const refute = () => mark("defender", "refute");
 export const conviction = () => mark("court", "conviction", ` sha=${SHA}`);
 export const acquittal = () => mark("court", "acquittal");
+export const entry = () => mark("clerk", "entry");
+export const noEntry = () => mark("clerk", "no-entry");
 
 export function collect(n: number) {
 	return collectIssueMarkers(issueOf(n), TRUSTED);

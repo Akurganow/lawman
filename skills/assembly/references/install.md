@@ -4,8 +4,6 @@ Run the steps in this order. Each step names its command and its stop condition.
 
 Before step 1, run `git -C lawman rev-parse HEAD`. Stop if it fails, because the law clone is missing. Tell the developer to clone the law repository into `lawman/` and check out its latest tag.
 
-Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session probe in step 6.
-
 ## Step 1. Detect the harness
 
 1. List `lawman/harnesses/*.md` in name order.
@@ -55,43 +53,33 @@ Prefix every `gh` call with `env -u GH_TOKEN`, except the scheduled-session prob
 
 ## Step 6. Measure the scheduled session
 
-The scheduled session is the only session that uses the token the harness gives. This step measures that session.
+Every role runs in a scheduled session. This step measures that session.
 
-1. Ask for the first precinct's repository, `<owner>/<repo>`, or drop the permission line when the developer has none.
-2. Create one one-shot job in the form the page gives, with `--skill patrol`, `--workdir` set to `<installation>`, the delivery platform, and the probe prompt below.
-3. Wait for the run to finish, and read its output with the attempts command the page gives, stopping if it did not finish.
-4. Check that the output holds the probe line, the login, the git version and `skill=patrol`, and stop if the probe line is missing.
-5. When the login is missing, go to the token steps below.
-6. Record `trusted_login` as the login line.
-7. When a repository is named, read `admin` and `push` in the permissions object, and warn the developer if either is `true`.
-8. When step 7 warned, ask the developer for explicit acknowledgement of a wide token.
-9. Stop if the token is wide and not acknowledged, and have the developer narrow the token before you repeat this step.
-10. Create one more one-shot job in the same form, without `--skill`, with the prompt `Reply with only the silence token that the harness page names. Nothing else.`
-11. Ask the developer to confirm that the probe report arrived once and that nothing arrived from the silence job, and stop if either fails.
-12. Remove both probe jobs with the remove command the page gives.
+1. Create one one-shot job in the form the page gives, with `--skill patrol`, `--workdir` set to `<installation>`, the delivery platform, and the probe prompt below.
+2. Wait for the run to finish, and read its output with the attempts command the page gives, stopping if it did not finish.
+3. Check that the output holds the probe line, the login, the git version and `skill=patrol`, and stop if the probe line is missing.
+4. When the login is missing, go to the token steps below.
+5. Record `trusted_login` as the login line.
+6. Create one more one-shot job in the same form, without `--skill`, with the prompt `Reply with only the silence token that the harness page names. Nothing else.`
+7. Ask the developer to confirm that the probe report arrived once and that nothing arrived from the silence job, and stop if either fails.
+8. Remove both probe jobs with the remove command the page gives.
 
-Probe prompt, with the permission line only when a repository is named:
+Probe prompt:
 
 ```
 Lawman probe. Run only these commands from this directory, and show each output under its command.
 bin/journal probe --schema 2
 gh api user --jq .login
-gh api repos/<owner>/<repo> --jq .permissions
 git --version
 Do not run anything else. Do not write to any repository. Do not take an order.
 End with one line: skill=<name of the skill you loaded>
 ```
 
-If the developer has no repository yet, repeat this step for that repository before the first weight rises.
-
 Token steps, used when the login is missing in the scheduled session. The scheduled session may be unable to read the keychain.
 
 1. Name the variable that the harness page gives for the token, and say where the page says to write it.
-2. Tell the developer that a minimal token has these rights: Contents read, Pull requests read and Issues write, on the selected repositories.
-3. Tell the developer that `gh auth token` gives the full login token, which triggers the wide-token warning.
-4. Tell the developer that the page makes the variable visible to every session, so the minimal token is preferred.
-5. Tell the developer to write the value where the page says, and never to paste it into this session.
-6. Repeat this step after the developer confirms.
+2. Tell the developer to write the value where the page says, and never to paste it into this session.
+3. Repeat this step after the developer confirms.
 
 ## Step 7. Check the turn limit
 
@@ -109,7 +97,7 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 Finish this step before the developer adds a precinct.
 
 1. List the role folders: every folder `lawman/skills/*/` other than `assembly`. In the roles mode, keep only the roles without a job.
-2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15. Ask the developer to accept it or name other times and intervals, and wait for the answer.
+2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15, clerk 10:30. Ask the developer to accept it or name other times and intervals, and wait for the answer.
 3. For each role folder, run `bin/journal role set <role> --every <minutes>`, and stop if it fails.
 4. Outside the roles mode, tell the developer to add the first precinct next, because step 10 runs after it.
 
@@ -120,7 +108,7 @@ Run this step after the first precinct is in the journal. The precinct reference
 1. List the scheduled jobs with the list command the page gives.
 2. Skip a job whose name is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the model of each role without a job, one role at a time, and wait for each answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
-4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court, in the machine's local time.
+4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court and `30 10 * * *` for clerk, in the machine's local time.
 5. Show every create command to the developer, and wait for a yes.
 6. Create one job per role folder without a job, with the create form the page gives:
 

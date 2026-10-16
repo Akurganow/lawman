@@ -1,13 +1,13 @@
 ---
 name: duty-desk
-description: Runs one tick of a Lawman duty desk, which writes at most one order per role for investigation, prosecutor, defender, court and patrol, then exits without filing, commenting or editing anything.
+description: Runs one tick of a Lawman duty desk, which writes at most one order per role for investigation, prosecutor, defender, court, clerk and patrol, then exits without filing, commenting or editing anything.
 ---
 
 # Duty desk
 
 You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
 
-One invocation runs one tick. The tick writes at most one order per role for five roles: investigation, prosecutor, defender, court and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
+One invocation runs one tick. The tick writes at most one order per role for six roles: investigation, prosecutor, defender, court, clerk and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
 
 The law is `lawman/law/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: "Tick outcomes", "Alarms and their repetition", "Silence is the default" and "One tick, one case, exit". The page shapes that `lint-page` checks come from `lawman/law/constitution.md` and `lawman/law/departments.md`.
 
@@ -78,7 +78,7 @@ Send the report through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first 
 
 Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for the answer. A non-zero exit ends with `failed`.
 
-### Step 2: Stage orders
+### Step 2: Orders on issues
 
 2.1. Run `bin/journal precinct list`. Each line is `<name><TAB><repo><TAB><weight><TAB><credit><TAB><synced>`. For each line whose weight is above zero, sync the tracker, with `<login>` from step 0.3:
 
@@ -86,7 +86,7 @@ Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for 
 bash -o pipefail -c 'gh issue list -R <repo> --author <login> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>'
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed.
+The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed. For the clerk a closed issue is still work.
 
 2.2. Run `bin/journal due --role investigation`.
 
@@ -100,7 +100,9 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `sto
 
 2.5. Run `bin/journal due --role court` and handle it the same way, with `--role court`. Keep the printed id as `<court order>`.
 
-The sync and these four orders are the only writes of this step.
+2.6. Run `bin/journal due --role clerk` and handle it the same way, with `--role clerk`. Keep the printed id as `<clerk order>`.
+
+The sync and these five orders are the only writes of this step.
 
 ### Step 3: Choose the precinct
 
@@ -200,7 +202,7 @@ Never write the silence token together with an `ALARM` line or a stop line. A cl
 End every tick with the same five labelled lines, one line per part, in this order. Send them on stdin to `tick end`:
 
 ```
-Coverage: <orders: patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>, court <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
+Coverage: <orders: patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>, court <id|none>, clerk <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.
@@ -211,7 +213,7 @@ Example, for a skipped precinct:
 
 ```
 bin/journal tick end <id> --outcome skipped-no-constitution --precinct <name> <<'LAWMAN_<id>'
-Coverage: orders: patrol none, investigation none, prosecutor none, defender none, court none. Precinct <name>, no commit read.
+Coverage: orders: patrol none, investigation none, prosecutor none, defender none, court none, clerk none. Precinct <name>, no commit read.
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.

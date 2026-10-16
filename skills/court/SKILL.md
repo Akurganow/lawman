@@ -112,7 +112,7 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|court|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
+The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
 
 `returned` lists the roles that already returned the case to investigation. `-` means none.
 
@@ -238,7 +238,7 @@ Only for `acquittal`. Run it after the read-back and before the sync. For `convi
    gh issue view <n> -R <owner/repo> --json state --jq .state
    ```
 
-When the ruling comment landed and the close failed, the issue stays open. `need` is `none`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the defence, keeps `need` at `none`.
+When the ruling comment landed and the close failed, the issue stays open. `need` is `clerk`, never `court`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the defence, keeps `need` at `clerk` until a clerk marker exists, and never returns the case to the court.
 
 ### Step 11: sync the tracker again
 

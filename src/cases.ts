@@ -16,6 +16,7 @@ export type Need =
 	| "prosecutor"
 	| "defender"
 	| "court"
+	| "clerk"
 	| "none";
 
 const RETURNING_ROLES = ["prosecutor", "defender"];
@@ -38,8 +39,7 @@ const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
 		),
 	);
 
-export function needOf(state: string, markers: CaseMarker[]): Need {
-	if (state === "CLOSED") return "none";
+function stageOf(markers: CaseMarker[]): Need {
 	const c = newestOf(markers, "investigation", "case");
 	if (c === undefined) return "investigation";
 	const p = newestOf(markers, "prosecutor");
@@ -52,7 +52,15 @@ export function needOf(state: string, markers: CaseMarker[]): Need {
 	if (backToInvestigation(d)) return "investigation";
 	if (d.stage !== "defence") return "none";
 	const r = newestOf(markers, "court");
-	return r === undefined || r.ord < d.ord ? "court" : "none";
+	if (r === undefined || r.ord < d.ord) return "court";
+	if (r.stage !== "conviction" && r.stage !== "acquittal") return "none";
+	const k = newestOf(markers, "clerk");
+	return k === undefined || k.ord < r.ord ? "clerk" : "none";
+}
+
+export function needOf(state: string, markers: CaseMarker[]): Need {
+	const need = stageOf(markers);
+	return state === "CLOSED" && need !== "clerk" ? "none" : need;
 }
 
 function markersOf(db: Database, precinct: string, issue: number) {
@@ -110,11 +118,11 @@ export function dueCommand(args: string[]): void {
 				`SELECT i.precinct, i.issue, i.state,
            (SELECT max(d.at) FROM dispatches d
              WHERE d.role = ? AND d.precinct = i.precinct AND d.issue = i.issue) AS last
-         ${LEAD_ORIGIN_FROM} AND i.state = 'OPEN'
+         ${LEAD_ORIGIN_FROM} AND (i.state = 'OPEN' OR ? = 'clerk')
            AND EXISTS (SELECT 1 FROM precincts p WHERE p.name = i.precinct AND p.weight > 0)
          ORDER BY last IS NOT NULL, last, i.created_at, i.precinct, i.issue`,
 			)
-			.all(roleName) as Candidate[];
+			.all(roleName, roleName) as Candidate[];
 		const due = candidates.find(
 			(c) => needOf(c.state, markersOf(db, c.precinct, c.issue)) === roleName,
 		);
