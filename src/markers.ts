@@ -125,12 +125,14 @@ function readFields(body: string): Record<string, string> | null {
 	return fields;
 }
 
+const LEAD_ROLES = ["patrol", "response-unit"];
+
 const matches = (re: RegExp, value: string | undefined) =>
 	value !== undefined && re.test(value);
 
 function validLead(f: Record<string, string>): boolean {
 	return (
-		f.role === "patrol" &&
+		LEAD_ROLES.includes(f.role ?? "") &&
 		f.department !== undefined &&
 		f.id !== undefined &&
 		matches(SHA_HEX, f.sha) &&
