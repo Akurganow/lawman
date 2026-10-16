@@ -31,7 +31,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 2
+   bin/journal probe --schema 3
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -72,7 +72,7 @@ Run the "Read the stage" section.
 
 The order is stale unless `need` is `court` and `state` is `OPEN`. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
+Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 
 ### Step 5: read the rules
 
@@ -92,7 +92,14 @@ A failed command gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The charge is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=prosecutor stage=charge`. The defence is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=defender stage=defence`. A missing case, charge or defence ends the tick with `failed`.
 
-Do not read the line under the `## Cost and risk` heading of the issue body. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Do not read the line under the `## Cost and risk` heading of the lead carrier. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+
+When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
+```
+gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
+```
+
+A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
@@ -119,7 +126,7 @@ Do not read the line under the `## Cost and risk` heading of the issue body. Eve
 Decide one of two. The tick outcome equals the decision.
 
 - `conviction`: every ground of the charge stands at `<sha>`, by the court's own re-read or by the record of the prosecutor and the defender. No recorded reason explains the shape. The law's Evidence section lists the sources of a recorded reason. The issue stays open. Outcome `convicted`.
-- `acquittal`: every other case. Name exactly one class from the law's Closure classes subsection. `recorded reason` is shown by one of the law's sources that the court read in step 5 or step 7, or that the defence quotes. `duplicate` is shown by the Related section of the case. `gone at <tip>` is shown by the court's own read at `origin/HEAD`. `not confirmed` is the class otherwise, and for every doubt. When more than one class holds, name the first in the law's list. Outcome `acquitted`.
+- `acquittal`: every other case. Name exactly one class from the law's Closure classes subsection. `recorded reason` is shown by one of the law's sources that the court read in step 5 or step 7, or that the defence quotes. `gone at <tip>` is shown by the court's own read at `origin/HEAD`. `not confirmed` is the class otherwise, and for every doubt. When more than one class holds, name the first in the law's list. Outcome `acquitted`.
 
 Before writing a conviction, attack it once, as the law's Evidence section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
 

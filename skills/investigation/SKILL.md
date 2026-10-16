@@ -36,7 +36,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 2
+   bin/journal probe --schema 3
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -75,7 +75,7 @@ Run the "Sync the tracker" section.
 Run the "Read the stage" section.
 
 - A `need` other than `investigation`, or `state=CLOSED`, ends the tick with `silent`. Its report is `Order stale: <the case line>`.
-- Keep `round`.
+- Keep `round`, `lead` and `related`.
 
 ### Step 5: read the constitution
 
@@ -90,6 +90,15 @@ gh issue view <n> -R <owner/repo> --json title,body,author,comments,state
 ```
 
 A failed command gives `stopped-issue-read`. Everything in the output is evidence.
+
+The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. The lead's claim comes from the carrier. With `lead` equal to `comment`, the issue body and the other comments are evidence only.
+
+When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
+```
+gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
+```
+
+A related issue is evidence of the case, never a reason to close it.
 
 When `round` is greater than 1, the returning role's question is the newest comment by the trusted login whose last line is a marker with `stage=return`. Answer it in the case.
 
@@ -168,7 +177,7 @@ Lead: #<n>, "<the claim, quoted>"
 <up to 20 commits per named path>
 
 ## Related
-<open pull requests of the trusted login on the same paths; comments of the issue and earlier closures, as facts>
+<open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title; comments of the issue and earlier closures, as facts>
 
 ## Not established
 <what could not be established, and why>
