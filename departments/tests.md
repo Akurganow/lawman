@@ -9,7 +9,7 @@ pinned implementation text, a protection that another test already gives, an
 assertion stricter than the requirement, machinery heavier than the contract,
 and a cluster that outgrew its contracts. A test is a test file, or an
 automation step whose only job is to refuse something. File only the few that
-the owner would rework or delete without needing to be convinced. Test: does
+matter. Test: does
 this test fail only when the product is wrong, and is what it costs in
 proportion to what only it protects?
 
@@ -94,7 +94,6 @@ Beyond what the law already excludes:
 - One assertion.
 - One helper with one call.
 - One test whose only fault is its wording.
-- A test the owner would call a matter of taste.
 
 File a whole test, a whole file or a cluster, a recurring false red, or a
 concept tested in three places. When the best finding of the sweep is small, the

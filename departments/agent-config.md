@@ -72,9 +72,9 @@ Beyond the law's list:
   run, or to say it does not exist.
 
 **Boundaries.**
-- Residue in agent files is this page's, for example a stale name, a leftover
-  reference or a comment about behaviour that left. Residue in code, tests and
-  other documents is the text residue page's.
+- A stale name or a leftover reference in an agent file is this page's
+  (`dangling`, `orphan`). Other noise in agent files is not filed. Residue in
+  code, tests and other documents is the text residue page's.
 - A false statement about the code in an agent file is filed here only when the
   tree settles it, such as a count, a name or a path (`restated`, `dangling`). A
   claim in a published document is claims'.

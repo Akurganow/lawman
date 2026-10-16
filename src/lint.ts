@@ -49,8 +49,6 @@ const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 export const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
 const CODE_SPAN = /(`+).+?\1/g;
 const MENTION = /@[A-Za-z0-9]/;
-const SOURCE_LINE =
-	/^Source: (advisories [a-z]+ [A-Za-z0-9@._/-]+@[A-Za-z0-9._-]+|releases [A-Za-z0-9-]+\/[A-Za-z0-9._-]+)$/;
 const TITLE_SHELL = /['`$\\]/;
 
 const BODY_RULES: [string, RegExp][] = [
@@ -72,11 +70,7 @@ function lineReasons(line: string, fenced: boolean): string[] {
 	const reasons = BODY_RULES.filter(([, re]) => re.test(line)).map(
 		([reason]) => reason,
 	);
-	if (
-		!fenced &&
-		!SOURCE_LINE.test(line) &&
-		MENTION.test(line.replace(CODE_SPAN, ""))
-	)
+	if (!fenced && MENTION.test(line.replace(CODE_SPAN, "")))
 		reasons.push("@ mention");
 	return reasons;
 }

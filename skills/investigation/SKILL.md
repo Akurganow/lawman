@@ -142,7 +142,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    gh pr list -R <owner/repo> --state open --limit 200 --json number,author,files --jq '.[] | select(.author.login == "<login>") | .number as $n | .files[].path | "\($n)\t\(.)"'
    ```
    A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
-5. For each `Source:` line in the `Not checked` section of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms, run verbatim with its fixed `--jq` filter.
+5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms, run verbatim with its fixed `--jq` filter.
    ```
    gh api '/advisories?ecosystem=<ecosystem>&affects=<package>@<version>' --jq '.[] | [.ghsa_id, .severity, .updated_at, .summary] | @tsv'
    gh api 'repos/<owner>/<repo>/releases?per_page=100' --jq '.[] | [.tag_name, .id, .published_at] | @tsv'
