@@ -50,7 +50,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md`. Obey its "Working rules", "Alarm" and "Never" sections for the whole tick. Then run its "Alarms before work" section.
+6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
 
 ### Step 1: take an order
 
@@ -133,7 +133,7 @@ Compose the comment from the Ruling format section. Write it as the "Write a com
 
 Only for `acquittal`. Run the "Close the issue" section. Run it after the read-back. For `conviction`, go to step 11.
 
-When the ruling landed, close failed, the issue stays open. `need` is `clerk`, never `court`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the defence, keeps `need` at `clerk` until a clerk marker exists, and never returns the case to the court.
+When the ruling comment landed and the close failed, the issue stays open. `need` is `clerk`, never `court`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the defence, keeps `need` at `clerk` until a clerk marker exists, and never returns the case to the court.
 
 ### Step 11: end the tick
 

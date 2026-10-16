@@ -55,7 +55,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md`. Obey its "Working rules", "Alarm" and "Never" sections for the whole tick. Then run its "Alarms before work" section.
+6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
 7. Run the "Housekeeping" section.
 
 ### Step 1: take an order

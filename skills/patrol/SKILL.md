@@ -54,7 +54,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md`. Obey its "Working rules", "Alarm" and "Never" sections for the whole tick. Then run its "Alarms before work" section.
+6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
 7. Run the "Housekeeping" section.
 
 ### Step 1: take an order
@@ -225,7 +225,7 @@ Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section 
 
 ## Report
 
-Write the five parts of the law's Report section, in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
+Write the five parts that the law's "The report" section names, in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
 
 ```
 Filed nothing. CLEAN at <sha>.
