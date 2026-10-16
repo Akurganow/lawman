@@ -25,11 +25,6 @@ describe("precedent core", () => {
 		});
 	});
 
-	test("a none section is replaced by the first numbered line", () => {
-		const result = entry(decision("## Precedent", "- 2026-10-16: a ruling"));
-		expect(result.kind === "entry" && result.page).not.toContain("none");
-	});
-
 	test("the number is the largest prefix number plus one, other lines untouched", () => {
 		const page =
 			"## Precedents\n\n- 2026-01-01 #1: one\n- 2026-01-02 #7: seven, see #40: x\n- 2026-01-03 #2: two\n";

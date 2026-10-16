@@ -23,49 +23,37 @@ tempDb();
 beforeEach(() => addPrecincts({ main: 1 }));
 
 describe("case: stage", () => {
-	test("a lead alone needs the investigation", () => {
-		put({ 1: { body: [lead()] } });
-		expect(needOnly(1)).toBe("need=investigation");
-	});
-
-	test("a case needs the prosecutor", () => {
-		put({ 1: { body: [lead()], comments: [[T(10), caseMark()]] } });
-		expect(needOnly(1)).toBe("need=prosecutor");
-	});
-
-	test("a charge after the case needs the defender", () => {
-		put({
-			1: withLead(caseMark(), charge()),
-		});
-		expect(needOnly(1)).toBe("need=defender");
-	});
-
-	test("a decline after the case ends the work", () => {
-		put({
-			1: withLead(caseMark(), decline()),
-		});
-		expect(needOnly(1)).toBe("need=none");
-	});
-
-	test("a return to the investigation needs the investigation", () => {
-		put({
-			1: withLead(caseMark(), returnTo("investigation")),
-		});
-		expect(needOnly(1)).toBe("need=investigation");
-	});
-
-	test("a return to another role ends the case work", () => {
-		put({
-			1: withLead(caseMark(), returnTo("patrol")),
-		});
-		expect(needOnly(1)).toBe("need=none");
-	});
-
-	test("a newer case after a return needs the prosecutor", () => {
-		put({
-			1: withLead(caseMark(), returnTo("investigation"), caseMark()),
-		});
-		expect(needOnly(1)).toBe("need=prosecutor");
+	test.each([
+		["a lead alone needs the investigation", withLead(), "investigation"],
+		["a case needs the prosecutor", withLead(caseMark()), "prosecutor"],
+		[
+			"a charge after the case needs the defender",
+			withLead(caseMark(), charge()),
+			"defender",
+		],
+		[
+			"a decline after the case ends the work",
+			withLead(caseMark(), decline()),
+			"none",
+		],
+		[
+			"a return to the investigation needs the investigation",
+			withLead(caseMark(), returnTo("investigation")),
+			"investigation",
+		],
+		[
+			"a return to another role ends the case work",
+			withLead(caseMark(), returnTo("patrol")),
+			"none",
+		],
+		[
+			"a newer case after a return needs the prosecutor",
+			withLead(caseMark(), returnTo("investigation"), caseMark()),
+			"prosecutor",
+		],
+	])("%s", (_name, spec, expected) => {
+		put({ 1: spec });
+		expect(needOnly(1)).toBe(`need=${expected}`);
 	});
 
 	test("a closed issue needs nobody", () => {

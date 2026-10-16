@@ -69,6 +69,17 @@ export function pick<T>(
 		: undefined;
 }
 
+export function subcommand<T>(
+	table: Record<string, T>,
+	args: string[],
+	text: string,
+): { run: T; rest: string[] } {
+	const [name, ...rest] = args;
+	const run = pick(table, name);
+	if (run === undefined) throw usage(text);
+	return { run, rest };
+}
+
 export function count(value: string, label: string, min: number): number {
 	const n = Number(value);
 	if (!/^\d+$/.test(value) || !Number.isSafeInteger(n) || n < min) {

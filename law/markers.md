@@ -88,82 +88,30 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-These markers are defined. A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` carry none either.
 
-Patrol lead, the last line of the body of the issue the patrol files:
+Each marker is the last line of the issue body or comment that its role writes.
 
-```
-<!-- lawman: role=patrol stage=lead department=<name> id=<path>::<symbol>::<kind> sha=<40 hex> at=<UTC> [of=<issue number>] -->
-```
+| Role | Stage | Written in | Fields beyond `role`, `stage` and `at` |
+| :-- | :-- | :-- | :-- |
+| `patrol` | `lead` | the body of the issue patrol files | `department`, `id`, `sha`, and `of` when the defect has returned |
+| `investigation` | `case` | the case comment | `sha` |
+| `prosecutor` | `charge` | the decision comment | `sha` |
+| `prosecutor` | `decline` | the decision comment | none |
+| `prosecutor` or `defender` | `return` | the comment that returns a case | `to`, `round` |
+| `defender` | `defence` | the defence comment | `sha` |
+| `defender` | `refute` | the defence comment | none |
+| `court` | `conviction` | the ruling comment | `sha` |
+| `court` | `acquittal` | the ruling comment | none |
+| `clerk` | `entry` | the comment after it opens a precedent pull request | none |
+| `clerk` | `no-entry` | the comment when the ruling holds no valid precedent line | none |
 
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
-
-Case, the last line of the case comment the investigation writes:
-
-```
-<!-- lawman: role=investigation stage=case sha=<40 hex> at=<UTC> -->
-```
-
-Charge, the last line of the decision comment the prosecutor writes:
-
-```
-<!-- lawman: role=prosecutor stage=charge sha=<40 hex> at=<UTC> -->
-```
-
-Return, the last line of the comment that returns a case:
-
-```
-<!-- lawman: role=<role> stage=return to=<role> round=<n> at=<UTC> -->
-```
-
-- `to` matches `[a-z][a-z0-9-]*`.
-- `round` is a positive decimal integer without leading zeros.
+- `to` matches `[a-z][a-z0-9-]*`. `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
-- The prosecutor and the defender write it, both with `to=investigation` and `round` equal to the round in which it returns.
-
-Decline, the last line of the decision comment the prosecutor writes:
-
-```
-<!-- lawman: role=prosecutor stage=decline at=<UTC> -->
-```
-
-Defence, the last line of the defence comment the defender writes:
-
-```
-<!-- lawman: role=defender stage=defence sha=<40 hex> at=<UTC> -->
-```
-
-Refute, the last line of the defence comment the defender writes:
-
-```
-<!-- lawman: role=defender stage=refute at=<UTC> -->
-```
-
-Conviction, the last line of the ruling comment the court writes:
-
-```
-<!-- lawman: role=court stage=conviction sha=<40 hex> at=<UTC> -->
-```
-
-Acquittal, the last line of the ruling comment the court writes:
-
-```
-<!-- lawman: role=court stage=acquittal at=<UTC> -->
-```
-
-Entry, the last line of the comment the clerk writes after it opens a precedent pull request:
-
-```
-<!-- lawman: role=clerk stage=entry at=<UTC> -->
-```
-
-No-entry, the last line of the comment the clerk writes when the ruling holds no valid precedent line:
-
-```
-<!-- lawman: role=clerk stage=no-entry at=<UTC> -->
-```
+- The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.
 
 A stage not defined here is parsed and kept.
 

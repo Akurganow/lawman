@@ -42,10 +42,15 @@ export function env(
 	return { PATH: process.env.PATH ?? "", ...extra };
 }
 
-export function cli(args: string[], extra: Record<string, string> = {}) {
+export function cli(
+	args: string[],
+	extra: Record<string, string> = {},
+	stdin?: string,
+) {
 	const r = Bun.spawnSync(["bun", "src/journal.ts", ...args], {
 		cwd: ROOT,
 		env: env(extra),
+		stdin: stdin === undefined ? undefined : Buffer.from(stdin),
 	});
 	return {
 		code: r.exitCode,
@@ -136,18 +141,8 @@ export const later = (hours: number, seconds = 0) =>
 	new Date(Date.parse(BASE) + hours * 3600 * 1000 + seconds * 1000)
 		.toISOString()
 		.replace(".000Z", "Z");
-export const call = (clock: string, args: string[], stdin = "") => {
-	const r = Bun.spawnSync(["bun", "src/journal.ts", ...args], {
-		cwd: ROOT,
-		env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: clock }),
-		stdin: Buffer.from(stdin),
-	});
-	return {
-		code: r.exitCode,
-		out: r.stdout.toString(),
-		err: r.stderr.toString(),
-	};
-};
+export const call = (clock: string, args: string[], stdin = "") =>
+	cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock }, stdin);
 export const alarm = (clock: string, ...flags: string[]) =>
 	call(clock, ["alarm", ...flags]);
 export const seed = (body: (db: Database) => void) => {
@@ -157,7 +152,7 @@ export const seed = (body: (db: Database) => void) => {
 };
 export const rows = (sql: string) => {
 	const db = open(dbFile);
-	const result = db.query(sql).all();
+	const result = db.query(sql).all() as Record<string, unknown>[];
 	db.close();
 	return result;
 };
@@ -177,4 +172,30 @@ export const tick = (
 	db.run(
 		"INSERT INTO ticks (role, precinct, started_at, ended_at, outcome) VALUES (?, ?, ?, ?, ?)",
 		[role, p, startedAt, endedAt, outcome],
+	);
+
+type OrderFields = {
+	at?: string;
+	department?: string;
+	issue?: number;
+	takenAt?: string;
+	outcome?: string;
+};
+export const order = (
+	db: Database,
+	precinctName: string,
+	role: string,
+	f: OrderFields = {},
+) =>
+	db.run(
+		"INSERT INTO dispatches (at, precinct, role, department, issue, taken_at, outcome) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		[
+			f.at ?? BASE,
+			precinctName,
+			role,
+			f.department ?? null,
+			f.issue ?? null,
+			f.takenAt ?? null,
+			f.outcome ?? null,
+		],
 	);

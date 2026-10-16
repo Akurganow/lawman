@@ -7,43 +7,10 @@ import { dispatch, tick } from "./dispatch";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand } from "./precedent";
-import { next, pause, precinct, role } from "./precincts";
+import { next, precinct, role } from "./precincts";
 import { sync } from "./sync";
 
-export { check } from "./args";
-export {
-	checkEnv,
-	dbPath,
-	EXIT,
-	Fail,
-	MIGRATIONS,
-	now,
-	open,
-	out,
-	probeLine,
-} from "./db";
-export { CAP_TABLE } from "./leads";
-export {
-	BODY_MAX_BYTES,
-	CONSTITUTION_HEADINGS,
-	DEPARTMENT_HEADINGS,
-	lintBody,
-	lintPage,
-	type PageLint,
-} from "./lint";
-export {
-	canonicalId,
-	collectIssueMarkers,
-	decodeIdPart,
-	encodeIdPart,
-	extractMarkers,
-	type Found,
-	MARKER_MAX_BYTES,
-	type Marker,
-	parseMarker,
-} from "./markers";
-export { pickNext } from "./precincts";
-export { SYNC_LIMIT } from "./sync";
+export { open } from "./db";
 
 type Handler = ((args: string[]) => void) | ((args: string[]) => number);
 
@@ -54,7 +21,6 @@ export const COMMANDS: Record<string, Handler> = {
 	next,
 	dispatch,
 	tick,
-	pause,
 	alarm,
 	status,
 	sync,

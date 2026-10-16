@@ -3,7 +3,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { CONSTITUTION_HEADINGS, DEPARTMENT_HEADINGS, lintPage } from "./lint";
-import { env, must, ROOT } from "./test-helpers";
+import { cli, must, ROOT } from "./test-helpers";
 
 describe("lint-page", () => {
 	const pages = join(ROOT, "src", "fixtures", "pages");
@@ -12,6 +12,37 @@ describe("lint-page", () => {
 		name: string,
 		kind: "constitution" | "department" = "constitution",
 	) => lintPage(kind, page(name)).reasons;
+	const VALID = page("constitution-valid.md");
+	const FENCE_BLOCK = must(
+		VALID.match(/## Fence\n[\s\S]*?(?=## Regression proof)/),
+	)[0];
+	const BROKEN = {
+		badDepartmentLine: VALID.replace("- docs-drift:", "- Docs_Drift:"),
+		badVersion: VALID.replace("contract_version: 1", "contract_version: 2"),
+		dotdot: VALID.replace(
+			"- README.md\n",
+			"- README.md\n- ../outside/secrets.md\n",
+		),
+		emptySection: VALID.replace(
+			"- make lint\n- make typecheck\n- make test\n\n",
+			"",
+		),
+		extraHeading: VALID.replace(
+			"## Precedents",
+			"## Notes\n\n- anything\n\n## Precedents",
+		),
+		fencedHeading: VALID.replace(
+			/## Precedents\n[\s\S]*/,
+			"```markdown\n## Precedents\n\n- 2026-09-02 #1: hidden in a fence\n```\n",
+		),
+		missingHeading: VALID.replace(FENCE_BLOCK, ""),
+		wrongOrder: VALID.replace(FENCE_BLOCK, "").replace(
+			"## Not judged",
+			`${FENCE_BLOCK}## Not judged`,
+		),
+	};
+	const constitutionReasons = (text: string) =>
+		lintPage("constitution", text).reasons;
 
 	const headingsOf = (file: string) => {
 		const text = readFileSync(join(ROOT, "law", file), "utf8");
@@ -32,7 +63,7 @@ describe("lint-page", () => {
 	});
 
 	test("the constitution example passes and yields the department pairs", () => {
-		expect(lintPage("constitution", page("constitution-valid.md"))).toEqual({
+		expect(lintPage("constitution", VALID)).toEqual({
 			reasons: [],
 			departments: [
 				["abstraction", "docs/review/abstractions.md"],
@@ -52,38 +83,38 @@ describe("lint-page", () => {
 	});
 
 	test("a missing heading is named", () => {
-		expect(reasons("constitution-missing-heading.md")).toEqual([
+		expect(constitutionReasons(BROKEN.missingHeading)).toEqual([
 			'19: missing heading "Fence"',
 		]);
 	});
 
 	test("an extra heading is named", () => {
-		expect(reasons("constitution-extra-heading.md")).toEqual([
+		expect(constitutionReasons(BROKEN.extraHeading)).toEqual([
 			'44: extra heading "Notes"',
 		]);
 	});
 
 	test("headings out of order are named at the first misplaced one", () => {
-		expect(reasons("constitution-wrong-order.md")).toEqual([
+		expect(constitutionReasons(BROKEN.wrongOrder)).toEqual([
 			'19: heading "Regression proof" is out of order, expected "Fence"',
 		]);
 	});
 
 	test("a repeated heading is extra", () => {
-		const text = `${page("constitution-valid.md")}\n## Precedents\n\nnone\n`;
+		const text = `${VALID}\n## Precedents\n\nnone\n`;
 		expect(lintPage("constitution", text).reasons).toEqual([
 			'49: extra heading "Precedents"',
 		]);
 	});
 
 	test("a wrong contract version is named at its line", () => {
-		expect(reasons("constitution-bad-version.md")).toEqual([
+		expect(constitutionReasons(BROKEN.badVersion)).toEqual([
 			"2: contract_version must be 1",
 		]);
 	});
 
 	test("missing frontmatter, an unclosed one and a missing version are named", () => {
-		const body = must(page("constitution-valid.md").split("---\n")[2]);
+		const body = must(VALID.split("---\n")[2]);
 		expect(lintPage("constitution", body).reasons).toEqual([
 			"1: frontmatter missing or not closed",
 		]);
@@ -96,10 +127,10 @@ describe("lint-page", () => {
 	});
 
 	test("an empty section is named, none is accepted", () => {
-		expect(reasons("constitution-empty-section.md")).toEqual([
+		expect(constitutionReasons(BROKEN.emptySection)).toEqual([
 			'24: section "Regression proof" is empty, write none',
 		]);
-		const text = page("constitution-valid.md");
+		const text = VALID;
 		expect(
 			lintPage(
 				"constitution",
@@ -112,15 +143,15 @@ describe("lint-page", () => {
 	});
 
 	test("a heading inside a fence counts for neither the list nor a section", () => {
-		expect(reasons("constitution-fenced-heading.md")).toEqual([
+		expect(constitutionReasons(BROKEN.fencedHeading)).toEqual([
 			'48: missing heading "Precedents"',
 		]);
-		const text = page("constitution-valid.md").replace(
+		const text = VALID.replace(
 			"## Fence\n",
 			"## Fence\n\n```\n## Bogus\n```\n",
 		);
 		expect(lintPage("constitution", text).reasons).toEqual([]);
-		const onlyFence = page("constitution-valid.md").replace(
+		const onlyFence = VALID.replace(
 			/## Not judged\n\nnone\n/,
 			"## Not judged\n\n~~~\n## Execution\n~~~\n",
 		);
@@ -128,36 +159,33 @@ describe("lint-page", () => {
 	});
 
 	test("a deeper heading is not a section heading", () => {
-		const text = page("constitution-valid.md").replace(
-			"## Fence\n",
-			"## Fence\n\n### Detail\n",
-		);
+		const text = VALID.replace("## Fence\n", "## Fence\n\n### Detail\n");
 		expect(lintPage("constitution", text).reasons).toEqual([]);
 	});
 
 	test("the constitution needs the title line before the first heading", () => {
-		const text = page("constitution-valid.md").replace(
+		const text = VALID.replace(
 			"# Constitution of example/widgets\n",
 			"# Widgets\n",
 		);
 		expect(lintPage("constitution", text).reasons).toEqual([
 			'4: title line "# Constitution of <owner>/<repo>" missing',
 		]);
-		const late = page("constitution-valid.md")
-			.replace("# Constitution of example/widgets\n\n", "")
-			.replace("## Precedents", "# Constitution of a/b\n## Precedents");
+		const late = VALID.replace(
+			"# Constitution of example/widgets\n\n",
+			"",
+		).replace("## Precedents", "# Constitution of a/b\n## Precedents");
 		expect(lintPage("constitution", late).reasons).toEqual([
 			'4: title line "# Constitution of <owner>/<repo>" missing',
 		]);
 	});
 
 	test("a parent segment in a listed path is named", () => {
-		expect(reasons("constitution-dotdot.md")).toEqual(["10: path holds .."]);
+		expect(constitutionReasons(BROKEN.dotdot)).toEqual(["10: path holds .."]);
 	});
 
 	test("leading slashes and backslashes are named in every path section", () => {
-		const text = page("constitution-valid.md")
-			.replace("- README.md\n", "- /etc/passwd\n- docs\\x.md\n")
+		const text = VALID.replace("- README.md\n", "- /etc/passwd\n- docs\\x.md\n")
 			.replace("- rules/testing.md", "- /rules/testing.md")
 			.replace("## Not judged\n\nnone", "## Not judged\n\n- a/../b\n")
 			.replace(
@@ -178,15 +206,12 @@ describe("lint-page", () => {
 	});
 
 	test("a quoted heading after a path is not part of the path", () => {
-		const text = page("constitution-valid.md").replace(
-			'"Module boundaries"',
-			'"Wait... what"',
-		);
+		const text = VALID.replace('"Module boundaries"', '"Wait... what"');
 		expect(lintPage("constitution", text).reasons).toEqual([]);
 	});
 
 	test("a department line of the wrong shape is named", () => {
-		expect(reasons("constitution-bad-department-line.md")).toEqual([
+		expect(constitutionReasons(BROKEN.badDepartmentLine)).toEqual([
 			'17: department line must read "- <name>: judged by <path or none>"',
 		]);
 		for (const bad of [
@@ -197,22 +222,17 @@ describe("lint-page", () => {
 			"- X: judged by none",
 			"- x:  judged by none",
 		]) {
-			const text = page("constitution-valid.md").replace(
-				"- docs-drift: judged by none",
-				bad,
-			);
+			const text = VALID.replace("- docs-drift: judged by none", bad);
 			expect(lintPage("constitution", text).reasons).toHaveLength(1);
 		}
 	});
 
 	test("a failing page yields no pairs", () => {
-		expect(
-			lintPage("constitution", page("constitution-bad-version.md")).departments,
-		).toEqual([]);
+		expect(lintPage("constitution", BROKEN.badVersion).departments).toEqual([]);
 	});
 
 	test("a Departments section of none yields no pairs and passes", () => {
-		const text = page("constitution-valid.md").replace(
+		const text = VALID.replace(
 			/## Departments\n[\s\S]*?(?=## Fence)/,
 			"## Departments\n\nnone\n\n",
 		);
@@ -249,30 +269,18 @@ describe("lint-page", () => {
 	});
 
 	test("a department page uses its own heading list", () => {
-		expect(
-			lintPage("department", page("constitution-valid.md")).reasons[0],
-		).toContain("name missing");
+		expect(lintPage("department", VALID).reasons[0]).toContain("name missing");
 		expect(
 			lintPage("constitution", page("department-valid.md")).reasons,
 		).toContain('5: extra heading "Mission"');
 	});
 
 	describe("command", () => {
-		const feed = (args: string[], input: string) => {
-			const r = Bun.spawnSync(["bun", "src/journal.ts", "lint-page", ...args], {
-				cwd: ROOT,
-				env: env(),
-				stdin: Buffer.from(input),
-			});
-			return {
-				code: r.exitCode,
-				out: r.stdout.toString(),
-				err: r.stderr.toString(),
-			};
-		};
+		const feed = (args: string[], input: string) =>
+			cli(["lint-page", ...args], {}, input);
 
 		test("a valid constitution prints name TAB judged-by per department and exits 0", () => {
-			const r = feed(["constitution"], page("constitution-valid.md"));
+			const r = feed(["constitution"], VALID);
 			expect(r).toEqual({
 				code: 0,
 				out: "abstraction\tdocs/review/abstractions.md\ndead-code\tdocs/review/dead-code.md\ndocs-drift\tnone\n",
@@ -301,7 +309,7 @@ describe("lint-page", () => {
 		});
 
 		test("reasons go to stdout, one per line, with exit 8", () => {
-			const r = feed(["constitution"], page("constitution-bad-version.md"));
+			const r = feed(["constitution"], BROKEN.badVersion);
 			expect(r).toEqual({
 				code: EXIT.LINT_PAGE,
 				out: "2: contract_version must be 1\n",

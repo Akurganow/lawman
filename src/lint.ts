@@ -110,37 +110,37 @@ export function lintBodyCommand(args: string[]): number {
 	return reasons.length > 0 ? EXIT.LINT_BODY : EXIT.OK;
 }
 
-type Frontmatter = { keys: Map<string, { value: string; line: number }> };
+type FrontKeys = Map<string, { value: string; line: number }>;
 type Heading = { name: string; line: number };
 export type PageLint = { reasons: string[]; departments: [string, string][] };
 
 function readFrontmatter(
 	lines: string[],
-): { front: Frontmatter; end: number } | null {
+): { keys: FrontKeys; end: number } | null {
 	const close =
 		lines[0] === FRONTMATTER_FENCE ? lines.indexOf(FRONTMATTER_FENCE, 1) : -1;
 	if (close < 0) return null;
-	const keys: Frontmatter["keys"] = new Map();
+	const keys: FrontKeys = new Map();
 	lines.slice(1, close).forEach((line, i) => {
 		const [, key, value] = line.match(FRONTMATTER_KEY) ?? [];
 		if (key !== undefined) keys.set(key, { value: value ?? "", line: i + 2 });
 	});
-	return { front: { keys }, end: close + 1 };
+	return { keys, end: close + 1 };
 }
 
 function frontmatterReasons(
-	front: Frontmatter | null,
+	keys: FrontKeys | null,
 	kind: string,
 	expectedName?: string,
 ): string[] {
-	if (front === null) return ["1: frontmatter missing or not closed"];
+	if (keys === null) return ["1: frontmatter missing or not closed"];
 	const reasons: string[] = [];
-	const version = front.keys.get("contract_version");
+	const version = keys.get("contract_version");
 	if (!version) reasons.push("1: contract_version missing");
 	else if (version.value !== "1")
 		reasons.push(`${version.line}: contract_version must be 1`);
 	if (kind !== "department") return reasons;
-	const name = front.keys.get("name");
+	const name = keys.get("name");
 	if (!name) reasons.push("1: name missing");
 	else if (!NAME.test(name.value))
 		reasons.push(`${name.line}: name must match [a-z][a-z0-9-]*`);
@@ -254,7 +254,7 @@ export function lintPage(
 		if (name !== undefined) found.push({ name, line: i + 1 });
 	});
 	const page: PageLint = {
-		reasons: frontmatterReasons(parsed?.front ?? null, kind, expectedName),
+		reasons: frontmatterReasons(parsed?.keys ?? null, kind, expectedName),
 		departments: [],
 	};
 	page.reasons.push(

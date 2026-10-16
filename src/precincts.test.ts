@@ -1,9 +1,16 @@
-import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
 import { now, open } from "./db";
 import { pickNext } from "./precincts";
-import { addPrecincts, cli, dbFile, must, run, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	cli,
+	dbFile,
+	must,
+	order,
+	run,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 
@@ -13,19 +20,6 @@ function credits(): Record<string, number> {
 		.split("\n")
 		.map((l) => l.split("\t"));
 	return Object.fromEntries(rows.map((r) => [r[0], Number(r[3])]));
-}
-
-function openOrder(
-	db: Database,
-	precinct: string,
-	role: string,
-	at = "t",
-): void {
-	db.run("INSERT INTO dispatches (at, precinct, role) VALUES (?, ?, ?)", [
-		at,
-		precinct,
-		role,
-	]);
 }
 
 function tally(picks: (string | undefined)[]): Record<string, number> {
@@ -57,7 +51,7 @@ function cycles(
 		const clock = { LAWMAN_DB: "x", LAWMAN_NOW: new Date(ms).toISOString() };
 		const pick = must(pickNext(db, "patrol"));
 		picks.push(pick.name);
-		openOrder(db, pick.name, "patrol", now(clock));
+		order(db, pick.name, "patrol", { at: now(clock) });
 		db.run(
 			"UPDATE dispatches SET outcome = 'silent', closed_at = ? WHERE outcome IS NULL",
 			[now(clock)],
@@ -161,21 +155,20 @@ describe("next", () => {
 		expect(tally(picks)).toEqual({ a: 4, b: 3, c: 2 });
 	});
 
-	test("weights 4/3/2 over 900 cycles give 400/300/200 and ignore the clock", () => {
-		const frozen = cycles({ a: 4, b: 3, c: 2 }, 900, () => 0);
-		expect(tally(frozen)).toEqual({ a: 400, b: 300, c: 200 });
-		rmSync(dbFile);
-		const advancing = cycles({ a: 4, b: 3, c: 2 }, 900, UNEVEN_STEP_SECONDS);
-		expect(advancing).toEqual(frozen);
-	}, 60_000);
-
-	test("weights 5/3/2 over 1000 cycles give 500/300/200 and ignore the clock", () => {
-		const frozen = cycles({ a: 5, b: 3, c: 2 }, 1000, () => 0);
-		expect(tally(frozen)).toEqual({ a: 500, b: 300, c: 200 });
-		rmSync(dbFile);
-		const advancing = cycles({ a: 5, b: 3, c: 2 }, 1000, UNEVEN_STEP_SECONDS);
-		expect(advancing).toEqual(frozen);
-	}, 60_000);
+	test.each([
+		["4/3/2", { a: 4, b: 3, c: 2 }, 900, { a: 400, b: 300, c: 200 }],
+		["5/3/2", { a: 5, b: 3, c: 2 }, 1000, { a: 500, b: 300, c: 200 }],
+	])(
+		"weights %s over the given cycles keep their shares and ignore the clock",
+		(_label, weights, count, shares) => {
+			const frozen = cycles(weights, count, () => 0);
+			expect(tally(frozen)).toEqual(shares);
+			rmSync(dbFile);
+			const advancing = cycles(weights, count, UNEVEN_STEP_SECONDS);
+			expect(advancing).toEqual(frozen);
+		},
+		60_000,
+	);
 
 	test("the command line gives the same nine picks under a frozen and an advancing LAWMAN_NOW", () => {
 		const sequence = (nowFor: (i: number) => string) => {
@@ -189,7 +182,7 @@ describe("next", () => {
 				});
 				const name = must(r.out.split("\t")[0]);
 				picks.push(name);
-				openOrder(db, name, "patrol");
+				order(db, name, "patrol");
 				db.run(
 					"UPDATE dispatches SET outcome = 'silent' WHERE outcome IS NULL",
 				);
@@ -216,7 +209,7 @@ describe("next", () => {
 	test("a precinct with an open order of this role is skipped and the others move as if it were absent", () => {
 		addPrecincts({ a: 3, b: 2, c: 1 });
 		const db = open(dbFile);
-		openOrder(db, "a", "patrol");
+		order(db, "a", "patrol");
 		for (let i = 0; i < 4; i++) run(["next", "--role", "patrol"]);
 		const withOrder = credits();
 		db.close();
@@ -230,7 +223,7 @@ describe("next", () => {
 	test("an open order of another role does not exclude the precinct", () => {
 		addPrecincts({ a: 1 });
 		const db = open(dbFile);
-		openOrder(db, "a", "duty-desk");
+		order(db, "a", "duty-desk");
 		db.close();
 		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
 	});
@@ -238,9 +231,7 @@ describe("next", () => {
 	test("an open order for an issue does not exclude the precinct", () => {
 		addPrecincts({ a: 1 });
 		const db = open(dbFile);
-		db.run(
-			"INSERT INTO dispatches (at, precinct, role, issue) VALUES ('t', 'a', 'patrol', 5)",
-		);
+		order(db, "a", "patrol", { issue: 5 });
 		db.close();
 		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
 	});

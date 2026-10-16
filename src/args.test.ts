@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { check } from "./args";
+import { check, subcommand } from "./args";
 import { EXIT, Fail } from "./db";
 
 describe("argument validators", () => {
@@ -75,4 +75,24 @@ describe("argument validators", () => {
 			}
 		});
 	}
+});
+
+describe("subcommand", () => {
+	const add = () => "add";
+	const table = { add };
+
+	test("returns the handler and the arguments after the name", () => {
+		expect(subcommand(table, ["add", "--x", "1"], "t <add>")).toEqual({
+			run: add,
+			rest: ["--x", "1"],
+		});
+	});
+
+	test("rejects a missing, unknown or inherited name with the usage text", () => {
+		for (const args of [[], ["bogus"], ["toString"]]) {
+			expect(() => subcommand(table, args, "t <add>")).toThrow(
+				new Fail(EXIT.USAGE, "usage: journal t <add>"),
+			);
+		}
+	});
 });

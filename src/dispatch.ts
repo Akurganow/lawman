@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { check, count, parseArgs, pick, usage } from "./args";
+import { check, count, parseArgs, subcommand } from "./args";
 import {
 	CLAIM_TTL_MS,
 	EXIT,
@@ -83,14 +83,6 @@ function dispatchTake(db: Database, args: string[]): void {
 		);
 }
 
-function closeOrder(db: Database, id: number, outcome: string): void {
-	const changed = db.run(
-		"UPDATE dispatches SET outcome = ?, closed_at = ? WHERE id = ? AND outcome IS NULL",
-		[outcome, now(), id],
-	).changes;
-	if (changed === 0) throw new Fail(EXIT.USAGE, `no open order with id ${id}`);
-}
-
 const DISPATCH_COMMANDS: Record<
 	string,
 	(db: Database, args: string[]) => void
@@ -100,9 +92,7 @@ const DISPATCH_COMMANDS: Record<
 };
 
 export function dispatch(args: string[]): void {
-	const [sub, ...rest] = args;
-	const run = pick(DISPATCH_COMMANDS, sub);
-	if (run === undefined) throw usage(DISPATCH_USAGE);
+	const { run, rest } = subcommand(DISPATCH_COMMANDS, args, DISPATCH_USAGE);
 	withDb((db) => run(db, rest));
 }
 
@@ -145,7 +135,14 @@ function tickEnd(db: Database, args: string[]): void {
 			[now(), outcome, report, precinctName, department, id],
 		).changes;
 		if (changed === 0) throw new Fail(EXIT.USAGE, `no open tick with id ${id}`);
-		if (order !== null) closeOrder(db, order, outcome);
+		if (order !== null) {
+			const closed = db.run(
+				"UPDATE dispatches SET outcome = ?, closed_at = ? WHERE id = ? AND outcome IS NULL",
+				[outcome, now(), order],
+			).changes;
+			if (closed === 0)
+				throw new Fail(EXIT.USAGE, `no open order with id ${order}`);
+		}
 	});
 }
 
@@ -155,8 +152,6 @@ const TICK_COMMANDS: Record<string, (db: Database, args: string[]) => void> = {
 };
 
 export function tick(args: string[]): void {
-	const [sub, ...rest] = args;
-	const run = pick(TICK_COMMANDS, sub);
-	if (run === undefined) throw usage(TICK_USAGE);
+	const { run, rest } = subcommand(TICK_COMMANDS, args, TICK_USAGE);
 	withDb((db) => run(db, rest));
 }

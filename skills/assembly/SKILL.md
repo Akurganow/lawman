@@ -58,14 +58,6 @@ deliver: <delivery platform>
 
 Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys.
 
-## Reference files
-
-- `references/install.md`: install steps 1 to 10, in order. The roles mode runs steps 9 and 10 only.
-- `references/precinct.md`: add a precinct, re-check one, or raise a weight.
-- `references/update.md`: move the installation to a new release tag, with rollback.
-
-Each reference names its own stop conditions. Follow them in order.
-
 ## Finish
 
 End each mode with a short summary. List what changed in the installation. List what the developer still must do, one item per line.
