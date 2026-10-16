@@ -110,7 +110,7 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|court|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
+The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`.
 
 When `need` is not `prosecutor`, or `state` is `CLOSED`, the order is stale. End the tick with `silent` and the report `Order stale: <the line>`.
 
