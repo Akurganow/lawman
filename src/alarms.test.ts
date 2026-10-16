@@ -105,7 +105,7 @@ describe("alarms and status", () => {
 					"patrol",
 					later(6),
 					later(6, 60),
-					"skipped-no-departments",
+					"skipped-no-constitution",
 					"a",
 				),
 			);

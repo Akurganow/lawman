@@ -194,7 +194,7 @@ describe("legacy fingerprints", () => {
 		expect(m.fields).toEqual({
 			role: "patrol",
 			stage: "lead",
-			department: "slop",
+			department: "text-residue",
 			id: "tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
 			legacy: "police-fingerprint",
 			at: "2026-10-14T09:00:00Z",
@@ -206,7 +206,7 @@ describe("legacy fingerprints", () => {
 		expect(m.fields).toEqual({
 			role: "patrol",
 			stage: "lead",
-			department: "agent",
+			department: "agent-config",
 			legacy: "police-fingerprint",
 			at: "2026-10-14T09:00:00Z",
 		});
@@ -215,7 +215,7 @@ describe("legacy fingerprints", () => {
 	test("#21 role-fingerprint becomes a lead", () => {
 		const m = must(canonical(21)[0]);
 		expect(m.fields).toMatchObject({
-			department: "slop",
+			department: "text-residue",
 			id: "plugins/triz::principles-subitems-attributed-to-altshuller::lying",
 			legacy: "slop-police-fingerprint",
 		});
@@ -224,7 +224,7 @@ describe("legacy fingerprints", () => {
 	test("#22 repo-audit-routine gives department repo and no id", () => {
 		const m = must(canonical(22)[0]);
 		expect(m.fields).toMatchObject({
-			department: "repo",
+			department: "claims",
 			legacy: "repo-audit-routine",
 		});
 		expect(m.fields).not.toHaveProperty("id");
@@ -237,18 +237,29 @@ describe("legacy fingerprints", () => {
 
 	test("the department mapping", () => {
 		const dept = (line: string) => legacyLine(line)[0]?.fields.department;
-		expect(
-			dept("<!-- police-fingerprint: abstraction-police a/b::c::d -->"),
-		).toBe("abstractions");
-		expect(dept("<!-- abstraction-police-fingerprint: a/b::c::d -->")).toBe(
-			"abstractions",
-		);
+		const RENAMED = [
+			["abstraction", "abstractions"],
+			["slop", "text-residue"],
+			["sanity", "proportion"],
+			["repo", "claims"],
+			["test", "tests"],
+			["dependency", "dependencies"],
+			["agent", "agent-config"],
+		] as const;
+		for (const [legacy, renamed] of RENAMED) {
+			expect(
+				dept(`<!-- police-fingerprint: ${legacy}-police a/b::c::d -->`),
+			).toBe(renamed);
+			expect(dept(`<!-- police-fingerprint: ${legacy} a/b::c::d -->`)).toBe(
+				renamed,
+			);
+			expect(dept(`<!-- ${legacy}-police-fingerprint: a/b::c::d -->`)).toBe(
+				renamed,
+			);
+		}
 		expect(dept("<!-- police-fingerprint: evals x -->")).toBe("evals");
 		expect(dept("<!-- evals-fingerprint: x -->")).toBe("evals");
-		expect(dept("<!-- police-fingerprint: dependency-police x -->")).toBe(
-			"dependency",
-		);
-		expect(dept("<!-- repo-audit-routine:x -->")).toBe("repo");
+		expect(dept("<!-- repo-audit-routine:x -->")).toBe("claims");
 	});
 
 	test("a bad department or a malformed line is dropped", () => {
@@ -341,9 +352,9 @@ describe("legacy fingerprints", () => {
 
 		test("leads lists the open ones with their departments and ids, seen finds the closed one", () => {
 			expect(legacyRows(rows(["leads", PRECINCT]))).toEqual([
-				"19|OPEN||slop|tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
-				"20|OPEN||agent|",
-				"22|OPEN||repo|",
+				"19|OPEN||text-residue|tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
+				"20|OPEN||agent-config|",
+				"22|OPEN||claims|",
 			]);
 			expect(
 				run([
@@ -356,12 +367,12 @@ describe("legacy fingerprints", () => {
 		});
 
 		test("cap counts the open legacy leads of a department", () => {
-			expect(run(["cap", PRECINCT, "--department", "slop"]).out.trim()).toBe(
-				"cap=3 open=1",
-			);
-			expect(run(["cap", PRECINCT, "--department", "agent"]).out.trim()).toBe(
-				"cap=3 open=1",
-			);
+			expect(
+				run(["cap", PRECINCT, "--department", "text-residue"]).out.trim(),
+			).toBe("cap=3 open=1");
+			expect(
+				run(["cap", PRECINCT, "--department", "agent-config"]).out.trim(),
+			).toBe("cap=3 open=1");
 		});
 
 		test("seen finds a legacy id by its symbol", () => {

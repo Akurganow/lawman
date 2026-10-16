@@ -70,6 +70,12 @@ const LEGACY_FORMS: {
 const POLICE_SUFFIX = /-police$/;
 const DEPARTMENT_RENAMES: Record<string, string> = {
 	abstraction: "abstractions",
+	slop: "text-residue",
+	sanity: "proportion",
+	repo: "claims",
+	test: "tests",
+	dependency: "dependencies",
+	agent: "agent-config",
 };
 
 function encodeBytes(bytes: Uint8Array): string {
