@@ -8,7 +8,7 @@ and sweeps its subject. One department covers one class of defect. The page
 says only what to look for. Forensics, filing, caps and markers come from the
 law. Investigation works out a defect's cause. The page never does.
 
-A page that violates this contract is not attached.
+A page that violates this contract is not in the rotation.
 
 ## Frontmatter
 
@@ -39,15 +39,36 @@ A section with nothing to say contains the single word `none`.
 deciding test: one question whose answer separates a finding from a non-finding.
 
 **Kinds.** A Markdown table with the columns `kind`, `meaning`, `measurement`.
-One row per kind. A kind is a lowercase word. The measurement says what to
+One row per kind. A kind matches `[a-z][a-z0-9-]*`. The measurement says what to
 quote or count to show the kind. A kind names a symptom, never a tool.
 
-**Where to look.** The subject in terms of the tree. Cover definitions, entry
-points, indirection and near-duplicates, or whatever fits the class. Use no
-paths and no tool names of a specific repository. A page is read in many
-repositories.
+A kind that rests on an external source names its hook in the tree. The hook is
+the tree text that makes the source worth reading. Such a kind also names the
+`Source:` line its lead carries, in one of these two shapes:
 
-**Not findings.** What the page excludes beyond the law's list. It also states
+- `Source: advisories <ecosystem> <package>@<version>`
+- `Source: releases <owner>/<repo>`
+
+Each value comes from the tree and matches its class. A value outside its
+class is not used.
+
+| value | class |
+| :-- | :-- |
+| `<ecosystem>` | `^[a-z]+$` |
+| `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
+| `<version>` | `^[A-Za-z0-9._-]+$` |
+| `<owner>` | `^[A-Za-z0-9-]+$` |
+| `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
+
+**Where to look.** The subject in terms of the tree. Cover definitions, entry
+points, indirection and near-duplicates, or whatever fits the class. A shared
+page uses no paths and no tool names of a specific repository, because it is
+read in many repositories. A shared page lives in Lawman or in the installation.
+A page in a precinct's own `.lawman/departments/` may name that precinct's paths
+and tools.
+
+**Not findings.** What the page excludes beyond what the law already excludes:
+the Fence, Not judged and every recorded reason. It also states
 the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed.
 
@@ -56,6 +77,12 @@ command run on a unit known to be in use, with both outputs quoted. The classes
 of hidden callers that a plain text search misses. Describe each class by
 mechanism. Name no language. The page also tells the patrol to attack its own
 claim once and drop it when unsure.
+
+A page whose department can find a live secret names the check in one paragraph
+of Proof. The paragraph starts with the words `Alarm check:`. It holds a
+placeholder example that the search must find, as the positive control. Every
+command of it that can print a value ends in `cut`, so the value never reaches
+the output.
 
 **Anchors.** What the scores mean, in words.
 
@@ -66,7 +93,7 @@ claim once and drop it when unsure.
 **Judged by.** The role of the precinct document that tries this department's
 findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
-constitution.
+constitution. A department with no line is judged by none.
 
 **Lead body.** The sections of a filed lead's body, in order. The two first
 lines, `Analysed commit` and `Department`, belong to the law. The sections
@@ -78,6 +105,17 @@ risk` line reads.
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
 volatile. A line number, a count or a commit never enters the identity.
+
+## Rotation
+
+A department is in a precinct's rotation when its name meets one of these
+tests:
+
+- A page with that name lies in Lawman's `departments/`.
+- A line of the precinct's Departments section names it.
+
+A page in the installation or in the precinct that neither test admits is not in
+the rotation. Name resolution then decides which page answers the name.
 
 ## Name resolution
 
@@ -95,9 +133,10 @@ Rules:
 
 ## Incomplete pages
 
-The assembly runs `lint-page department` on the resolved page. A page that
-fails is not attached. The assembly names the first missing or misplaced
-heading. A name in the frontmatter that differs from the file name fails too.
+The duty desk runs `lint-page department` on the resolved page. A page that
+fails is out of the rotation for that tick. The check names the first missing or
+misplaced heading, and the duty desk reports it. A name in the frontmatter that
+differs from the file name fails too.
 
 ## Example
 

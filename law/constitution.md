@@ -43,7 +43,8 @@ The quoted heading narrows the read to one section.
 
 ### Departments
 
-The departments attached to this repository. One per line:
+Every department page in Lawman's `departments/` is in this repository's rotation with no line.
+A line names a department of this repository. It may also name the document that judges a department of Lawman. One per line:
 
 - `- <name>: judged by <path>`
 - `- <name>: judged by none`
