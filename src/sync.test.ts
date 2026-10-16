@@ -37,15 +37,15 @@ describe("sync", () => {
 		markers: rows("SELECT * FROM markers ORDER BY issue, ord"),
 		synced: rows("SELECT synced_at FROM precincts"),
 	});
-	const mine = (i: (typeof issues)[number]) =>
-		i.author.login.toLowerCase() === TRUSTED;
+	const human = (i: (typeof issues)[number]) =>
+		i.author.is_bot !== true && !i.author.login.startsWith("app/");
 	const lines = (i: (typeof issues)[number]) =>
 		[i.body, ...i.comments.map((c) => c.body)].flatMap((t) => t.split("\n"));
 
 	beforeEach(() => addPrecincts({ [PRECINCT]: 1 }));
 
 	test("a fixture sync prints counts that match the fixture", () => {
-		const kept = issues.filter(mine);
+		const kept = issues.filter(human);
 		const found = kept.map((i) => collectIssueMarkers(i, TRUSTED));
 		const markers = found.reduce((n, f) => n + f.markers.length, 0);
 		const legacy = found
@@ -79,6 +79,7 @@ describe("sync", () => {
 			title: "Later markers never displace the lead origin",
 			created_at: "2026-10-14T09:00:00Z",
 			closed_at: "2026-10-15T08:00:00Z",
+			replied_at: null,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
@@ -206,21 +207,38 @@ describe("sync", () => {
 		expect(snapshot()).toEqual(before);
 	});
 
-	test("issues by another author are skipped and counted", () => {
+	test("issues of other humans are stored and their markers do not count", () => {
 		const foreign = {
 			number: 50,
 			state: "OPEN",
 			title: "[Lead] foreign",
-			author: { login: "bystander-fictional" },
+			author: { login: "bystander-fictional", is_bot: false },
 			body: lead(),
 			comments: [],
 		};
+		const r = sync([issues[0], foreign]);
+		expect(r.out.trim()).toBe("issues=2 leads=1 markers=2 invalid=1 skipped=0");
+		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
+			{ issue: 1 },
+			{ issue: 50 },
+		]);
+		expect(rows("SELECT count(*) AS n FROM markers WHERE issue = 50")).toEqual([
+			{ n: 0 },
+		]);
+	});
+
+	test.each([
+		["a bot flagged by is_bot", { login: "dependabot", is_bot: true }],
+		["an app login", { login: "app/renovate", is_bot: false }],
+		["an app login without the flag", { login: "app/renovate" }],
+		["no author", null],
+		["an empty login", { login: "" }],
+	])("an issue by %s is skipped and counted", (_name, author) => {
 		const r = sync([
 			issues[0],
-			foreign,
-			{ number: 51, state: "OPEN", title: "ghost", author: null },
+			{ number: 51, state: "OPEN", title: "x", author },
 		]);
-		expect(r.out.trim()).toBe("issues=1 leads=1 markers=2 invalid=0 skipped=2");
+		expect(r.out.trim()).toBe("issues=1 leads=1 markers=2 invalid=0 skipped=1");
 		expect(rows("SELECT issue FROM issues")).toEqual([{ issue: 1 }]);
 	});
 
@@ -237,7 +255,7 @@ describe("sync", () => {
 	test("status counts the synced leads by department", () => {
 		sync(issues);
 		const want = new Map<string, number>();
-		for (const i of issues.filter(mine).filter((x) => x.state === "OPEN")) {
+		for (const i of issues.filter(human).filter((x) => x.state === "OPEN")) {
 			const dept = collectIssueMarkers(i, TRUSTED).leadOrigin?.marker.fields
 				.department;
 			if (dept !== undefined) want.set(dept, (want.get(dept) ?? 0) + 1);

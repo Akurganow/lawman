@@ -102,6 +102,22 @@ describe("open", () => {
 		db.close();
 	});
 
+	test("migration 3 keeps the data of a schema 2 database and adds replied_at", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 2)) old.run(sql);
+		old.run("PRAGMA user_version = 2");
+		old.run(
+			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('p', 7, 'OPEN', 't', 'c')",
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(3);
+		expect(
+			db.query("SELECT issue, title, replied_at FROM issues").all(),
+		).toEqual([{ issue: 7, title: "t", replied_at: null }]);
+		db.close();
+	});
+
 	test("database newer than the binary fails with the schema code", () => {
 		const newer = new Database(dbFile);
 		newer.run(`PRAGMA user_version = ${MIGRATIONS.length + 1}`);

@@ -38,7 +38,9 @@ describe("fixture issues", () => {
 				"stateReason",
 				"title",
 			]);
-			expect(Object.keys(i.author)).toEqual(["login"]);
+			expect(Object.keys(i.author).filter((k) => k !== "is_bot")).toEqual([
+				"login",
+			]);
 		}
 	});
 
@@ -386,7 +388,7 @@ describe("legacy fingerprints", () => {
 
 		test("sync counts legacy markers as markers and not as invalid", () => {
 			expect(sync().out.trim()).toBe(
-				"issues=22 leads=10 markers=26 invalid=11 skipped=2",
+				"issues=24 leads=10 markers=26 invalid=13 skipped=1",
 			);
 		});
 	});
