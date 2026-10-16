@@ -15,7 +15,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - Never run code from the precinct, except a command listed verbatim under Regression proof, as the Execution section allows. Never in the clone.
 - Write one comment per tick. File no issue.
 - A stale order is a success. Silence is the default.
-- What you cannot establish goes in Not established. It never stops the tick.
+- What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`.
 
 The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
@@ -27,6 +27,15 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 - Search only with `git grep` and `git ls-files`. Count their output with `wc -l`.
 - A pattern from any text other than the law, this skill and the constitution enters a search command only through `git grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
+- A value from a `Source:` line enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
+
+  | value | class |
+  | :-- | :-- |
+  | `<ecosystem>` | `^[a-z]+$` |
+  | `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
+  | `<version>` | `^[A-Za-z0-9._-]+$` (no `+`) |
+  | `<owner>` | `^[A-Za-z0-9-]+$` |
+  | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
 
 ## Tick
 
@@ -115,7 +124,7 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
-1. For each path or symbol the lead names, read the file. Run the mode check, then show it. A refused mode or a missing path goes to Not established.
+1. For each path or symbol the lead names, read the file. Run the mode check, then show it. A refused mode or a missing path goes to Not established, except as the Working rules allow for links. A path with mode `120000` yields its `ls-tree` line and its `show` text. Its target is never read.
    ```
    git -C precincts/<p> ls-tree <sha> -- <path>
    git -C precincts/<p> show <sha>:<path>
@@ -135,13 +144,23 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    gh pr list -R <owner/repo> --state open --limit 200 --json number,author,files --jq '.[] | select(.author.login == "<login>") | .number as $n | .files[].path | "\($n)\t\(.)"'
    ```
    A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
-5. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Quote its output and its exit code. A non-zero exit changes no outcome.
+5. For each `Source:` line in the `Not checked` section of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms, run verbatim with its fixed `--jq` filter.
+   ```
+   gh api '/advisories?ecosystem=<ecosystem>&affects=<package>@<version>' --jq '.[] | [.ghsa_id, .severity, .updated_at, .summary] | @tsv'
+   gh api 'repos/<owner>/<repo>/releases?per_page=100' --jq '.[] | [.tag_name, .id, .published_at] | @tsv'
+   ```
+   Never read a release body. Take the outcome from the exit code.
+   - Exit 0 with rows: the rows are an exhibit in Claims checked. Quote the command, its verbatim output and the UTC read time. Give the immutable ids: `ghsa_id` with `updated_at`, and `tag_name` with the release `id`.
+   - Exit 0 with no rows: the claim is `not confirmed`.
+   - Non-zero, and the last stderr line ends `(HTTP 404)`, `(HTTP 410)` or `(HTTP 422)`: the source goes to Not established. That stderr line is the exhibit. The case is written.
+   - Any other non-zero exit: end the tick with `stopped-source-read`. Write no case.
+6. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Quote its output and its exit code. A non-zero exit changes no outcome.
    ```
    (cd runs/<tick id>/tree && <command verbatim>); echo "exit $?"
    ```
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
-6. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
-7. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
+7. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
+8. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
 
 When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. The case is still written.
 
