@@ -28,7 +28,7 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 1. Run `bin/journal precinct list`, then `git -C precincts/<name> fetch origin` for each precinct, and stop if a fetch fails.
 2. Run `git -C precincts/<name> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution` for each precinct.
 3. When the file's `contract_version` is lower than the new contract version `<n>`, draft an amendment.
-4. Draft the amendment with steps 6 to 25 of the add path in `references/precinct.md`, on the branch `lawman/constitution-v<n>`, and never merge its pull request.
+4. Draft the amendment with steps 6 to 26 of the add path in `references/precinct.md`, on the branch `lawman/constitution-v<n>`, and never merge its pull request.
 5. Tell the developer that the precinct's ticks end with `skipped-contract-version` until the amendment merges.
 6. When lint fails for another reason, show the reasons. The precinct's ticks then end with `skipped-bad-constitution`.
 
