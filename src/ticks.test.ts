@@ -1,35 +1,17 @@
 import { describe, expect, test } from "bun:test";
-import { MIGRATIONS, open } from "./db";
 import {
 	BASE,
 	call,
-	dbFile,
 	later,
 	precinct,
 	rows,
 	seed,
-	tables,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
 
-describe("ticks and pauses", () => {
-	describe("migration 2", () => {
-		test("creates pauses and allows only one open pause", () => {
-			const db = open(dbFile);
-			expect(MIGRATIONS).toHaveLength(2);
-			expect(tables(db)).toContain("pauses");
-			db.run("INSERT INTO pauses (started_at) VALUES ('a')");
-			expect(() =>
-				db.run("INSERT INTO pauses (started_at) VALUES ('b')"),
-			).toThrow();
-			db.run("UPDATE pauses SET ended_at = 'c'");
-			db.run("INSERT INTO pauses (started_at) VALUES ('d')");
-			db.close();
-		});
-	});
-
+describe("ticks", () => {
 	describe("tick", () => {
 		test("start prints the id and stores the clock time", () => {
 			const r = call(BASE, ["tick", "start", "--role", "patrol"]);
@@ -190,43 +172,6 @@ describe("ticks and pauses", () => {
 			];
 			for (const args of bad)
 				expect([args, call(BASE, args).code]).toEqual([args, 1]);
-		});
-	});
-
-	describe("pause", () => {
-		test("set opens a pause, clear closes it, and a new one can follow", () => {
-			expect(call(BASE, ["pause", "set"])).toMatchObject({ code: 0, out: "" });
-			expect(call(later(1), ["pause", "clear"])).toMatchObject({
-				code: 0,
-				out: "",
-			});
-			expect(call(later(2), ["pause", "set"]).code).toBe(0);
-			expect(
-				rows("SELECT started_at, ended_at FROM pauses ORDER BY id"),
-			).toEqual([
-				{ started_at: BASE, ended_at: later(1) },
-				{ started_at: later(2), ended_at: null },
-			]);
-		});
-
-		test("a second set and a clear without an open pause exit 1", () => {
-			expect(call(BASE, ["pause", "clear"]).code).toBe(1);
-			call(BASE, ["pause", "set"]);
-			const twice = call(later(1), ["pause", "set"]);
-			expect(twice.code).toBe(1);
-			expect(twice.err.trim().split("\n")).toHaveLength(1);
-			call(later(2), ["pause", "clear"]);
-			expect(call(later(3), ["pause", "clear"]).code).toBe(1);
-		});
-
-		test("bad arguments exit 1", () => {
-			for (const args of [
-				["pause"],
-				["pause", "bogus"],
-				["pause", "set", "extra"],
-			]) {
-				expect([args, call(BASE, args).code]).toEqual([args, 1]);
-			}
 		});
 	});
 });

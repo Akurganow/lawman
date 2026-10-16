@@ -7,7 +7,7 @@ import { dispatch, tick } from "./dispatch";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand } from "./precedent";
-import { next, pause, precinct, role } from "./precincts";
+import { next, precinct, role } from "./precincts";
 import { sync } from "./sync";
 
 export { check } from "./args";
@@ -54,7 +54,6 @@ export const COMMANDS: Record<string, Handler> = {
 	next,
 	dispatch,
 	tick,
-	pause,
 	alarm,
 	status,
 	sync,

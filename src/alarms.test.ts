@@ -270,55 +270,8 @@ describe("alarms and status", () => {
 		});
 	});
 
-	describe("pause window", () => {
-		const stuck = () =>
-			seed((db) => {
-				precinct(db, "a");
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role) VALUES (?, 'a', 'patrol')",
-					[BASE],
-				);
-				db.run("INSERT INTO roles (name, every_minutes) VALUES ('patrol', 10)");
-				tick(db, "patrol", BASE, later(0, 60), "silent");
-				tick(db, "duty-desk", BASE, null, null);
-			});
-
-		test("an open pause freezes the age of orders, hung ticks and silent roles", () => {
-			stuck();
-			call(later(0, 600), ["pause", "set"]);
-			expect(alarm(later(100)).out).toBe("");
-			expect(alarm(later(1000)).out).toBe("");
-		});
-
-		test("a closed pause removes its duration from the age", () => {
-			stuck();
-			call(later(0, 600), ["pause", "set"]);
-			call(later(100), ["pause", "clear"]);
-			expect(alarm(later(100)).out).toBe("");
-			expect(alarm(later(147, 3000)).out).not.toContain("order-untaken");
-			expect(alarm(later(147, 3001)).out).toContain("order-untaken");
-		});
-
-		test("tick-failing and broken-lead ignore the pause", () => {
-			seed((db) => {
-				for (let i = 0; i < 3; i++)
-					tick(db, "patrol", later(i), later(i, 60), "failed", "a");
-				db.run(
-					"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', 1, 'OPEN', '[Lead] x', ?)",
-					[BASE],
-				);
-			});
-			call(later(0), ["pause", "set"]);
-			const kinds = alarm(later(5))
-				.out.trim()
-				.split("\n")
-				.map((l) => l.split(" ")[1]);
-			expect(kinds.sort()).toEqual(["broken-lead", "tick-failing"]);
-		});
-	});
-
 	describe("status", () => {
-		test("prints open orders, last ticks, alarms, leads and the pause", () => {
+		test("prints open orders, last ticks, alarms, and leads", () => {
 			seed((db) => {
 				precinct(db, "alpha");
 				precinct(db, "beta");
@@ -352,7 +305,6 @@ describe("alarms and status", () => {
 				marker(4, "search");
 			});
 			alarm(later(60));
-			call(later(61), ["pause", "set"]);
 			const r = call(later(62), ["status"]);
 			expect(r.code).toBe(0);
 			const lines = r.out.trim().split("\n");
@@ -370,7 +322,6 @@ describe("alarms and status", () => {
 			).toEqual(["alarm order-untaken 1", "alarm tick-hung 2"]);
 			expect(lines).toContain("leads billing 2");
 			expect(lines).toContain("leads search 1");
-			expect(lines).toContain(`pause since ${later(61)}`);
 		});
 
 		test("prints no precincts and zero leads on an empty journal and rejects arguments", () => {
@@ -378,7 +329,6 @@ describe("alarms and status", () => {
 			const r = call(BASE, ["status"]);
 			expect(r.out).not.toContain("precinct ");
 			expect(r.out).toContain("leads 0");
-			expect(r.out).not.toContain("pause");
 			expect(call(BASE, ["status", "x"]).code).toBe(1);
 		});
 	});

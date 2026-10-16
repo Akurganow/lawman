@@ -1,14 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { check, count, parseArgs, pick, usage } from "./args";
-import {
-	EXIT,
-	Fail,
-	inTransaction,
-	isConstraint,
-	now,
-	out,
-	withDb,
-} from "./db";
+import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
 
 const PRECINCT_USAGE =
 	"precinct <add <name> --repo <owner/repo> --weight <n>|set <name> --weight <n>|list>";
@@ -139,30 +131,4 @@ export function next(args: string[]): void {
 		const pick = pickNext(db, roleName);
 		if (pick) out(pick.name, pick.repo);
 	});
-}
-
-const PAUSE_USAGE = "pause <set|clear>";
-
-function pauseSet(db: Database): void {
-	try {
-		db.run("INSERT INTO pauses (started_at) VALUES (?)", [now()]);
-	} catch (e) {
-		if (!isConstraint(e)) throw e;
-		throw new Fail(EXIT.USAGE, "a pause is already open");
-	}
-}
-
-function pauseClear(db: Database): void {
-	if (
-		db.run("UPDATE pauses SET ended_at = ? WHERE ended_at IS NULL", [now()])
-			.changes === 0
-	) {
-		throw new Fail(EXIT.USAGE, "no open pause");
-	}
-}
-
-export function pause(args: string[]): void {
-	if (args.length !== 1 || (args[0] !== "set" && args[0] !== "clear"))
-		throw usage(PAUSE_USAGE);
-	withDb((db) => (args[0] === "set" ? pauseSet(db) : pauseClear(db)));
 }

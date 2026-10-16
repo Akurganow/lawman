@@ -20,26 +20,11 @@ const TICK_FAILING_RUN = 3;
 const ALARM_REPEAT_MS = 24 * HOUR_MS;
 
 type Candidate = { kind: string; ref: string; detail: string };
-type Pause = { started_at: string; ended_at: string | null };
-type Clock = { nowMs: number; pauses: Pause[] };
-
-function pausedMs(clock: Clock, sinceMs: number): number {
-	return clock.pauses.reduce((sum, p) => {
-		const end =
-			p.ended_at === null
-				? clock.nowMs
-				: Math.min(Date.parse(p.ended_at), clock.nowMs);
-		return sum + Math.max(0, end - Math.max(Date.parse(p.started_at), sinceMs));
-	}, 0);
+function ageMs(nowMs: number, since: string): number {
+	return nowMs - Date.parse(since);
 }
 
-// time spent paused does not age anything
-function ageMs(clock: Clock, since: string): number {
-	const sinceMs = Date.parse(since);
-	return clock.nowMs - sinceMs - pausedMs(clock, sinceMs);
-}
-
-function orderUntaken(db: Database, clock: Clock): Candidate[] {
+function orderUntaken(db: Database, nowMs: number): Candidate[] {
 	const open = db
 		.query(
 			"SELECT id, precinct, role, at, taken_at FROM dispatches WHERE outcome IS NULL",
@@ -54,7 +39,7 @@ function orderUntaken(db: Database, clock: Clock): Candidate[] {
 	const limit = (o: { taken_at: string | null }) =>
 		ORDER_UNTAKEN_MS + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
 	return open
-		.filter((o) => ageMs(clock, o.taken_at ?? o.at) > limit(o))
+		.filter((o) => ageMs(nowMs, o.taken_at ?? o.at) > limit(o))
 		.map((o) => ({
 			kind: "order-untaken",
 			ref: String(o.id),
@@ -62,7 +47,7 @@ function orderUntaken(db: Database, clock: Clock): Candidate[] {
 		}));
 }
 
-function tickHung(db: Database, clock: Clock): Candidate[] {
+function tickHung(db: Database, nowMs: number): Candidate[] {
 	const open = db
 		.query("SELECT id, role, started_at FROM ticks WHERE ended_at IS NULL")
 		.all() as {
@@ -71,7 +56,7 @@ function tickHung(db: Database, clock: Clock): Candidate[] {
 		started_at: string;
 	}[];
 	return open
-		.filter((t) => ageMs(clock, t.started_at) > TICK_HUNG_MS)
+		.filter((t) => ageMs(nowMs, t.started_at) > TICK_HUNG_MS)
 		.map((t) => ({
 			kind: "tick-hung",
 			ref: String(t.id),
@@ -79,7 +64,7 @@ function tickHung(db: Database, clock: Clock): Candidate[] {
 		}));
 }
 
-function roleSilent(db: Database, clock: Clock): Candidate[] {
+function roleSilent(db: Database, nowMs: number): Candidate[] {
 	const latest = db
 		.query(
 			`SELECT r.name, r.every_minutes, max(t.started_at) AS last FROM roles r
@@ -91,7 +76,7 @@ function roleSilent(db: Database, clock: Clock): Candidate[] {
 	return latest
 		.filter(
 			(r) =>
-				ageMs(clock, r.last) >
+				ageMs(nowMs, r.last) >
 				ROLE_SILENT_INTERVALS * r.every_minutes * MINUTE_MS,
 		)
 		.map((r) => ({
@@ -145,7 +130,7 @@ const DETECTORS = [
 	roleSilent,
 	tickFailing,
 	brokenLead,
-] as ((db: Database, clock: Clock) => Candidate[])[];
+] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
 	id: number;
@@ -164,10 +149,7 @@ function reconcileAlarms(
 	repeat: boolean,
 ): string[] {
 	const nowMs = Date.parse(stamp);
-	const pauses = db
-		.query("SELECT started_at, ended_at FROM pauses")
-		.all() as Pause[];
-	const wanted = DETECTORS.flatMap((detect) => detect(db, { nowMs, pauses }));
+	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
 	const open = db
 		.query(
 			"SELECT id, kind, ref, detail, notified_at FROM alarms WHERE cleared_at IS NULL ORDER BY id",
@@ -279,23 +261,10 @@ function statusLeads(db: Database): string[] {
 		: rows.map((r) => `leads ${r.department ?? "-"} ${r.n}`);
 }
 
-function statusPause(db: Database): string[] {
-	const open = db
-		.query("SELECT started_at FROM pauses WHERE ended_at IS NULL")
-		.get() as { started_at: string } | null;
-	return open ? [`pause since ${open.started_at}`] : [];
-}
-
 export function status(args: string[]): void {
 	if (args.length > 0) throw usage("status");
 	withDb((db) => {
-		const sections = [
-			statusOrders,
-			statusTicks,
-			statusAlarms,
-			statusLeads,
-			statusPause,
-		];
+		const sections = [statusOrders, statusTicks, statusAlarms, statusLeads];
 		for (const section of sections) for (const line of section(db)) out(line);
 	});
 }
