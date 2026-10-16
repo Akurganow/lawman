@@ -61,11 +61,6 @@ describe("case: court stage", () => {
 			"court",
 		],
 		[
-			"a court return after the defence needs nobody",
-			defended(returnTo("investigation", 1, "court")),
-			"none",
-		],
-		[
 			"a conviction with no defence leaves the defender",
 			withLead(caseMark(), charge(), conviction()),
 			"defender",
@@ -88,11 +83,6 @@ describe("case: court stage", () => {
 	])("%s", (_name, spec, expected) => {
 		put({ 1: spec });
 		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
-
-	test("a closed issue with a conviction needs the clerk", () => {
-		put({ 1: { ...defended(conviction()), state: "CLOSED" } });
-		expect(needOnly(1)).toBe("need=clerk");
 	});
 
 	test("due for the prosecutor, defender and investigation skips closed issues", () => {

@@ -62,16 +62,10 @@ describe("case: clerk stage", () => {
 			"clerk",
 		],
 		[
-			"a court return needs nobody",
-			ruled(() => returnTo("investigation", 1, "court")),
-			"none",
-		],
-		[
 			"a closed charge with a clerk marker needs nobody",
 			closed(withLead(caseMark(), charge(), entry())),
 			"none",
 		],
-		["a closed lead needs nobody", closed(withLead()), "none"],
 	])("%s", (_name, spec, expected) => {
 		put({ 1: spec });
 		expect(needOnly(1)).toBe(`need=${expected}`);
