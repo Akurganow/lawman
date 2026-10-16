@@ -66,7 +66,7 @@ export function needOf(state: string, markers: CaseMarker[]): Need {
 	return state === "CLOSED" && need !== "clerk" ? "none" : need;
 }
 
-function markersOf(db: Database, precinct: string, issue: number) {
+export function markersOf(db: Database, precinct: string, issue: number) {
 	return (
 		db
 			.query(

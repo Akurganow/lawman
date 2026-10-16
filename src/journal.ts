@@ -4,6 +4,7 @@ import { pick } from "./args";
 import { caseCommand, dueCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { dispatch, tick } from "./dispatch";
+import { intakeCommand } from "./intake";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand } from "./precedent";
@@ -30,6 +31,7 @@ export const COMMANDS: Record<string, Handler> = {
 	last,
 	case: caseCommand,
 	due: dueCommand,
+	intake: intakeCommand,
 	"lint-body": lintBodyCommand,
 	"lint-page": lintPageCommand,
 	precedent: precedentCommand,
