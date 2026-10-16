@@ -31,7 +31,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 2
+   bin/journal probe --schema 3
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -70,7 +70,7 @@ Run the "Read the stage" section.
 
 When `need` is not `prosecutor`, or `state` is `CLOSED`, the order is stale. End the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
+Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 
 ### Step 5: read the rules
 
@@ -88,6 +88,13 @@ gh issue view <n> -R <owner/repo> --json title,body,author,comments,state
 A failed command gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+
+When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
+```
+gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
+```
+
+A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 

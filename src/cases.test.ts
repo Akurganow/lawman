@@ -59,7 +59,7 @@ describe("case: stage", () => {
 	test("a closed issue needs nobody", () => {
 		put({ 1: { state: "CLOSED", body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=none round=1 returned=- department=core sha=- state=CLOSED",
+			"need=none round=1 returned=- department=core sha=- state=CLOSED lead=body related=-",
 		);
 	});
 
@@ -103,14 +103,14 @@ describe("case: round, department, sha", () => {
 	test("the line carries the department of the lead origin and the sha of the newest case", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), caseMark()]] } });
 		expect(need(1)).toBe(
-			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN`,
+			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN lead=body related=-`,
 		);
 	});
 
 	test("without a case the sha is a dash", () => {
 		put({ 1: { body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=core sha=- state=OPEN",
+			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=-",
 		);
 	});
 });

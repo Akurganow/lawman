@@ -18,6 +18,7 @@ const SYNC_USAGE = "sync <precinct> --author <login> [--reset]";
 const MARKER_PREFIX = "<!-- lawman:";
 
 type SyncIssue = GhIssue & {
+	bot: boolean;
 	state: string;
 	stateReason: string | null;
 	title: string;
@@ -53,6 +54,7 @@ function readIssue(raw: unknown): SyncIssue {
 		: [];
 	return {
 		number: raw.number as number,
+		bot: isRecord(raw.author) && raw.author.is_bot === true,
 		state: raw.state,
 		stateReason: textOrNull(raw.stateReason),
 		title: text(raw.title),
@@ -94,6 +96,26 @@ const markerShaped = (issue: SyncIssue) =>
 		.flatMap((t) => t.split("\n"))
 		.filter((l) => l.startsWith(MARKER_PREFIX)).length;
 
+const APP_LOGIN_PREFIX = "app/";
+
+const isHuman = (issue: SyncIssue) =>
+	issue.author !== null &&
+	!issue.bot &&
+	!issue.author.login.startsWith(APP_LOGIN_PREFIX);
+
+// The newest comment by the issue author that carries no marker line.
+function repliedAt(issue: SyncIssue): string | null {
+	const author = asciiLower(issue.author?.login ?? "");
+	const times = issue.comments
+		.filter(
+			(c) =>
+				asciiLower(c.author?.login ?? "") === author &&
+				!c.body.split("\n").some((l) => l.startsWith(MARKER_PREFIX)),
+		)
+		.map((c) => c.createdAt);
+	return times.length === 0 ? null : times.reduce((a, b) => (a > b ? a : b));
+}
+
 function storeIssue(
 	db: Database,
 	name: string,
@@ -102,7 +124,7 @@ function storeIssue(
 	stats: SyncStats,
 ): void {
 	db.run(
-		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 		[
 			name,
 			issue.number,
@@ -111,6 +133,7 @@ function storeIssue(
 			issue.title,
 			issue.createdAt,
 			issue.closedAt,
+			repliedAt(issue),
 		],
 	);
 	const { markers, leadOrigin } = collectIssueMarkers(issue, login);
@@ -163,8 +186,7 @@ function replaceCache(
 	db.run("DELETE FROM markers WHERE precinct = ?", [name]);
 	db.run("DELETE FROM issues WHERE precinct = ?", [name]);
 	for (const issue of issues) {
-		if (asciiLower(issue.author?.login ?? "") !== asciiLower(login))
-			stats.skipped++;
+		if (!isHuman(issue)) stats.skipped++;
 		else storeIssue(db, name, issue, login, stats);
 	}
 	db.run("UPDATE precincts SET synced_at = ? WHERE name = ?", [now(), name]);

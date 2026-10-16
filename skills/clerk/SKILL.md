@@ -32,7 +32,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 2
+   bin/journal probe --schema 3
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```

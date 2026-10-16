@@ -55,9 +55,9 @@ A resolved page that fails hides the later places, so never fall back to them.
 ### Issue templates
 
 26. Run `git -C precincts/<owner>-<repo> ls-tree HEAD -- .github/ISSUE_TEMPLATE/`.
-27. Read `config.yml` in that folder if it exists, and note `blank_issues_enabled: false` and any template with required fields.
-28. Show the developer the `[Lead]` title prefix and the body sections of a future lead, taken from each attached department page and from `lawman/skills/patrol/SKILL.md`.
-29. Keep the template notes in your summary, and write them nowhere.
+27. Read `config.yml` and the templates in that folder if they exist.
+28. Compare their fields with the "What intake needs" section of `lawman/skills/response-unit/SKILL.md`, and name the missing ones.
+29. Show the developer the list as a recommendation, and write it nowhere.
 
 ### Measure access
 
@@ -78,8 +78,9 @@ A resolved page that fails hides the later places, so never fall back to them.
 2. Run `git -C precincts/<owner>-<repo> fetch origin`, and stop if it fails.
 3. Run `git -C precincts/<owner>-<repo> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution`, and show the reasons on exit 8.
 4. Check the department pages again, using `origin/HEAD` in place of `HEAD`.
-5. Run the read calls from the measurement section.
-6. Report the result, and change no weight.
+5. Run steps 26 to 29, using `origin/HEAD` in place of `HEAD`.
+6. Run the read calls from the measurement section.
+7. Report the result, and change no weight.
 
 ## Raise a weight
 

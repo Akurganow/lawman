@@ -94,7 +94,9 @@ duty desk: picks a precinct by weight and time since the last visit
 
 ## Open questions
 
-- The response unit and outside issues were deferred from the first heist and are being designed now. Open points: which marker records intake, how an issue awaiting the reporter re-enters the funnel, and how a confirmed bug picks a department.
+- The response unit and outside issues are designed and built in this release.
+- Deferred from the response unit: visible cross-reference comments and a "registry" role; one pull request that closes related issues together (execution); semantic duplicate search, only after a measured miss.
+- Divergence from Proposed outcome: the decision record quotes the owner on a label for the reply to the reporter, and mentions a duplicate verdict. This release marks intake with a marker instead of a label (the owner: "mark it lawfully"). It removes the `duplicate` closure class (the owner: "Remove the class").
 - Distillation of the departments from the three existing police systems is the next planned heist.
 - Optional TypeSafe Jev as one more piece of evidence for the priority, never as the verdict. "at least optionally, use Jev from TypeSafe to determine the priority." Not built yet.
 - A second harness after Hermes. Its documentation is to be read live when the time comes.

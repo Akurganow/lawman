@@ -26,13 +26,10 @@ describe("leads, seen, cap and last", () => {
 		origin?: Origin,
 		title = `[Lead] x: ${n}`,
 	) {
-		db.run("INSERT INTO issues VALUES (?, ?, ?, ?, ?, 't', NULL)", [
-			PRECINCT,
-			n,
-			state,
-			reason,
-			title,
-		]);
+		db.run(
+			"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at) VALUES (?, ?, ?, ?, ?, 't')",
+			[PRECINCT, n, state, reason, title],
+		);
 		if (origin)
 			mark(
 				n,
@@ -265,6 +262,12 @@ describe("leads, seen, cap and last", () => {
 			put(403, "OPEN", null, undefined, "[Lead] corex: prefix only");
 			put(404, "OPEN", null, undefined, "core: no prefix");
 			expect(cap("core")).toBe("cap=1 open=3");
+		});
+
+		test("a lead with no department does not count for any department", () => {
+			fill(2);
+			put(600, "OPEN", null, lead("-", "src/u.rs::f::dead-code"));
+			expect(cap("core")).toBe("cap=3 open=2");
 		});
 
 		test("an open lead whose title names another department counts for its origin", () => {

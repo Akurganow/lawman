@@ -30,7 +30,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 2
+   bin/journal probe --schema 3
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -71,7 +71,7 @@ Run the "Read the stage" section.
 
 The order is stale unless `need` is `defender` and `state` is `OPEN`. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `returned`, `department` and `sha`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
+Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 
 ### Step 5: read the rules
 
@@ -91,7 +91,14 @@ A failed command gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The charge is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=prosecutor stage=charge`. A missing case or charge ends the tick with `failed`.
 
-Keep the line under the `## Cost and risk` heading of the issue body when there is one. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Keep the line under the `## Cost and risk` heading of the lead carrier when there is one. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+
+When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
+```
+gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
+```
+
+A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
@@ -119,7 +126,7 @@ Decide one of three. The tick outcome equals the decision.
 
 - `defence`: when neither other outcome holds. Outcome `defended`.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `defender`. Outcome `returned`.
-- `refute`: the issue closes on one of the four classes in the law's Closure classes subsection. The class is shown by an exhibit you re-read in step 7, by a recorded reason you read in step 5, or, for `duplicate`, by the Related section of the case. Name the class in the defence. Outcome `refuted`.
+- `refute`: the issue closes on one of the three classes in the law's Closure classes subsection. The class is shown by an exhibit you re-read in step 7 or by a recorded reason you read in step 5. Name the class in the defence. Outcome `refuted`.
 
 A tip that differs from `<sha>` is one line of fact in the defence. It is never a reason to return.
 

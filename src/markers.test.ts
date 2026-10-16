@@ -75,6 +75,15 @@ describe("parseMarker", () => {
 		expect(parseMarker(lead().replace(SHA, SHA.slice(1)))).toBeNull();
 	});
 
+	test("a response-unit lead is valid with department -, and no other role is", () => {
+		const unit = lead()
+			.replace("role=patrol", "role=response-unit")
+			.replace("department=core", "department=-");
+		expect(must(parseMarker(unit)).role).toBe("response-unit");
+		expect(parseMarker(unit.replace(" department=-", ""))).toBeNull();
+		expect(parseMarker(unit.replace("response-unit", "court"))).toBeNull();
+	});
+
 	test("of is a positive integer without leading zeros", () => {
 		expect(parseMarker(lead(" of=7"))).not.toBeNull();
 		for (const bad of ["0", "07", "-1", "x", "1.5"])
@@ -446,5 +455,18 @@ describe("law examples", () => {
 			{ role: "clerk", stage: "no-entry" },
 		]);
 		for (const marker of found) expect(marker.fields).not.toHaveProperty("sha");
+	});
+
+	test("E16, E17 and E18 are valid response-unit markers", () => {
+		const lines = must(blocks[7]).split("\n");
+		expect(lines).toHaveLength(3);
+		const found = lines.map((l) => must(parseMarker(l)));
+		expect(found).toMatchObject([
+			{ role: "response-unit", stage: "lead" },
+			{ role: "response-unit", stage: "await" },
+			{ role: "response-unit", stage: "out" },
+		]);
+		expect(must(found[0]).fields.department).toBe("-");
+		expect(must(found[2]).fields.reason).toBe("feature");
 	});
 });

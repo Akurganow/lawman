@@ -24,7 +24,7 @@ type Origin = {
 	title: string;
 };
 
-function leadOrigins(db: Database, name: string): Origin[] {
+export function leadOrigins(db: Database, name: string): Origin[] {
 	return db
 		.query(
 			`SELECT i.issue, i.state, i.state_reason, m.department, m.lead_id, i.title ${LEAD_ORIGIN_FROM} AND i.precinct = ?
@@ -57,7 +57,7 @@ export function leads(args: string[]): void {
 	});
 }
 
-const symbolOf = (id: string) => id.slice(0, id.lastIndexOf("::"));
+export const symbolOf = (id: string) => id.slice(0, id.lastIndexOf("::"));
 
 function seenLine(origins: Origin[], id: string): string {
 	const same = origins.filter(

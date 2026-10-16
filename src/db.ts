@@ -101,6 +101,7 @@ export const MIGRATIONS: string[] = [
     ended_at   TEXT);
   CREATE UNIQUE INDEX open_pause ON pauses((1)) WHERE ended_at IS NULL;
   `,
+	"ALTER TABLE issues ADD COLUMN replied_at TEXT",
 ];
 
 const envValue = (env: Env, name: string): string | undefined =>
