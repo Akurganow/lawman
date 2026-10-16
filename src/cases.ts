@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { check, parseArgs, usage } from "./args";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
+import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
 const DUE_USAGE = "due --role <role>";
@@ -20,6 +21,8 @@ export type Need =
 	| "none";
 
 const RETURNING_ROLES = ["prosecutor", "defender"];
+const BODY_RANK = 0;
+const ORD_RANK_PART = 1;
 
 const newest = (markers: CaseMarker[]) =>
 	markers.reduce<CaseMarker | undefined>(
@@ -78,15 +81,36 @@ function markersOf(db: Database, precinct: string, issue: number) {
 	}));
 }
 
+const leadPlace = (ord: string) =>
+	Number(ord.split("|")[ORD_RANK_PART]) === BODY_RANK ? "body" : "comment";
+
+function relatedOf(db: Database, precinct: string, issue: number, id: string) {
+	if (id === "") return "-";
+	const numbers = leadOrigins(db, precinct)
+		.filter(
+			(o) =>
+				o.issue !== issue &&
+				(o.lead_id ?? "") !== "" &&
+				symbolOf(o.lead_id ?? "") === symbolOf(id),
+		)
+		.map((o) => o.issue);
+	return numbers.join(",") || "-";
+}
+
 export function caseCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(CASE_USAGE);
 	const [name, issue] = args as [string, string];
 	withDb((db) => {
 		const origin = db
 			.query(
-				`SELECT i.state, m.department ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
+				`SELECT i.state, m.department, m.lead_id, m.ord ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
 			)
-			.get(name, issue) as { state: string; department: string | null } | null;
+			.get(name, issue) as {
+			state: string;
+			department: string | null;
+			lead_id: string | null;
+			ord: string;
+		} | null;
 		if (origin === null)
 			throw new Fail(EXIT.USAGE, `no lead origin for ${name} #${issue}`);
 		const markers = markersOf(db, name, Number(issue));
@@ -96,7 +120,7 @@ export function caseCommand(args: string[]): void {
 			returns.some((m) => m.role === r),
 		);
 		out(
-			`need=${needOf(origin.state, markers)} round=${returns.length + 1} returned=${returned.join(",") || "-"} department=${origin.department ?? "-"} sha=${sha ?? "-"} state=${origin.state}`,
+			`need=${needOf(origin.state, markers)} round=${returns.length + 1} returned=${returned.join(",") || "-"} department=${origin.department ?? "-"} sha=${sha ?? "-"} state=${origin.state} lead=${leadPlace(origin.ord)} related=${relatedOf(db, name, Number(issue), origin.lead_id ?? "")}`,
 		);
 	});
 }
