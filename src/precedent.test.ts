@@ -73,6 +73,89 @@ describe("precedent core", () => {
 		);
 	});
 
+	test("an example heading inside a fence is not the page section", () => {
+		const page =
+			"# T\n\n```\n## Precedents\n- 2026-01-01 #3: x\n```\n\n## Precedents\n\n- 2026-01-01 #1: a\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toEqual({
+			kind: "entry",
+			number: 2,
+			page: `${page}- 2026-10-16 #2: r (${SOURCE})\n`,
+		});
+	});
+
+	test("a decision heading indented 3 spaces is read", () => {
+		const result = entry(decision("   ## Precedent", "- 2026-10-16: r"));
+		expect(result).toMatchObject({ kind: "entry", number: 1 });
+	});
+
+	test("an owner line with a hash number is not counted", () => {
+		const page =
+			"## Precedents\n\n- 2026-01-01 #1: a\n- 2026-01-02: see #40: x\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toMatchObject({ kind: "entry", number: 2 });
+	});
+
+	test("none next to a numbered line is kept", () => {
+		const page = "## Precedents\n\nnone\n- 2026-01-01 #1: a\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toEqual({
+			kind: "entry",
+			number: 2,
+			page: `${page}- 2026-10-16 #2: r (${SOURCE})\n`,
+		});
+	});
+
+	test("a CRLF page keeps CRLF when none is replaced", () => {
+		const page = "## Precedents\r\n\r\nnone\r\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toEqual({
+			kind: "entry",
+			number: 1,
+			page: `## Precedents\r\n\r\n- 2026-10-16 #1: r (${SOURCE})\r\n`,
+		});
+	});
+
+	test("a CRLF page keeps CRLF on an appended line", () => {
+		const page = "## Precedents\r\n\r\n- 2026-01-01 #1: a\r\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toEqual({
+			kind: "entry",
+			number: 2,
+			page: `${page}- 2026-10-16 #2: r (${SOURCE})\r\n`,
+		});
+	});
+
+	test("a page without a Precedents heading still gets the line as number 1", () => {
+		const page = "# T\n\ntext\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result).toEqual({
+			kind: "entry",
+			number: 1,
+			page: `${page}- 2026-10-16 #1: r (${SOURCE})\n`,
+		});
+	});
+
+	test("a lone none line without a Precedents heading is not replaced", () => {
+		const page = "none\n";
+		const result = entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		expect(result.kind === "entry" && result.page).toBe(
+			`${page}- 2026-10-16 #1: r (${SOURCE})\n`,
+		);
+	});
+
+	test("a ruling ending in a link is copied before the source link", () => {
+		const ruling = "see (http://example.test/a)";
+		const result = entry(decision("## Precedent", `- 2026-10-16: ${ruling}`));
+		expect(result.kind === "entry" && result.page).toContain(
+			`- 2026-10-16 #1: ${ruling} (${SOURCE})\n`,
+		);
+	});
+
+	test("an empty decision has no section", () => {
+		expect(entry("")).toEqual({ kind: "no-entry", reason: "no-section" });
+	});
+
 	test.each([
 		["no heading", "Ruling only.", "no-section"],
 		[
@@ -98,6 +181,13 @@ describe("precedent core", () => {
 		],
 		["no date", "## Precedent\n- a ruling", "bad-line"],
 		["wrong date form", "## Precedent\n- 16.10.2026: a ruling", "bad-line"],
+		["short month and day", "## Precedent\n- 2026-1-6: r", "bad-line"],
+		["no space after colon", "## Precedent\n- 2026-10-16:r", "bad-line"],
+		[
+			"heading indented 4 spaces",
+			"    ## Precedent\n- 2026-10-16: r",
+			"no-section",
+		],
 		["text around", "## Precedent\nsee - 2026-10-16: a ruling", "bad-line"],
 		["empty text", "## Precedent\n- 2026-10-16: ", "bad-line"],
 		["None", "## Precedent\nNone", "bad-line"],

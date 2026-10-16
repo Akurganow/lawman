@@ -91,6 +91,11 @@ describe("case: clerk stage", () => {
 		]);
 	});
 
+	test("a clerk return marker leaves round and returned unchanged", () => {
+		put({ 1: ruled(conviction, returnTo("investigation", 1, "clerk")) });
+		expect(need(1).split(" ").slice(1, 3)).toEqual(["round=1", "returned=-"]);
+	});
+
 	test("due for the clerk lists open charges and closed acquittals only", () => {
 		const due = () => call(BASE, ["due", "--role", "clerk"]).out;
 		put({ 1: ruled(conviction) });
