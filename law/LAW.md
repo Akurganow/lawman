@@ -2,11 +2,11 @@
 
 Lawman is a set of roles that watch software repositories. A repository a developer points Lawman at is a precinct. Each role is a Markdown skill. It runs in the developer's own agent harness, on that harness's scheduler.
 
-This file is what every role shares. It names no precinct, no path, no tool, no CI workflow, no rule file and no harness. A sentence that cannot be checked without a precinct's name does not belong here. It goes into that precinct's constitution, under the heading that waits for it.
+This file is what every role shares. It names no precinct, no path, no tool, no CI workflow, no rule file and no harness. The tick file names the tools of a tick, and names no precinct and no harness. A sentence that cannot be checked without a precinct's name does not belong here. It goes into that precinct's constitution, under the heading that waits for it.
 
 Where a role disagrees with this file, this file wins and the role is stale.
 
-Three more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. Each owns its subject and none repeats another.
+Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the six roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
 
 Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report that patrol files as an issue. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 
@@ -20,7 +20,7 @@ Three words recur. A department is one subject of judgement, defined by a page. 
 
 Each stage costs more per case and sees fewer cases than the one before it.
 
-Seven roles exist in this release. The duty desk and the clerk are not stages. The duty desk chooses the precinct and the department and writes orders for patrol, investigation, the prosecutor, the defender, the court and the clerk. Patrol is stage 1. Investigation is stage 2. The prosecutor and the defender share stage 3. The court is stage 4. Execution is named so the vocabulary stays stable. No role performs it yet.
+Seven roles exist in this release. The duty desk and the clerk are not stages. The duty desk chooses the precinct and the department and writes orders for patrol, investigation, the prosecutor, the defender, the court and the clerk. Execution is named so the vocabulary stays stable. No role performs it yet.
 
 ## The roles of this release
 
@@ -38,15 +38,13 @@ The court takes one order on an issue, reads the case, the charge and the defenc
 
 The clerk takes one order on an issue that holds a court ruling, open or closed. It reads the Precedent section of the ruling comment. If that section holds exactly one valid line, the clerk opens a pull request that adds the numbered line to the constitution's Precedents. It then leaves a comment with a marker. Otherwise it leaves only the comment. It never merges and never pushes to the main branch. The precedent binds the roles only after the owner merges the pull request.
 
-Roles never start each other and never wait for each other.
-
 ## Silence is the default
 
 A run that files nothing is a successful run. In a healthy precinct it is the common outcome.
 
 Five merely plausible leads teach the reader to ignore all of them. The one real finding is ignored with them. When in doubt, the doubt goes in the report, never in the tracker.
 
-A successful tick, empty or not, answers the harness page's silence token. Its report lives in the journal. Only alarm lines, a failure and a stop are delivered to the owner. Alarm lines in a reply always count as content (see "Alarms and their repetition").
+A successful tick, empty or not, answers the harness page's silence token. Its report lives in the journal. Only alarm lines, a failure and a stop are delivered to the owner.
 
 ## Evidence
 
@@ -85,7 +83,6 @@ An alarm is a condition the owner must see. Examples are an order that nobody ta
 - No duplicates. A condition that disappears clears its alarm.
 - Alarms are computed before any work is chosen. An owner hears about a broken installation even when every precinct is busy.
 - Alarm lines in a reply defeat the silence convention. The reply is delivered.
-- A maintenance pause window recorded in the journal is excluded from every age count. The journal subtracts it from order, tick and role ages.
 - A role cannot see whether a message arrived. That is why repetition lives in the journal and not in the role.
 
 ## Returns instead of stops
@@ -162,7 +159,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 - Patrol asks for the cap after the sync and before any analysis.
 - An open issue whose title carries the lead prefix but holds no lead marker counts toward the department named in its title. The journal does the same.
 - At cap 0 the patrol tick ends with outcome `capped`. There is no sweep and no candidate report. The tick report states the cap and the count.
-- The cap is a ceiling, not a target. An empty result is normal.
+- The cap is a ceiling, not a target.
 - No department has an exception.
 - A weight is a share of duty desk slots, not of leads. A capped slot is spent like any other.
 
@@ -228,7 +225,7 @@ A slug is `[a-z0-9-]+`. These are the slugs of this release:
 - `stopped-readback`: a write, a body or a comment, did not read back as sent.
 - `stopped-lint`: the body check rejected a body or a comment.
 
-A new slug is added to this list before any role uses it. A tick without an end record is unfinished, not successful.
+A new slug is added to this list before any role uses it.
 
 ## Journal exit codes
 
@@ -260,14 +257,9 @@ Paths inside the precinct's own tree are evidence and may appear.
 ## Hard constraints
 
 - Reading roles never edit a file in the precinct or change its git state.
-- No role creates a label.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Patrol never spawns a subagent verifier.
 - Investigation, the prosecutor, the defender, the court and the clerk file no issue.
 - Only the prosecutor, the defender and the court close an issue, and only by the closure classes. The court closes only by acquittal.
-- No role files beyond the cap.
-- No role follows a URL from third-party text.
-- No role executes the precinct's code. The one exception is the investigation run of a command listed verbatim under Regression proof, as the Evidence section states it.
-- No role files a lead to show that a tick happened.
 - No role prints or files an installation path, home path, account name or token.
