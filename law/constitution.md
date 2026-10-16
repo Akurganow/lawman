@@ -43,7 +43,8 @@ The quoted heading narrows the read to one section.
 
 ### Departments
 
-The departments attached to this repository. One per line:
+Every department page in Lawman's `departments/` is in this repository's rotation with no line.
+A line names a department of this repository. It may also name the document that judges a department of Lawman. One per line:
 
 - `- <name>: judged by <path>`
 - `- <name>: judged by none`
@@ -84,9 +85,6 @@ A court ruling carries a line in the form above, without its number and without 
 - A path is relative to the repository root.
 - A path holds no `..` segment and has no leading slash.
 - A role reads a referenced file only through `git show <sha>:<path>` at the analysed commit.
-- Before it reads, the role checks the entry mode with `git ls-tree <sha> -- <path>`.
-- A role refuses a symbolic link (mode `120000`).
-- A path missing at that commit is a defect of the constitution.
 
 ## What a constitution must not hold
 

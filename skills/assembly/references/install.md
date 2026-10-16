@@ -81,27 +81,22 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 2. Tell the developer to write the value where the page says, and never to paste it into this session.
 3. Repeat this step after the developer confirms.
 
-## Step 7. Check the turn limit
-
-1. Read the harness's per-session turn limit with the read command the page gives.
-2. A patrol or investigation tick needs more than 60 turns. If the limit is below the number the page names, show the developer the set command the page gives and ask them to raise it or lift it; do not change it yourself.
-
-## Step 8. Write the config
+## Step 7. Write the config
 
 1. Run `git -C lawman rev-parse HEAD`, and record the output as `law_commit`.
 2. Write `<installation>/config.yaml` with the seven keys listed in `SKILL.md`.
 3. Read the file back, and stop if a key is missing or a value is empty.
 
-## Step 9. Set the role intervals
+## Step 8. Set the role intervals
 
 Finish this step before the developer adds a precinct.
 
 1. List the role folders: every folder `lawman/skills/*/` other than `assembly`. In the roles mode, keep only the roles without a job.
 2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, response-unit 09:05, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15, clerk 10:30. Ask the developer to accept it or name other times and intervals, and wait for the answer.
 3. For each role folder, run `bin/journal role set <role> --every <minutes>`, and stop if it fails.
-4. Outside the roles mode, tell the developer to add the first precinct next, because step 10 runs after it.
+4. Outside the roles mode, tell the developer to add the first precinct next, because step 9 runs after it.
 
-## Step 10. Create the scheduled jobs
+## Step 9. Create the scheduled jobs
 
 Run this step after the first precinct is in the journal. The precinct reference calls it. Create the jobs in this interactive session only, because scheduled sessions cannot create jobs.
 

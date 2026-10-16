@@ -19,16 +19,16 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `worktree add`, `worktree remove`, `worktree prune` and `status --porcelain`.
+- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `worktree add`, `worktree remove` and `status --porcelain`.
 - In the tree `runs/<tick id>/tree`, run only `add LAWMAN.md`, `commit` and the one `push` of step 9.
 - Never check out, reset, clean, branch, tag, merge, stash or push another ref.
-- Read a precinct file only through `git -C precincts/<p> show <tip>:<path>`, after the mode check.
+- Read a precinct file only through `git -C precincts/<p> show <tip>:<path>`.
 
 ## Tick
 
 Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
-### Step 0: guards and housekeeping
+### Step 0: guards
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -52,7 +52,6 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    gh api user --jq .login
    ```
 6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
-7. Run the "Housekeeping" section.
 
 ### Step 1: take an order
 
@@ -134,7 +133,7 @@ Compose the comment from the Comment format section. Write it as the "Write a co
 
 Use the entry form after `entry`. Use the no-entry form after `none` or `no-entry`.
 
-When the push or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the push, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand. The clerk runs no `ls-remote` and no other probe of the branch.
+When the push or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the push, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
 
 ### Step 11: end the tick
 
@@ -202,8 +201,3 @@ Blockers: <tool, source or tracker errors, the stop token, the no-entry reason, 
 ```
 
 When the order is empty or stale, the report is the one line of step 1 or step 4.
-
-## Never
-
-- A repository URL in the pull request body, the comment or the precedent line does not count as an account name. The constitution's title already names `<owner>/<repo>`.
-- Never merge a pull request, run `gh pr merge`, or push the main branch.

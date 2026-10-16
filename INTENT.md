@@ -97,7 +97,12 @@ duty desk: picks a precinct by weight and time since the last visit
 - The response unit and outside issues are designed and built in this release.
 - Deferred from the response unit: visible cross-reference comments and a "registry" role; one pull request that closes related issues together (execution); semantic duplicate search, only after a measured miss.
 - Divergence from Proposed outcome: the decision record quotes the owner on a label for the reply to the reporter, and mentions a duplicate verdict. This release marks intake with a marker instead of a label (the owner: "mark it lawfully"). It removes the `duplicate` closure class (the owner: "Remove the class").
-- Distillation of the departments from the three existing police systems is the next planned heist.
+- The departments of the three existing police systems are distilled into ten shared pages in this release. The old police departments leave the three repositories through one pull request each.
+- Divergence from Proposed outcome: the constitution no longer attaches the shared departments. Every shared page is always in the duty desk's rotation. A precinct's own page joins through a line in its constitution.
+- Execution: when an open pull request from Lawman's own identity already exists for an issue, find it and continue the work there. The owner: "if there is an open pull request, look for it and continue working in it, if this pull request is opened in my name."
+- The fate of the old courts, clerks and pipelines of the three police systems is decided with execution.
+- Deduplication against old police leads in the `D:path:slug` form: read the path from that form only after a measured repeat.
+- Issues filed by the old police systems are processed gradually, like any other issue. "Processing all of them at once is expensive, the limits would not be enough."
 - Optional TypeSafe Jev as one more piece of evidence for the priority, never as the verdict. "at least optionally, use Jev from TypeSafe to determine the priority." Not built yet.
 - A second harness after Hermes. Its documentation is to be read live when the time comes.
 - Chancery and works, the two execution queues. Not built yet.
@@ -139,3 +144,4 @@ What the owner proposed, what Claude proposed, and what was accepted or rejected
 | Repository | owner | Create it on GitHub, public | Done |
 | Installation layout | Claude | One installation folder with the journal, clones, departments and config | Accepted: "Option 1 works" |
 | Method | owner | Build it with the gangsta plugin | Accepted. The first heist started |
+| Department set of a precinct | owner | The duty desk picks a precinct by round robin, takes the shared departments plus the precinct's own, then picks the patrol by a second round robin. "First it picks the squad, if there is somewhere to send it, and then the patrol" | Accepted |

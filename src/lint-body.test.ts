@@ -104,6 +104,15 @@ describe("lint-body", () => {
 		expect(reasonsOf("an unclosed `span @someone")).toEqual(["1: @ mention"]);
 	});
 
+	test("a fenced Source line naming a package version passes", () => {
+		expect(
+			reasonsOf("```", "Source: advisories npm @scope/pkg@1.0.0", "```"),
+		).toEqual([]);
+		expect(reasonsOf("Source: advisories npm left-pad@1.3.0")).toEqual([
+			"1: @ mention",
+		]);
+	});
+
 	test("an @ inside a fenced block passes, other rules still apply there", () => {
 		expect(reasonsOf("```", "@Override", "```")).toEqual([]);
 		expect(reasonsOf("~~~~", "@Override", "~~~", "@someone", "~~~~")).toEqual(

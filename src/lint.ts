@@ -44,9 +44,9 @@ const PATH_SECTIONS = [
 ];
 const FRONTMATTER_FENCE = "---";
 const FRONTMATTER_KEY = /^([a-z_]+):\s*(.*?)\s*$/;
-const HEADING = /^ {0,3}## +(\S.*?) *$/;
+export const HEADING = /^ {0,3}## +(\S.*?) *$/;
 const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
-const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
+export const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
 const CODE_SPAN = /(`+).+?\1/g;
 const MENTION = /@[A-Za-z0-9]/;
 const TITLE_SHELL = /['`$\\]/;
@@ -114,7 +114,7 @@ type FrontKeys = Map<string, { value: string; line: number }>;
 type Heading = { name: string; line: number };
 export type PageLint = { reasons: string[]; departments: [string, string][] };
 
-function readFrontmatter(
+export function readFrontmatter(
 	lines: string[],
 ): { keys: FrontKeys; end: number } | null {
 	const close =

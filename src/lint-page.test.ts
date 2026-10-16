@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { CONSTITUTION_HEADINGS, DEPARTMENT_HEADINGS, lintPage } from "./lint";
@@ -80,6 +80,15 @@ describe("lint-page", () => {
 			"utf8",
 		);
 		expect(lintPage("department", shipped, "abstractions").reasons).toEqual([]);
+	});
+
+	test("every file in departments/ is a page that passes the department lint", () => {
+		const dir = join(ROOT, "departments");
+		for (const file of readdirSync(dir)) {
+			const text = readFileSync(join(dir, file), "utf8");
+			const name = file.slice(0, -".md".length);
+			expect(lintPage("department", text, name).reasons).toEqual([]);
+		}
 	});
 
 	test("a missing heading is named", () => {
