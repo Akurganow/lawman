@@ -128,17 +128,11 @@ The model is chosen per job with `--model`. Each role has its own model. The doc
 
 ### The token
 
-A `GH_TOKEN` in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment. They do not state whether local terminal subprocesses inherit them. Assume every session sees it, including the developer's other jobs. That is why the token must have minimal rights.
+Every role uses one identity: the signed-in `gh` CLI, or the one token the developer adds at setup.
 
-To run one command without the token, prefix `env -u GH_TOKEN`:
+A `GH_TOKEN` in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
 
-```
-env -u GH_TOKEN gh pr create ...
-```
-
-`gh` then uses the owner's interactive login. The installation assembly runs precinct clone, branch push and pull request commands this way.
-
-The probe measured that `gh` reads the keychain from a cron session. The login worked and `GH_TOKEN` was not needed. So the variable is often unnecessary on a Mac with a signed-in `gh`. Add it only when the keychain is unavailable.
+The probe measured that `gh` reads the keychain from a cron session. The login worked and `GH_TOKEN` was not needed. A signed-in `gh` can serve scheduled sessions too, so the variable is often unnecessary. Add it only when the keychain is unavailable.
 
 ## What a second harness needs
 
