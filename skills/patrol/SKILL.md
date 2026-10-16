@@ -225,7 +225,7 @@ Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section 
 
 ## Report
 
-Write the five parts that the law's "The report" section names, in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
+Write the five parts that the law names under "The report", in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
 
 ```
 Filed nothing. CLEAN at <sha>.
