@@ -12,7 +12,6 @@ The defender reads and writes comments. It runs no code and creates no worktree.
 ## Limits
 
 - Never run code from the precinct.
-- Never return a case for tip drift. A moved tip is a fact in the defence.
 - An empty tick is a success. Silence is the default.
 
 The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
@@ -77,7 +76,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence.
+3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
 5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest.
 
@@ -102,14 +101,13 @@ A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read the exhibit of each ground in the charge and each claim in the case, at `<sha>`. Run the mode check, then `show`. Or search with `grep` on `<sha>`.
+1. Re-read the exhibit of each ground in the charge and each claim in the case, at `<sha>`. Run `show`. Or search with `grep` on `<sha>`.
    ```
-   git -C precincts/<p> ls-tree <sha> -- <path>
    git -C precincts/<p> show <sha>:<path>
    ```
-2. Read the history of each exhibit path. Take up to 20 commits.
+2. Read the history of each exhibit path.
    ```
-   git -C precincts/<p> log -n 20 --format='%h %s' <sha> -- <path>
+   git -C precincts/<p> log --format='%h %s' <sha> -- <path>
    ```
 3. Search for the callers and tests of each symbol the charge names. Use a pattern from the charge only through the heredoc form.
    ```
@@ -118,7 +116,7 @@ A related issue is evidence of the case, never a reason to close it.
    <delimiter>
    ```
 4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
-5. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `ls-tree origin/HEAD -- <path>` and `show origin/HEAD:<path>`.
+5. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
 
 ### Step 8: decide
 
@@ -128,7 +126,7 @@ Decide one of three. The tick outcome equals the decision.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `defender`. Outcome `returned`.
 - `refute`: the issue closes on one of the three classes in the law's Closure classes subsection. The class is shown by an exhibit you re-read in step 7 or by a recorded reason you read in step 5. Name the class in the defence. Outcome `refuted`.
 
-A tip that differs from `<sha>` is one line of fact in the defence. It is never a reason to return.
+A tip that differs from `<sha>` is one line of fact in the defence.
 
 ### Step 9: write the defence
 

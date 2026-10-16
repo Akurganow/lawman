@@ -85,9 +85,6 @@ A court ruling carries a line in the form above, without its number and without 
 - A path is relative to the repository root.
 - A path holds no `..` segment and has no leading slash.
 - A role reads a referenced file only through `git show <sha>:<path>` at the analysed commit.
-- Before it reads, the role checks the entry mode with `git ls-tree <sha> -- <path>`.
-- A role refuses a symbolic link (mode `120000`).
-- A path missing at that commit is a defect of the constitution.
 
 ## What a constitution must not hold
 

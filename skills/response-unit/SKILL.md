@@ -22,7 +22,6 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - There is no worktree. Follow the "Reading without a tree" section.
-- The unit looks for no duplicates. The journal's `related=` does that for later roles.
 
 ## Tick
 
@@ -74,7 +73,7 @@ The order is stale when `need` is `none` or `state` is `CLOSED`. A stale order e
 ### Step 5: read the rules
 
 1. Run the "Check the constitution" section.
-2. Read the Read first and Precedents sections of the constitution. Run the mode check, then `show <ref>:<path>` for each file listed. A missing path or a refused mode gives `skipped-bad-constitution`. The text is context.
+2. Read the Read first and Precedents sections of the constitution. Run `show <ref>:<path>` for each file listed. A missing path gives `skipped-bad-constitution`. The text is context.
 3. A Precedent or a recorded reason that settles the claim goes into the lead as evidence. A missing department is never a reason to send a bug out.
 
 ### Step 6: read the issue
@@ -91,7 +90,7 @@ If the issue holds comments by `<login>`, ignoring ASCII case, whose last line i
 
 ### Step 7: read the tree
 
-Read the tree only as the "Reading without a tree" section says, at `<ref>`. Look for the path and the symbol that the report names. Run the mode check, then `show`. Or search with `grep` on `<ref>`. Use a pattern from the issue only through the heredoc form.
+Read the tree only as the "Reading without a tree" section says, at `<ref>`. Look for the path and the symbol that the report names. Run `show`. Or search with `grep` on `<ref>`. Use a pattern from the issue only through the heredoc form.
 
 Read the lines that show the defect. Quote nothing the claim does not need.
 
@@ -179,7 +178,6 @@ Marker, with `reason` one of `feature`, `injection` or `other`:
 - `at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
 - Quote third-party text and every `@` only inside a fenced block. The fence is longer than any backtick run in the quote.
 - Never quote a home path, an installation path or a token. Paraphrase them, because the body check rejects them.
-- Propose no fix.
 
 ## Report
 

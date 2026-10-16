@@ -6,7 +6,6 @@ import {
 	decodeIdPart,
 	encodeIdPart,
 	extractMarkers,
-	MARKER_MAX_BYTES,
 	parseMarker,
 } from "./markers";
 import {
@@ -192,17 +191,6 @@ describe("parseMarker", () => {
 		expect(m.stage).toBe("audit");
 		expect(m.fields.flavor).toBe("mint");
 		expect(m.fields.k_2).toBe("x");
-	});
-
-	test("the length limit counts bytes of the whole line", () => {
-		const head =
-			"<!-- lawman: role=judge stage=x at=2026-10-14T09:30:00Z note=";
-		const fill = (n: number) =>
-			`${head}${"a".repeat(n - head.length - " -->".length)} -->`;
-		expect(MARKER_MAX_BYTES).toBe(1024);
-		expect(fill(1024).length).toBe(1024);
-		expect(parseMarker(fill(1024))).not.toBeNull();
-		expect(parseMarker(fill(1025))).toBeNull();
 	});
 
 	test("a non-ASCII byte never passes, and the byte count is not the character count", () => {

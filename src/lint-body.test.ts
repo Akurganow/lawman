@@ -104,6 +104,23 @@ describe("lint-body", () => {
 		expect(reasonsOf("an unclosed `span @someone")).toEqual(["1: @ mention"]);
 	});
 
+	test("a Source line naming a package version or a release is not a mention", () => {
+		expect(reasonsOf("Source: advisories npm left-pad@1.3.0")).toEqual([]);
+		expect(reasonsOf("Source: advisories pip @scope/pkg@1.0.0-rc.1")).toEqual(
+			[],
+		);
+		expect(reasonsOf("Source: releases owner/repo")).toEqual([]);
+		expect(reasonsOf("Source: advisories npm a@1 thanks @someone")).toEqual([
+			"1: @ mention",
+		]);
+		expect(reasonsOf("Source: advisories npm left-pad@1.3.0 ping@x")).toEqual([
+			"1: @ mention",
+		]);
+		expect(reasonsOf("note Source: advisories npm left-pad@1.3.0")).toEqual([
+			"1: @ mention",
+		]);
+	});
+
 	test("an @ inside a fenced block passes, other rules still apply there", () => {
 		expect(reasonsOf("```", "@Override", "```")).toEqual([]);
 		expect(reasonsOf("~~~~", "@Override", "~~~", "@someone", "~~~~")).toEqual(

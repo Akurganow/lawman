@@ -4,7 +4,6 @@ const PATTERNS = {
 	precinct: /^[a-z][a-z0-9-]*$/,
 	role: /^[a-z][a-z0-9-]*$/,
 	department: /^[a-z][a-z0-9-]*$/,
-	judgedBy: /^\S+$/,
 	repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
 	login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
 	outcome:

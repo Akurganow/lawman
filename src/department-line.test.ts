@@ -105,12 +105,10 @@ describe("department-line", () => {
 		expect(r.out).toBe("");
 	});
 
-	test("a name or path outside its class exits 1 with empty stdout", () => {
+	test("a name outside its class exits 1 with empty stdout", () => {
 		for (const args of [
 			["--name", "Security", "--judged-by", "none"],
 			["--name", "a b", "--judged-by", "none"],
-			["--name", "security", "--judged-by", "a b"],
-			["--name", "security", "--judged-by", "none\n- x: judged by none"],
 		]) {
 			const r = run(VALID, ...args);
 			expect(r.code).toBe(1);

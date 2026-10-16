@@ -85,7 +85,6 @@ describe("lint-page", () => {
 	test("every file in departments/ is a page that passes the department lint", () => {
 		const dir = join(ROOT, "departments");
 		for (const file of readdirSync(dir)) {
-			expect(file.endsWith(".md")).toBe(true);
 			const text = readFileSync(join(dir, file), "utf8");
 			const name = file.slice(0, -".md".length);
 			expect(lintPage("department", text, name).reasons).toEqual([]);

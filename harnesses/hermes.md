@@ -120,7 +120,7 @@ Cron sessions cannot create cron jobs. The docs say cron management tools are di
 
 ### Turns
 
-`agent.max_turns` is the iteration budget per conversation turn. The docs state it is unlimited by default. A positive integer caps it. On exhaustion Hermes sends one wrap-up message and allows a single grace call. The docs name no per-job or per-session override, so this is a global setting of the developer. A patrol or investigation tick spends more than 60 iterations on its mechanical steps and the sweep, so a cap of 60 stops it before the tick closes. Read it with `hermes config get agent.max_turns`. The developer raises it with `hermes config set agent.max_turns <n>` or lifts it with `hermes config unset agent.max_turns`. The assembly only reads it and asks. Settings are written with `hermes config set <key> <value>` and removed with `hermes config unset <key>`, never by editing the file; `hermes config get <key>` reads the resolved value.
+`agent.max_turns` is the iteration budget per conversation turn. The docs state it is unlimited by default. A positive integer caps it. On exhaustion Hermes sends one wrap-up message and allows a single grace call. The docs name no per-job or per-session override, so this is a global setting of the developer. Read it with `hermes config get agent.max_turns`. The developer raises it with `hermes config set agent.max_turns <n>` or lifts it with `hermes config unset agent.max_turns`. Settings are written with `hermes config set <key> <value>` and removed with `hermes config unset <key>`, never by editing the file; `hermes config get <key>` reads the resolved value.
 
 ### Money
 

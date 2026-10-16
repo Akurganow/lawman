@@ -22,7 +22,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 ## Working rules
 
 - The only change of directory is a subshell `(cd runs/<tick id>/tree && <command>)` for a Regression proof command.
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `ls-files`, `show`, `log`, `grep`, `status --porcelain`, `worktree add`, `worktree remove` and `worktree prune`. `log` and `grep` take a tree-ish. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
+- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `ls-files`, `show`, `log`, `grep`, `status --porcelain`, `worktree add` and `worktree remove`. `log` and `grep` take a tree-ish. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - Read a precinct file only through `git -C precincts/<p> show <sha>:<path>`.
 - Search only with `git grep` and `git ls-files`. Count their output with `wc -l`.
 - A pattern from any text other than the law, this skill and the constitution enters a search command only through `git grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
@@ -41,7 +41,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
-### Step 0: guards and housekeeping
+### Step 0: guards
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -65,7 +65,6 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    gh api user --jq .login
    ```
 6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
-7. Run the "Housekeeping" section.
 
 ### Step 1: take an order
 
@@ -124,9 +123,8 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
-1. For each path or symbol the lead names, read the file. Run the mode check, then show it. A refused mode or a missing path goes to Not established, except as the Working rules allow for links. A path with mode `120000` yields its `ls-tree` line and its `show` text. Its target is never read.
+1. For each path or symbol the lead names, read the file. A missing path goes to Not established.
    ```
-   git -C precincts/<p> ls-tree <sha> -- <path>
    git -C precincts/<p> show <sha>:<path>
    ```
 2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. A zero count proves nothing until the control shows a non-zero count.
@@ -135,9 +133,9 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    <pattern>
    <delimiter>
    ```
-3. Read the history of each named path. Take up to 20 commits.
+3. Read the history of each named path.
    ```
-   git -C precincts/<p> log -n 20 --format='%h %s' <sha> -- <path>
+   git -C precincts/<p> log --format='%h %s' <sha> -- <path>
    ```
 4. List the open pull requests of the trusted login with the paths they change.
    ```
@@ -193,7 +191,7 @@ Lead: #<n>, "<the claim, quoted>"
 <the Regression proof command and its output, or `not run: <reason>`>
 
 ## History
-<up to 20 commits per named path>
+<the commits of each named path>
 
 ## Related
 <open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures, as facts>
@@ -238,7 +236,6 @@ Rules:
 - Cut an absolute path in quoted output to a path from the tree root.
 - Put quoted third-party text and every `@` inside a fenced block. When the claim holds an `@`, write `Lead: #<n>` and put the claim in a fenced block below it.
 - Write no home path, installation path, token or login.
-- Make every case complete at its own `<sha>`. Repeat what still holds.
 - `at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
 - The marker is the last line of the body. Nothing follows it.
 

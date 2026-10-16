@@ -49,16 +49,8 @@ the tree text that makes the source worth reading. Such a kind also names the
 - `Source: advisories <ecosystem> <package>@<version>`
 - `Source: releases <owner>/<repo>`
 
-Each value comes from the tree and matches its class. A value outside its
-class is not used.
-
-| value | class |
-| :-- | :-- |
-| `<ecosystem>` | `^[a-z]+$` |
-| `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
-| `<version>` | `^[A-Za-z0-9._-]+$` |
-| `<owner>` | `^[A-Za-z0-9-]+$` |
-| `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
+Each value comes from the tree. Investigation checks it against its class
+table before it reads the source.
 
 **Where to look.** The subject in terms of the tree. Cover definitions, entry
 points, indirection and near-duplicates, or whatever fits the class. A shared

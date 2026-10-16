@@ -1,5 +1,3 @@
-export const MARKER_MAX_BYTES = 1024;
-
 export type Fields = {
 	role: string;
 	stage: string;
@@ -165,7 +163,6 @@ function validFields(f: Record<string, string>): f is Fields {
 }
 
 export function parseMarker(line: string): Marker | null {
-	if (Buffer.byteLength(line) > MARKER_MAX_BYTES) return null;
 	const shape = line.match(MARKER_LINE);
 	const fields = shape && readFields(shape[1] ?? "");
 	if (!fields || !validFields(fields)) return null;
@@ -174,7 +171,6 @@ export function parseMarker(line: string): Marker | null {
 
 // the legacy fingerprint lines are read only: nobody writes them any more
 function parseLegacy(line: string, createdAt: string): Marker | null {
-	if (Buffer.byteLength(line) > MARKER_MAX_BYTES) return null;
 	for (const form of LEGACY_FORMS) {
 		const m = line.match(form.re);
 		if (!m) continue;

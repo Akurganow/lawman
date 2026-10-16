@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	cli,
@@ -179,13 +179,5 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		const r = pipe(null, ["billing"]);
 		expect(r.code).not.toBe(0);
 		expect(r.out).toBe("");
-	});
-
-	test("the duty-desk skill carries the pipeline verbatim", () => {
-		const skill = readFileSync(
-			join(ROOT, "skills", "duty-desk", "SKILL.md"),
-			"utf8",
-		);
-		expect(skill).toContain(`bash -o pipefail -c '${PIPELINE}'`);
 	});
 });

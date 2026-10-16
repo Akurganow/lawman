@@ -58,8 +58,7 @@ export function departmentLineCommand(args: string[]): number {
 		DEPARTMENT_LINE_USAGE,
 	);
 	const name = check("department", opt.name);
-	const judgedBy = check("judgedBy", opt["judged-by"]);
-	const result = withDepartmentLine(readStdin(), name, judgedBy);
+	const result = withDepartmentLine(readStdin(), name, opt["judged-by"]);
 	const { reasons } = lintPage("constitution", result);
 	if (reasons.length > 0) throw new Fail(EXIT.LINT_PAGE, reasons.join("\n"));
 	process.stdout.write(result);

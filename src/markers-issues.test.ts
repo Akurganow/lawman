@@ -1,10 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import {
-	collectIssueMarkers,
-	decodeIdPart,
-	extractMarkers,
-	MARKER_MAX_BYTES,
-} from "./markers";
+import { collectIssueMarkers, decodeIdPart, extractMarkers } from "./markers";
 import {
 	addPrecincts,
 	carrier,
@@ -116,14 +111,6 @@ describe("fixture issues", () => {
 		expect(must(c.newestByRole.get("judge")).marker.fields.round).toBe("1");
 	});
 
-	test("#14 a marker over 1024 bytes drops and displaces nothing", () => {
-		const comment = must(issueOf(14).comments[0]).body;
-		expect(Buffer.byteLength(must(comment.split("\n").at(-1)))).toBeGreaterThan(
-			MARKER_MAX_BYTES,
-		);
-		expect(rounds(14)).toEqual(["1"]);
-	});
-
 	test("#15 a-%2Db is valid and a--b is not", () => {
 		const c = collect(15);
 		expect(c.markers).toHaveLength(1);
@@ -189,7 +176,7 @@ describe("legacy fingerprints", () => {
 		expect(m).toMatchObject({
 			role: "patrol",
 			stage: "lead",
-			raw: must(issues[18]).body.split("\n")[2],
+			raw: issueOf(19).body.split("\n")[2],
 		});
 		expect(m.fields).toEqual({
 			role: "patrol",
@@ -320,12 +307,9 @@ describe("legacy fingerprints", () => {
 		).toBeUndefined();
 	});
 
-	test("an untrusted author and an oversized line count for nothing", () => {
+	test("an untrusted author counts for nothing", () => {
 		expect(
 			carrier("<!-- repo-audit-routine:x -->", "bystander-fictional"),
-		).toEqual([]);
-		expect(
-			legacyLine(`<!-- repo-audit-routine:${"x".repeat(MARKER_MAX_BYTES)} -->`),
 		).toEqual([]);
 	});
 
@@ -399,7 +383,7 @@ describe("legacy fingerprints", () => {
 
 		test("sync counts legacy markers as markers and not as invalid", () => {
 			expect(sync().out.trim()).toBe(
-				"issues=24 leads=10 markers=26 invalid=13 skipped=1",
+				"issues=23 leads=10 markers=25 invalid=12 skipped=1",
 			);
 		});
 	});

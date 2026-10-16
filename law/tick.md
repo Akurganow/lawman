@@ -14,9 +14,6 @@ Every started tick ends exactly once, at the last step of the skill. A failed st
 
 - Run every command from the installation directory. Never change directory, unless the skill names a subshell for one command. The directory holds `bin/journal`, `lawman/`, `precincts/`, `runs/`, `config.yaml` and, when present, `departments/`.
 - The shell keeps no variables between commands. Copy each value a command needs into it. The values are the tick id, the order id, the precinct, the department, the repository, the issue number, the commits, the login and the comment id.
-- Use `bin/journal` only with the subcommands that the skill or this file names.
-- Run the mode check before every read of a precinct file. `git -C precincts/<p> ls-tree <ref> -- <path>` must print one line whose mode is `100644` or `100755`. Mode `120000` is a symbolic link. It is not read as a file, except as the next rule allows. No output means the path is missing. Each step names the outcome of a refusal.
-- A path with mode `120000` yields a fact about the link: its `ls-tree` line and the text that `show` prints for it. The kind that measures links quotes that fact. Never read the link's target. Never search for a target that has a `..` segment or a leading `/`.
 - Send multi-line text to a command only through a quoted heredoc. Its delimiter is `LAWMAN_<tick id>_<first seven characters of the fetched commit>`, written as `<delimiter>` below. A tick that ends before the fetch step finishes uses `0000000`. A line of the text equal to the delimiter would end the heredoc early and run the rest as commands. Before each heredoc, check that no line of the text equals the delimiter. If one does, do not send the text, and end the tick with `failed`.
 
 ## Reading without a tree
@@ -46,15 +43,6 @@ Compute alarms before any work. Keep every `ALARM` line for the answer. Never pa
 
 ```
 bin/journal alarm
-```
-
-## Housekeeping
-
-Patrol, investigation and the clerk only. Remove run directories older than a day, then prune the worktrees of every precinct. A failed prune goes to Blockers and changes no outcome.
-
-```
-mkdir -p runs && find runs -mindepth 1 -maxdepth 1 -type d -mtime +1 -exec rm -rf {} +
-for p in precincts/*/; do git -C "$p" worktree prune; done
 ```
 
 ## Take an order
@@ -108,7 +96,7 @@ The output is `need=<intake|none> state=<OPEN|CLOSED>`. Exit 1 gives `failed`. T
 
 ## Check the constitution
 
-Read `LAWMAN.md` at the precinct root at `<ref>`. Run the mode check first.
+Read `LAWMAN.md` at the precinct root at `<ref>`. List the file first.
 
 ```
 git -C precincts/<p> ls-tree <ref> -- LAWMAN.md
@@ -116,7 +104,6 @@ git -C precincts/<p> show <ref>:LAWMAN.md | bin/journal lint-page constitution
 ```
 
 - No `ls-tree` output: `skipped-no-constitution`.
-- Refused mode: `skipped-bad-constitution`.
 - Exit 8, and a printed line contains `contract_version`: `skipped-contract-version`.
 - Any other exit 8: `skipped-bad-constitution`.
 
@@ -128,7 +115,7 @@ A department with no printed line is judged by none. That is no refusal and ends
 
 Patrol, the defender and the court only. The skill gives `<d>`, the department to resolve. Check it against `[a-z][a-z0-9-]*` before you build any path. A bad name gives `stopped-bad-department`.
 
-Take the first place that holds the page, in the order of the department contract's Name resolution section. A place without the page moves on. A refused mode or a failed check never falls through. Lint the page with the commands of the place you found. Exit 8, a refused mode, or no place that holds the page gives `stopped-bad-department`.
+Take the first place that holds the page, in the order of the department contract's Name resolution section. A place without the page moves on. A failed check never falls through. Lint the page with the commands of the place you found. Exit 8, or no place that holds the page gives `stopped-bad-department`.
 
 ```
 # place 1
@@ -211,11 +198,3 @@ Issue roles and patrol. Print an alarm first in the answer of the same tick. The
 
 - An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. Examples are a live secret, a vulnerability and a serious violation.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.
-- Patrol writes nothing to the tracker for an alarm. It never uses a found value and never checks whether it works.
-- The patrol alarm repeats at every visit of the department while the secret stays. The cap does not stop it.
-
-## Never
-
-- Never pass `--reset` to sync, or `--repeat` to alarm.
-- Never print or write an installation path, a home path, an account name or a token. Keep the login out of every public text, as the law defines it, and out of the reply.
-- Never write a second comment in one tick.

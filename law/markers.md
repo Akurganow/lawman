@@ -14,7 +14,6 @@ This file is the single definition of the grammar. The journal parser checks the
 - Fields sit between them, separated by single spaces. No other whitespace is allowed.
 - A field is `key=value`. Fields may appear in any order. Writers use the order shown above.
 - `role`, `stage` and `at` are required. Each appears once.
-- The whole line is at most 1024 bytes, without the line terminator.
 - Split text on `\n`. Drop one trailing `\r` from each line.
 - A candidate line matches `^<!-- lawman: K=V( K=V)* -->$`, with `K = [a-z][a-z0-9_]*` and `V = [A-Za-z0-9.:_/%+-]+`.
 

@@ -13,7 +13,6 @@ The court reads and writes comments. It runs no code and creates no worktree.
 
 - Never run code from the precinct.
 - The court never returns. Its doubt is an acquittal.
-- A moved tip is a fact in the ruling.
 - An empty tick is a success. Silence is the default.
 
 The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
@@ -78,7 +77,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
+3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
 5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest.
 
@@ -103,14 +102,13 @@ A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read at `<sha>` the exhibits of the case, the charge and the defence that the court finds decisive. The court chooses which. Run the mode check, then `show`. Or search with `grep` on `<sha>`. A missing path or a refused mode makes that exhibit a claim, not an exhibit, and goes to Blockers.
+1. Re-read at `<sha>` the exhibits of the case, the charge and the defence that the court finds decisive. The court chooses which. Run `show`. Or search with `grep` on `<sha>`. A missing path makes that exhibit a claim, not an exhibit, and goes to Blockers.
    ```
-   git -C precincts/<p> ls-tree <sha> -- <path>
    git -C precincts/<p> show <sha>:<path>
    ```
-2. Read the history of each exhibit path that the court re-reads. Take up to 20 commits.
+2. Read the history of each exhibit path that the court re-reads.
    ```
-   git -C precincts/<p> log -n 20 --format='%h %s' <sha> -- <path>
+   git -C precincts/<p> log --format='%h %s' <sha> -- <path>
    ```
 3. Search for the callers and tests of a symbol the court re-reads. Use a pattern from the case, the charge or the defence only through the heredoc form.
    ```
@@ -119,7 +117,7 @@ A related issue is evidence of the case, never a reason to close it.
    <delimiter>
    ```
 4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
-5. Read the exhibit paths at `origin/HEAD` only when the court considers the class `gone at <tip>`. Run `ls-tree origin/HEAD -- <path>` and `show origin/HEAD:<path>`. Only this read can show that class.
+5. Read the exhibit paths at `origin/HEAD` only when the court considers the class `gone at <tip>`. Run `show origin/HEAD:<path>`. Only this read can show that class.
 
 ### Step 8: decide
 

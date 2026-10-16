@@ -12,7 +12,6 @@ The prosecutor reads and writes comments. It runs no code.
 ## Limits
 
 - Never run code from the precinct.
-- Never return a case for tip drift. A moved tip is a fact in the decision.
 - An empty tick is a success. Silence is the default.
 - Never return in round 3, and never return twice. Remaining doubt when a return is not allowed is a decline.
 
@@ -76,7 +75,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence.
+3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law's Evidence section defines it.
 
 ### Step 6: read the issue
@@ -98,9 +97,9 @@ A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read the decisive exhibit of each claim at `<sha>`, through the mode check and `show`, or through `grep` on `<sha>`.
+1. Re-read the decisive exhibit of each claim at `<sha>`, through `show`, or through `grep` on `<sha>`.
 2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
-3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `ls-tree origin/HEAD -- <path>` and `show origin/HEAD:<path>`.
+3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
 4. Search with a pattern from the case only through the heredoc form.
 
 ### Step 8: decide
@@ -113,7 +112,7 @@ Decide one of three. The tick outcome equals the decision.
 
 When a return is not allowed, in round 3 or after an earlier return of the prosecutor, any remaining doubt is a decline.
 
-A tip that differs from `<sha>` is one line of fact in the decision. It is never a reason to return.
+A tip that differs from `<sha>` is one line of fact in the decision.
 
 ### Step 9: write the decision
 
