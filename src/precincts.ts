@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { check, count, parseArgs, pick, usage } from "./args";
+import { check, count, parseArgs, subcommand, usage } from "./args";
 import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
 
 const PRECINCT_USAGE =
@@ -68,9 +68,7 @@ const PRECINCT_COMMANDS: Record<
 };
 
 export function precinct(args: string[]): void {
-	const [sub, ...rest] = args;
-	const run = pick(PRECINCT_COMMANDS, sub);
-	if (run === undefined) throw usage(PRECINCT_USAGE);
+	const { run, rest } = subcommand(PRECINCT_COMMANDS, args, PRECINCT_USAGE);
 	withDb((db) => run(db, rest));
 }
 

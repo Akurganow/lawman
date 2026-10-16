@@ -92,9 +92,9 @@ export function seen(args: string[]): void {
 }
 
 function capFor(open: number): number {
-	for (const row of CAP_TABLE)
-		if (row.upTo === null || open <= row.upTo) return row.cap;
-	throw new Error("CAP_TABLE has no open-ended row");
+	const row = CAP_TABLE.find((r) => r.upTo === null || open <= r.upTo);
+	if (row === undefined) throw new Error("CAP_TABLE has no open-ended row");
+	return row.cap;
 }
 
 // a broken lead has the title prefix but no lead marker, so it has no origin department

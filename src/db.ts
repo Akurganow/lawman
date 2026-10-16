@@ -93,6 +93,7 @@ export const MIGRATIONS: string[] = [
     raw        TEXT NOT NULL,
     PRIMARY KEY (precinct, issue, ord));
   `,
+	// pauses has no reader. The migration stays because installed databases are at schema 2.
 	`
   CREATE TABLE pauses (
     id         INTEGER PRIMARY KEY,
@@ -155,18 +156,13 @@ function migrate(db: Database): void {
 	const seen = userVersion(db);
 	if (seen > MIGRATIONS.length) throw tooNew(seen);
 	if (seen === MIGRATIONS.length) return;
-	db.run("BEGIN IMMEDIATE");
-	try {
+	inTransaction(db, () => {
 		// another process may have migrated while this one waited for the write lock
 		const current = userVersion(db);
 		if (current > MIGRATIONS.length) throw tooNew(current);
 		for (const sql of MIGRATIONS.slice(current)) db.run(sql);
 		db.run(`PRAGMA user_version = ${MIGRATIONS.length}`);
-		db.run("COMMIT");
-	} catch (e) {
-		db.run("ROLLBACK");
-		throw e;
-	}
+	});
 }
 
 function enableWal(db: Database): void {
