@@ -24,14 +24,14 @@ describe("case: court stage", () => {
 	test.each([
 		["a defence after the charge needs the court", defended(), "court"],
 		[
-			"a conviction after the defence needs nobody",
+			"a conviction after the defence needs the clerk",
 			defended(conviction()),
-			"none",
+			"clerk",
 		],
 		[
-			"an acquittal on an open issue needs nobody",
+			"an acquittal on an open issue needs the clerk",
 			defended(acquittal()),
-			"none",
+			"clerk",
 		],
 		[
 			"a refute instead of a defence needs nobody",
@@ -90,9 +90,17 @@ describe("case: court stage", () => {
 		expect(needOnly(1)).toBe(`need=${expected}`);
 	});
 
-	test("a closed issue with court markers needs nobody", () => {
+	test("a closed issue with a conviction needs the clerk", () => {
 		put({ 1: { ...defended(conviction()), state: "CLOSED" } });
-		expect(needOnly(1)).toBe("need=none");
+		expect(needOnly(1)).toBe("need=clerk");
+	});
+
+	test("due for the prosecutor, defender and investigation skips closed issues", () => {
+		put({ 1: { ...withLead(), state: "CLOSED" } });
+		put({ 2: { ...withLead(caseMark()), state: "CLOSED" } });
+		put({ 3: { ...withLead(caseMark(), charge()), state: "CLOSED" } });
+		for (const role of ["investigation", "prosecutor", "defender"])
+			expect(call(BASE, ["due", "--role", role]).out).toBe("");
 	});
 
 	test("a court return leaves round and returned unchanged", () => {

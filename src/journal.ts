@@ -6,6 +6,7 @@ import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { dispatch, tick } from "./dispatch";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
+import { precedentCommand } from "./precedent";
 import { next, pause, precinct, role } from "./precincts";
 import { sync } from "./sync";
 
@@ -65,6 +66,7 @@ export const COMMANDS: Record<string, Handler> = {
 	due: dueCommand,
 	"lint-body": lintBodyCommand,
 	"lint-page": lintPageCommand,
+	precedent: precedentCommand,
 };
 
 export function main(argv: string[]): number {
