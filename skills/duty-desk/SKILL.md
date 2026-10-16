@@ -1,13 +1,13 @@
 ---
 name: duty-desk
-description: Runs one tick of a Lawman duty desk, which writes at most one order per role for investigation, prosecutor, defender, court, clerk and patrol, then exits without filing, commenting or editing anything.
+description: Runs one tick of a Lawman duty desk, which writes at most one order per role for the response unit, investigation, prosecutor, defender, court, clerk and patrol, then exits without filing, commenting or editing anything.
 ---
 
 # Duty desk
 
 You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
 
-One invocation runs one tick. The tick writes at most one order per role for six roles: investigation, prosecutor, defender, court, clerk and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
+One invocation runs one tick. The tick writes at most one order per role for seven roles: the response unit, investigation, prosecutor, defender, court, clerk and patrol. For patrol it picks one precinct and the department that has waited longest there. Then it exits. It does nothing else.
 
 The law is `lawman/law/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: "Tick outcomes", "Alarms and their repetition", "Silence is the default" and "One tick, one case, exit". The page shapes that `lint-page` checks come from `lawman/law/constitution.md` and `lawman/law/departments.md`.
 
@@ -60,7 +60,7 @@ Send the report through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first 
 
 ### Step 0: Guards
 
-0.1. Run `bin/journal probe --schema 2`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
+0.1. Run `bin/journal probe --schema 3`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 0.2. Run `bin/journal tick start --role duty-desk`. Keep the printed number as `<id>`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop.
 
@@ -81,7 +81,7 @@ Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for 
 2.1. Run `bin/journal precinct list`. Each line is `<name><TAB><repo><TAB><weight><TAB><credit><TAB><synced>`. For each line whose weight is above zero, sync the tracker, with `<login>` from step 0.3:
 
 ```
-bash -o pipefail -c 'gh issue list -R <repo> --author <login> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>'
+bash -o pipefail -c 'gh issue list -R <repo> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>'
 ```
 
 The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed. For the clerk a closed issue is still work.
@@ -133,9 +133,14 @@ If either fails, end with `stopped-git-fetch`.
 5.3. Run `git -C precincts/<name> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution`.
 
 - Exit 8: if a printed line contains `contract_version`, end with `skipped-contract-version`. Otherwise end with `skipped-bad-constitution`. Keep the printed lines for the report.
-- Exit 0 with no printed line: end with `skipped-no-departments`.
-- Exit 0 with lines: each line is `<name><TAB><judged-by>`. Keep the names in printed order. That list is the constitution's department list.
-- Any other exit ends with `failed`.
+- Exit 0: run `bin/journal intake <name>` first.
+  - Empty output: go on.
+  - One number `<n>`: run `bin/journal dispatch add --precinct <name> --role response-unit --issue <n>`. Keep the printed id as `<response-unit order>`. Exit 2: an open order already exists. Go on, silently.
+  - Any other non-zero exit, from either command, ends with `failed`.
+- Then branch on the printed lines of the lint:
+  - No printed line: end with `skipped-no-departments`.
+  - Lines: each line is `<name><TAB><judged-by>`. Keep the names in printed order. That list is the constitution's department list.
+- Any other exit of the lint ends with `failed`.
 
 ### Step 6: Choose the department
 
@@ -196,7 +201,7 @@ Never write the silence token together with an `ALARM` line or a stop line. A cl
 End every tick with the same five labelled lines, one line per part, in this order. Send them on stdin to `tick end`:
 
 ```
-Coverage: <orders: patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>, court <id|none>, clerk <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
+Coverage: <orders: response-unit <id|none>, patrol <id|none>, investigation <id|none>, prosecutor <id|none>, defender <id|none>, court <id|none>, clerk <id|none>; and the precinct, department and sha from step 5.2 of the patrol part, or "none" when no precinct was chosen>
 Candidates: none. The duty desk analyses nothing.
 Filed: Filed nothing.
 Strongest rejected: none.
