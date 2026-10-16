@@ -159,7 +159,7 @@ describe("next", () => {
 		["4/3/2", { a: 4, b: 3, c: 2 }, 900, { a: 400, b: 300, c: 200 }],
 		["5/3/2", { a: 5, b: 3, c: 2 }, 1000, { a: 500, b: 300, c: 200 }],
 	])(
-		"weights %s over %d cycles keep their shares and ignore the clock",
+		"weights %s over the given cycles keep their shares and ignore the clock",
 		(_label, weights, count, shares) => {
 			const frozen = cycles(weights, count, () => 0);
 			expect(tally(frozen)).toEqual(shares);

@@ -17,7 +17,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - A stale order is a success. Silence is the default.
 - What you cannot establish goes in Not established. It never stops the tick.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
 ## Working rules
 
@@ -55,7 +55,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md`. Then run its "Alarms before work" section.
+6. Read `lawman/law/tick.md`. Obey its "Working rules", "Alarm" and "Never" sections for the whole tick. Then run its "Alarms before work" section.
 7. Run the "Housekeeping" section.
 
 ### Step 1: take an order
@@ -142,7 +142,8 @@ Compose the comment from the Case format section. Write it as the "Write a comme
 
 ### Step 10: end the tick
 
-Run the "End the tick" section. The success token is `investigated`. The silence token is `[SILENT]`.
+Run the "End the tick" section. The success token is `investigated`.
+The silence token is `[SILENT]`.
 
 ## Case format
 

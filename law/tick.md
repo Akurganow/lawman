@@ -58,7 +58,8 @@ for p in precincts/*/; do git -C "$p" worktree prune; done
 
 ## Take an order
 
-Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`. Empty output ends the tick with `silent`, and its report is `No order.` An issue role also ends the tick with `failed` when the order has no issue number.
+Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`. Empty output ends the tick with `silent`, and its report is `No order.`
+An issue role also ends the tick with `failed` when the order has no issue number.
 
 ```
 bin/journal dispatch take --role <role>
