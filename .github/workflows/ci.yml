@@ -25,16 +25,9 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LAWMAN_FENCE_NAMES: ${{ secrets.LAWMAN_FENCE_NAMES }}
+      FENCE_PATHS: law departments skills/duty-desk skills/patrol skills/investigation skills/prosecutor skills/defender skills/court skills/clerk
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
-      - name: Select fenced paths
-        run: |
-          paths=""
-          for p in law departments skills/duty-desk skills/patrol skills/investigation skills/prosecutor skills/defender skills/court skills/clerk; do
-            if [ -e "$p" ]; then paths="$paths $p"; fi
-          done
-          if [ -z "$paths" ]; then echo "no fenced paths"; exit 1; fi
-          echo "FENCE_PATHS=$paths" >> "$GITHUB_ENV"
       - name: Class fence
         run: |
           grep -vE '^(#|[[:space:]]*$)' fence-patterns.txt > "$RUNNER_TEMP/fence.txt"
@@ -51,9 +44,6 @@ jobs:
           if [ "$rc" -gt 1 ]; then echo "fence scan error"; exit 2; fi
           if [ "$rc" -eq 0 ]; then echo "$hits"; echo "names fence failed"; exit 1; fi
           echo "names fence clean"
-      - name: Names fence skipped
-        if: env.LAWMAN_FENCE_NAMES == ''
-        run: echo "names fence skipped"
 
   leaks:
     runs-on: ubuntu-latest

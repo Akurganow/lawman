@@ -6,11 +6,11 @@ This release holds the law, the contracts, the marker grammar, the journal, the 
 
 ## How it is laid out
 
-- `law/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers roles leave on issues.
+- `law/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers roles leave on issues. `tick.md` holds the steps that the six roles of a tick share.
 - `skills/`: the roles, as Agent Skills. `duty-desk` picks a precinct and writes the orders. `patrol` takes its order and files leads. `investigation` builds the case on one lead. `prosecutor` charges, returns or declines the case. `defender` defends, returns or refutes the charge. `court` convicts or acquits the defended case. `clerk` carries the precedent of a ruling to a pull request. `assembly` sets up an installation, adds precincts and updates the law.
 - `departments/`: department pages shipped with the law. A department is a page, not an agent.
 - `harnesses/`: one page per harness with what a skill cannot know about it.
-- `src/journal.ts`: the journal, one program on Bun with SQLite, compiled to a binary per platform and published on releases.
+- `src/journal.ts`: the journal, one program on Bun with SQLite, compiled to a binary per platform and published on releases. `status` and `leads` show the tracker cache as of the last sync.
 
 A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its constitution. Everything repository-specific lives there, never in the law.
 

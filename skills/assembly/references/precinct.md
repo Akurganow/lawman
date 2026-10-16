@@ -64,19 +64,13 @@ A resolved page that fails hides the later places, so never fall back to them.
 30. Run `gh issue list -R <owner>/<repo> --limit 1`, and stop if it fails.
 31. Run `gh pr list -R <owner>/<repo> --limit 1`, and stop if it fails.
 32. Run `git -C precincts/<owner>-<repo> ls-remote origin HEAD`, and stop if it fails.
-33. Compare steps 30 to 32 with the read calls that `lawman/skills/patrol/SKILL.md` names, and run any other read call it names with `--limit 1` added.
-34. Ask the developer whether the assembly may create and close one probe issue, and skip steps 35 to 37 unless they say yes.
-35. Run `gh issue create -R <owner>/<repo> --title "Lawman probe" --body "Write probe. Closed at once."`.
-36. Run `gh issue close <number> -R <owner>/<repo> --reason "not planned"`, with the number from step 35.
-37. Record a refused create as a warning in your summary, and give the developer the number to close by hand when the close fails.
-
-The write probe runs under the one identity every role uses.
+33. Compare steps 30 to 32 with the read calls that `lawman/skills/patrol/SKILL.md` and `lawman/law/tick.md` name, and run any other read call they name with `--limit 1` added.
 
 ### Add the precinct
 
-38. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
-39. When this is the first precinct and the scheduled jobs of the roles are not listed, run install step 10 now.
-40. Tell the developer to return after the pull request merges, and that the weight stays at 0 until then.
+34. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
+35. When this is the first precinct and the scheduled jobs of the roles are not listed, run install step 10 now.
+36. Tell the developer to return after the pull request merges, and that the weight stays at 0 until then.
 
 ## Re-check a precinct
 
