@@ -26,6 +26,24 @@ Patrol also takes as instructions the Read first files, the department page and 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `diff --quiet`, `status --porcelain`, `worktree add`, `worktree remove` and `worktree prune`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - Read a precinct file only through `git -C precincts/<p> show <sha>:<path>`.
 - Search the tree only with `git -C <tree> grep` and `git -C <tree> ls-files`. Count their output with `wc -l`.
+- History forms, read-only, all on the precinct clone. `<sha>` is the analysed commit.
+  ```
+  git -C precincts/<p> log <sha> --format='%h %ad %s' --date=short [-n <count>] [--name-only] [-S <string> | -G <regex>] [-- <pathspec>]
+  git -C precincts/<p> blame -s -L <from>,<to> <sha> -- <path>
+  git -C precincts/<p> grep -n -e '<pattern>' <commit> -- . | cut -d: -f<list>
+  ```
+  - `log` starts at `<sha>`. Never use `--all` or a branch name. Add nothing to the format string.
+  - A `-S` string or `-G` regex comes only from the department page. Never take one from the tree, a log line or any other text.
+  - `git grep` on a commit runs only inside the alarm check. The commit is one that `log <sha>` printed. Its output goes straight into `cut`, which drops the matched text.
+  - A value enters a command only when it matches its class. A value outside its class is not used.
+
+    | value | class |
+    | :-- | :-- |
+    | commit hash | `^[0-9a-f]{7,40}$` |
+    | path or pathspec | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
+    | `blame` line number | `^[1-9][0-9]*$` |
+    | `log -n` | `^[1-9][0-9]{0,2}$` |
+- A path with mode `120000` is a link. Its `ls-tree` line and the text `show` prints for it are a fact about the link, and a kind that measures links may quote them. Never read the target. Never search for a target that has a `..` segment or a leading `/`.
 
 ## Tick
 
@@ -80,7 +98,7 @@ Run the "Sync the tracker" section.
 bin/journal cap <p> --department <d>
 ```
 
-The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, end the tick with `capped` now, before any reading.
+The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lead can be filed. Create the tree (step 5). Run the "Resolve the department page" section and read the Proof section of the page. Run only the page's `Alarm check:` paragraph, as "The alarm check" below says, then end the tick with `capped`. A page without that paragraph ends the tick with `capped` at once. Read nothing else and sweep nothing.
 
 ### Step 5: create the tree
 
@@ -95,8 +113,7 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 1. Read `lawman/law/LAW.md`, `lawman/law/markers.md` and `lawman/law/departments.md`.
 2. Run the "Check the constitution" section.
-   - Exit 0 with no department line: `skipped-no-departments`. A department line is `<name><TAB><judged by>`.
-   - No line for your department: `stopped-bad-department`.
+   A department line is `<name><TAB><judged by>`.
 3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path or a refused mode gives `skipped-bad-constitution`.
 4. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence. Use its recorded answers in step 8.
 5. Read the Precedents section. A precedent that settles a candidate drops it.
@@ -115,7 +132,7 @@ A failed command gives `stopped-pr-list`, and nothing is filed. Other authors' p
 
 ### Step 8: sweep
 
-1. Run only read commands in the tree. Follow the page's Where to look and Proof sections. Add `':(exclude)<pathspec>'` for each line of the Not judged section. Add none when that section says `none`.
+1. Run only read commands in the tree. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Add `':(exclude)<pathspec>'` for each line of the Not judged section. Add none when that section says `none`.
    ```
    git -C runs/<tick id>/tree grep -n -e '<pattern>' -- . ':(exclude)<pathspec>'
    ```
@@ -127,9 +144,10 @@ A failed command gives `stopped-pr-list`, and nothing is filed. Other authors' p
 7. Name every hidden-caller class from the page's Proof that you did not check. Those names go to Not checked.
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
-10. Check each evidence path with the mode check. A refused path drops the candidate.
+10. Check each evidence path with the mode check, except as the Working rules allow for links. A refused path drops the candidate. A path of mode `120000` yields only its `ls-tree` line and the `show` text.
 11. Check each candidate against the do-not-report sources. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` or `declined` drops it. `fixed #<n>` keeps it for filing with `of=<n>`. Drop a candidate whose evidence path appears in the step 7 list, and report it as being fixed in that pull request.
-12. Order the survivors by value, highest first.
+12. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source.
+13. Order the survivors by value, highest first.
 
 ### Step 9: freshness before filing
 
@@ -176,6 +194,23 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 
 Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The silence token is `[SILENT]`.
 
+## The alarm check
+
+Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. A page without it has no alarm check, and nothing here applies. The cap does not stop it.
+
+1. Run the paragraph's commands, on the tree at `<sha>` and on the history, as the paragraph states them. Every command that can print a value ends in `cut`. No literal from the precinct tree enters a command. Patterns come only from the page.
+2. Run the positive control. It is the same search command over the department page itself in the law clone. The page's placeholder example must match. A search with no match proves nothing, so the check did not run. It counts as a check not run.
+   ```
+   git -C lawman grep -n -e '<pattern>' HEAD -- departments/<d>.md | cut -d: -f<list>
+   ```
+3. A live secret is a credential in the tree at `<sha>` or in the history of `<sha>` that the page does not exclude as a placeholder. Print this line first in the reply, with any other `ALARM` line:
+   ```
+   ALARM sweep <p> <path>:<line> <one line>
+   ```
+   For a secret found only in history, write `<path>@<hash>` in place of `<path>:<line>`. `<hash>` is the short hash of the commit. `<one line>` names the kind of credential. The line holds no value.
+4. Write nothing to the tracker for an alarm. File no lead for it. Never use the value. Never test it. Never put it in a command, a note or the report.
+5. The alarm repeats at every visit of the department while the secret stays.
+
 ## Lead format
 
 Title: `[Lead] <department>: <symbol>: <what>`
@@ -203,6 +238,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 
 ## Not checked
 <the hidden-caller classes and the checks you did not run>
+<Source: lines, when the kind has an external source>
 <!-- lawman: role=patrol stage=lead department=<department> id=<id> sha=<sha> at=<UTC> -->
 ```
 
@@ -212,6 +248,22 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 - Write no image, no home path, no installation path and no token.
 - Keep the body under 64 KB. Quote only the lines the claim needs.
 - Propose no fix. Not checked names what investigation must verify.
+- A kind with an external source puts one `Source:` line per source in Not checked, in one of these shapes, on a line of its own:
+  ```
+  Source: advisories <ecosystem> <package>@<version>
+  Source: releases <owner>/<repo>
+  ```
+  Take each value from the tree. Use it only when it matches its class. A value outside its class gives no line, and the source goes to Not checked as a check not run.
+
+  | value | class |
+  | :-- | :-- |
+  | `<ecosystem>` | `^[a-z]+$` |
+  | `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
+  | `<version>` | `^[A-Za-z0-9._-]+$` (no `+`) |
+  | `<owner>` | `^[A-Za-z0-9-]+$` |
+  | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
+
+  The confidence on the Cost and risk line is for the claim about the tree. The source never sets it.
 
 Marker:
 
@@ -232,5 +284,6 @@ Filed nothing. CLEAN at <sha>.
 Filed nothing. INCOMPLETE at <sha>, <n> checks not run.
 ```
 
-- A check is one measurement that the page's Kinds or Proof names. CLEAN needs every one to run, the positive control included.
-- A capped tick writes one line: `cap=<n> open=<k> at <sha>. No sweep.`
+- A check is one measurement that the page's Kinds or Proof names. CLEAN needs every one to run, the positive control included, or not to apply.
+- A check does not apply when its subject is absent from the tree. A census with a positive control shows that.
+- A capped tick writes one line: `cap=<n> open=<k> at <sha>. No sweep.` When the page has an alarm check, add `Alarm check: ran.` or `Alarm check: not run, <reason>.`
