@@ -52,7 +52,7 @@ Create one job per role:
 
 ```
 hermes cron create "<cron expression>" "<tick prompt>" \
-  --name <role> --skill <role> --workdir <installation> \
+  --name "[lawman] <role>" --skill <role> --workdir <installation> \
   --model <model> --deliver <platform>
 ```
 

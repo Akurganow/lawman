@@ -22,7 +22,7 @@ Read `<installation>/config.yaml`. Take the first mode that holds.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `config.yaml` exists and `law_commit` or `release_tag` differs from the law clone, update by reading `references/update.md`.
-3. If `config.yaml` matches the law clone, and a folder `lawman/skills/<role>/` other than `assembly` has no job in the scheduler's job list, add the roles. Get the list with the list command the harness page gives. Run install steps 9 and 10 from `references/install.md` for those roles only.
+3. If `config.yaml` matches the law clone, and a folder `lawman/skills/<role>/` other than `assembly` has no job `[lawman] <role>` in the scheduler's job list, add the roles. Get the list with the list command the harness page gives. Run install steps 9 and 10 from `references/install.md` for those roles only.
 4. Otherwise, run the precinct mode by reading `references/precinct.md`.
 
 The law clone's values are `git -C lawman rev-parse HEAD` and `git -C lawman describe --tags --exact-match`. A failing `describe` counts as a difference.

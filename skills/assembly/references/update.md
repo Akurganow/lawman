@@ -38,4 +38,4 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 2. Set `law_commit` to `git -C lawman rev-parse HEAD`, `release_tag` to `<target>` and `journal_sha256` to the sum from install step 5, item 14, and keep the other keys.
 3. Write `config.yaml`, and read it back.
 4. Tell the developer the new tag and the changes from step 1.
-5. If a folder under `lawman/skills/` other than `assembly` has no job in the scheduler's list, tell the developer to run the assembly again, which enters the roles mode.
+5. If a folder under `lawman/skills/` other than `assembly` has no job `[lawman] <role>` in the scheduler's list, tell the developer to run the assembly again, which enters the roles mode.

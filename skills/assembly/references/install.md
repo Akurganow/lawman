@@ -106,17 +106,17 @@ Finish this step before the developer adds a precinct.
 Run this step after the first precinct is in the journal. The precinct reference calls it. Create the jobs in this interactive session only, because scheduled sessions cannot create jobs.
 
 1. List the scheduled jobs with the list command the page gives.
-2. Skip a job whose name is already listed, and tell the developer which ones you skipped.
+2. Skip a role whose job `[lawman] <role>` is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the model of each role without a job, one role at a time, and wait for each answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
 4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `5 9 * * *` for response-unit, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court and `30 10 * * *` for clerk, in the machine's local time.
 5. Show every create command to the developer, and wait for a yes.
 6. Create one job per role folder without a job, with the create form the page gives:
 
 ```
-<create command from the page> "<cron expression>" "<Role name> tick." --name <role> --skill <role> --workdir <installation> --model <model> --deliver <deliver>
+<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role> --workdir <installation> --model <model> --deliver <deliver>
 ```
 
-`<Role name>` is the role folder name with hyphens as spaces and a capital first letter. The prompt for `investigation` is `Investigation tick.`
+Every job name carries the prefix `[lawman] ` so the developer can filter Lawman jobs from others. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. The prompt for `investigation` is `Investigation tick.`
 
 7. List the jobs again, and stop if a job is missing.
 8. Tell the developer that the install is complete.
