@@ -77,7 +77,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 ### Step 5: read the rules
 
 1. Run the "Check the constitution" section.
-2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. When `department` is not `-` and no line has its name, the tick ends with `stopped-bad-department`.
+2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
 3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
 5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest.

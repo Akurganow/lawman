@@ -75,7 +75,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 ### Step 5: read the rules
 
 1. Run the "Check the constitution" section.
-2. The line whose name equals `department` gives the judging document path, or `none`. No line for the department means no judging document.
+2. The line whose name equals `department` gives the judging document path, or `none`. The "Check the constitution" section says what a department with no printed line means.
 3. Read the judging document, if any. Run the mode check, then `show <sha>:<path>`. A missing path or a refused mode gives `skipped-bad-constitution`. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law's Evidence section defines it.
 
