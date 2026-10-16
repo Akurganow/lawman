@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	cli,
@@ -98,14 +98,16 @@ describe("rotation", () => {
 	});
 });
 
-describe("rotation fed by a directory listing", () => {
+describe("rotation fed by the page directory and the precinct lines", () => {
 	const PIPELINE =
-		'ls -1 "$DEPARTMENTS" | sed -n \'s/\\.md$//p\' | bin/journal rotation "$PRECINCT" --role patrol';
+		'{ ls -1 lawman/departments | sed -n "s/[.]md$//p" && printf "%s\\n" "$PRECINCT_LINES"; } | bin/journal rotation "$PRECINCT" --role patrol';
 
-	function pipe(listed: string[]) {
-		const pages = join(dir, "pages");
-		mkdirSync(pages);
-		for (const file of listed) writeFileSync(join(pages, file), "");
+	function pipe(listed: string[] | null, precinctLines: string[] = []) {
+		if (listed !== null) {
+			const pages = join(dir, "lawman", "departments");
+			mkdirSync(pages, { recursive: true });
+			for (const file of listed) writeFileSync(join(pages, file), "");
+		}
 		const bin = join(dir, "bin");
 		mkdirSync(bin);
 		const shim = join(bin, "journal");
@@ -119,8 +121,8 @@ describe("rotation fed by a directory listing", () => {
 			env: {
 				PATH: process.env.PATH ?? "",
 				LAWMAN_DB: dbFile,
-				DEPARTMENTS: pages,
 				PRECINCT,
+				PRECINCT_LINES: precinctLines.join("\n"),
 			},
 		});
 		return { code: r.exitCode, out: r.stdout.toString() };
@@ -138,15 +140,52 @@ describe("rotation fed by a directory listing", () => {
 		]);
 	});
 
-	test("a directory without page files gives empty output and exit 0", () => {
-		const r = pipe(["notes.txt"]);
+	test("precinct line names join the page names", () => {
+		visit("api", "2026-10-05T00:00:00Z");
+		const r = pipe(["api.md"], ["billing", "audit"]);
 		expect(r.code).toBe(0);
-		expect(r.out).toBe("");
+		expect(lines(r)).toEqual([
+			"audit\t-",
+			"billing\t-",
+			"api\t2026-10-05T00:00:00Z",
+		]);
+	});
+
+	test("a precinct line that repeats a page name prints once", () => {
+		const r = pipe(["api.md", "web.md"], ["web", "billing"]);
+		expect(r.code).toBe(0);
+		expect(lines(r)).toEqual(["api\t-", "billing\t-", "web\t-"]);
+	});
+
+	test("a directory without page files gives only the precinct lines", () => {
+		const none = pipe(["notes.txt"]);
+		expect(none.code).toBe(0);
+		expect(none.out).toBe("");
 	});
 
 	test("an empty directory gives empty output and exit 0", () => {
 		const r = pipe([]);
 		expect(r.code).toBe(0);
 		expect(r.out).toBe("");
+	});
+
+	test("an empty directory still lists the precinct lines", () => {
+		const r = pipe([], ["billing"]);
+		expect(r.code).toBe(0);
+		expect(lines(r)).toEqual(["billing\t-"]);
+	});
+
+	test("a missing page directory fails the pipeline", () => {
+		const r = pipe(null, ["billing"]);
+		expect(r.code).not.toBe(0);
+		expect(r.out).toBe("");
+	});
+
+	test("the duty-desk skill carries the pipeline verbatim", () => {
+		const skill = readFileSync(
+			join(ROOT, "skills", "duty-desk", "SKILL.md"),
+			"utf8",
+		);
+		expect(skill).toContain(`bash -o pipefail -c '${PIPELINE}'`);
 	});
 });

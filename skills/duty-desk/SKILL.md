@@ -137,29 +137,30 @@ If either fails, end with `stopped-git-fetch`.
   - Empty output: go on.
   - One number `<n>`: run `bin/journal dispatch add --precinct <name> --role response-unit --issue <n>`. Keep the printed id as `<response-unit order>`. Exit 2: an open order already exists. Go on, silently.
   - Any other non-zero exit, from either command, ends with `failed`.
-- Then branch on the printed lines of the lint:
-  - No printed line: end with `skipped-no-departments`.
-  - Lines: each line is `<name><TAB><judged-by>`. Keep the names in printed order. That list is the constitution's department list.
+- Then keep the printed lines. Each line is `<name><TAB><judged-by>`. Keep the names in printed order as the precinct's lines. An empty list is allowed: the precinct then adds no line.
 - Any other exit of the lint ends with `failed`.
 
-### Step 6: Choose the department
+### Step 6: List the departments
 
-Run `bin/journal last <name> --role patrol`. It prints `<department><TAB><at>` lines, oldest first.
+The precinct's departments are the page names in `lawman/departments` plus the names of the precinct's lines from step 5.3. Run this command with `<name>` from step 3. Put the precinct's lines, one per line, in `<lines>`. Leave `<lines>` empty when the list is empty:
 
-1. A department in the constitution list with no line in that output has waited longest. Take the first such department, in constitution order.
-2. If every department has a line, take the first line whose department is in the constitution list.
+```
+PRECINCT=<name> PRECINCT_LINES='<lines>' bash -o pipefail -c '{ ls -1 lawman/departments | sed -n "s/[.]md$//p" && printf "%s\n" "$PRECINCT_LINES"; } | bin/journal rotation "$PRECINCT" --role patrol'
+```
 
-Keep the chosen name as `<d>`. A non-zero exit ends with `failed`.
+Each output line is `<department><TAB><at>`. The list is in rotation order: a department never visited comes first, then the oldest visit first. A failure of the pipeline ends with `failed`. Empty output ends with `skipped-bad-department`.
 
-### Step 7: Resolve the department page
+### Step 7: Choose the department
+
+Walk the printed list from top to bottom. For each name run step 8. The first page that passes is `<d>`. Keep its name as `<d>` and go to step 9.
+
+### Step 8: Resolve the department page
 
 Check these locations in order. The first location that holds the file is the page. Never try a later location, even when the first page is broken.
 
 1. Precinct: `git -C precincts/<name> ls-tree origin/HEAD -- .lawman/departments/<d>.md`. If the output is not empty, the page is `git -C precincts/<name> show origin/HEAD:.lawman/departments/<d>.md`. A symbolic link there counts as a bad page.
 2. Installation: `departments/<d>.md`.
 3. Law clone: `lawman/departments/<d>.md`.
-
-Check `<d>` against `[a-z][a-z0-9-]*` before any path is built. A name that fails ends with `skipped-bad-department`.
 
 Pipe the page into the check:
 
@@ -168,19 +169,21 @@ git -C precincts/<name> show origin/HEAD:.lawman/departments/<d>.md | bin/journa
 bin/journal lint-page department --name <d> < departments/<d>.md
 ```
 
-- No location holds the file: end with `skipped-bad-department`.
-- Exit 8: end with `skipped-bad-department`. Keep the printed lines for the report.
-- Exit 0: continue.
+- Exit 0: the page passes. Step 7 takes this name.
+- Exit 8: the page is bad. Keep the printed lines.
+- No location holds the file: the page is bad.
 - Any other exit ends with `failed`.
 
-### Step 8: Write the order
+A bad page does not end the tick. Put its name and the first line of the reason into Blockers, take the next name in the list and run this step again. When the list is exhausted, end with `skipped-bad-department`.
+
+### Step 9: Write the order
 
 Run `bin/journal dispatch add --precinct <name> --role patrol --department <d>`. It prints the order id. Keep it as `<order>`.
 
 - Exit 2: an open order already exists. End the patrol part with `silent`.
 - Any other non-zero exit ends with `failed`.
 
-### Step 9: End with the orders
+### Step 10: End with the orders
 
 Do not close any order, because each role takes its own order and closes it.
 
