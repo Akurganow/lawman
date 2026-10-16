@@ -3,12 +3,14 @@ import { alarm, status } from "./alarms";
 import { pick } from "./args";
 import { caseCommand, dueCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
+import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
 import { intakeCommand } from "./intake";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
+import { rotation } from "./rotation";
 import { sync } from "./sync";
 
 export { open } from "./db";
@@ -29,11 +31,13 @@ export const COMMANDS: Record<string, Handler> = {
 	seen,
 	cap,
 	last,
+	rotation,
 	case: caseCommand,
 	due: dueCommand,
 	intake: intakeCommand,
 	"lint-body": lintBodyCommand,
 	"lint-page": lintPageCommand,
+	"department-line": departmentLineCommand,
 	precedent: precedentCommand,
 };
 

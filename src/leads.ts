@@ -123,18 +123,27 @@ export function cap(args: string[]): void {
 	});
 }
 
+export type Visit = { department: string; at: string };
+
+export function lastVisits(
+	db: Database,
+	name: string,
+	roleName: string,
+): Visit[] {
+	return db
+		.query(
+			`SELECT department, max(at) AS at FROM dispatches
+       WHERE precinct = ? AND role = ? AND department IS NOT NULL
+       GROUP BY department ORDER BY max(at), department`,
+		)
+		.all(name, roleName) as Visit[];
+}
+
 export function last(args: string[]): void {
 	const { pos, opt } = parseArgs(args, 1, ["role"], LAST_USAGE);
 	const name = check("precinct", pos[0]);
 	const roleName = check("role", opt.role);
 	withDb((db) => {
-		const rows = db
-			.query(
-				`SELECT department, max(at) AS at FROM dispatches
-         WHERE precinct = ? AND role = ? AND department IS NOT NULL
-         GROUP BY department ORDER BY max(at), department`,
-			)
-			.all(name, roleName) as { department: string; at: string }[];
-		for (const r of rows) out(r.department, r.at);
+		for (const r of lastVisits(db, name, roleName)) out(r.department, r.at);
 	});
 }
