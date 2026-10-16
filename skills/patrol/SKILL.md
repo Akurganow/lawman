@@ -63,7 +63,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
-2. Run the "Take an order" section with `--role <role>`.
+2. Run the "Take an order" section with `--role patrol`.
 3. An order with an issue number, or with no department, is not a patrol order. End with `failed`.
 
 ### Step 2: fetch the precinct

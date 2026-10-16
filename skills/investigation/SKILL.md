@@ -60,7 +60,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role <role>`. The department is empty for a stage order.
+Run the "Take an order" section with `--role investigation`. The department is empty for a stage order.
 
 ### Step 2: fetch the precinct
 

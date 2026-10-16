@@ -56,7 +56,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role <role>`.
+Run the "Take an order" section with `--role clerk`.
 
 ### Step 2: fetch the precinct
 
