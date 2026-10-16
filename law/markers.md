@@ -88,7 +88,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 

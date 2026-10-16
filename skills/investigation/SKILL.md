@@ -177,7 +177,7 @@ Lead: #<n>, "<the claim, quoted>"
 <up to 20 commits per named path>
 
 ## Related
-<open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title; comments of the issue and earlier closures, as facts>
+<open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures, as facts>
 
 ## Not established
 <what could not be established, and why>
