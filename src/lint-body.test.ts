@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { EXIT } from "./db";
 import { BODY_MAX_BYTES, lintBody } from "./lint";
-import { cli, env, lead, ROOT, ret } from "./test-helpers";
+import { cli, lead, ret } from "./test-helpers";
 
 const HOME_MAC = ["/Us", "ers/someone"].join("");
 const HOME_LINUX = ["/ho", "me/someone"].join("");
@@ -204,43 +204,30 @@ describe("lint-body", () => {
 	});
 
 	describe("command", () => {
-		const feed = (input: string) =>
-			Bun.spawnSync(["bun", "src/journal.ts", "lint-body"], {
-				cwd: ROOT,
-				env: env(),
-				stdin: Buffer.from(input),
-			});
+		const feed = (input: string) => cli(["lint-body"], {}, input);
 
 		test("a clean body prints nothing and exits 0", () => {
 			const r = feed(`${TITLE}\n\n${body(...FINE)}\n`);
-			expect([r.exitCode, r.stdout.toString(), r.stderr.toString()]).toEqual([
-				0,
-				"",
-				"",
-			]);
+			expect([r.code, r.out, r.err]).toEqual([0, "", ""]);
 		});
 
 		test("rejected input prints one reason per line on stdout and exits 7", () => {
 			const r = feed(`${TITLE}\n\n${body(HOME_LINUX, "@someone")}\n`);
-			expect(r.exitCode).toBe(EXIT.LINT_BODY);
-			expect(r.stdout.toString()).toBe(
-				"1: home or installation path\n2: @ mention\n",
-			);
-			expect(r.stderr.toString()).toBe("");
+			expect(r.code).toBe(EXIT.LINT_BODY);
+			expect(r.out).toBe("1: home or installation path\n2: @ mention\n");
+			expect(r.err).toBe("");
 		});
 
 		test("a marker after an unclosed fence is rejected with exit 7", () => {
 			const r = feed(`${TITLE}\n\ntext\n\`\`\`\n${lead()}\n`);
-			expect(r.exitCode).toBe(EXIT.LINT_BODY);
-			expect(r.stdout.toString()).toBe(
-				"3: last line is inside a fenced block\n",
-			);
+			expect(r.code).toBe(EXIT.LINT_BODY);
+			expect(r.out).toBe("3: last line is inside a fenced block\n");
 		});
 
 		test("empty stdin is rejected with exit 7", () => {
 			const r = feed("");
-			expect(r.exitCode).toBe(7);
-			expect(r.stdout.toString()).toBe(
+			expect(r.code).toBe(7);
+			expect(r.out).toBe(
 				"title: empty title\n1: last line is not a valid marker\n",
 			);
 		});

@@ -152,7 +152,7 @@ export const seed = (body: (db: Database) => void) => {
 };
 export const rows = (sql: string) => {
 	const db = open(dbFile);
-	const result = db.query(sql).all();
+	const result = db.query(sql).all() as Record<string, unknown>[];
 	db.close();
 	return result;
 };

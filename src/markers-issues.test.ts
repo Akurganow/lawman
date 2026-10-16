@@ -8,15 +8,14 @@ import {
 import {
 	addPrecincts,
 	carrier,
+	cli,
 	collect,
 	dbFile,
-	env,
 	issueOf,
 	issues,
 	LEAD_ID,
 	lead,
 	must,
-	ROOT,
 	rounds,
 	run,
 	TRUSTED,
@@ -52,20 +51,17 @@ describe("fixture issues", () => {
 		expect([...newestByRole.keys()].sort()).toEqual(["judge", "patrol"]);
 	});
 
-	test("#2 a marker in a backtick fence does not count", () => {
-		expect(collect(2).markers).toEqual([]);
-	});
-
-	test("#3 a marker in a tilde fence does not count", () => {
-		expect(collect(3).markers).toEqual([]);
+	test.each([
+		[2, "a marker in a backtick fence"],
+		[3, "a marker in a tilde fence"],
+		[5, "indented, quoted, mid-line, trailing and leading-space markers"],
+		[23, "a fenced legacy line"],
+	])("#%d %s does not count", (n) => {
+		expect(collect(n).markers).toEqual([]);
 	});
 
 	test("#4 a three-backtick line does not close a four-backtick fence", () => {
 		expect(rounds(4)).toEqual(["3"]);
-	});
-
-	test("#5 indented, quoted, mid-line, trailing and leading-space markers do not count", () => {
-		expect(collect(5).markers).toEqual([]);
 	});
 
 	test("#6 an untrusted author counts for nothing, body or comment", () => {
@@ -232,8 +228,7 @@ describe("legacy fingerprints", () => {
 		expect(m.fields).not.toHaveProperty("id");
 	});
 
-	test("#23 a fenced legacy line and #24 a foreign one do not count", () => {
-		expect(collect(23).markers).toEqual([]);
+	test("#24 a foreign legacy line does not count", () => {
 		expect(collect(24).markers).toEqual([]);
 		expect(collect(24).leadOrigin).toBeNull();
 	});
@@ -323,13 +318,10 @@ describe("legacy fingerprints", () => {
 
 	describe("through the CLI", () => {
 		const sync = () =>
-			Bun.spawnSync(
-				["bun", "src/journal.ts", "sync", PRECINCT, "--author", TRUSTED],
-				{
-					cwd: ROOT,
-					env: env({ LAWMAN_DB: dbFile }),
-					stdin: Buffer.from(JSON.stringify(issues)),
-				},
+			cli(
+				["sync", PRECINCT, "--author", TRUSTED],
+				{ LAWMAN_DB: dbFile },
+				JSON.stringify(issues),
 			);
 		const rows = (args: string[]) =>
 			run(args)
@@ -342,7 +334,7 @@ describe("legacy fingerprints", () => {
 
 		beforeEach(() => {
 			addPrecincts({ [PRECINCT]: 1 });
-			expect(sync().exitCode).toBe(0);
+			expect(sync().code).toBe(0);
 		});
 
 		test("leads lists the open ones with their departments and ids, seen finds the closed one", () => {
@@ -393,21 +385,8 @@ describe("legacy fingerprints", () => {
 		});
 
 		test("sync counts legacy markers as markers and not as invalid", () => {
-			const kept = issues.filter(
-				(i) => i.author.login.toLowerCase() === TRUSTED,
-			);
-			const all = kept.flatMap((i) => collectIssueMarkers(i, TRUSTED).markers);
-			const shaped = kept
-				.flatMap((i) => [i.body, ...i.comments.map((c) => c.body)])
-				.flatMap((t) => t.split("\n"));
-			const lawman = all.filter(
-				(m) => m.marker.fields.legacy === undefined,
-			).length;
-			const invalid =
-				shaped.filter((l) => l.startsWith("<!-- lawman:")).length - lawman;
-			expect(all.length - lawman).toBe(4);
-			expect(sync().stdout.toString()).toContain(
-				`markers=${all.length} invalid=${invalid} `,
+			expect(sync().out.trim()).toBe(
+				"issues=22 leads=10 markers=26 invalid=11 skipped=2",
 			);
 		});
 	});

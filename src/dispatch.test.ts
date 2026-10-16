@@ -2,9 +2,11 @@ import { describe, expect, test } from "bun:test";
 import { open } from "./db";
 import {
 	addPrecincts,
-	cli,
+	BASE,
+	call,
 	dbFile,
 	env,
+	later,
 	ROOT,
 	run,
 	tempDb,
@@ -13,21 +15,13 @@ import {
 tempDb();
 
 describe("dispatch", () => {
-	const T0 = "2026-04-01T00:00:00Z";
-	const HOUR_MS = 3600 * 1000;
-	const later = (hours: number, seconds = 0) =>
-		new Date(Date.parse(T0) + hours * HOUR_MS + seconds * 1000)
-			.toISOString()
-			.replace(".000Z", "Z");
-	const at = (clock: string, args: string[]) =>
-		cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock });
 	const add = (
 		precinct: string,
 		role = "patrol",
 		extra: string[] = [],
-		clock = T0,
+		clock = BASE,
 	) =>
-		at(clock, [
+		call(clock, [
 			"dispatch",
 			"add",
 			"--precinct",
@@ -36,8 +30,8 @@ describe("dispatch", () => {
 			role,
 			...extra,
 		]);
-	const take = (clock = T0, role = "patrol") =>
-		at(clock, ["dispatch", "take", "--role", role]);
+	const take = (clock = BASE, role = "patrol") =>
+		call(clock, ["dispatch", "take", "--role", role]);
 
 	test("add prints an integer id and a duplicate open order exits 2 with one stderr line", () => {
 		addPrecincts({ a: 1 });
@@ -75,12 +69,12 @@ describe("dispatch", () => {
 			["--role", "patrol"],
 		];
 		for (const args of bad)
-			expect([args, at(T0, ["dispatch", "add", ...args]).code]).toEqual([
+			expect([args, call(BASE, ["dispatch", "add", ...args]).code]).toEqual([
 				args,
 				1,
 			]);
-		expect(at(T0, ["dispatch"]).code).toBe(1);
-		expect(at(T0, ["dispatch", "bogus"]).code).toBe(1);
+		expect(call(BASE, ["dispatch"]).code).toBe(1);
+		expect(call(BASE, ["dispatch", "bogus"]).code).toBe(1);
 	});
 
 	test("add stores the clock time, the department and the issue", () => {
@@ -129,7 +123,7 @@ describe("dispatch", () => {
 		expect(take()).toMatchObject({ code: 0, out: "" });
 		add("a", "duty-desk");
 		expect(take()).toMatchObject({ code: 0, out: "" });
-		expect(take(T0, "Bad").code).toBe(1);
+		expect(take(BASE, "Bad").code).toBe(1);
 	});
 
 	test("take returns the oldest open order first", () => {
@@ -149,7 +143,7 @@ describe("dispatch", () => {
 				["bun", "src/journal.ts", "dispatch", "take", "--role", "patrol"],
 				{
 					cwd: ROOT,
-					env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: T0 }),
+					env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
 					stdout: "pipe",
 					stderr: "pipe",
 				},
@@ -166,7 +160,7 @@ describe("dispatch", () => {
 	test("a taken order is reclaimed only after 24 hours", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
-		expect(take(T0).out).not.toBe("");
+		expect(take(BASE).out).not.toBe("");
 		expect(take(later(0, 1)).out).toBe("");
 		expect(take(later(23, 3599)).out).toBe("");
 		expect(take(later(24)).out).toBe("");
@@ -177,7 +171,7 @@ describe("dispatch", () => {
 	test("close is a usage error and leaves the order open", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
-		const r = at(T0, ["dispatch", "close", id, "--outcome", "filed"]);
+		const r = call(BASE, ["dispatch", "close", id, "--outcome", "filed"]);
 		expect(r.code).toBe(1);
 		expect(r.out).toBe("");
 		const db = open(dbFile);
@@ -191,8 +185,8 @@ describe("dispatch", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
 		expect(run(["next", "--role", "patrol"]).out).toBe("");
-		const tick = at(T0, ["tick", "start", "--role", "patrol"]).out.trim();
-		at(T0, ["tick", "end", tick, "--outcome", "silent", "--dispatch", id]);
+		const tick = call(BASE, ["tick", "start", "--role", "patrol"]).out.trim();
+		call(BASE, ["tick", "end", tick, "--outcome", "silent", "--dispatch", id]);
 		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
 	});
 });

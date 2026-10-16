@@ -1,15 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { open } from "./db";
 import { collectIssueMarkers } from "./markers";
 import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
+	cli,
 	dbFile,
-	env,
 	issues,
 	lead,
 	must,
-	ROOT,
+	rows,
 	run,
 	TRUSTED,
 	tempDb,
@@ -27,34 +26,16 @@ describe("sync", () => {
 		...extra,
 	];
 	const feed = (input: string, args = syncArgs()) =>
-		Bun.spawnSync(["bun", "src/journal.ts", ...args], {
-			cwd: ROOT,
-			env: env({ LAWMAN_DB: dbFile }),
-			stdin: Buffer.from(input),
-		});
-	const sync = (data: unknown, extra: string[] = []) => {
-		const r = feed(
+		cli(args, { LAWMAN_DB: dbFile }, input);
+	const sync = (data: unknown, extra: string[] = []) =>
+		feed(
 			typeof data === "string" ? data : JSON.stringify(data),
 			syncArgs(extra),
 		);
-		return {
-			code: r.exitCode,
-			out: r.stdout.toString(),
-			err: r.stderr.toString(),
-		};
-	};
-	const query = (sql: string) => {
-		const db = open(dbFile);
-		try {
-			return db.query(sql).all() as Record<string, unknown>[];
-		} finally {
-			db.close();
-		}
-	};
 	const snapshot = () => ({
-		issues: query("SELECT * FROM issues ORDER BY issue"),
-		markers: query("SELECT * FROM markers ORDER BY issue, ord"),
-		synced: query("SELECT synced_at FROM precincts"),
+		issues: rows("SELECT * FROM issues ORDER BY issue"),
+		markers: rows("SELECT * FROM markers ORDER BY issue, ord"),
+		synced: rows("SELECT synced_at FROM precincts"),
 	});
 	const mine = (i: (typeof issues)[number]) =>
 		i.author.login.toLowerCase() === TRUSTED;
@@ -78,20 +59,18 @@ describe("sync", () => {
 		expect(r.out.trim()).toBe(
 			`issues=${kept.length} leads=${found.filter((f) => f.leadOrigin).length} markers=${markers} invalid=${shaped - (markers - legacy)} skipped=${issues.length - kept.length}`,
 		);
-		expect(query("SELECT count(*) AS n FROM issues")).toEqual([
+		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
 			{ n: kept.length },
 		]);
-		expect(query("SELECT count(*) AS n FROM markers")).toEqual([
-			{ n: markers },
-		]);
-		expect(query("SELECT synced_at IS NOT NULL AS ok FROM precincts")).toEqual([
+		expect(rows("SELECT count(*) AS n FROM markers")).toEqual([{ n: markers }]);
+		expect(rows("SELECT synced_at IS NOT NULL AS ok FROM precincts")).toEqual([
 			{ ok: 1 },
 		]);
 	});
 
 	test("rows keep the issue fields and the marker columns", () => {
 		sync(issues);
-		const one = query("SELECT * FROM issues WHERE issue = 17")[0];
+		const one = rows("SELECT * FROM issues WHERE issue = 17")[0];
 		expect(one).toEqual({
 			precinct: PRECINCT,
 			issue: 17,
@@ -101,13 +80,13 @@ describe("sync", () => {
 			created_at: "2026-10-14T09:00:00Z",
 			closed_at: "2026-10-15T08:00:00Z",
 		});
-		expect(query("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
+		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
 		]);
-		const rows = query("SELECT * FROM markers WHERE issue = 1 ORDER BY ord");
+		const stored = rows("SELECT * FROM markers WHERE issue = 1 ORDER BY ord");
 		const want = collectIssueMarkers(must(issues[0]), TRUSTED).markers;
-		expect(rows.map((r) => r.ord)).toEqual(want.map((m) => m.ord));
-		const first = must(rows[0]);
+		expect(stored.map((r) => r.ord)).toEqual(want.map((m) => m.ord));
+		const first = must(stored[0]);
 		expect(first).toMatchObject({
 			role: "patrol",
 			stage: "lead",
@@ -118,7 +97,7 @@ describe("sync", () => {
 		expect(JSON.parse(first.fields as string)).toEqual(
 			must(want[0]).marker.fields,
 		);
-		expect(rows[1]).toMatchObject({
+		expect(stored[1]).toMatchObject({
 			stage: "return",
 			department: null,
 			lead_id: null,
@@ -129,12 +108,12 @@ describe("sync", () => {
 		sync(issues);
 		const first = snapshot();
 		expect(sync(issues.slice(0, 3)).code).toBe(0);
-		expect(query("SELECT issue FROM issues ORDER BY issue")).toEqual([
+		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
 			{ issue: 1 },
 			{ issue: 2 },
 			{ issue: 3 },
 		]);
-		expect(query("SELECT DISTINCT issue FROM markers")).toEqual([{ issue: 1 }]);
+		expect(rows("SELECT DISTINCT issue FROM markers")).toEqual([{ issue: 1 }]);
 		expect(sync(issues).code).toBe(0);
 		expect(snapshot().issues).toEqual(first.issues);
 		expect(snapshot().markers).toEqual(first.markers);
@@ -148,15 +127,15 @@ describe("sync", () => {
 				"other",
 				"--author",
 				TRUSTED,
-			]).exitCode,
+			]).code,
 		).toBe(0);
 		sync(issues);
 		expect(sync([], ["--reset"]).code).toBe(0);
 		expect(
-			query("SELECT count(*) AS n FROM issues WHERE precinct = 'other'"),
+			rows("SELECT count(*) AS n FROM issues WHERE precinct = 'other'"),
 		).toEqual([{ n: 2 }]);
 		expect(
-			query("SELECT count(*) AS n FROM markers WHERE precinct = 'other'"),
+			rows("SELECT count(*) AS n FROM markers WHERE precinct = 'other'"),
 		).toEqual([{ n: 2 }]);
 	});
 
@@ -187,8 +166,8 @@ describe("sync", () => {
 		const r = sync([], ["--reset"]);
 		expect(r.code).toBe(0);
 		expect(r.out.trim()).toBe("issues=0 leads=0 markers=0 invalid=0 skipped=0");
-		expect(query("SELECT count(*) AS n FROM issues")).toEqual([{ n: 0 }]);
-		expect(query("SELECT count(*) AS n FROM markers")).toEqual([{ n: 0 }]);
+		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([{ n: 0 }]);
+		expect(rows("SELECT count(*) AS n FROM markers")).toEqual([{ n: 0 }]);
 	});
 
 	test("an empty array over an empty cache succeeds", () => {
@@ -208,7 +187,7 @@ describe("sync", () => {
 		expect(r.code).toBe(3);
 		expect(snapshot()).toEqual(before);
 		expect(sync(minimal(SYNC_LIMIT - 1)).code).toBe(0);
-		expect(query("SELECT count(*) AS n FROM issues")).toEqual([
+		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
 			{ n: SYNC_LIMIT - 1 },
 		]);
 	});
@@ -242,20 +221,16 @@ describe("sync", () => {
 			{ number: 51, state: "OPEN", title: "ghost", author: null },
 		]);
 		expect(r.out.trim()).toBe("issues=1 leads=1 markers=2 invalid=0 skipped=2");
-		expect(query("SELECT issue FROM issues")).toEqual([{ issue: 1 }]);
+		expect(rows("SELECT issue FROM issues")).toEqual([{ issue: 1 }]);
 	});
 
 	test("an unknown precinct exits 1 and a bad login exits 1", () => {
-		expect(feed("[]", ["sync", "nowhere", "--author", TRUSTED]).exitCode).toBe(
-			1,
-		);
-		expect(feed("[]", ["sync", PRECINCT, "--author", "-bad-"]).exitCode).toBe(
-			1,
-		);
-		expect(feed("[]", ["sync", PRECINCT]).exitCode).toBe(1);
+		expect(feed("[]", ["sync", "nowhere", "--author", TRUSTED]).code).toBe(1);
+		expect(feed("[]", ["sync", PRECINCT, "--author", "-bad-"]).code).toBe(1);
+		expect(feed("[]", ["sync", PRECINCT]).code).toBe(1);
 		expect(
 			feed("[]", ["sync", PRECINCT, "--author", TRUSTED, "--reset", "--reset"])
-				.exitCode,
+				.code,
 		).toBe(1);
 	});
 
