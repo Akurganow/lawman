@@ -4,6 +4,7 @@ import {
 	BASE,
 	call,
 	later,
+	order,
 	precinct,
 	rows,
 	seed,
@@ -18,10 +19,7 @@ describe("alarms and status", () => {
 		test("order-untaken fires after 48 hours and not before", () => {
 			seed((db) => {
 				precinct(db, "a");
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role) VALUES (?, 'a', 'patrol')",
-					[BASE],
-				);
+				order(db, "a", "patrol");
 			});
 			expect(alarm(later(48))).toMatchObject({ code: 0, out: "" });
 			const r = alarm(later(48, 1));
@@ -31,14 +29,8 @@ describe("alarms and status", () => {
 		test("an order that was taken or closed does not alarm", () => {
 			seed((db) => {
 				precinct(db, "a");
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role, taken_at) VALUES (?, 'a', 'patrol', ?)",
-					[BASE, BASE],
-				);
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role, outcome) VALUES (?, 'a', 'duty-desk', 'silent')",
-					[BASE],
-				);
+				order(db, "a", "patrol", { takenAt: BASE });
+				order(db, "a", "duty-desk", { outcome: "silent" });
 			});
 			expect(alarm(later(72)).out).toBe("");
 		});
@@ -190,10 +182,7 @@ describe("alarms and status", () => {
 		const untaken = () =>
 			seed((db) => {
 				precinct(db, "a");
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role) VALUES (?, 'a', 'patrol')",
-					[BASE],
-				);
+				order(db, "a", "patrol");
 			});
 
 		test("a new alarm prints once and is silent without --repeat", () => {
@@ -278,10 +267,7 @@ describe("alarms and status", () => {
 				db.run("UPDATE precincts SET synced_at = ? WHERE name = 'alpha'", [
 					BASE,
 				]);
-				db.run(
-					"INSERT INTO dispatches (at, precinct, role, department) VALUES (?, 'alpha', 'patrol', 'billing')",
-					[BASE],
-				);
+				order(db, "alpha", "patrol", { department: "billing" });
 				tick(db, "patrol", BASE, later(0, 60), "filed", "alpha");
 				tick(db, "patrol", later(1), null, null);
 				tick(db, "duty-desk", later(1), later(1, 60), "ordered", "alpha");
