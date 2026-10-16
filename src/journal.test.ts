@@ -3,7 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import pkg from "../package.json";
-import { MIGRATIONS } from "./journal";
+import { MIGRATIONS } from "./db";
 import { cli, dbFile, dir, harness, ROOT, tempDb } from "./test-helpers";
 
 tempDb();
