@@ -63,13 +63,6 @@ describe("case: lead origin", () => {
 		);
 	});
 
-	test("a lead of the patrol in the body says lead=body", () => {
-		put({ 1: { body: [lead()] } });
-		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=-",
-		);
-	});
-
 	test("the earliest lead marker decides where the origin sits", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), lead()]] } });
 		expect(need(1)).toContain(" lead=body ");

@@ -126,22 +126,14 @@ describe("intake", () => {
 		expect(intake().out).toBe("");
 	});
 
-	test("an await with a newer reply waits", () => {
-		addIssue(5, { repliedAt: T(11) });
+	test.each([
+		["an await with a newer reply waits", 11, "5"],
+		["a reply older than the await does not wait", 9, ""],
+		["a reply at the carrier time does not wait", 10, ""],
+	])("%s", (_name, repliedAt, out) => {
+		addIssue(5, { repliedAt: T(repliedAt) });
 		addMarker(5, "await", T(10));
-		expect(intake().out).toBe("5");
-	});
-
-	test("a reply older than the await does not wait", () => {
-		addIssue(5, { repliedAt: T(9) });
-		addMarker(5, "await", T(10));
-		expect(intake().out).toBe("");
-	});
-
-	test("a reply at the carrier time does not wait", () => {
-		addIssue(5, { repliedAt: T(10) });
-		addMarker(5, "await", T(10));
-		expect(intake().out).toBe("");
+		expect(intake().out).toBe(out);
 	});
 
 	test("the carrier time decides, not the at field", () => {
@@ -201,27 +193,28 @@ describe("intake", () => {
 });
 
 describe("intake order", () => {
-	test("an issue with no order goes before one with an earlier order", () => {
+	test.each<[string, [number, number][]]>([
+		["an issue with no order goes before one with an earlier order", [[1, 3]]],
+		[
+			"the oldest last order goes first",
+			[
+				[1, 6],
+				[2, 5],
+			],
+		],
+		[
+			"the last order of an issue is the newest one",
+			[
+				[1, 3],
+				[1, 7],
+				[2, 5],
+			],
+		],
+	])("%s", (_name, orders) => {
 		addIssue(1, { createdAt: T(1) });
 		addIssue(2, { createdAt: T(2) });
-		unitOrder(1, { at: T(3), outcome: "failed" });
-		expect(intake().out).toBe("2");
-	});
-
-	test("the oldest last order goes first", () => {
-		addIssue(1, { createdAt: T(1) });
-		addIssue(2, { createdAt: T(2) });
-		unitOrder(1, { at: T(6), outcome: "failed" });
-		unitOrder(2, { at: T(5), outcome: "failed" });
-		expect(intake().out).toBe("2");
-	});
-
-	test("the last order of an issue is the newest one", () => {
-		addIssue(1, { createdAt: T(1) });
-		addIssue(2, { createdAt: T(2) });
-		unitOrder(1, { at: T(3), outcome: "failed" });
-		unitOrder(1, { at: T(7), outcome: "failed" });
-		unitOrder(2, { at: T(5), outcome: "failed" });
+		for (const [n, at] of orders)
+			unitOrder(n, { at: T(at), outcome: "failed" });
 		expect(intake().out).toBe("2");
 	});
 
