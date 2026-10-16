@@ -6,13 +6,13 @@ This file is what every role shares. It names no precinct, no path, no tool, no 
 
 Where a role disagrees with this file, this file wins and the role is stale.
 
-Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the six roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
+Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the seven roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
 
-Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report that patrol files as an issue. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
+Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report. Patrol files it in an issue body. The response unit files it in a comment on an issue that a human wrote. The lead origin is the earliest `stage=lead` marker. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 
 ## The funnel
 
-1. Patrol or response unit: sweeps a whole subject cheaply and files draft leads.
+1. Patrol or response unit: patrol sweeps a whole subject cheaply and files draft leads. The response unit turns one human-written issue into a lead.
 2. Investigation: takes one lead and tests it against the tree.
 3. Prosecutor and defender: argue for and against one case.
 4. Court: rules on the case.
@@ -20,13 +20,15 @@ Three words recur. A department is one subject of judgement, defined by a page. 
 
 Each stage costs more per case and sees fewer cases than the one before it.
 
-Seven roles exist in this release. The duty desk and the clerk are not stages. The duty desk chooses the precinct and the department and writes orders for patrol, investigation, the prosecutor, the defender, the court and the clerk. Execution is named so the vocabulary stays stable. No role performs it yet.
+Eight roles exist in this release. The duty desk and the clerk are not stages. The duty desk chooses the precinct and the department and writes orders for the response unit, patrol, investigation, the prosecutor, the defender, the court and the clerk. Execution is named so the vocabulary stays stable. No role performs it yet.
 
 ## The roles of this release
 
 The duty desk chooses where each role goes next and writes its orders. It files nothing and comments on nothing.
 
 Patrol takes an order, sweeps the department's subject in the precinct and files at most as many leads as the cap allows. One patrol serves every department. The department supplies the subject. The order supplies the precinct and the department.
+
+The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It leaves one comment with one marker.
 
 Investigation takes one order on an issue, tests the lead against the tree at one commit and leaves a case as a comment.
 
@@ -127,10 +129,9 @@ A role that closes a case names exactly one class:
 
 - `not confirmed`: the exhibits do not establish the claim.
 - `recorded reason`: a recorded reason explains the current shape. The Evidence section defines the sources.
-- `duplicate`: another case holds the same finding.
 - `gone at <tip>`: the defect is gone at a later commit.
 
-The first three close as not planned. `gone at <tip>` closes as completed.
+The first two close as not planned. `gone at <tip>` closes as completed.
 
 ## Freshness before filing
 
@@ -141,7 +142,7 @@ A candidate analysed at an older commit can be false by the time it is filed. Im
 
 A candidate whose evidence paths changed is dropped. The report gets one line saying so.
 
-The journal's cache is refreshed when a role syncs. The duty desk syncs every precinct with a weight above zero before it writes stage orders, so an order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
+The journal's cache is refreshed when a role syncs. Issues by bots (an author with `is_bot` set, or a login that starts with `app/`) and issues with no author do not enter the cache. The duty desk syncs every precinct with a weight above zero before it writes stage orders, so an order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
 
 ## The cap table
 
@@ -160,6 +161,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 - An open issue whose title carries the lead prefix but holds no lead marker counts toward the department named in its title. The journal does the same.
 - At cap 0 the patrol tick ends with outcome `capped`. There is no sweep and no candidate report. The tick report states the cap and the count.
 - The cap is a ceiling, not a target.
+- A lead with `department=-` counts in no department.
 - No department has an exception.
 - A weight is a share of duty desk slots, not of leads. A capped slot is spent like any other.
 
@@ -177,9 +179,9 @@ Every patrol tick that analyses ends with a report in this shape, so reports com
 
 A department may add parts. It never removes one.
 
-Every investigation, prosecutor, defender, court and clerk tick that took an order ends with a three-line report:
+Every response unit, investigation, prosecutor, defender, court and clerk tick that took an order ends with a three-line report:
 
-- `Coverage:` the analysed commit, the issue number and the round. For the clerk, the tip and the issue number replace the commit and the round.
+- `Coverage:` the analysed commit, the issue number and the round. For the clerk and the response unit, the tip and the issue number replace the commit and the round.
 - `Written:` the comment URL, the closure with its reason, or `none`. The clerk adds the pull request URL when it opens one.
 - `Blockers:` as for patrol.
 
@@ -187,8 +189,11 @@ Every investigation, prosecutor, defender, court and clerk tick that took an ord
 
 The outcome of a tick is one token from this grammar, taken from the role's own report:
 
-- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on.
+- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A response unit order is stale when the issue needs no intake.
 - `ordered`: the duty desk wrote at least one order.
+- `admitted`: the response unit wrote a lead comment.
+- `asked`: the response unit asked the reporter for facts.
+- `out`: the response unit sent the issue out of the funnel.
 - `investigated`: investigation wrote a case.
 - `charged`: the prosecutor charged the case.
 - `returned`: the prosecutor or the defender returned the case.

@@ -1,8 +1,8 @@
 # The tick
 
-Six roles share these steps: patrol, investigation, the prosecutor, the defender, the court and the clerk. The duty desk runs its own tick and does not read this file. The file turns the rules of the law into commands and adds no rule. A skill reads it at item 6 of its step 0 and keeps its own steps.
+Seven roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court and the clerk. The duty desk runs its own tick and does not read this file. The file turns the rules of the law into commands and adds no rule. A skill reads it at item 6 of its step 0 and keeps its own steps.
 
-The issue roles are investigation, the prosecutor, the defender, the court and the clerk. Each takes one order on an issue.
+The issue roles are the response unit, investigation, the prosecutor, the defender, the court and the clerk. Each takes one order on an issue.
 
 The fetch step prints the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`.
 
@@ -20,7 +20,7 @@ Every started tick ends exactly once, at the last step of the skill. A failed st
 
 ## Reading without a tree
 
-The prosecutor, the defender and the court create no worktree. They follow these rules.
+The response unit, the prosecutor, the defender and the court create no worktree. They follow these rules.
 
 - Read a precinct file only through `git -C precincts/<p> show <ref>:<path>`. Search only with `git -C precincts/<p> grep` on the tree-ish `<ref>`. Count output with `wc -l`.
 - A pattern from any text other than the law, the skill and the constitution enters a search only through a quoted heredoc on standard input:
@@ -78,20 +78,32 @@ The last output is the fetched commit. A failed command gives `stopped-git-fetch
 ## Sync the tracker
 
 ```
-bash -o pipefail -c 'gh issue list -R <owner/repo> --author <login> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <p> --author <login>'
+bash -o pipefail -c 'gh issue list -R <owner/repo> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <p> --author <login>'
 ```
 
 The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`.
 
 ## Read the stage
 
-Issue roles only.
+Issue roles other than the response unit only.
 
 ```
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED>`. Exit 1 gives `failed`. The skill says when the order is stale.
+The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED> lead=<body|comment> related=<list>`. Exit 1 gives `failed`. The skill says when the order is stale.
+
+`lead=` says where the lead origin sits. `related=` lists the other issues of the precinct, in any state, whose lead has the same path and symbol. The numbers ascend, are separated by commas and carry no `#`. With none, it is `-`. Related issues are evidence for the case, never a reason to close it.
+
+## Check the intake order
+
+The response unit only.
+
+```
+bin/journal intake <p> --issue <n>
+```
+
+The output is `need=<intake|none> state=<OPEN|CLOSED>`. Exit 1 gives `failed`. The skill says when the order is stale.
 
 ## Check the constitution
 
@@ -159,7 +171,7 @@ Issue roles only. The skill gives the heading, which is the first line of the co
 
 The prosecutor, the defender and the court only, for their closing decision. Run it after the read-back.
 
-1. Close the issue with the reason the law's Closure classes subsection gives for the class: `completed` for `gone at <tip>`, `not planned` for the other three.
+1. Close the issue with the reason the law's Closure classes subsection gives for the class: `completed` for `gone at <tip>`, `not planned` for the other two.
    ```
    gh issue close <n> -R <owner/repo> --reason "not planned"
    gh issue close <n> -R <owner/repo> --reason completed
