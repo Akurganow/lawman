@@ -2,7 +2,7 @@
 
 An executive branch for software repositories. Patrols file leads as issues, an investigation builds the case, a prosecutor decides whether to charge, a defender argues against the charge, a court rules, and a clerk carries the court's precedent to a pull request. It runs inside the agent harness a developer already uses, on that harness's own schedule, with the `git` and `gh` already on the machine. No server, no dashboard, no GitHub access of its own.
 
-This release holds the law, the contracts, the marker grammar, the journal, the duty desk, a response unit for human-filed issues, one generic patrol with the Abstractions department, an investigation, a prosecutor, a defender, a court, a clerk, and the assembly for Hermes Agent. Only the execution comes in a later release.
+This release holds the law, the contracts, the marker grammar, the journal, the duty desk, a response unit for human-filed issues, one generic patrol with ten shared departments (abstractions, agent-config, claims, dependencies, logic, privacy, proportion, security, tests, text-residue), an investigation, a prosecutor, a defender, a court, a clerk, and the assembly for Hermes Agent. Only the execution comes in a later release.
 
 ## How it is laid out
 
