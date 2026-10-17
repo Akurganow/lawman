@@ -1,5 +1,11 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { fields, need, needOnly, put, withLead } from "./cases-fixture";
+import {
+	expectNeed,
+	expectRoundKept,
+	fields,
+	put,
+	withLead,
+} from "./cases-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -82,10 +88,7 @@ describe("case: court stage", () => {
 			defended(conviction(), caseMark()),
 			"prosecutor",
 		],
-	])("%s", (_name, spec, expected) => {
-		put({ 1: spec });
-		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
+	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("due for the prosecutor, defender and investigation skips closed issues", () => {
 		put({ 1: { ...withLead(), state: "CLOSED" } });
@@ -96,12 +99,7 @@ describe("case: court stage", () => {
 	});
 
 	test("a court return leaves round and returned unchanged", () => {
-		put({ 1: defended(returnTo("investigation", 1, "court")) });
-		expect(need(1).split(" ").slice(0, 3)).toEqual([
-			"need=none",
-			"round=1",
-			"returned=-",
-		]);
+		expectRoundKept(defended(returnTo("investigation", 1, "court")));
 	});
 
 	test("due for the court lists only a defended open case", () => {

@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, withLead } from "./cases-fixture";
+import {
+	closed,
+	expectNeed,
+	expectRoundKept,
+	need,
+	needOnly,
+	put,
+	ruled,
+	withLead,
+} from "./cases-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -17,13 +26,6 @@ import {
 
 tempDb();
 beforeEach(() => addPrecincts({ main: 1 }));
-
-const ruled = (ruling: () => string, ...rest: string[]) =>
-	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
-const closed = (spec: ReturnType<typeof withLead>) => ({
-	...spec,
-	state: "CLOSED",
-});
 
 describe("case: clerk stage", () => {
 	test.each([
@@ -66,10 +68,7 @@ describe("case: clerk stage", () => {
 			closed(withLead(caseMark(), charge(), entry())),
 			"none",
 		],
-	])("%s", (_name, spec, expected) => {
-		put({ 1: spec });
-		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
+	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("a clerk marker leaves the prosecutor need alone", () => {
 		put({ 1: withLead(caseMark(), entry()) });
@@ -77,12 +76,7 @@ describe("case: clerk stage", () => {
 	});
 
 	test("clerk markers leave round and returned unchanged", () => {
-		put({ 1: ruled(acquittal, entry()) });
-		expect(need(1).split(" ").slice(0, 3)).toEqual([
-			"need=none",
-			"round=1",
-			"returned=-",
-		]);
+		expectRoundKept(ruled(acquittal, entry()));
 	});
 
 	test("a clerk return marker leaves round and returned unchanged", () => {

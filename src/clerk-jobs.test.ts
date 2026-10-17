@@ -121,21 +121,17 @@ describe("table rows", () => {
 		});
 	});
 
-	test("1: a kept marker over shut does not reopen the issue again", () => {
-		const r = run({
-			state: "CLOSED",
-			markers: pairs(["shut", "7", "closed"], ["kept", "7", "closed"]),
-			pulls: [pull(7, 1)],
-		});
-		expect(r.job).toBe("-");
-	});
-
-	test("1: a shut marker for another pull request is not reopened", () => {
-		const r = run({
-			state: "CLOSED",
-			markers: pairs(["shut", "6", "closed"]),
-			pulls: [pull(7, 1)],
-		});
+	test.each([
+		[
+			"a kept marker over shut does not reopen the issue again",
+			pairs(["shut", "7", "closed"], ["kept", "7", "closed"]),
+		],
+		[
+			"a shut marker for another pull request is not reopened",
+			pairs(["shut", "6", "closed"]),
+		],
+	])("1: %s", (_name, markers) => {
+		const r = run({ state: "CLOSED", markers, pulls: [pull(7, 1)] });
 		expect(r.job).toBe("-");
 	});
 

@@ -1,10 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	cache,
+	convicted,
+	dueOut,
+	handed,
 	human,
+	order,
 	pairMark,
 	put,
-	type Spec,
 	T,
 	withLead,
 } from "./cases-fixture";
@@ -26,30 +29,8 @@ import {
 tempDb();
 beforeEach(() => addPrecincts({ main: 1, side: 1 }));
 
-const due = (role: string, ...exclude: string[]) => {
-	const r = call(BASE, [
-		"due",
-		"--role",
-		role,
-		...exclude.flatMap((p) => ["--exclude", p]),
-	]);
-	expect(r.code).toBe(0);
-	return r.out;
-};
-const convicted = (priority: string): Spec =>
-	withLead(
-		caseMark(),
-		charge(),
-		defence(),
-		mark("court", "conviction", ` sha=${SHA} priority=${priority}`),
-	);
-const order = (role: string, issue: number, at: string, open = false) =>
-	seed((db) =>
-		db.run(
-			"INSERT INTO dispatches (at, precinct, role, issue, outcome) VALUES (?, 'main', ?, ?, ?)",
-			[at, role, issue, open ? null : "ok"],
-		),
-	);
+const due = (role: string, ...exclude: string[]) =>
+	dueOut((args) => call(BASE, args), role, exclude);
 
 describe("due --role clerk", () => {
 	test("an issue without a lead is a candidate", () => {
@@ -114,8 +95,6 @@ describe("due --role clerk", () => {
 	});
 });
 
-const handed = (pull: number, ...more: string[]) =>
-	human("OPEN", pairMark("handed", pull, "open"), ...more);
 const priorityOnly = (priority: string) =>
 	mark("court", "conviction", ` sha=${SHA} priority=${priority}`);
 const pulls = (...rows: [number, number[], string][]) =>
@@ -141,14 +120,14 @@ describe("due --role spec-writer", () => {
 		expect(due("spec-writer")).toBe(expected);
 	});
 
-	test("a source whose pair marker names another pull request does not count", () => {
-		put({ 1: handed(8) });
-		pulls([7, [1], "none"]);
-		expect(due("spec-writer")).toBe("");
-	});
-
-	test("a source whose base is not handed does not count", () => {
-		put({ 1: human("OPEN", pairMark("shut", 7, "closed")) });
+	test.each([
+		["a source whose pair marker names another pull request", handed(8)],
+		[
+			"a source whose base is not handed",
+			human("OPEN", pairMark("shut", 7, "closed")),
+		],
+	])("%s does not count", (_name, source) => {
+		put({ 1: source });
 		pulls([7, [1], "none"]);
 		expect(due("spec-writer")).toBe("");
 	});

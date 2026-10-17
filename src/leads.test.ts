@@ -16,6 +16,8 @@ describe("leads, seen, cap and last", () => {
 	const cmd = (...args: string[]) => run(args);
 	const lines = (r: { out: string }) =>
 		r.out.split("\n").filter((l) => l !== "");
+	const leadIds = (...args: string[]) =>
+		lines(cmd("leads", PRECINCT, ...args)).map((l) => l.split("\t")[0]);
 	let db: Database;
 
 	type Origin = { department: string; id: string; ord?: string };
@@ -114,11 +116,7 @@ describe("leads, seen, cap and last", () => {
 
 		test("the origin survives a later marker of another role", () => {
 			mark(3, "investigation", "case", "2026-10-14T10:00:00Z|000001|000001");
-			expect(
-				lines(cmd("leads", PRECINCT, "--department", "core")).map(
-					(l) => l.split("\t")[0],
-				),
-			).toEqual(["3"]);
+			expect(leadIds("--department", "core")).toEqual(["3"]);
 			expect(cap("core")).toBe("cap=3 open=1");
 		});
 
@@ -130,16 +128,8 @@ describe("leads, seen, cap and last", () => {
 				"2026-10-14T11:00:00Z|000001|000001",
 				lead("web", "src/z.rs::h::dead-code"),
 			);
-			expect(
-				lines(cmd("leads", PRECINCT, "--department", "core")).map(
-					(l) => l.split("\t")[0],
-				),
-			).toEqual(["3"]);
-			expect(
-				lines(cmd("leads", PRECINCT, "--department", "web")).map(
-					(l) => l.split("\t")[0],
-				),
-			).toEqual(["1"]);
+			expect(leadIds("--department", "core")).toEqual(["3"]);
+			expect(leadIds("--department", "web")).toEqual(["1"]);
 		});
 	});
 

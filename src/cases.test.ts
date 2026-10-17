@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, T, withLead } from "./cases-fixture";
+import {
+	expectNeed,
+	need,
+	needOnly,
+	order,
+	put,
+	T,
+	withLead,
+} from "./cases-fixture";
 import {
 	addPrecincts,
 	BASE,
@@ -13,7 +21,6 @@ import {
 	refute,
 	returnTo,
 	SHA,
-	seed,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
@@ -51,10 +58,7 @@ describe("case: stage", () => {
 			withLead(caseMark(), returnTo("investigation"), caseMark()),
 			"prosecutor",
 		],
-	])("%s", (_name, spec, expected) => {
-		put({ 1: spec });
-		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
+	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("a closed issue needs nobody", () => {
 		put({ 1: { state: "CLOSED", body: [lead()] } });
@@ -148,13 +152,6 @@ describe("due", () => {
 		expect(r.code).toBe(0);
 		return r.out;
 	};
-	const order = (role: string, issue: number, at: string, open = false) =>
-		seed((db) =>
-			db.run(
-				"INSERT INTO dispatches (at, precinct, role, issue, outcome) VALUES (?, 'main', ?, ?, ?)",
-				[at, role, issue, open ? null : "ok"],
-			),
-		);
 
 	test("an empty journal has nothing due", () => {
 		expect(due("investigation")).toBe("");

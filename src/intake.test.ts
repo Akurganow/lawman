@@ -119,15 +119,12 @@ describe("intake", () => {
 		expect(intake().out).toBe("5");
 	});
 
-	test("an issue with a lead origin does not wait", () => {
+	test.each([
+		["an issue with a lead origin", "patrol"],
+		["a response-unit lead origin", UNIT],
+	])("%s does not wait", (_name, role) => {
 		addIssue(5);
-		addMarker(5, "lead", T(9), "patrol");
-		expect(intake().out).toBe("");
-	});
-
-	test("a response-unit lead origin does not wait", () => {
-		addIssue(5);
-		addMarker(5, "lead", T(9));
+		addMarker(5, "lead", T(9), role);
 		expect(intake().out).toBe("");
 	});
 
@@ -175,15 +172,12 @@ describe("intake", () => {
 		expect(intake().out).toBe("5");
 	});
 
-	test("an open response-unit order on this precinct blocks", () => {
+	test.each([
+		["on this precinct", 5],
+		["without an issue", undefined],
+	])("an open response-unit order %s blocks", (_name, issue) => {
 		addIssue(5);
-		unitOrder(5);
-		expect(intake().out).toBe("");
-	});
-
-	test("an open response-unit order without an issue blocks", () => {
-		addIssue(5);
-		unitOrder();
+		unitOrder(issue);
 		expect(intake().out).toBe("");
 	});
 

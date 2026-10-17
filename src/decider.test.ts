@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { EXIT, Fail } from "./db";
-import { decide } from "./decider";
+import { decide, decider } from "./decider";
 
 const answer = (
 	event: { type?: string; actor?: { login: string } | null } | null,
@@ -108,5 +108,11 @@ describe("decide", () => {
 				},
 			}),
 		);
+	});
+});
+
+describe("decider command", () => {
+	test("any argument is a usage error", () => {
+		expect(() => decider(["response.json"])).toThrow(Fail);
 	});
 });

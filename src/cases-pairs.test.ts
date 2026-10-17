@@ -1,12 +1,15 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	cache,
+	closed,
 	fields,
 	human,
 	need,
 	needOnly,
 	pairMark,
 	put,
+	ruled,
+	type Spec,
 	withLead,
 } from "./cases-fixture";
 import {
@@ -22,12 +25,12 @@ import {
 tempDb();
 beforeEach(() => addPrecincts({ main: 1 }));
 
-const ruled = (ruling: () => string, ...rest: string[]) =>
-	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
-const closed = (spec: ReturnType<typeof withLead>) => ({
-	...spec,
-	state: "CLOSED",
-});
+const expectJobs = (steps: readonly (readonly [Spec, string])[]) => {
+	for (const [spec, expected] of steps) {
+		put({ 1: spec });
+		expect(`${fields(1).job} ${fields(1).action}`).toBe(expected);
+	}
+};
 
 const JOBS = ["job", "action", "pull", "sources", "branch"] as const;
 const jobOf = (n: number) => {
@@ -208,10 +211,7 @@ describe("case: states of the pair", () => {
 			],
 		] as const;
 		cache([5, [1]]);
-		for (const [spec, expected] of steps) {
-			put({ 1: spec });
-			expect(`${fields(1).job} ${fields(1).action}`).toBe(expected);
-		}
+		expectJobs(steps);
 	});
 
 	test("the stranger sequence: reopen a shut issue, close it, a decider reopens", () => {
@@ -229,10 +229,7 @@ describe("case: states of the pair", () => {
 				"state reopen",
 			],
 		] as const;
-		for (const [spec, expected] of steps) {
-			put({ 1: spec });
-			expect(`${fields(1).job} ${fields(1).action}`).toBe(expected);
-		}
+		expectJobs(steps);
 	});
 
 	test("kept issue=open over settled gives no job", () => {

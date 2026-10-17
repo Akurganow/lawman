@@ -1,8 +1,14 @@
+import type { PullRow } from "./pulls";
 import { mark, SHA } from "./test-helpers";
 
 export const BOT = "lawman-bot";
 export const REPO = "o/main";
 export const SPEC = mark("spec-writer", "spec", ` sha=${SHA}`);
+
+export const FIXTURE_ROWS: PullRow[] = [
+	{ number: 7, issues: "3,4,5", spec: "up" },
+	{ number: 12, issues: "", spec: "none" },
+];
 
 export type Reactions = { up?: string[]; down?: string[] };
 export type Comment = Reactions & {

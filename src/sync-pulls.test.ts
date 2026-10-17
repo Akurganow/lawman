@@ -1,6 +1,8 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import fixture from "./fixtures/pulls.json";
-import { BOT, page } from "./pulls-fixture";
+import { captured } from "./inproc";
+import { syncPulls } from "./pulls";
+import { BOT, FIXTURE_ROWS, page } from "./pulls-fixture";
 import { addPrecincts, cli, dbFile, rows, seed, tempDb } from "./test-helpers";
 
 tempDb();
@@ -32,10 +34,7 @@ describe("sync --pulls", () => {
 		const r = feed(fixture);
 		expect(r.code).toBe(0);
 		expect(r.out).toBe("pulls=2\n");
-		expect(stored()).toEqual([
-			{ number: 7, issues: "3,4,5", spec: "up" },
-			{ number: 12, issues: "", spec: "none" },
-		]);
+		expect(stored()).toEqual(FIXTURE_ROWS);
 	});
 
 	test("a second sync replaces the rows of that precinct only", () => {
@@ -99,5 +98,34 @@ describe("sync --pulls", () => {
 
 	test("without --pulls the issue sync is unchanged", () => {
 		expect(feed([], ["--author", BOT]).code).toBe(0);
+	});
+});
+
+describe("syncPulls in process", () => {
+	beforeEach(() => addPrecincts({ main: 1 }));
+	const sync = (name: string, input: string) =>
+		captured("2026-05-01T00:00:00Z", () => syncPulls(name, BOT, input));
+
+	test("stores the rows and prints the count", () => {
+		const r = sync("main", JSON.stringify(fixture));
+		expect(r).toMatchObject({ code: 0, out: "pulls=2\n" });
+		expect(
+			rows("SELECT number, issues, spec FROM pulls ORDER BY number"),
+		).toEqual(FIXTURE_ROWS);
+	});
+
+	test("an unknown precinct is a usage error", () => {
+		expect(sync("nowhere", "[]").code).toBe(1);
+	});
+
+	test("a repeated number is rejected and a valid replacement wins", () => {
+		seed((db) => {
+			db.run("INSERT INTO pulls VALUES ('main', 99, '1', 'waiting')");
+		});
+		const repeated = JSON.stringify([page([{ number: 3 }, { number: 3 }])]);
+		expect(sync("main", repeated).code).toBe(4);
+		expect(rows("SELECT number FROM pulls")).toEqual([{ number: 99 }]);
+		expect(sync("main", JSON.stringify([page([])])).out).toBe("pulls=0\n");
+		expect(rows("SELECT number FROM pulls")).toEqual([]);
 	});
 });

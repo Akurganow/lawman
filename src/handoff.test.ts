@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { EXIT } from "./db";
-import { buildHandoff } from "./handoff";
+import { buildHandoff, handoffCommand } from "./handoff";
+import { captured } from "./inproc";
 import { lintBody } from "./lint";
 import { parseMarker } from "./markers";
-import { env, ROOT } from "./test-helpers";
+import { env, ROOT, tempDb } from "./test-helpers";
 
 const AT = "2026-10-17T10:45:00Z";
 const HOME_MAC = ["/Us", "ers/someone"].join("");
@@ -166,5 +167,32 @@ describe("handoff command", () => {
 		expect(r.code).toBe(EXIT.USAGE);
 		expect(r.out).toBe("");
 		expect(r.err).not.toBe("");
+	});
+});
+
+describe("handoff command in process", () => {
+	tempDb();
+	const inHandoff = (...args: string[]) =>
+		captured(AT, () => handoffCommand(args));
+
+	test("prints the pull request text for the sources and the merged request", () => {
+		const r = inHandoff("--sources", "12,15", "--merged", "9");
+		expect(r.code).toBe(EXIT.OK);
+		expect(r.out).toContain("carries #12 and #15 for the spec writer.");
+		expect(r.out).toContain("merged pull request #9");
+		expect(r.out).toContain(`stage=handoff at=${AT}`);
+	});
+
+	test("a single source reads without and", () => {
+		expect(inHandoff("--sources", "4").out).toContain("carries #4 for");
+	});
+
+	test("a malformed source or a repeated --adopted is a usage error", () => {
+		expect(inHandoff("--sources", "0").code).toBe(EXIT.USAGE);
+		expect(inHandoff("--sources", "x,2").code).toBe(EXIT.USAGE);
+		expect(inHandoff("--adopted", "--adopted", "--sources", "1").code).toBe(
+			EXIT.USAGE,
+		);
+		expect(inHandoff("--sources", "1", "--merged", "-1").code).toBe(EXIT.USAGE);
 	});
 });

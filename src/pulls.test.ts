@@ -4,6 +4,7 @@ import { readPulls } from "./pulls";
 import {
 	BOT,
 	type Comment,
+	FIXTURE_ROWS,
 	page,
 	REPO,
 	type Reactions,
@@ -62,10 +63,7 @@ describe("readPulls validity", () => {
 	});
 
 	test("the committed fixture reads across two pages", () => {
-		expect(readPulls(JSON.stringify(fixture), BOT, REPO)).toEqual([
-			{ number: 7, issues: "3,4,5", spec: "up" },
-			{ number: 12, issues: "", spec: "none" },
-		]);
+		expect(readPulls(JSON.stringify(fixture), BOT, REPO)).toEqual(FIXTURE_ROWS);
 	});
 });
 
