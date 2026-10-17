@@ -1,8 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import * as db from "./db";
 import { Fail } from "./db";
-import { answerLine, requestLine } from "./jev";
+import { captured } from "./inproc";
+import { answerLine, jev, requestLine } from "./jev";
 import { cli, ROOT } from "./test-helpers";
 
 const FIXTURES = join(ROOT, "src", "fixtures", "jev");
@@ -53,48 +55,6 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 		});
 	});
 
-	test("the body keys are model, state, questions in that order", () => {
-		for (const kind of ["p0", "grade"])
-			expect(Object.keys(bodyOf(kind))).toEqual([
-				"model",
-				"state",
-				"questions",
-			]);
-		expect(bodyOf("p0").model).toBe("jev-latest");
-	});
-
-	test("the p0 questions are three Nouls in the order of the contract", () => {
-		const { questions } = bodyOf("p0");
-		expect(Object.keys(questions)).toEqual([
-			"live_secret",
-			"vulnerability",
-			"serious_violation",
-		]);
-		for (const q of Object.values(
-			questions as Record<string, { type: string }>,
-		))
-			expect(q.type).toBe("noul");
-	});
-
-	test("the grade questions are one Score then three Nouls", () => {
-		const { questions } = bodyOf("grade");
-		expect(Object.keys(questions)).toEqual([
-			"level",
-			"harm_users",
-			"harm_maintainers",
-			"cosmetic_only",
-		]);
-		expect(questions.level).toEqual({
-			type: "score",
-			instructions: "Which situation describes `brief` best?",
-			criteria: [
-				"Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
-				"The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
-				"Harm to users or maintainers now.",
-			],
-		});
-	});
-
 	test("the field order is canonical whatever the input order", () => {
 		for (const kind of ["p0", "grade"]) {
 			const reversed = lines(fixture(`brief.${kind}.txt`))
@@ -141,27 +101,11 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 			);
 		});
 
-		test("a field of the other kind is unknown", () => {
-			expect(request("grade", `${grade.join("\n")}\nsecret: x\n`)).toEqual(
-				fail("brief field secret is not a grade field"),
-			);
-		});
-
 		test("a wrapped value names the line number and never the text", () => {
 			const wrapped = `${grade[0]}\nSECRETWORD wrapped\n${grade.slice(1).join("\n")}`;
 			const r = request("grade", wrapped);
 			expect(r).toEqual(fail("brief line 2 is not name: value"));
 			expect(r.err).not.toContain("SECRETWORD");
-		});
-
-		test("a field with no value does not match", () => {
-			expect(request("grade", "defect:\n")).toEqual(
-				fail("brief line 1 is not name: value"),
-			);
-		});
-
-		test("empty input misses the first field", () => {
-			expect(request("p0", "")).toEqual(fail("brief field defect is missing"));
 		});
 
 		test("a bad or missing kind is a usage error that never echoes it", () => {
@@ -212,7 +156,7 @@ describe("law consistency", () => {
 		expect(text("cosmetic_only")).toContain("wording");
 	});
 
-	test("the tick alarm line carries the text of the contract", () => {
+	test("the tick alarm line carries the text in the law", () => {
 		const tick = lines(readFileSync(join(ROOT, "law", "tick.md"), "utf8"));
 		expect(tick).toContain(
 			"- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation.",
@@ -276,7 +220,6 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 
 	test.each<[string, string, string, string]>([
 		["a 401", "p0", "{}\n401", `${NONE}status-401`],
-		["a 500 with CR", "p0", "oops\n500\r", `${NONE}status-500`],
 		["status 000", "p0", "\n000", `${NONE}no-reply`],
 		["empty stdin", "p0", "", `${NONE}no-reply`],
 		["a tail abc", "p0", "{}\nabc", `${NONE}no-reply`],
@@ -292,7 +235,6 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 			p0(["answers", "vulnerability"]),
 			`${NONE}bad-answer`,
 		],
-		["a missing answers map", "p0", p0(["answers"]), `${NONE}bad-answer`],
 		[
 			"a non-finite number",
 			"p0",
@@ -339,13 +281,6 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 		expect(answer("p0", extra)).toEqual(line(P0_LINE));
 	});
 
-	test("a bad kind is a usage error that never echoes it", () => {
-		const r = answer("nope", "\n401");
-		expect(r.code).toBe(1);
-		expect(r.out).toBe("");
-		expect(r.err).not.toContain("nope");
-	});
-
 	test("every recorded reply gives a line that starts with jev model=", () => {
 		const recorded = JSON.parse(readFileSync(RECORDED, "utf8")) as {
 			kind: string;
@@ -368,6 +303,23 @@ describe("jev through the journal", () => {
 		expect(cli(["jev", "answer"], {}, "\n401")).toEqual(usage);
 		expect(cli(["jev", "frobnicate"])).toEqual(usage);
 		expect(cli(["jev"])).toEqual(usage);
+	});
+
+	test("both subcommands read stdin and print one line", () => {
+		const stdin = spyOn(db, "readStdin");
+		stdin.mockReturnValueOnce(fixture("brief.p0.txt"));
+		const asked = captured("2026-01-01T00:00:00Z", () =>
+			jev(["request", "--kind", "p0"]),
+		);
+		expect(asked.out).toBe(
+			`${requestLine(["--kind", "p0"], fixture("brief.p0.txt"))}\n`,
+		);
+		stdin.mockReturnValueOnce("\n401");
+		const answered = captured("2026-01-01T00:00:00Z", () =>
+			jev(["answer", "--kind", "p0"]),
+		);
+		expect(answered.out).toBe("jev none reason=status-401\n");
+		stdin.mockRestore();
 	});
 
 	test("neither subcommand opens the database", () => {

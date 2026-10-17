@@ -67,7 +67,7 @@ Every role runs in a scheduled session. This step measures that session.
 10. Ask: "Use TypeSafe Jev as one more piece of evidence for the court's priority? You will be asked per precinct whether the court may send its brief there. The brief states facts about a conviction in the court's own words and holds no issue text. It goes to api.typesafe.ai and is paid per input token." Record `yes` or `no`.
 11. On `yes`, run the skill listing command the harness page gives, and look for `typesafe-ai`. When it is missing, show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page. The developer installs it or declines. Run the listing again after an install.
 12. On `yes`, name `TYPESAFE_API_KEY` and the place the harness page gives for it. Tell the developer to write the value there and never to paste it into this session.
-13. On `yes`, create one more one-shot job as in item 1. Use the probe prompt below with the Jev probe lines added before its last line. Run it as in items 2 and 3.
+13. On `yes`, create one more one-shot job as in item 1. Use the probe prompt below with the Jev probe lines added before its line "Do not run anything else." Run it as in items 2 and 3.
 14. Read the probe's `jev` line, and remove the job with the remove command the page gives after the last repeat.
     - `jev model=` passes.
     - `jev none reason=no-key` means the session does not see the variable. Tell the developer to write it where the page says, then repeat items 13 and 14 once.
@@ -86,7 +86,7 @@ Do not run anything else. Do not write to any repository. Do not take an order.
 End with one line: skill=<name of the skill you loaded>
 ```
 
-Jev probe lines. Add them before the last line of the probe prompt, only when the developer answered `yes` in item 10:
+Jev probe lines. Add them before the line "Do not run anything else.", only when the developer answered `yes` in item 10:
 
 ```
 Then read the section "Send" of lawman/skills/court/SKILL.md and run its command once, with kind grade, the delimiter LAWMAN_PROBE and this brief:

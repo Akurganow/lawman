@@ -57,7 +57,7 @@ typesafe: <yes|no>
 typesafe_precincts: <name>=<yes|no> ... | none
 ```
 
-Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys. The court reads `typesafe` and `typesafe_precincts`.
+Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys.
 
 ## Finish
 

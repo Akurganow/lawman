@@ -66,7 +66,7 @@ Every shared department is in the precinct's rotation with no line. The section 
 
 34. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
 35. When `typesafe` is `yes` in `config.yaml`, ask: "May the court send its brief about a conviction in <owner>/<repo> to api.typesafe.ai? The brief states facts about the code in the court's own words and holds no issue text. Answer yes or no."
-36. Set `<owner>-<repo>=<answer>` in `typesafe_precincts`. Replace `none`, replace an existing pair for that name, and never append a second one. Write `config.yaml`, and read it back.
+36. When step 35 asked the question, set `<owner>-<repo>=<answer>` in `typesafe_precincts`. Replace `none`, replace an existing pair for that name, and never append a second one. Write `config.yaml`, and read it back.
 37. When this is the first precinct and the scheduled jobs of the roles are not listed, run install step 9 now.
 38. Tell the developer to return after the pull request merges.
 

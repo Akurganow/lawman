@@ -6,33 +6,18 @@ const MODEL = "jev-latest";
 const BRIEF_LINE = /^([a-z_]+): (.+)$/;
 const ANSWER_MODEL = /^[A-Za-z0-9._-]{1,40}$/;
 const STATUS = /^[0-9]{3}$/;
-const OK_STATUS = "200";
-const NO_STATUS = "000";
 
-type Noul = {
-	type: "noul";
-	instructions: string;
-	criteria: { true: string; false: string };
-};
-type Score = { type: "score"; instructions: string; criteria: string[] };
-type Reading = [label: string, path: string[]];
 type Kind = {
 	fields: string[];
-	questions: Record<string, Noul | Score>;
-	readings: Reading[];
+	questions: Record<string, object>;
+	levels: [label: string, level: string][];
 };
 
-const noul = (instructions: string, yes: string, no: string): Noul => ({
+const noul = (instructions: string, yes: string, no: string) => ({
 	type: "noul",
 	instructions,
 	criteria: { true: yes, false: no },
 });
-
-const noulAt = (id: string): Reading => [id, ["answers", id, "noul"]];
-const levelAt = (label: string, level: string): Reading => [
-	label,
-	["answers", "level", "probabilities", level],
-];
 
 const P0: Kind = {
 	fields: [
@@ -60,7 +45,7 @@ const P0: Kind = {
 			"No rule is broken, or the breach touches only wording, process or convenience inside the project.",
 		),
 	},
-	readings: ["live_secret", "vulnerability", "serious_violation"].map(noulAt),
+	levels: [],
 };
 
 const GRADE: Kind = {
@@ -91,11 +76,10 @@ const GRADE: Kind = {
 			"What the code does, or what users or maintainers rely on, is affected.",
 		),
 	},
-	readings: [
-		levelAt("P1", "2"),
-		levelAt("P2", "1"),
-		levelAt("P3", "0"),
-		...["harm_users", "harm_maintainers", "cosmetic_only"].map(noulAt),
+	levels: [
+		["P1", "2"],
+		["P2", "1"],
+		["P3", "0"],
 	],
 };
 
@@ -146,50 +130,51 @@ export function requestLine(args: string[], text: string): string {
 	});
 }
 
-function finite(root: unknown, path: string[]): number {
-	let node = root;
-	for (const key of path) {
-		if (typeof node !== "object" || node === null || !Object.hasOwn(node, key))
-			throw new Error("missing");
-		node = (node as Record<string, unknown>)[key];
-	}
-	if (typeof node !== "number" || !Number.isFinite(node))
-		throw new Error("not a finite number");
-	return node;
-}
+const at = (root: unknown, path: string[]) =>
+	path.reduce<unknown>(
+		(node, key) => (node as Record<string, unknown> | null)?.[key],
+		root,
+	);
 
 const shown = (n: number) => n.toFixed(2).replace(/^-0\.00$/, "0.00");
 
 function evidence(name: string, kind: Kind, body: string): string {
-	const root: unknown = JSON.parse(body);
-	if (typeof root !== "object" || root === null || Array.isArray(root))
-		throw new Error("root is not an object");
-	const model = (root as Record<string, unknown>).model;
+	const root = JSON.parse(body);
+	const model = at(root, ["model"]);
 	if (typeof model !== "string" || !ANSWER_MODEL.test(model))
 		throw new Error("model is not valid");
-	const values = kind.readings.map(
-		([label, path]) => `${label}=${shown(finite(root, path))}`,
-	);
+	const noulIds = Object.entries(kind.questions)
+		.filter(([, q]) => "type" in q && q.type === "noul")
+		.map(([id]): [string, string[]] => [id, ["answers", id, "noul"]]);
+	const readings = [
+		...kind.levels.map(([label, level]): [string, string[]] => [
+			label,
+			["answers", "level", "probabilities", level],
+		]),
+		...noulIds,
+	];
+	const values = readings.map(([label, path]) => {
+		const n = at(root, path);
+		if (typeof n !== "number" || !Number.isFinite(n))
+			throw new Error("not a finite number");
+		return `${label}=${shown(n)}`;
+	});
 	return `jev model=${model} kind=${name} ${values.join(" ")}`;
 }
 
-const none = (reason: string) => `jev none reason=${reason}`;
-
-function reply(name: string, kind: Kind, input: string): string {
+export function answerLine(args: string[], input: string): string {
+	const { name, kind } = kindOf(args);
+	const none = (reason: string) => `jev none reason=${reason}`;
 	const cut = input.lastIndexOf("\n");
 	const tail = input.slice(cut + 1).replace(/\r$/, "");
-	if (!STATUS.test(tail) || tail === NO_STATUS) return none("no-reply");
-	if (tail !== OK_STATUS) return none(`status-${tail}`);
+	// curl prints 000 as the status when no reply came
+	if (!STATUS.test(tail) || tail === "000") return none("no-reply");
+	if (tail !== "200") return none(`status-${tail}`);
 	try {
 		return evidence(name, kind, input.slice(0, Math.max(cut, 0)));
 	} catch {
 		return none("bad-answer");
 	}
-}
-
-export function answerLine(args: string[], input: string): string {
-	const { name, kind } = kindOf(args);
-	return reply(name, kind, input);
 }
 
 export function jev(args: string[]): void {

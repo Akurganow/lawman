@@ -145,7 +145,7 @@ For a conviction, run these items in order:
    - After a `p0` line, the court may lower its `P0` to `P1`.
 5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
 
-When Jev is not allowed, skip items 2 and 3. A `jev none` line goes to Blockers, never to the ruling.
+When Jev is not allowed, skip items 2 and 3.
 
 A tip that differs from `<sha>` is one line of fact in the ruling.
 
@@ -187,7 +187,7 @@ Rules:
 - Never write a secret value, part of one or a hash.
 - Never write a machine path, `~/`, `$HOME`, `.lawman`, a login, an `@` or an image (`![`).
 
-Three defaults, open to change after the Hit measures them:
+Three defaults:
 
 - Write no counts and no dates.
 - Write no ids, no timestamps and no random fields.
@@ -217,17 +217,13 @@ printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPES
 <delimiter>
 ```
 
-The command prints one line:
-
-- `jev model=<m> kind=p0 live_secret=<n> vulnerability=<n> serious_violation=<n>`
-- `jev model=<m> kind=grade P1=<n> P2=<n> P3=<n> harm_users=<n> harm_maintainers=<n> cosmetic_only=<n>`
-- `jev none reason=<no-key|brief|no-reply|status-<code>|bad-answer|failed>`
+The command prints one `jev` line. A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
 
 Rules:
 
 - Run the command untraced and unchanged. Do not retry it. Set no timeout.
-- A non-zero exit, or a harness timeout, is not a failed command. When no `jev model=` line printed, record `jev none reason=failed` in Blockers.
-- Copy a `jev model=` line unchanged into the ruling. Record a `jev none` line in Blockers only.
+- A non-zero exit, or a harness timeout, is not a failed command. When the command printed no line at all, record `jev none reason=failed` in Blockers.
+- Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
 - The key comes only from `TYPESAFE_API_KEY`. It reaches curl through process substitution. Never print it and never put it on a command line.
 - The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the command.
 - Make no other request to the service in a tick. Only the Send command uses the key.

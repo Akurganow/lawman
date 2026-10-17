@@ -11,8 +11,7 @@ import { dir, ROOT, tempDb } from "./test-helpers";
 
 const FIXTURES = join(ROOT, "src", "fixtures", "jev");
 const fixture = (name: string) => readFileSync(join(FIXTURES, name), "utf8");
-const compact = (name: string) =>
-	`${JSON.stringify(JSON.parse(fixture(name)))}\n`;
+
 describe("the Send block of the court skill", () => {
 	const DUMMY = "dummy-key-not-a-real-secret";
 	const DELIMITER = "LAWMAN_TEST";
@@ -32,7 +31,6 @@ printf '\\n%s' "$FAKE_STATUS"
 
 	const skill = readFileSync(join(ROOT, "skills", "court", "SKILL.md"), "utf8");
 	const block = (skill.split(/^## Send$/m)[1] ?? "").split("```")[1] ?? "";
-	const script = block.slice(block.indexOf("bash -c '") + "bash -c '".length);
 
 	tempDb();
 	const made = (name: string) => join(dir, name);
@@ -52,7 +50,7 @@ printf '\\n%s' "$FAKE_STATUS"
 		writeFileSync(join(bin, "curl"), FAKE_CURL);
 		chmodSync(join(bin, "journal"), 0o755);
 		chmodSync(join(bin, "curl"), 0o755);
-		writeFileSync(made("reply"), compact("reply.grade.json"));
+		writeFileSync(made("reply"), fixture("reply.grade.json"));
 		const command = block
 			.replace("<p0|grade>", "grade")
 			.replace("<brief, one name: value line per field>", () =>
@@ -73,7 +71,7 @@ printf '\\n%s' "$FAKE_STATUS"
 	}
 
 	test("the first fenced block under the heading holds the command", () => {
-		expect(script).toStartWith("set +x\n");
+		expect(block).toContain("bash -c 'set +x\n");
 		expect(block).toContain("https://api.typesafe.ai/v1/systemone");
 	});
 
