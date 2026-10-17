@@ -314,6 +314,6 @@ A precinct's tools write absolute paths into files, and adding files by name rea
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor file no issue.
-- The executor changes the precinct only by pushes to the head branch of its pull request.
+- The executor changes the precinct only by pushes to the head branch of its pull request. It never merges, never force-pushes, never reviews and never reacts.
 - Only the prosecutor, the defender, the court and the clerk close an issue, and only by the closure classes. The court closes only by acquittal. The clerk closes and reopens an issue only to carry a decider's action on the pair or to confirm a merge, with the classes `declined by the owner` and `gone at <sha>`.
 - No role prints or files an installation path, home path, account name or token.

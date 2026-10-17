@@ -40,7 +40,7 @@ Run it when `mergeable` is `CONFLICTING`.
    ```
    git -C runs/<tick id>/tree merge -m "<message>" origin/HEAD
    ```
-   A conflict makes the command exit 1. That is no failure. A merge with no conflict commits itself. Push it, as the "Commit and push" recipe says, and skip the rest of this recipe.
+   A conflict makes the command exit 1. That is no failure. A merge with no conflict commits itself. Its content is the reviewed default branch, so check only its message with the "Leak check" recipe. A match there ends the tick with `failed` and nothing is pushed. Otherwise push it, as the "Commit and push" recipe says, and skip the rest of this recipe.
 2. List the conflicted paths.
    ```
    git -C runs/<tick id>/tree diff --name-only --diff-filter=U
@@ -65,7 +65,7 @@ Run it when `mergeable` is `CONFLICTING`.
      ```
      git -C runs/<tick id>/tree merge --abort
      ```
-5. Run the "Leak check" recipe. Finish the merge with a commit. The message flag opens no editor. Push it, as the "Commit and push" recipe says.
+5. Run the "Leak check" recipe on the resolved paths only, the ones step 2 listed, and on the message. The rest of the staged merge is the reviewed default branch. Finish the merge with a commit. The message flag opens no editor. Push it, as the "Commit and push" recipe says.
    ```
    git -C runs/<tick id>/tree commit -m "<message>"
    ```
@@ -83,12 +83,12 @@ bash -c 'git -C runs/<tick id>/tree diff --cached --name-only -z | while IFS= re
 No output means a clean diff. Check the commit message and the comment text the same way:
 
 ```
-grep -c -F -e "$PWD" -e "$HOME" <<'<delimiter>'
+grep -c -F -e "$PWD" -e "$HOME" <<'<delimiter>' || true
 <commit message or comment text>
 <delimiter>
 ```
 
-The output must be `0`.
+The output must be `0`. `grep` exits 1 when it counts no match; `|| true` keeps that clean result from failing the tick.
 
 ## Work
 

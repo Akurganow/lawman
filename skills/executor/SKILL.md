@@ -44,7 +44,8 @@ These forms are forbidden. Each has its boundary:
 | :-- | :-- |
 | `add -A`, `add .`, `add -u`, `commit -a` | They stage build output. Tools write absolute paths into files, and the index does not read contents. |
 | `push --force`, `--force-with-lease`, a `+` refspec, any other ref | A rewrite erases commits that the owner pushed to the same branch. |
-| `branch`, `tag`, `stash`, `checkout -b`, `switch -c`, `update-ref`, `config` | They write refs or settings into the shared `.git` of the clone. |
+| `branch`, `tag`, `stash`, `checkout -b`, `switch -c`, `update-ref`, `config`, `remote`, `symbolic-ref`, `notes`, `replace`; in the tree also `worktree` and `fetch` | They write refs or settings into the shared `.git` of the clone, or retarget the one push. |
+| any `push` other than the one form | The push lands only on the head branch of this pull request in this repository. |
 | `pr merge`, `pr review`, a reaction, a label | Merging, reviewing and voting belong to the owner. |
 | `pr edit`, `pr create`, `pr close`, `pr reopen`, `issue comment`, `issue close`, `issue reopen` | The title, the body and the state of the pair belong to the clerk. |
 | `run rerun`, `run cancel` | A run is evidence. The executor does not change it. |

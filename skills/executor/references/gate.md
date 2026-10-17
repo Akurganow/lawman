@@ -13,9 +13,10 @@ Read this file at step 9 of the executor skill. It holds the recipes of steps 9 
    gh run list -R <owner/repo> --commit <head> --event pull_request --workflow <file> --json databaseId,status,conclusion
    ```
    - Ignore runs whose `conclusion` is `cancelled`. A cancelled run is no result.
+   - The command fails because `<file>` is not on the default branch: the gate cannot be read. End the tick with `failed`. Blockers names the file.
    - No run is left: run the command once more. Still none: end the tick with `failed`. Blockers says `no run of <file> on <head>` and gives the `mergeable` value.
    - Take the run with the highest `databaseId`.
-   - A `status` other than `completed`: wait for it. The exit code is the result.
+   - A `status` other than `completed`: wait for it. A non-zero exit is red only when `run list` then shows the `conclusion` `failure`. A `cancelled` conclusion is no result.
      ```
      gh run watch <id> -R <owner/repo> --exit-status
      ```
