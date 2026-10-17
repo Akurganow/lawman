@@ -118,7 +118,7 @@ Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
 1. `job=state`: run the "Check the decider" section with the issue number `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
-2. `job=reopen-issue`: run the "Check the decider" section with the pull request number `pull`. With `decider=no`, run **kept**. With `decider=yes`, run **reopen-issue**.
+2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
 3. `job=adopt`, `settle`, `open` or `precedent`: run the recipe of that name.
 
 | `action` | Recipe |

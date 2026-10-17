@@ -100,7 +100,7 @@ function tableRow(
 ): Row {
 	const open = i.state === "OPEN";
 	const points = pull !== undefined && Number(k?.fields.pull) === pull.number;
-	if (pull !== undefined && k?.stage === "shut" && points)
+	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
 	if (pull === undefined && base === "handed") return job("settle");

@@ -121,11 +121,16 @@ describe("table rows", () => {
 		});
 	});
 
+	test("1: a kept marker over shut still reopens the issues when the pull request reopens", () => {
+		const r = run({
+			state: "CLOSED",
+			markers: pairs(["shut", "7", "closed"], ["kept", "7", "closed"]),
+			pulls: [pull(7, 1)],
+		});
+		expect(r.job).toBe("reopen-issue");
+	});
+
 	test.each([
-		[
-			"a kept marker over shut does not reopen the issue again",
-			pairs(["shut", "7", "closed"], ["kept", "7", "closed"]),
-		],
 		[
 			"a shut marker for another pull request is not reopened",
 			pairs(["shut", "6", "closed"]),

@@ -130,6 +130,9 @@ Run it when the decider check said `no`, or when `action` is `kept`.
    gh pr view <pull> -R <owner/repo> --json state --jq .state
    ```
 4. `OPEN`: change nothing on the pull request.
+
+A reopen that fails because the head branch is gone ends the tick with `failed`. Blockers names two remedies: restore the branch, or close the issue as not planned.
+
 5. For every `<s>`, read its state. When it is `CLOSED`, reopen it.
 6. Write the marker `handed` with `pull=<pull>` and `issue=open` on every `<s>`.
 

@@ -1,5 +1,5 @@
 import { parseArgs, usage } from "./args";
-import { EXIT, now, out, readStdin } from "./db";
+import { EXIT, now, readStdin } from "./db";
 import { lintBody } from "./lint";
 
 const HANDOFF_USAGE =
@@ -78,7 +78,7 @@ export function handoffCommand(args: string[]): number {
 		adopted: adopted ? readStdin() : undefined,
 		at: now(),
 	});
-	for (const reason of built.reasons) out(reason);
+	for (const reason of built.reasons) process.stderr.write(`${reason}\n`);
 	if (built.reasons.length > 0) return EXIT.LINT_BODY;
 	process.stdout.write(built.text);
 	return EXIT.OK;

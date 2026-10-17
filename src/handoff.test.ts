@@ -118,10 +118,11 @@ describe("handoff command", () => {
 		expect(r.out).not.toContain("see");
 	});
 
-	test("a failing lint prints the reasons and exits with the lint code", () => {
+	test("a failing lint prints the reasons on stderr, nothing on stdout, and exits with the lint code", () => {
 		const r = run(["--sources", "12", "--adopted"], `see ${HOME_MAC}/code`);
 		expect(r.code).toBe(EXIT.LINT_BODY);
-		expect(r.out).toBe("4: home or installation path\n");
+		expect(r.out).toBe("");
+		expect(r.err).toBe("4: home or installation path\n");
 	});
 
 	test.each([
