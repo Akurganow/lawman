@@ -288,7 +288,7 @@ describe("leads, seen, cap and last", () => {
 
 		test("the sync ceiling equals the number in the law", () => {
 			const law = readFileSync(join(ROOT, "law", "LAW.md"), "utf8");
-			const m = law.match(/^The sync ceiling is (\d+) records\./m);
+			const m = law.match(/^The issue sync ceiling is (\d+) records\./m);
 			expect(m).not.toBeNull();
 			expect(SYNC_LIMIT).toBe(Number(must(m)[1]));
 		});

@@ -111,10 +111,37 @@ describe("open", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(3);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(
 			db.query("SELECT issue, title, replied_at FROM issues").all(),
 		).toEqual([{ issue: 7, title: "t", replied_at: null }]);
+		db.close();
+	});
+
+	test("migration 4 keeps the data of a schema 3 database and adds pulls", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 3)) old.run(sql);
+		old.run("PRAGMA user_version = 3");
+		old.run(
+			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('p', 7, 'OPEN', 't', 'c')",
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(4);
+		expect(db.query("SELECT issue, title FROM issues").all()).toEqual([
+			{ issue: 7, title: "t" },
+		]);
+		db.run(
+			"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('p', 3, '7,9', 'up')",
+		);
+		expect(db.query("SELECT * FROM pulls").all()).toEqual([
+			{ precinct: "p", number: 3, issues: "7,9", spec: "up" },
+		]);
+		expect(() =>
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('p', 3, '', 'none')",
+			),
+		).toThrow();
 		db.close();
 	});
 
@@ -156,6 +183,12 @@ describe("probe", () => {
 	test("--schema above the supported version exits 6", () => {
 		const r = cli(["probe", "--schema", "99"]);
 		expect(r.code).toBe(6);
+	});
+
+	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
+		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
+		expect(cli(["probe", "--schema", "5"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

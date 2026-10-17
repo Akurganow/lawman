@@ -102,6 +102,14 @@ export const MIGRATIONS: string[] = [
   CREATE UNIQUE INDEX open_pause ON pauses((1)) WHERE ended_at IS NULL;
   `,
 	"ALTER TABLE issues ADD COLUMN replied_at TEXT",
+	`
+  CREATE TABLE pulls (
+    precinct TEXT NOT NULL,
+    number   INTEGER NOT NULL,
+    issues   TEXT NOT NULL,
+    spec     TEXT NOT NULL,
+    PRIMARY KEY (precinct, number));
+  `,
 ];
 
 const envValue = (env: Env, name: string): string | undefined =>
