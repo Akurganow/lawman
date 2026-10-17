@@ -1,0 +1,9 @@
+{
+	"model": "jev-1.13.0",
+	"answers": {
+		"live_secret": { "type": "noul", "noul": 0.95 },
+		"vulnerability": { "type": "noul", "noul": 0.12 },
+		"serious_violation": { "type": "noul", "noul": 0.8 }
+	},
+	"usage": { "input_tokens": 412, "output_tokens": 54 }
+}

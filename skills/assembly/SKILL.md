@@ -14,7 +14,7 @@ You run the assembly for the developer. The developer starts you from the instal
 - `bin/journal`: the journal binary.
 - `precincts/<owner>-<repo>/`: the full clone of one precinct.
 - The harness page: `lawman/harnesses/<harness>.md`. `<harness>` is the `harness` value in `config.yaml`. Stop if the page is missing.
-- The harness page is the only source for harness commands, budgets and token variables. Read the section the page gives. Never guess a harness command.
+- The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command.
 
 ## Choose the mode
 
@@ -32,8 +32,8 @@ Tell the developer the mode and the reason in one sentence.
 ## Rules
 
 - Ask one question at a time. Wait for the answer before you ask the next.
-- Never ask for, print, read or store a token value. Never print the environment. Never open the file the harness page names for the token.
-- When a token is needed, name the variable and the place the harness page gives. The developer creates the token and writes it there. Then repeat the measurement.
+- Never ask for, print, read or store a token or key value. Never print the environment. Never open the file the harness page names for a token or key.
+- When a token or key is needed, name the variable and the place the harness page gives. The developer creates it and writes it there. Then repeat the measurement.
 - Never edit the harness configuration. Show the lines. The developer applies them and confirms.
 - Never merge a pull request.
 - Never write a local path, a key, an account name, a token or a machine detail into a precinct, pull request, issue or commit.
@@ -53,9 +53,11 @@ release_repo: <owner>/<repo> of the release
 journal_sha256: <sha256 of bin/journal>
 trusted_login: <login the scheduled session reports>
 deliver: <delivery platform>
+typesafe: <yes|no>
+typesafe_precincts: <name>=<yes|no> ... | none
 ```
 
-Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys.
+Update reads `release_tag` and `journal_sha256`. Ticks and this assembly read the other keys. The court reads `typesafe` and `typesafe_precincts`.
 
 ## Finish
 

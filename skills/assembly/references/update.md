@@ -34,8 +34,11 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 
 ## Step 5. Measure and record
 
-1. Run install step 6 again, which records `trusted_login`.
-2. Set `law_commit` to `git -C lawman rev-parse HEAD`, `release_tag` to `<target>` and `journal_sha256` to the sum from install step 5, item 14, and keep the other keys.
-3. Write `config.yaml`, and read it back.
-4. Tell the developer the new tag and the changes from step 1.
-5. If a folder under `lawman/skills/` other than `assembly` has no job `[lawman] <role>` in the scheduler's list, tell the developer to run the assembly again, which enters the roles mode.
+1. Set `law_commit` to `git -C lawman rev-parse HEAD`, `release_tag` to `<target>` and `journal_sha256` to the sum from install step 5, item 14, and keep the other keys.
+2. Write `config.yaml`, and read it back.
+3. Run install step 6 once, which records `trusted_login` and carries the TypeSafe items, so there is no second TypeSafe question.
+4. Write the `trusted_login` and `typesafe` values that step 6 recorded to `config.yaml`, and read it back.
+5. When `typesafe` is `yes`, ask the precinct question of `references/precinct.md`, step 35, for each precinct from `bin/journal precinct list` that has no pair in `typesafe_precincts`. Ask one precinct at a time, and write each answer as step 36 says.
+6. When the court job exists and the skill listing shows `typesafe-ai`, show the add-skill command the page gives, with the job id and `typesafe-ai`. Run it after a yes.
+7. Tell the developer the new tag and the changes from step 1.
+8. If a folder under `lawman/skills/` other than `assembly` has no job `[lawman] <role>` in the scheduler's list, tell the developer to run the assembly again, which enters the roles mode.

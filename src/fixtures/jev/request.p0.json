@@ -1,0 +1,39 @@
+{
+	"model": "jev-latest",
+	"state": {
+		"brief": {
+			"defect": "A configuration file in the repository holds an access token for the project's hosting account.",
+			"secret": "An access token for the project's hosting account, readable by anyone who can read the public repository; the court did not test whether it works.",
+			"weakness": "none",
+			"rule": "A credential is never committed to the repository; this breach exposes the account to anyone.",
+			"established": "The court re-read the file at the analysed commit and saw a value shaped like a token.",
+			"not_established": "Whether the token still works."
+		}
+	},
+	"questions": {
+		"live_secret": {
+			"type": "noul",
+			"instructions": "Does `brief.secret` describe a live secret, a working credential that people outside its intended holders can read?",
+			"criteria": {
+				"true": "A working credential that outsiders can read.",
+				"false": "No credential is involved, or it is a placeholder, an example or a dead credential, or only its intended holders can read it."
+			}
+		},
+		"vulnerability": {
+			"type": "noul",
+			"instructions": "Does `brief.weakness` describe a vulnerability, a weakness that an outsider can use to gain access, run code or reach other people's data?",
+			"criteria": {
+				"true": "An outsider can use it to gain access, run code or reach others' data.",
+				"false": "No weakness is described, or only a maintainer can use it, or it gains nothing of that kind."
+			}
+		},
+		"serious_violation": {
+			"type": "noul",
+			"instructions": "Does `brief.rule` describe a serious violation of a rule?",
+			"criteria": {
+				"true": "A rule is broken and the breach is serious.",
+				"false": "No rule is broken, or the breach is minor."
+			}
+		}
+	}
+}

@@ -1,0 +1,4 @@
+defect: A help message misspells the name of one command option.
+effect_today: Readers of the help text see a misspelled option name, and the command still works.
+established: The help text was read.
+not_established: none

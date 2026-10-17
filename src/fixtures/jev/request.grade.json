@@ -1,0 +1,54 @@
+{
+	"model": "jev-latest",
+	"state": {
+		"brief": {
+			"defect": "A help message misspells the name of one command option.",
+			"effect_today": "Readers of the help text see a misspelled option name, and the command still works.",
+			"established": "The help text was read.",
+			"not_established": "none"
+		}
+	},
+	"questions": {
+		"level": {
+			"type": "score",
+			"instructions": "Which situation describes `brief` best?",
+			"criteria": [
+				"Cosmetic, or of small value.",
+				"The default: a real defect that harms no user or maintainer now.",
+				"Harm to users or maintainers now."
+			]
+		},
+		"harm_users": {
+			"type": "noul",
+			"instructions": "Does `brief.effect_today` describe harm to users now?",
+			"criteria": {
+				"true": "Users get a wrong result, lose data, are blocked or are misled today.",
+				"false": "Users notice no bad outcome today."
+			}
+		},
+		"harm_maintainers": {
+			"type": "noul",
+			"instructions": "Does `brief.effect_today` describe harm to maintainers now?",
+			"criteria": {
+				"true": "Maintainers are blocked, misled or made to redo work today, for example by a failing build.",
+				"false": "Maintainers notice no bad outcome today."
+			}
+		},
+		"cosmetic_only": {
+			"type": "noul",
+			"instructions": "Does `brief.defect` describe a cosmetic change only, with behaviour, users and maintainers' work untouched?",
+			"criteria": {
+				"true": "Appearance or wording only.",
+				"false": "It changes behaviour, or affects users, security or maintainers' work."
+			}
+		},
+		"small_value": {
+			"type": "noul",
+			"instructions": "Is the value of fixing `brief.defect` small, so that few would notice the fix?",
+			"criteria": {
+				"true": "Few would notice the fix.",
+				"false": "Many would notice the fix."
+			}
+		}
+	}
+}

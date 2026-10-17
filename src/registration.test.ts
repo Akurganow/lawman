@@ -13,7 +13,7 @@ import {
 tempDb();
 
 describe("registration", () => {
-	test.each(["pull", "handoff", "decider"])(
+	test.each(["pull", "handoff", "decider", "jev"])(
 		"%s is a registered command",
 		(name) => {
 			expect(Object.keys(COMMANDS)).toContain(name);
@@ -22,7 +22,7 @@ describe("registration", () => {
 
 	test("an unknown command lists the new commands in its usage", () => {
 		const err = call(BASE, ["frobnicate"]).err;
-		for (const name of ["pull", "handoff", "decider"])
+		for (const name of ["pull", "handoff", "decider", "jev"])
 			expect(err).toContain(name);
 	});
 

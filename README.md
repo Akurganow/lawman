@@ -26,7 +26,7 @@ You need `git`, the GitHub CLI signed in as the one account every role uses, Her
 
 2. Make the skills visible to the harness. For Hermes Agent, add `~/.lawman/lawman/skills` to `skills.external_dirs` in its config, as `harnesses/hermes.md` describes.
 
-3. From `~/.lawman`, run the assembly skill in an interactive session and answer its questions. It verifies the tools, downloads the journal binary from the release and checks its checksum and attestation, measures what a scheduled session can do, writes `config.yaml`, adds precincts and creates the scheduled jobs.
+3. From `~/.lawman`, run the assembly skill in an interactive session and answer its questions. It verifies the tools, downloads the journal binary from the release and checks its checksum and attestation, measures what a scheduled session can do, writes `config.yaml`, adds precincts and creates the scheduled jobs. It asks whether the court may use TypeSafe Jev as priority evidence, which needs `curl` and `TYPESAFE_API_KEY`, and asks again per precinct.
 
 The installation holds `lawman/` (the law clone), `bin/journal`, `journal.sqlite`, `precincts/` (one full clone per precinct), `runs/` (one working tree per patrol, investigation, clerk or executor tick), `departments/` (your own department pages for several precincts) and `config.yaml`.
 

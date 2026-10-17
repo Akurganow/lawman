@@ -9,6 +9,7 @@ import { dispatch, tick } from "./dispatch";
 import { dueCommand } from "./due";
 import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
+import { jev } from "./jev";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand, precedentMergeCommand } from "./precedent";
@@ -47,6 +48,7 @@ export const COMMANDS: Record<string, Handler> = {
 	pull: pullCommand,
 	handoff: handoffCommand,
 	decider,
+	jev,
 };
 
 export function main(argv: string[]): number {
