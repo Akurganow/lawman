@@ -13,8 +13,8 @@
 			"type": "score",
 			"instructions": "Which situation describes `brief` best?",
 			"criteria": [
-				"Cosmetic, or of small value.",
-				"The default: a real defect that harms no user or maintainer now.",
+				"Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
+				"The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
 				"Harm to users or maintainers now."
 			]
 		},
@@ -36,18 +36,10 @@
 		},
 		"cosmetic_only": {
 			"type": "noul",
-			"instructions": "Does `brief.defect` describe a cosmetic change only, with behaviour, users and maintainers' work untouched?",
+			"instructions": "Does `brief.defect` concern only wording, comments or appearance, with what the code does left the same?",
 			"criteria": {
-				"true": "Appearance or wording only.",
-				"false": "It changes behaviour, or affects users, security or maintainers' work."
-			}
-		},
-		"small_value": {
-			"type": "noul",
-			"instructions": "Is the value of fixing `brief.defect` small, so that few would notice the fix?",
-			"criteria": {
-				"true": "Few would notice the fix.",
-				"false": "Many would notice the fix."
+				"true": "Only wording, comments or appearance are off, and behaviour is the same.",
+				"false": "What the code does, or what users or maintainers rely on, is affected."
 			}
 		}
 	}

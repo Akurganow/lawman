@@ -55,9 +55,9 @@ const P0: Kind = {
 			"No weakness is described, or only a maintainer can use it, or it gains nothing of that kind.",
 		),
 		serious_violation: noul(
-			"Does `brief.rule` describe a serious violation of a rule?",
-			"A rule is broken and the breach is serious.",
-			"No rule is broken, or the breach is minor.",
+			"Does `brief.rule` describe a serious violation, a breach that exposes the project, its users or their data to outsiders, or lets outsiders control what the project does?",
+			"The breach exposes the project, its users or their data to outsiders, or hands outsiders control.",
+			"No rule is broken, or the breach touches only wording, process or convenience inside the project.",
 		),
 	},
 	readings: ["live_secret", "vulnerability", "serious_violation"].map(noulAt),
@@ -70,8 +70,8 @@ const GRADE: Kind = {
 			type: "score",
 			instructions: "Which situation describes `brief` best?",
 			criteria: [
-				"Cosmetic, or of small value.",
-				"The default: a real defect that harms no user or maintainer now.",
+				"Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
+				"The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
 				"Harm to users or maintainers now.",
 			],
 		},
@@ -86,23 +86,16 @@ const GRADE: Kind = {
 			"Maintainers notice no bad outcome today.",
 		),
 		cosmetic_only: noul(
-			"Does `brief.defect` describe a cosmetic change only, with behaviour, users and maintainers' work untouched?",
-			"Appearance or wording only.",
-			"It changes behaviour, or affects users, security or maintainers' work.",
-		),
-		small_value: noul(
-			"Is the value of fixing `brief.defect` small, so that few would notice the fix?",
-			"Few would notice the fix.",
-			"Many would notice the fix.",
+			"Does `brief.defect` concern only wording, comments or appearance, with what the code does left the same?",
+			"Only wording, comments or appearance are off, and behaviour is the same.",
+			"What the code does, or what users or maintainers rely on, is affected.",
 		),
 	},
 	readings: [
 		levelAt("P1", "2"),
 		levelAt("P2", "1"),
 		levelAt("P3", "0"),
-		...["harm_users", "harm_maintainers", "cosmetic_only", "small_value"].map(
-			noulAt,
-		),
+		...["harm_users", "harm_maintainers", "cosmetic_only"].map(noulAt),
 	],
 };
 

@@ -5,17 +5,32 @@
 			"type": "score",
 			"score": 1.05,
 			"legend": {
-				"0": "Cosmetic, or of small value.",
-				"1": "The default: a real defect that harms no user or maintainer now.",
+				"0": "Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
+				"1": "The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
 				"2": "Harm to users or maintainers now."
 			},
-			"probabilities": { "0": 0.1, "1": 0.75, "2": 0.15 },
+			"probabilities": {
+				"0": 0.1,
+				"1": 0.75,
+				"2": 0.15
+			},
 			"confidence": 0.8
 		},
-		"harm_users": { "type": "noul", "noul": 0.04 },
-		"harm_maintainers": { "type": "noul", "noul": 0.07 },
-		"cosmetic_only": { "type": "noul", "noul": 0.9 },
-		"small_value": { "type": "noul", "noul": 0.66 }
+		"harm_users": {
+			"type": "noul",
+			"noul": 0.04
+		},
+		"harm_maintainers": {
+			"type": "noul",
+			"noul": 0.07
+		},
+		"cosmetic_only": {
+			"type": "noul",
+			"noul": 0.9
+		}
 	},
-	"usage": { "input_tokens": 463, "output_tokens": 72 }
+	"usage": {
+		"input_tokens": 463,
+		"output_tokens": 72
+	}
 }

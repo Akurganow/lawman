@@ -29,10 +29,10 @@
 		},
 		"serious_violation": {
 			"type": "noul",
-			"instructions": "Does `brief.rule` describe a serious violation of a rule?",
+			"instructions": "Does `brief.rule` describe a serious violation, a breach that exposes the project, its users or their data to outsiders, or lets outsiders control what the project does?",
 			"criteria": {
-				"true": "A rule is broken and the breach is serious.",
-				"false": "No rule is broken, or the breach is minor."
+				"true": "The breach exposes the project, its users or their data to outsiders, or hands outsiders control.",
+				"false": "No rule is broken, or the breach touches only wording, process or convenience inside the project."
 			}
 		}
 	}

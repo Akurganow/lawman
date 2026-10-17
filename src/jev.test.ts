@@ -82,21 +82,20 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 			expect(q.type).toBe("noul");
 	});
 
-	test("the grade questions are one Score then four Nouls", () => {
+	test("the grade questions are one Score then three Nouls", () => {
 		const { questions } = bodyOf("grade");
 		expect(Object.keys(questions)).toEqual([
 			"level",
 			"harm_users",
 			"harm_maintainers",
 			"cosmetic_only",
-			"small_value",
 		]);
 		expect(questions.level).toEqual({
 			type: "score",
 			instructions: "Which situation describes `brief` best?",
 			criteria: [
-				"Cosmetic, or of small value.",
-				"The default: a real defect that harms no user or maintainer now.",
+				"Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
+				"The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
 				"Harm to users or maintainers now.",
 			],
 		});
@@ -204,9 +203,9 @@ describe("law consistency", () => {
 			expect(questions[id].instructions).toContain(phrases[i] as string);
 	});
 
-	test("Score levels 0 and 2 equal the law's P3 and P1 texts", () => {
+	test("Score levels 0 and 2 carry the law's P3 and P1 texts", () => {
 		const { criteria } = bodyOf("grade").questions.level;
-		expect(criteria[0]).toBe(capital(lawText("P3")));
+		expect(criteria[0]).toStartWith(capital(lawText("P3")).replace(/\.$/, ":"));
 		expect(criteria[2]).toBe(capital(lawText("P1")));
 		expect(criteria[1]).toContain("default");
 	});
@@ -216,8 +215,7 @@ describe("law consistency", () => {
 		const text = (id: string) => JSON.stringify(questions[id]);
 		expect(text("harm_users")).toContain("users");
 		expect(text("harm_maintainers")).toContain("maintainers");
-		expect(text("cosmetic_only")).toContain("cosmetic");
-		expect(text("small_value")).toContain("small");
+		expect(text("cosmetic_only")).toContain("wording");
 	});
 
 	test("the tick alarm line carries the text of the contract", () => {
@@ -232,7 +230,7 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 	const P0_LINE =
 		"jev model=jev-1.13.0 kind=p0 live_secret=0.95 vulnerability=0.12 serious_violation=0.80";
 	const GRADE_LINE =
-		"jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90 small_value=0.66";
+		"jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90";
 	const NONE = "jev none reason=";
 	type Tree = Record<string, unknown>;
 	const reply = (name: string): Tree => JSON.parse(fixture(name));
@@ -480,7 +478,7 @@ printf '\\n%s' "$FAKE_STATUS"
 	test("a docs-shaped 200 prints the jev model line", () => {
 		expect(send(DUMMY)).toEqual({
 			code: 0,
-			out: "jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90 small_value=0.66\n",
+			out: "jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90\n",
 		});
 	});
 

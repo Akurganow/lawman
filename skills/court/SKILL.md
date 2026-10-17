@@ -220,7 +220,7 @@ printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPES
 The command prints one line:
 
 - `jev model=<m> kind=p0 live_secret=<n> vulnerability=<n> serious_violation=<n>`
-- `jev model=<m> kind=grade P1=<n> P2=<n> P3=<n> harm_users=<n> harm_maintainers=<n> cosmetic_only=<n> small_value=<n>`
+- `jev model=<m> kind=grade P1=<n> P2=<n> P3=<n> harm_users=<n> harm_maintainers=<n> cosmetic_only=<n>`
 - `jev none reason=<no-key|brief|no-reply|status-<code>|bad-answer|failed>`
 
 Rules:
@@ -292,7 +292,7 @@ effect_today: Readers of the help text see a misspelled option name, and the com
 established: The help text was read.
 not_established: none
 ```
-jev model=jev-1.13.0 kind=grade P1=0.12 P2=0.31 P3=0.57 harm_users=0.08 harm_maintainers=0.05 cosmetic_only=0.91 small_value=0.74
+jev model=jev-1.13.0 kind=grade P1=0.12 P2=0.31 P3=0.57 harm_users=0.08 harm_maintainers=0.05 cosmetic_only=0.91
 
 ## Precedent
 - 2026-10-16: A misspelt option name in the help text does not make the parser at `src/cli.ts:21` accept it.
