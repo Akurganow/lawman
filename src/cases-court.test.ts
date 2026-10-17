@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, withLead } from "./cases-fixture";
+import { fields, need, needOnly, put, withLead } from "./cases-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -9,8 +9,10 @@ import {
 	charge,
 	conviction,
 	defence,
+	mark,
 	refute,
 	returnTo,
+	SHA,
 	tempDb,
 } from "./test-helpers";
 
@@ -112,5 +114,52 @@ describe("case: court stage", () => {
 			3: { ...defended(), state: "CLOSED" },
 		});
 		expect(due()).toBe("");
+	});
+});
+
+describe("case: priority", () => {
+	const ruledWith = (extra: string) =>
+		withLead(
+			caseMark(),
+			charge(),
+			defence(),
+			mark("court", "conviction", ` sha=${SHA}${extra}`),
+		);
+
+	test.each([
+		[" priority=P0", "P0"],
+		[" priority=P1", "P1"],
+		[" priority=P2", "P2"],
+		[" priority=P3", "P3"],
+		["", "P2"],
+		[" priority=P4", "P2"],
+		[" priority=high", "P2"],
+		[" priority=p0", "P2"],
+	])("a conviction%s reads %s", (extra, expected) => {
+		put({ 1: ruledWith(extra) });
+		expect(fields(1).priority).toBe(expected);
+	});
+
+	test("the priority comes from the newest conviction", () => {
+		put({
+			1: withLead(
+				caseMark(),
+				charge(),
+				defence(),
+				mark("court", "conviction", ` sha=${SHA} priority=P0`),
+				caseMark(),
+				charge(),
+				defence(),
+				mark("court", "conviction", ` sha=${SHA} priority=P3`),
+			),
+		});
+		expect(fields(1).priority).toBe("P3");
+	});
+
+	test("a case without a conviction reads P2", () => {
+		put({ 1: withLead(caseMark(), charge(), defence(), acquittal()) });
+		expect(fields(1).priority).toBe("P2");
+		put({ 1: withLead() });
+		expect(fields(1).priority).toBe("P2");
 	});
 });

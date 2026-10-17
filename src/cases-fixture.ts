@@ -1,5 +1,5 @@
 import { expect } from "bun:test";
-import { BASE, call, lead, TRUSTED } from "./test-helpers";
+import { BASE, call, lead, mark, seed, TRUSTED } from "./test-helpers";
 
 export type Comment = [createdAt: string, body: string];
 export type Spec = {
@@ -47,3 +47,30 @@ export const withLead = (...comments: string[]): Spec => ({
 	body: [lead()],
 	comments: comments.map((body, i): Comment => [T(10 + i), body]),
 });
+
+export const fields = (n: number) =>
+	Object.fromEntries(
+		need(n)
+			.split(" ")
+			.map((pair) => pair.split("=")),
+	) as Record<string, string>;
+
+export const pairMark = (stage: string, pull: number | string, issue: string) =>
+	mark("clerk", stage, ` pull=${pull} issue=${issue}`);
+
+export const human = (state: string, ...marks: string[]): Spec => ({
+	body: ["a human issue"],
+	comments: marks.map((body, i): Comment => [T(10 + i), body]),
+	state,
+});
+
+export function cache(...pulls: [number, number[]][]) {
+	seed((db) => {
+		db.run("DELETE FROM pulls");
+		for (const [number, issues] of pulls)
+			db.run("INSERT INTO pulls VALUES ('main', ?, ?, 'none')", [
+				number,
+				issues.join(","),
+			]);
+	});
+}

@@ -1,7 +1,7 @@
 import { check, usage } from "./args";
 import { EXIT, Fail, out, readStdin } from "./db";
 
-const DECIDING = new Set(["ADMIN", "MAINTAIN", "WRITE"]);
+export const DECIDING = new Set(["ADMIN", "MAINTAIN", "WRITE"]);
 const NO_ACTOR = "-";
 
 const reject = (why: string) =>

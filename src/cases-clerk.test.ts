@@ -30,11 +30,11 @@ describe("case: clerk stage", () => {
 		["an open conviction needs the clerk", ruled(conviction), "clerk"],
 		["an open acquittal needs the clerk", ruled(acquittal), "clerk"],
 		["a closed acquittal needs the clerk", closed(ruled(acquittal)), "clerk"],
-		["a closed conviction needs the clerk", closed(ruled(conviction)), "clerk"],
+		["a closed conviction needs nobody", closed(ruled(conviction)), "none"],
 		[
-			"an entry newer than the conviction needs nobody",
+			"an entry does not answer an open conviction",
 			ruled(conviction, entry()),
-			"none",
+			"clerk",
 		],
 		[
 			"a no-entry newer than the acquittal needs nobody",
@@ -77,7 +77,7 @@ describe("case: clerk stage", () => {
 	});
 
 	test("clerk markers leave round and returned unchanged", () => {
-		put({ 1: ruled(conviction, entry()) });
+		put({ 1: ruled(acquittal, entry()) });
 		expect(need(1).split(" ").slice(0, 3)).toEqual([
 			"need=none",
 			"round=1",
@@ -90,12 +90,12 @@ describe("case: clerk stage", () => {
 		expect(need(1).split(" ").slice(1, 3)).toEqual(["round=1", "returned=-"]);
 	});
 
-	test("due for the clerk lists open charges and closed acquittals only", () => {
+	test("due for the clerk lists open convictions and unanswered acquittals", () => {
 		const due = () => call(BASE, ["due", "--role", "clerk"]).out;
 		put({ 1: ruled(conviction) });
 		expect(due()).toBe("main\t1\n");
 		put({
-			1: ruled(conviction, entry()),
+			1: ruled(acquittal, noEntry()),
 			2: closed(ruled(acquittal)),
 		});
 		expect(due()).toBe("main\t2\n");

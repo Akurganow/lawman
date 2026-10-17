@@ -1,6 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { check, count, parseArgs } from "./args";
 import { type CaseMarker, markersOf } from "./cases";
+import { hasPair } from "./clerk-jobs";
 import { EXIT, Fail, out, withDb } from "./db";
 
 const INTAKE_USAGE = "intake <precinct> [--issue <n>]";
@@ -18,6 +19,7 @@ type Row = {
 const carrierTime = (ord: string) => ord.split(ORD_SEPARATOR)[0] ?? "";
 
 function waitsForReply(markers: CaseMarker[], repliedAt: string | null) {
+	if (hasPair(markers)) return false;
 	const unit = markers
 		.filter((m) => m.role === RESPONSE_UNIT)
 		.sort((a, b) => (a.ord < b.ord ? -1 : 1))

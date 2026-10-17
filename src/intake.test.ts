@@ -60,6 +60,8 @@ const addIssue = (n: number, s: IssueSpec = {}) =>
 		),
 	);
 
+const PAIR = { pull: "7", issue: "open" };
+
 const ordOf = (stamp: string, rank = 1) =>
 	`${stamp}|${String(rank).padStart(6, "0")}|000001`;
 
@@ -69,6 +71,7 @@ const addMarker = (
 	stamp: string,
 	role = UNIT,
 	markerAt = "2026-10-14T09:30:00Z",
+	extra: Record<string, string> = {},
 ) =>
 	seed((db) =>
 		db.run("INSERT INTO markers VALUES ('main', ?, ?, ?, ?, '-', ?, ?, ?)", [
@@ -77,7 +80,7 @@ const addMarker = (
 			role,
 			stage,
 			stage === "lead" ? "src/a.rs::f::dead-code" : null,
-			JSON.stringify({ role, stage, at: markerAt }),
+			JSON.stringify({ role, stage, at: markerAt, ...extra }),
 			lead(),
 		]),
 	);
@@ -100,6 +103,20 @@ describe("intake", () => {
 	test("a closed issue does not wait", () => {
 		addIssue(5, { state: "CLOSED" });
 		expect(intake().out).toBe("");
+	});
+
+	test("an issue with a pair marker is skipped, with or without a pull request", () => {
+		addIssue(5);
+		addIssue(6);
+		addMarker(5, "handed", T(10), "clerk", undefined, PAIR);
+		expect(intake().out).toBe("6");
+		expect(intake("--issue", "5").out).toBe("need=none state=OPEN");
+	});
+
+	test("a pair marker with a bad pull does not skip the issue", () => {
+		addIssue(5);
+		addMarker(5, "handed", T(10), "clerk", undefined, { ...PAIR, pull: "07" });
+		expect(intake().out).toBe("5");
 	});
 
 	test("an issue with a lead origin does not wait", () => {
