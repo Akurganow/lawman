@@ -4,7 +4,7 @@ import { buildHandoff, handoffCommand } from "./handoff";
 import { captured } from "./inproc";
 import { lintBody } from "./lint";
 import { parseMarker } from "./markers";
-import { env, ROOT, tempDb } from "./test-helpers";
+import { cli, tempDb } from "./test-helpers";
 
 const AT = "2026-10-17T10:45:00Z";
 const HOME_MAC = ["/Us", "ers/someone"].join("");
@@ -18,33 +18,8 @@ const textOf = (over: Partial<Parameters<typeof buildHandoff>[0]> = {}) => {
 	return built.text;
 };
 
-const HARNESS = `
-import { Fail } from "./src/db";
-import { handoffCommand } from "./src/handoff";
-try {
-  process.exitCode = handoffCommand(JSON.parse(process.env.HANDOFF_ARGS ?? "[]"));
-} catch (e) {
-  process.stderr.write(String(e instanceof Error ? e.message : e) + "\\n");
-  process.exitCode = e instanceof Fail ? e.code : 1;
-}
-`;
-
-function run(args: string[], stdin = "") {
-	const r = Bun.spawnSync(["bun", "-e", HARNESS], {
-		cwd: ROOT,
-		env: env({
-			LAWMAN_DB: ":memory:",
-			LAWMAN_NOW: AT,
-			HANDOFF_ARGS: JSON.stringify(args),
-		}),
-		stdin: Buffer.from(stdin),
-	});
-	return {
-		code: r.exitCode,
-		out: r.stdout.toString(),
-		err: r.stderr.toString(),
-	};
-}
+const run = (args: string[], stdin = "") =>
+	cli(["handoff", ...args], { LAWMAN_DB: ":memory:", LAWMAN_NOW: AT }, stdin);
 
 describe("handoff builder", () => {
 	test("title line, one sentence for the sources, marker last", () => {
