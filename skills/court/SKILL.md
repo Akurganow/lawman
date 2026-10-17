@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman court, which takes one order on a defende
 
 One tick takes one order on a defended case, re-reads the exhibits, decides conviction or acquittal, writes the ruling as a comment, and exits.
 
-The court reads and writes comments. It runs no code and creates no worktree.
+The court reads and writes comments. It runs no code from the precinct. It creates no worktree.
 
 ## Limits
 
@@ -36,10 +36,17 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    bin/journal tick start --role court
    ```
-3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
+3. Read `law_commit`, `trusted_login`, `typesafe` and `typesafe_precincts` from `config.yaml`. Each is one `key: value` line. A missing file, or a missing `law_commit` or `trusted_login`, ends the tick with `failed`. A missing `typesafe` or `typesafe_precincts` does not.
    ```
-   grep -E '^(law_commit|trusted_login):' config.yaml
+   grep -E '^(law_commit|trusted_login|typesafe|typesafe_precincts):' config.yaml
    ```
+   `typesafe` allows Jev only with the exact value `yes`. Any other value, or a missing key, reads as `no`.
+
+   Once step 1 has printed the order, count the precinct's pair. `<p>` is the precinct name of the order. A pair is a whole space-separated token. The precinct is allowed only when the count is at least 1. A count of 0 means no, and its exit 1 is no failure.
+   ```
+   grep -cE '^typesafe_precincts: (.* )?<p>=yes( .*)?$' config.yaml
+   ```
+   Jev is allowed when `typesafe` is `yes` and the precinct is allowed.
 4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
    ```
    git -C lawman rev-parse HEAD
@@ -128,7 +135,17 @@ Decide one of two. The tick outcome equals the decision.
 
 Before writing a conviction, attack it once, as the law's Evidence section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
 
-For a conviction, choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. At `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+For a conviction, run these items in order:
+
+1. Decide alone whether the conviction is `P0`. Never raise this decision later.
+2. When Jev is allowed, write the brief by the "Brief" section. Use kind `p0` for the court's own `P0`. Otherwise use kind `grade`.
+3. Run the command of the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and run the command once more.
+4. Choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
+   - After a `grade` line, choose among `P1`, `P2` and `P3` only.
+   - After a `p0` line, the court may lower its `P0` to `P1`.
+5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+
+When Jev is not allowed, skip items 2 and 3.
 
 A tip that differs from `<sha>` is one line of fact in the ruling.
 
@@ -148,6 +165,69 @@ The outcome is `convicted` after a written conviction. It is `acquitted` after a
 
 Run the "End the tick" section. The silence token is `[SILENT]`.
 
+## Brief
+
+The brief is the only text Jev reads. The court writes it itself, in English.
+
+Fields, in this order:
+
+- `p0`: `defect`, `secret`, `weakness`, `rule`, `established`, `not_established`.
+  - `secret` says what credential is involved, who can read it, and whether the court established that it works.
+  - `weakness` says who can trigger it and what they gain.
+  - `rule` says the rule in the court's words and what its breach does.
+- `grade`: `defect`, `effect_today`, `established`, `not_established`.
+  - `effect_today` says who is affected and what happens today when the code runs or is read, or `none`.
+
+Rules:
+
+- Write every field of the kind once, as one non-empty line `name: value`. Write `none` where a field does not apply.
+- `established` is what the court re-read itself. `not_established` is what it did not check.
+- Never write text copied from the issue, a comment, the case, the charge, the defence or a file. That covers quotes, code and links.
+- Never write a priority, a `P0` to `P3` token, a severity word or an argument for a priority.
+- Never write a secret value, part of one or a hash.
+- Never write a machine path, `~/`, `$HOME`, `.lawman`, a login, an `@` or an image (`![`).
+
+Three defaults:
+
+- Write no counts and no dates.
+- Write no ids, no timestamps and no random fields.
+- Correct the brief only for a fact the court finds wrong, never to match an answer.
+
+A `p0` brief:
+
+```
+defect: A configuration file in the repository holds an access token for the project's hosting account.
+secret: An access token for the project's hosting account, readable by anyone who can read the public repository; the court did not test whether it works.
+weakness: none
+rule: A credential is never committed to the repository; this breach exposes the account to anyone.
+established: The court re-read the file at the analysed commit and saw a value shaped like a token.
+not_established: Whether the token still works.
+```
+
+## Send
+
+Run this command once. `<p0|grade>` is the kind. The brief goes in the heredoc, one `name: value` line per field. `<delimiter>` is the tick's delimiter. Check that no line of the brief equals it.
+
+```
+bash -c 'set +x
+[ -n "${TYPESAFE_API_KEY:-}" ] || { echo "jev none reason=no-key"; exit 0; }
+body=$(bin/journal jev request --kind "$1") || { echo "jev none reason=brief"; exit 0; }
+printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPESAFE_API_KEY") -H "Content-Type: application/json" --data-binary @- -w "\n%{http_code}" https://api.typesafe.ai/v1/systemone | bin/journal jev answer --kind "$1"' _ <p0|grade> <<'<delimiter>'
+<brief, one name: value line per field>
+<delimiter>
+```
+
+The command prints one `jev` line. A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
+
+Rules:
+
+- Run the command untraced and unchanged. Do not retry it. Set no timeout.
+- A non-zero exit, or a harness timeout, is not a failed command. When the command printed no line at all, record `jev none reason=failed` in Blockers.
+- Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
+- The key comes only from `TYPESAFE_API_KEY`. It reaches curl through process substitution. Never print it and never put it on a command line.
+- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the command.
+- Make no other request to the service in a tick. Only the Send command uses the key.
+
 ## Ruling format
 
 Write the comment in this order:
@@ -166,6 +246,9 @@ Tip at ruling: <tip sha>
 
 ## Disposition
 <for a conviction, one instruction in words that names the file or symbol and the change, with no code and no diff. For an acquittal, none.>
+
+## Jev
+<only when a `jev model=` line exists: the brief as written, in a fenced block, then the line copied unchanged. Otherwise leave the section out.>
 
 ## Precedent
 <one line `- <YYYY-MM-DD>: <ruling>`, without a number, when the verdict settles a question for the future. Build it from Verdict and Grounds only, with no quoted third-party text. Otherwise none.>
@@ -188,25 +271,35 @@ Analysed commit: c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7
 Tip at ruling: e09a5d13b72c8f4a61d9e0b35c7f28a4d6e1b903
 
 ## Verdict
-Conviction, priority P2: every ground of the charge stands at the analysed commit.
+Conviction, priority P3: every ground of the charge stands at the analysed commit.
 
 ## Grounds
-- `src/config.ts:41`, re-read: `parseConfig` passes an empty `retries` value on without the default.
-- `src/cli.ts:12`, re-read: the flag reaches `parseConfig` with no check before the call.
-- `src/config.ts:44`, from the record: the default branch that the charge and the defence both cite.
+- `src/cli.ts:58`, re-read: the help text spells the option `--retires`.
+- `src/cli.ts:21`, re-read: the parser accepts only `--retries`.
+- `src/cli.ts:55`, from the record: the help block that the charge and the defence both cite.
 
 ## Disposition
-In `src/config.ts`, make `parseConfig` apply the default `retries` value when the input is empty.
+In `src/cli.ts`, correct the spelling of the option name in the help text.
+
+## Jev
+```
+defect: A help message misspells the name of one command option.
+effect_today: Readers of the help text see a misspelled option name, and the command still works.
+established: The help text was read.
+not_established: none
+```
+jev model=jev-1.13.0 kind=grade P1=0.12 P2=0.31 P3=0.57 harm_users=0.08 harm_maintainers=0.05 cosmetic_only=0.91
 
 ## Precedent
-- 2026-10-16: A flag that skips the caller's check does not protect `parseConfig` at `src/config.ts:41`.
+- 2026-10-16: A misspelt option name in the help text does not make the parser at `src/cli.ts:21` accept it.
 
-<!-- lawman: role=court stage=conviction sha=c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7 priority=P2 at=2026-10-16T10:20:00Z -->
+<!-- lawman: role=court stage=conviction sha=c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7 priority=P3 at=2026-10-16T10:20:00Z -->
 ````
 
 Rules:
 
-- A section with nothing to say holds the single word `none`.
+- A section with nothing to say holds the single word `none`. The exception is `## Jev`: write it only when a `jev model=` line exists, and leave it out otherwise. It is never `none`.
+- The lint checks the brief as it checks every other ruling text. It ignores an `@` inside a fence, and it applies the path, token and image rules inside a fence.
 - Quote only the lines a ground needs.
 - Put every `@` and every quote of third-party text inside a fenced block, git log lines included.
 - Name the department page by its department name, never by a path.

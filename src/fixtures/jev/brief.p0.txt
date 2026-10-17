@@ -1,0 +1,6 @@
+defect: A configuration file in the repository holds an access token for the project's hosting account.
+secret: An access token for the project's hosting account, readable by anyone who can read the public repository; the court did not test whether it works.
+weakness: none
+rule: A credential is never committed to the repository; this breach exposes the account to anyone.
+established: The court re-read the file at the analysed commit and saw a value shaped like a token.
+not_established: Whether the token still works.

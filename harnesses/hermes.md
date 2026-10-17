@@ -31,6 +31,8 @@ External directories are not a write-protection boundary. The docs say the agent
 
 To check a skill is listed, run `hermes skills list`. In a chat session, `/skills list` does the same. The docs state `hermes skills list --source hub` for hub skills. They do not state what a bare `hermes skills list` shows, so look for the role name in its output.
 
+The official TypeSafe skill is named `typesafe-ai`. Its page, https://docs.typesafe.ai/agent-skill, gives `npx skills add typesafe-ai/skills --skill typesafe-ai` for agents other than Claude Code, and asks the installer to choose the agent. The page names no Hermes route. `hermes skills install <identifier>` is the harness's own route. Its `--help` says the identifier is a skill identifier or a direct HTTP(S) URL to a `SKILL.md` file. Which identifier works for `typesafe-ai` is not probed.
+
 ## Running a role once
 
 Run the scheduled job once:
@@ -58,6 +60,7 @@ hermes cron create "<cron expression>" "<tick prompt>" \
 
 - `--workdir` is required and absolute. It is also the terminal's working directory.
 - Each job starts a fresh agent session.
+- `--skill` repeats on create to attach several skills (stated by `hermes cron create --help`, not probed).
 
 Schedule forms:
 
@@ -75,8 +78,11 @@ Manage jobs with these commands:
 | Remove | `hermes cron remove <role>` |
 | Attempts | `hermes cron runs <id>` |
 | Run now | `hermes cron run <role>` |
+| Add a skill | `hermes cron edit <job id> --add-skill <skill>` |
 
 `pause`, `resume`, `run` and `remove` take a job id or a name. The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
+
+"Add a skill" is stated by `hermes cron edit --help`, which says it appends a skill without replacing the job's list. It is not probed.
 
 Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown file with the prompt and the answer.
 
@@ -133,6 +139,10 @@ Every role uses one identity: the signed-in `gh` CLI, or the one token the devel
 A `GH_TOKEN` in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
 
 The probe measured that `gh` reads the keychain from a cron session. The login worked and `GH_TOKEN` was not needed. A signed-in `gh` can serve scheduled sessions too, so the variable is often unnecessary. Add it only when the keychain is unavailable.
+
+### The TypeSafe key
+
+`TYPESAFE_API_KEY` goes where `GH_TOKEN` goes: `~/.hermes/.env`. The docs say `.env` values are exported to the process environment. Whether a scheduled session sees the variable is not measured. The install probe's send measures it.
 
 ## What a second harness needs
 

@@ -63,6 +63,17 @@ Every role runs in a scheduled session. This step measures that session.
 6. Create one more one-shot job in the same form, without `--skill`, with the prompt `Reply with only the silence token that the harness page names. Nothing else.`
 7. Ask the developer to confirm that the probe report arrived once and that nothing arrived from the silence job, and stop if either fails.
 8. Remove both probe jobs with the remove command the page gives.
+9. When `config.yaml` already holds `typesafe`, keep it and skip items 10 to 14.
+10. Ask: "Use TypeSafe Jev as one more piece of evidence for the court's priority? You will be asked per precinct whether the court may send its brief there. The brief states facts about a conviction in the court's own words and holds no issue text. It goes to api.typesafe.ai and is paid per input token." Record `yes` or `no`.
+11. On `yes`, run the skill listing command the harness page gives, and look for `typesafe-ai`. When it is missing, show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page. The developer installs it or declines. Run the listing again after an install.
+12. On `yes`, name `TYPESAFE_API_KEY` and the place the harness page gives for it. Tell the developer to write the value there and never to paste it into this session.
+13. On `yes`, create one more one-shot job as in item 1. Use the probe prompt below with the Jev probe lines added before its line "Do not run anything else." Run it as in items 2 and 3.
+14. Read the probe's `jev` line, and remove the job with the remove command the page gives after the last repeat.
+    - `jev model=` passes.
+    - `jev none reason=no-key` means the session does not see the variable. Tell the developer to write it where the page says, then repeat items 13 and 14 once.
+    - `status-401` means the key is wrong.
+    - For any other line, show it.
+    - The developer may answer `no` at any point. A final `no` writes `typesafe: no`.
 
 Probe prompt:
 
@@ -75,6 +86,17 @@ Do not run anything else. Do not write to any repository. Do not take an order.
 End with one line: skill=<name of the skill you loaded>
 ```
 
+Jev probe lines. Add them before the line "Do not run anything else.", only when the developer answered `yes` in item 10:
+
+```
+Then read the section "Send" of lawman/skills/court/SKILL.md and run its command once, with kind grade, the delimiter LAWMAN_PROBE and this brief:
+defect: A help message misspells the name of one command option.
+effect_today: Readers of the help text see a misspelled option name, and the command still works.
+established: The help text was read.
+not_established: none
+Show the one line it prints.
+```
+
 Token steps, used when the login is missing in the scheduled session. The scheduled session may be unable to read the keychain.
 
 1. Name the variable that the harness page gives for the token, and say where the page says to write it.
@@ -84,7 +106,7 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 ## Step 7. Write the config
 
 1. Run `git -C lawman rev-parse HEAD`, and record the output as `law_commit`.
-2. Write `<installation>/config.yaml` with the seven keys listed in `SKILL.md`.
+2. Write `<installation>/config.yaml` with the nine keys listed in `SKILL.md`. Take `typesafe` from step 6 and write `typesafe_precincts: none`.
 3. Read the file back, and stop if a key is missing or a value is empty.
 
 ## Step 8. Set the role intervals
@@ -104,8 +126,9 @@ Run this step after the first precinct is in the journal. The precinct reference
 2. Skip a role whose job `[lawman] <role>` is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the model of each role without a job, one role at a time, and wait for each answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
 4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `5 9 * * *` for response-unit, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court, `30 10 * * *` for clerk, `45 10 * * *` for spec-writer and `0 11 * * *` for executor, in the machine's local time.
-5. Show every create command to the developer, and wait for a yes.
-6. Create one job per role folder without a job, with the create form the page gives:
+5. When `typesafe` is `yes` in `config.yaml`, run the skill listing command the page gives. When it shows `typesafe-ai`, add `--skill typesafe-ai` to the court's create line.
+6. Show every create command to the developer, and wait for a yes.
+7. Create one job per role folder without a job, with the create form the page gives:
 
 ```
 <create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role> --workdir <installation> --model <model> --deliver <deliver>
@@ -113,8 +136,9 @@ Run this step after the first precinct is in the journal. The precinct reference
 
 Every job name carries the prefix `[lawman] ` so the developer can filter Lawman jobs from others. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. The prompt for `investigation` is `Investigation tick.`
 
-7. List the jobs again, and stop if a job is missing.
-8. Tell the developer that the install is complete.
+8. When the court's create fails with `--skill typesafe-ai`, create the court job without it, then show the developer the add-skill command the page gives, with the court's job id and `typesafe-ai`.
+9. List the jobs again, and stop if a job is missing.
+10. Tell the developer that the install is complete.
 
 | Interval | Cron expression |
 | :-- | :-- |

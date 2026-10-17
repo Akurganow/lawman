@@ -1,0 +1,46 @@
+{
+	"model": "jev-latest",
+	"state": {
+		"brief": {
+			"defect": "A help message misspells the name of one command option.",
+			"effect_today": "Readers of the help text see a misspelled option name, and the command still works.",
+			"established": "The help text was read.",
+			"not_established": "none"
+		}
+	},
+	"questions": {
+		"level": {
+			"type": "score",
+			"instructions": "Which situation describes `brief` best?",
+			"criteria": [
+				"Cosmetic, or of small value: only wording, a comment, a note or how something looks is off, and nothing anyone does goes wrong.",
+				"The default: a real defect in what the code or the project does or promises, that harms no user or maintainer now.",
+				"Harm to users or maintainers now."
+			]
+		},
+		"harm_users": {
+			"type": "noul",
+			"instructions": "Does `brief.effect_today` describe harm to users now?",
+			"criteria": {
+				"true": "Users get a wrong result, lose data, are blocked or are misled today.",
+				"false": "Users notice no bad outcome today."
+			}
+		},
+		"harm_maintainers": {
+			"type": "noul",
+			"instructions": "Does `brief.effect_today` describe harm to maintainers now?",
+			"criteria": {
+				"true": "Maintainers are blocked, misled or made to redo work today, for example by a failing build.",
+				"false": "Maintainers notice no bad outcome today."
+			}
+		},
+		"cosmetic_only": {
+			"type": "noul",
+			"instructions": "Does `brief.defect` concern only wording, comments or appearance, with what the code does left the same?",
+			"criteria": {
+				"true": "Only wording, comments or appearance are off, and behaviour is the same.",
+				"false": "What the code does, or what users or maintainers rely on, is affected."
+			}
+		}
+	}
+}

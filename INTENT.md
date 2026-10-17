@@ -103,9 +103,10 @@ duty desk: picks a precinct by weight and time since the last visit
 - The old courts, clerks and pipelines of the three police systems leave the three repositories in this release, one pull request each. The owner: "Remove them in this heist." Only the rules about the old police go with them, and the general rules stay. The owner: "Only about the old police." Labels on issues stay as they are.
 - Deduplication against old police leads in the `D:path:slug` form: read the path from that form only after a measured repeat.
 - Issues filed by the old police systems are processed gradually, like any other issue. "Processing all of them at once is expensive, the limits would not be enough."
-- Optional TypeSafe Jev as one more piece of evidence for the priority, never as the verdict. "at least optionally, use Jev from TypeSafe to determine the priority." Not built yet.
+- Optional TypeSafe Jev as one more piece of evidence for the priority, never as the verdict. "at least optionally, use Jev from TypeSafe to determine the priority." Built: on a conviction, when the developer opted in at setup and for the precinct, the court first decides alone whether it is P0, then asks Jev (`jev-latest`) a yes/no check for a P0 or a grade among P1 to P3, on a brief the court writes itself. The court keeps the last word and records the answering version in the ruling.
 - A second harness after Hermes. Its documentation is to be read live when the time comes.
 - The executor's first live runs are not measured yet: one full run on a precinct, and a CI wait longer than the harness's command limit.
+- The schedule: ten roles each running every day spend model usage fast. Thin the schedule by each role's difficulty, its caps and similar measures. The owner: "the schedule needs to be diluted a little, depending on difficulty, caps and so on." Not designed yet.
 
 ## Decision record of the founding conversation
 
