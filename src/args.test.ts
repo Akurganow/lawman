@@ -34,6 +34,8 @@ describe("argument validators", () => {
 			"kept",
 			"specified",
 			"out",
+			"executed",
+			"skipped-merge-conflict",
 		],
 	} as const;
 	const bad = {
@@ -74,6 +76,9 @@ describe("argument validators", () => {
 			"kept-x",
 			"specify",
 			"Specified",
+			"execute",
+			"executed-x",
+			"Executed",
 		],
 	} as const;
 

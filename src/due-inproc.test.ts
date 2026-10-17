@@ -11,7 +11,7 @@ import {
 } from "./cases-fixture";
 import { dueCommand } from "./due";
 import { captured, inproc } from "./inproc";
-import { addPrecincts, BASE, lead, tempDb } from "./test-helpers";
+import { addPrecincts, BASE, lead, seed, tempDb } from "./test-helpers";
 
 tempDb();
 beforeEach(() => addPrecincts({ main: 1, side: 1 }));
@@ -75,5 +75,34 @@ describe("due in process: spec-writer", () => {
 		cache([7, [1], "down"]);
 		order("spec-writer", 7, T(8), true);
 		expect(dueIn("spec-writer")).toBe("");
+	});
+});
+
+describe("due in process: executor", () => {
+	const approved = (...numbers: number[]) =>
+		seed((db) => {
+			db.run("DELETE FROM pulls");
+			for (const number of numbers)
+				db.run(
+					"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', ?, ?, 'up')",
+					[number, String(number - 6)],
+				);
+		});
+
+	test("an approved pull request with open work is due", () => {
+		put({ 1: handed(7) });
+		approved(7);
+		expect(dueIn("executor")).toBe("main\t7\n");
+		expect(dueIn("executor", "main")).toBe("");
+		expect(dueIn("spec-writer")).toBe("");
+	});
+
+	test("an executor order rotates the role and an open one silences it", () => {
+		put({ 1: handed(7), 2: handed(8) });
+		approved(7, 8);
+		order("executor", 7, T(8));
+		expect(dueIn("executor")).toBe("main\t8\n");
+		order("executor", 8, T(9), true);
+		expect(dueIn("executor")).toBe("");
 	});
 });

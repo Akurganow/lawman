@@ -1,6 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { COMMANDS } from "./journal";
-import { addPrecincts, BASE, call, rows, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	alarm,
+	BASE,
+	call,
+	later,
+	rows,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 
@@ -47,5 +55,17 @@ describe("registration", () => {
 		expect(rows("SELECT role, issue FROM dispatches")).toEqual([
 			{ role: "spec-writer", issue: 7 },
 		]);
+	});
+
+	test("the executor role registers and is watched by role-silent", () => {
+		expect(
+			call(BASE, ["role", "set", "executor", "--every", "1440"]).code,
+		).toBe(0);
+		const id = call(BASE, ["tick", "start", "--role", "executor"]).out.trim();
+		expect(
+			call(later(0, 60), ["tick", "end", id, "--outcome", "executed"]).code,
+		).toBe(0);
+		expect(alarm(later(72)).out).toBe("");
+		expect(alarm(later(72, 1)).out).toMatch(/^ALARM role-silent executor /);
 	});
 });

@@ -11,7 +11,7 @@ import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
-import { precedentCommand } from "./precedent";
+import { precedentCommand, precedentMergeCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
 import { rotation } from "./rotation";
@@ -43,6 +43,7 @@ export const COMMANDS: Record<string, Handler> = {
 	"lint-page": lintPageCommand,
 	"department-line": departmentLineCommand,
 	precedent: precedentCommand,
+	"precedent-merge": precedentMergeCommand,
 	pull: pullCommand,
 	handoff: handoffCommand,
 	decider,

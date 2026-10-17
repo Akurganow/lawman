@@ -28,6 +28,7 @@
 							"comments": {
 								"nodes": [
 									{
+										"id": "IC_spec_7",
 										"author": { "login": "lawman-bot" },
 										"createdAt": "2026-10-14T09:00:00Z",
 										"body": "Spec\n\n<!-- lawman: role=spec-writer stage=spec sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:00:00Z -->",
@@ -40,6 +41,23 @@
 											]
 										},
 										"down": { "nodes": [] }
+									},
+									{
+										"id": "IC_ready_7",
+										"author": { "login": "lawman-bot" },
+										"createdAt": "2026-10-14T11:00:00Z",
+										"body": "Executor\n\n<!-- lawman: role=executor stage=ready sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->",
+										"up": { "nodes": [] },
+										"down": { "nodes": [] }
+									}
+								]
+							},
+							"latestOpinionatedReviews": {
+								"nodes": [
+									{
+										"state": "APPROVED",
+										"submittedAt": "2026-10-14T12:00:00Z",
+										"author": { "login": "maint-a" }
 									}
 								]
 							}
@@ -67,14 +85,16 @@
 							"author": { "login": "stranger" },
 							"body": "Closes #3",
 							"closingIssuesReferences": { "nodes": [] },
-							"comments": { "nodes": [] }
+							"comments": { "nodes": [] },
+							"latestOpinionatedReviews": { "nodes": [] }
 						},
 						{
 							"number": 12,
 							"author": { "login": "Lawman-Bot" },
 							"body": "no link",
 							"closingIssuesReferences": { "nodes": [] },
-							"comments": { "nodes": [] }
+							"comments": { "nodes": [] },
+							"latestOpinionatedReviews": { "nodes": [] }
 						}
 					]
 				}

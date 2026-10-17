@@ -20,12 +20,16 @@ describe("sync --pulls", () => {
 		);
 	const stored = (p = "main") =>
 		rows(
-			`SELECT number, issues, spec FROM pulls WHERE precinct = '${p}' ORDER BY number`,
+			`SELECT number, issues, spec, work, spec_id FROM pulls WHERE precinct = '${p}' ORDER BY number`,
 		);
-	const OLD = [{ number: 99, issues: "1", spec: "waiting" }];
+	const OLD = [
+		{ number: 99, issues: "1", spec: "waiting", work: "todo", spec_id: "-" },
+	];
 	const seedOld = () =>
 		seed((db) => {
-			db.run("INSERT INTO pulls VALUES ('main', 99, '1', 'waiting')");
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', 99, '1', 'waiting')",
+			);
 		});
 
 	beforeEach(() => addPrecincts({ main: 1, other: 1 }));
@@ -40,11 +44,15 @@ describe("sync --pulls", () => {
 	test("a second sync replaces the rows of that precinct only", () => {
 		seedOld();
 		seed((db) => {
-			db.run("INSERT INTO pulls VALUES ('other', 5, '', 'none')");
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('other', 5, '', 'none')",
+			);
 		});
 		expect(feed(fixture).code).toBe(0);
 		expect(stored().map((r) => r.number)).toEqual([7, 12]);
-		expect(stored("other")).toEqual([{ number: 5, issues: "", spec: "none" }]);
+		expect(stored("other")).toEqual([
+			{ number: 5, issues: "", spec: "none", work: "todo", spec_id: "-" },
+		]);
 	});
 
 	test("an empty list replaces a filled cache with none", () => {
@@ -72,6 +80,30 @@ describe("sync --pulls", () => {
 			expect(r.err).toContain("cache untouched");
 			expect(stored()).toEqual(OLD);
 		}
+	});
+
+	test("a pull request of the author without review nodes, or a comment without an id, exits 4", () => {
+		seedOld();
+		const noReviews = [page([{ number: 3, noReviews: true }])];
+		const noId = [page([{ number: 3, comments: [{ body: "x", noId: true }] }])];
+		for (const input of [noReviews, noId]) {
+			const r = feed(input);
+			expect(r.code).toBe(4);
+			expect(r.err).toContain("cache untouched");
+			expect(stored()).toEqual(OLD);
+		}
+	});
+
+	test("a pull request of another author without either field is no failure", () => {
+		const other = {
+			number: 3,
+			author: "stranger",
+			noReviews: true,
+			comments: [{ body: "x", noId: true }],
+		};
+		const r = feed([page([other, { number: 4 }])]);
+		expect(r.code).toBe(0);
+		expect(stored().map((p) => p.number)).toEqual([4]);
 	});
 
 	test("a repeated pull request number exits 4 and leaves the cache intact", () => {
@@ -110,7 +142,9 @@ describe("syncPulls in process", () => {
 		const r = sync("main", JSON.stringify(fixture));
 		expect(r).toMatchObject({ code: 0, out: "pulls=2\n" });
 		expect(
-			rows("SELECT number, issues, spec FROM pulls ORDER BY number"),
+			rows(
+				"SELECT number, issues, spec, work, spec_id FROM pulls ORDER BY number",
+			),
 		).toEqual(FIXTURE_ROWS);
 	});
 
@@ -120,7 +154,9 @@ describe("syncPulls in process", () => {
 
 	test("a repeated number is rejected and a valid replacement wins", () => {
 		seed((db) => {
-			db.run("INSERT INTO pulls VALUES ('main', 99, '1', 'waiting')");
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', 99, '1', 'waiting')",
+			);
 		});
 		const repeated = JSON.stringify([page([{ number: 3 }, { number: 3 }])]);
 		expect(sync("main", repeated).code).toBe(4);

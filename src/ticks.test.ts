@@ -72,6 +72,24 @@ describe("ticks", () => {
 			]);
 		});
 
+		test("end accepts the executed and skipped-merge-conflict outcomes", () => {
+			for (const outcome of ["executed", "skipped-merge-conflict"]) {
+				const id = call(BASE, [
+					"tick",
+					"start",
+					"--role",
+					"executor",
+				]).out.trim();
+				expect(
+					call(later(1), ["tick", "end", id, "--outcome", outcome]).code,
+				).toBe(0);
+			}
+			expect(rows("SELECT outcome FROM ticks ORDER BY id")).toEqual([
+				{ outcome: "executed" },
+				{ outcome: "skipped-merge-conflict" },
+			]);
+		});
+
 		test("end with --dispatch closes the order with the same outcome", () => {
 			seed((db) => precinct(db, "a"));
 			const order = call(BASE, [

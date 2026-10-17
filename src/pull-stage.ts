@@ -9,8 +9,10 @@ const OPEN_VOTES = ["none", "down"];
 const NONE = "-";
 
 export type PullStage = {
-	need: "spec-writer" | "none";
+	need: "spec-writer" | "executor" | "none";
 	spec: string;
+	specId: string;
+	work: string;
 	sources: string;
 	priority: string;
 };
@@ -18,13 +20,31 @@ export type PullStage = {
 const MISSING: PullStage = {
 	need: "none",
 	spec: NONE,
+	specId: NONE,
+	work: NONE,
 	sources: NONE,
 	priority: DEFAULT_PRIORITY,
 };
 
-type Cached = { issues: string; spec: string; weighted: number };
+type Cached = {
+	issues: string;
+	spec: string;
+	work: string;
+	spec_id: string;
+	weighted: number;
+};
 
-// The spec writer's need for one cached pull request, without the open-order check.
+const EXECUTABLE_WORK = ["todo", "returned"];
+
+function needOf(row: Cached, handed: boolean): PullStage["need"] {
+	if (row.weighted !== 1 || !handed) return "none";
+	if (OPEN_VOTES.includes(row.spec)) return "spec-writer";
+	if (row.spec === "up" && EXECUTABLE_WORK.includes(row.work))
+		return "executor";
+	return "none";
+}
+
+// The next role's need for one cached pull request, without the open-order check.
 export function stageOf(
 	db: Database,
 	precinct: string,
@@ -32,7 +52,7 @@ export function stageOf(
 ): PullStage {
 	const row = db
 		.query(
-			`SELECT p.issues, p.spec,
+			`SELECT p.issues, p.spec, p.work, p.spec_id,
          EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0) AS weighted
          FROM pulls p WHERE p.precinct = ? AND p.number = ?`,
 		)
@@ -46,10 +66,11 @@ export function stageOf(
 		const pair = pairOf(markers);
 		return pair.base === "handed" && pair.pull === String(number);
 	});
-	const open = row.weighted === 1 && OPEN_VOTES.includes(row.spec) && handed;
 	return {
-		need: open ? "spec-writer" : "none",
+		need: needOf(row, handed),
 		spec: row.spec,
+		specId: row.spec_id,
+		work: row.work,
 		sources: row.issues || NONE,
 		priority: marked.map(priorityOf).sort()[0] ?? DEFAULT_PRIORITY,
 	};
@@ -63,7 +84,7 @@ export function pullCommand(args: string[]): void {
 	withDb((db) => {
 		const s = stageOf(db, name, m);
 		out(
-			`need=${s.need} spec=${s.spec} sources=${s.sources} priority=${s.priority}`,
+			`need=${s.need} spec=${s.spec} spec_id=${s.specId} work=${s.work} sources=${s.sources} priority=${s.priority}`,
 		);
 	});
 }

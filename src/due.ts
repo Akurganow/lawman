@@ -9,6 +9,8 @@ const DUE_USAGE = "due --role <role> [--exclude <precinct>]…";
 const EXCLUDE_FLAG = "--exclude";
 const CLERK = "clerk";
 const SPEC_WRITER = "spec-writer";
+const EXECUTOR = "executor";
+const PULL_ROLES = [SPEC_WRITER, EXECUTOR];
 // the clerk also works closed issues and issues that never had a lead
 const ALL_ISSUES = "FROM issues i WHERE true";
 
@@ -61,18 +63,18 @@ function issueEntries(db: Database, role: string, excluded: string[]) {
 		});
 }
 
-function pullEntries(db: Database, excluded: string[]) {
+function pullEntries(db: Database, role: string, excluded: string[]) {
 	const rows = db
 		.query(
 			`SELECT p.precinct, p.number FROM pulls p
          ORDER BY ${lastOrder("p.precinct", "p.number")} IS NOT NULL, ${lastOrder("p.precinct", "p.number")}, p.precinct, p.number`,
 		)
-		.all(SPEC_WRITER, SPEC_WRITER) as PullRow[];
+		.all(role, role) as PullRow[];
 	return rows
 		.filter((r) => !excluded.includes(r.precinct))
 		.flatMap((r): Entry[] => {
 			const stage = stageOf(db, r.precinct, r.number);
-			return stage.need === SPEC_WRITER
+			return stage.need === role
 				? [{ precinct: r.precinct, number: r.number, priority: stage.priority }]
 				: [];
 		});
@@ -89,10 +91,9 @@ export function dueCommand(args: string[]): void {
 				.get(role)
 		)
 			return;
-		const entries =
-			role === SPEC_WRITER
-				? pullEntries(db, excluded)
-				: issueEntries(db, role, excluded);
+		const entries = PULL_ROLES.includes(role)
+			? pullEntries(db, role, excluded)
+			: issueEntries(db, role, excluded);
 		// Array.sort is stable, so rotation order survives inside a priority
 		const first = entries.sort((a, b) =>
 			a.priority.localeCompare(b.priority),

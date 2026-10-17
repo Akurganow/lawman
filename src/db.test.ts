@@ -127,7 +127,7 @@ describe("open", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(4);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT issue, title FROM issues").all()).toEqual([
 			{ issue: 7, title: "t" },
 		]);
@@ -135,13 +135,46 @@ describe("open", () => {
 			"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('p', 3, '7,9', 'up')",
 		);
 		expect(db.query("SELECT * FROM pulls").all()).toEqual([
-			{ precinct: "p", number: 3, issues: "7,9", spec: "up" },
+			{
+				precinct: "p",
+				number: 3,
+				issues: "7,9",
+				spec: "up",
+				work: "todo",
+				spec_id: "-",
+			},
 		]);
 		expect(() =>
 			db.run(
 				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('p', 3, '', 'none')",
 			),
 		).toThrow();
+		db.close();
+	});
+
+	test("migration 5 keeps the pulls of a schema 4 database and adds work and spec_id", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 4)) old.run(sql);
+		old.run("PRAGMA user_version = 4");
+		old.run(
+			"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('p', 3, '7', 'up')",
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(5);
+		expect(db.query("SELECT * FROM pulls").all()).toEqual([
+			{
+				precinct: "p",
+				number: 3,
+				issues: "7",
+				spec: "up",
+				work: "todo",
+				spec_id: "-",
+			},
+		]);
+		db.run(
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES ('p', 4, '', 'up', 'ready', 'IC_1')",
+		);
 		db.close();
 	});
 
@@ -186,9 +219,10 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "5"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "6"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {
