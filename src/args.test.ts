@@ -28,6 +28,11 @@ describe("argument validators", () => {
 			"recorded",
 			"admitted",
 			"asked",
+			"handed",
+			"shut",
+			"settled",
+			"kept",
+			"specified",
 			"out",
 		],
 	} as const;
@@ -61,6 +66,14 @@ describe("argument validators", () => {
 			"convicte",
 			"recorded-x",
 			"record",
+			"hand",
+			"handed-",
+			"shuts",
+			"settle",
+			"keep",
+			"kept-x",
+			"specify",
+			"Specified",
 		],
 	} as const;
 

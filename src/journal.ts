@@ -1,15 +1,19 @@
 import pkg from "../package.json";
 import { alarm, status } from "./alarms";
 import { pick } from "./args";
-import { caseCommand, dueCommand } from "./cases";
+import { caseCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
+import { decider } from "./decider";
 import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
+import { dueCommand } from "./due";
+import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
+import { pullCommand } from "./pull-stage";
 import { rotation } from "./rotation";
 import { sync } from "./sync";
 
@@ -39,6 +43,9 @@ export const COMMANDS: Record<string, Handler> = {
 	"lint-page": lintPageCommand,
 	"department-line": departmentLineCommand,
 	precedent: precedentCommand,
+	pull: pullCommand,
+	handoff: handoffCommand,
+	decider,
 };
 
 export function main(argv: string[]): number {

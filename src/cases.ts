@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { check, parseArgs, usage } from "./args";
+import { usage } from "./args";
 import {
 	type ClerkCase,
 	clerkCase,
@@ -12,7 +12,6 @@ import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
-const DUE_USAGE = "due --role <role>";
 
 export type CaseMarker = {
 	role: string;
@@ -192,41 +191,5 @@ export function caseCommand(args: string[]): void {
 		out(
 			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch}`,
 		);
-	});
-}
-
-type Candidate = { precinct: string; issue: number; state: string };
-
-export function dueCommand(args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["role"], DUE_USAGE);
-	const roleName = check("role", opt.role);
-	withDb((db) => {
-		if (
-			db
-				.query("SELECT 1 FROM dispatches WHERE role = ? AND outcome IS NULL")
-				.get(roleName)
-		)
-			return;
-		const candidates = db
-			.query(
-				`SELECT i.precinct, i.issue, i.state,
-           (SELECT max(d.at) FROM dispatches d
-             WHERE d.role = ? AND d.precinct = i.precinct AND d.issue = i.issue) AS last
-         ${LEAD_ORIGIN_FROM} AND (i.state = 'OPEN' OR ? = 'clerk')
-           AND EXISTS (SELECT 1 FROM precincts p WHERE p.name = i.precinct AND p.weight > 0)
-         ORDER BY last IS NOT NULL, last, i.created_at, i.precinct, i.issue`,
-			)
-			.all(roleName, roleName) as Candidate[];
-		const due = candidates.find(
-			(c) =>
-				caseOf(
-					db,
-					c.precinct,
-					c.issue,
-					c.state,
-					markersOf(db, c.precinct, c.issue),
-				).need === roleName,
-		);
-		if (due !== undefined) out(due.precinct, due.issue);
 	});
 }

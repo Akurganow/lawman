@@ -35,7 +35,7 @@ const ISSUE_STATES = ["open", "closed"];
 const ANSWERS = ["entry", "no-entry"];
 const POSITIVE = /^[1-9][0-9]*$/;
 const PRIORITY = /^P[0-3]$/;
-const DEFAULT_PRIORITY = "P2";
+export const DEFAULT_PRIORITY = "P2";
 const NONE = "-";
 
 const byOrd = (a: CaseMarker, b: CaseMarker) => (a.ord < b.ord ? -1 : 1);
@@ -69,6 +69,12 @@ function baseOf(pairs: CaseMarker[]): string | undefined {
 		pairs.filter((m) => m.stage !== "kept" && m.ord < k.ord).at(-1)?.stage ??
 		"kept"
 	);
+}
+
+// the pull request and the base of an issue's newest pair marker
+export function pairOf(markers: CaseMarker[]) {
+	const pairs = pairMarkers(markers);
+	return { pull: pairs.at(-1)?.fields.pull, base: baseOf(pairs) };
 }
 
 function stateAction(
@@ -137,8 +143,8 @@ function peersOf(i: ClerkInput, pull: string | undefined, base: string) {
 	const all = new Map(i.others()).set(i.issue, i.markers);
 	const peers = [...all]
 		.filter(([, markers]) => {
-			const pairs = pairMarkers(markers);
-			return pairs.at(-1)?.fields.pull === pull && baseOf(pairs) === base;
+			const pair = pairOf(markers);
+			return pair.pull === pull && pair.base === base;
 		})
 		.map(([n]) => n)
 		.sort((a, b) => a - b);
