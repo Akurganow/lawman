@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, writeFileSync } from "node:fs";
+import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	cli,
@@ -99,8 +99,11 @@ describe("rotation", () => {
 });
 
 describe("rotation fed by the page directory and the precinct lines", () => {
-	const PIPELINE =
-		'{ ls -1 lawman/departments | sed -n "s/[.]md$//p" && printf "%s\\n" "$PRECINCT_LINES"; } | bin/journal rotation "$PRECINCT" --role patrol';
+	const skill = readFileSync(
+		join(ROOT, "skills", "duty-desk", "SKILL.md"),
+		"utf8",
+	);
+	const COMMAND = (skill.split(/^### Step 6/m)[1] ?? "").split("```")[1] ?? "";
 
 	function pipe(listed: string[] | null, precinctLines: string[] = []) {
 		if (listed !== null) {
@@ -116,17 +119,19 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 			`#!/bin/sh\nexec bun ${join(ROOT, "src", "journal.ts")} "$@"\n`,
 		);
 		chmodSync(shim, 0o755);
-		const r = Bun.spawnSync(["bash", "-o", "pipefail", "-c", PIPELINE], {
+		const command = COMMAND.replace("<name>", PRECINCT).replace("<lines>", () =>
+			precinctLines.join("\n"),
+		);
+		const r = Bun.spawnSync(["bash", "-c", command], {
 			cwd: dir,
-			env: {
-				PATH: process.env.PATH ?? "",
-				LAWMAN_DB: dbFile,
-				PRECINCT,
-				PRECINCT_LINES: precinctLines.join("\n"),
-			},
+			env: { PATH: process.env.PATH ?? "", LAWMAN_DB: dbFile },
 		});
 		return { code: r.exitCode, out: r.stdout.toString() };
 	}
+
+	test("the command is a subshell that sets pipefail", () => {
+		expect(COMMAND).toContain("(set -o pipefail;");
+	});
 
 	test("page files come out in rotation order without their suffix", () => {
 		visit("core", "2026-09-01T00:00:00Z");

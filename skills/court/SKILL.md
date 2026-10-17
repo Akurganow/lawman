@@ -24,7 +24,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
@@ -56,11 +56,30 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
+6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   ```
+   bin/journal alarm
+   ```
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role court`.
+Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+
+```
+bin/journal dispatch take --role court
+```
+
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+
+```
+bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
+No order.
+LAWMAN_<tick id>_0000000
+```
+
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+
+With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -113,6 +132,14 @@ A related issue is evidence of the case, never a reason to close it.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
+   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
+   - A cited number that the range does not support makes that exhibit a claim, not an exhibit.
+   - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
+   - A commit from the case enters the command only when it matches `^[0-9a-f]{7,40}$`, as item 2 of that section says.
+   - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
+   - The class is `not confirmed` in three cases. The new place is outside the precinct, only a commit subject names it, or the commit removed the path.
+   - Say so when only a commit subject names the place.
+   - Re-read a claim of absence as its search and its control, as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path that the court re-reads.
    ```
    git -C precincts/<p> log --format='%h %s' <sha> -- <path>
@@ -206,13 +233,13 @@ not_established: Whether the token still works.
 
 ## Send
 
-Run this command once. `<p0|grade>` is the kind. The brief goes in the heredoc, one `name: value` line per field. `<delimiter>` is the tick's delimiter. Check that no line of the brief equals it.
+Run this command once. `<p0|grade>` is the kind, written in both places. The brief goes in the heredoc, one `name: value` line per field. `<delimiter>` is the tick's delimiter. Check that no line of the brief equals it.
 
 ```
-bash -c 'set +x
+(set +x
 [ -n "${TYPESAFE_API_KEY:-}" ] || { echo "jev none reason=no-key"; exit 0; }
-body=$(bin/journal jev request --kind "$1") || { echo "jev none reason=brief"; exit 0; }
-printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPESAFE_API_KEY") -H "Content-Type: application/json" --data-binary @- -w "\n%{http_code}" https://api.typesafe.ai/v1/systemone | bin/journal jev answer --kind "$1"' _ <p0|grade> <<'<delimiter>'
+body=$(bin/journal jev request --kind <p0|grade>) || { echo "jev none reason=brief"; exit 0; }
+printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPESAFE_API_KEY") -H "Content-Type: application/json" --data-binary @- -w "\n%{http_code}" https://api.typesafe.ai/v1/systemone | bin/journal jev answer --kind <p0|grade>) <<'<delimiter>'
 <brief, one name: value line per field>
 <delimiter>
 ```
@@ -236,7 +263,7 @@ Write the comment in this order:
 Ruling
 
 Analysed commit: <sha>
-Tip at ruling: <tip sha>
+Tip at ruling: <tip>
 
 ## Verdict
 <one sentence: conviction with its priority, or acquittal with its class from the law's Closure classes subsection>
@@ -304,15 +331,22 @@ Rules:
 - Put every `@` and every quote of third-party text inside a fenced block, git log lines included.
 - Name the department page by its department name, never by a path.
 - Write no home path, no installation path, no token and no login.
+- `<tip>` is the commit that step 2 printed.
 
 ## Report
 
-Three lines:
+Three lines. The second line is exactly one of the `Written:` lines below.
 
 ```
 Coverage: <sha>, issue #<n>, round <r>.
-Written: <comment URL>, then closed as <reason> for an acquittal.
+Written: <one of the lines below>
 Blockers: <tool, source or tracker errors, the stop token, any facts about evidence, the tip fact if it moved>.
 ```
+
+Write exactly one of the three `Written:` lines. The report has three lines in total.
+
+- `Written: <comment URL>.` for a conviction, and for an acquittal whose close did not read back as `CLOSED`.
+- `Written: <comment URL>; closed as <class>.` for an acquittal, after the close read back as `CLOSED`.
+- `Written: none.` when the role wrote nothing.
 
 When the order is empty or stale, the report is the one line of step 1 or step 4.

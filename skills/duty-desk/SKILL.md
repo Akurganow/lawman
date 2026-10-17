@@ -72,7 +72,7 @@ Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for 
 2.1. Run `bin/journal precinct list`. Each line is `<name><TAB><repo><TAB><weight><TAB><credit><TAB><synced>`. For each line whose weight is above zero, sync the tracker, with `<login>` from step 0.3:
 
 ```
-bash -o pipefail -c 'gh issue list -R <repo> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>'
+gh issue list -R <repo> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <name> --author <login>
 ```
 
 The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed. For the clerk a closed issue is still work.
@@ -80,7 +80,7 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `sto
 Then sync the pull requests of the same precinct, with `<login>` from step 0.3. In the command, `<owner>` and `<repo>` are the two halves of the precinct's repo: the text before and after the slash. `<name>` is the precinct name.
 
 ```
-bash -o pipefail -c 'gh api graphql --paginate --slurp -f owner=<owner> -f name=<repo> -f query="$1" | bin/journal sync <name> --pulls --author <login>' _ 'query($owner:String!,$name:String!,$endCursor:String){ repository(owner:$owner,name:$name){ collaborators(first:100){pageInfo{hasNextPage} edges{permission node{login}}} pullRequests(states:OPEN,first:50,after:$endCursor,orderBy:{field:CREATED_AT,direction:ASC}){pageInfo{hasNextPage endCursor} nodes{number author{login} body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}} comments(last:100){nodes{id author{login} createdAt body up: reactions(content:THUMBS_UP,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}} down: reactions(content:THUMBS_DOWN,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}}}}latestOpinionatedReviews(first:20){nodes{state submittedAt author{login}}}}}}}'
+gh api graphql --paginate --slurp -f owner=<owner> -f name=<repo> -f query='query($owner:String!,$name:String!,$endCursor:String){ repository(owner:$owner,name:$name){ collaborators(first:100){pageInfo{hasNextPage} edges{permission node{login}}} pullRequests(states:OPEN,first:50,after:$endCursor,orderBy:{field:CREATED_AT,direction:ASC}){pageInfo{hasNextPage endCursor} nodes{number author{login} body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}} comments(last:100){nodes{id author{login} createdAt body up: reactions(content:THUMBS_UP,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}} down: reactions(content:THUMBS_DOWN,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}}}}latestOpinionatedReviews(first:20){nodes{state submittedAt author{login}}}}}}}' | bin/journal sync <name> --pulls --author <login>
 ```
 
 The output is one line with the count of pull requests stored. Any non-zero exit is a failed pull request sync. A failed pull request sync does not end the tick. Add the precinct to the excluded precincts and go on with the next precinct. Steps 2.6, 2.7 and 2.8 pass the excluded precincts to `due`.
@@ -152,10 +152,10 @@ If either fails, end with `stopped-git-fetch`.
 
 ### Step 6: List the departments
 
-The precinct's departments are the page names in `lawman/departments` plus the names of the precinct's lines from step 5.3. Run this command with `<name>` from step 3. Put the precinct's lines, one per line, in `<lines>`. Leave `<lines>` empty when the list is empty:
+The precinct's departments are the page names in `lawman/departments` plus the names of the precinct's lines from step 5.3. Run this command with `<name>` from step 3. Put the precinct's lines, one per line, between the single quotes of `'<lines>'`. Leave them empty when the list is empty:
 
 ```
-PRECINCT=<name> PRECINCT_LINES='<lines>' bash -o pipefail -c '{ ls -1 lawman/departments | sed -n "s/[.]md$//p" && printf "%s\n" "$PRECINCT_LINES"; } | bin/journal rotation "$PRECINCT" --role patrol'
+(set -o pipefail; { ls -1 lawman/departments | sed -n "s/[.]md$//p" && printf "%s\n" '<lines>'; } | bin/journal rotation <name> --role patrol)
 ```
 
 Each output line is `<department><TAB><at>`. The list is in rotation order: a department never visited comes first, then the oldest visit first. A failure of the pipeline ends with `failed`. Empty output ends with `skipped-bad-department`.

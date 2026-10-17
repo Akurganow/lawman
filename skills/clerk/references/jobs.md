@@ -52,7 +52,7 @@ gh pr view <pull> -R <owner/repo> --json isDraft --jq .isDraft
 The journal builds the whole comment and lints it. Do not retype it. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
 
 ```
-bash -o pipefail -c 'bin/journal handoff --sources <sources> [--merged <pull>] < /dev/null | gh pr comment <m> -R <owner/repo> --body-file -'
+bin/journal handoff --sources <sources> [--merged <pull>] | gh pr comment <m> -R <owner/repo> --body-file -
 ```
 
 The output is the comment URL. Read it back as step 3 of the "Write a comment" section says. The author must equal `<login>`. The last line must start with `<!-- lawman: role=clerk stage=handoff at=`.
@@ -78,10 +78,10 @@ The path is relative to the clone, so `../../` leads back to the installation. A
 The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. The clerk never retypes the ruling text. Pipe the ruling comment straight into the journal. The `--source` URL is the ruling URL.
 
 ```
-bash -o pipefail -c 'gh api repos/<owner/repo>/issues/comments/<comment id> --jq .body | bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>'
+(set -o pipefail; gh api repos/<owner/repo>/issues/comments/<comment id> --jq .body | bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>)
 ```
 
-The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
+The subshell makes a failed `gh api` a non-zero exit. The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
 
 - `entry<TAB><number>`: the line is in the tree. Keep the number.
 - `none`: no line was added.
@@ -196,8 +196,11 @@ Taken up by the clerk as a draft that counts as not started.
    ```
 2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`.
    ```
-   bash -o pipefail -c 'gh pr view <pull> -R <owner/repo> --json body --jq .body | bin/journal handoff --sources <sources> --adopted | gh pr comment <pull> -R <owner/repo> --body-file -'
+   (set -o pipefail; gh pr view <pull> -R <owner/repo> --json body --jq .body | bin/journal handoff --sources <sources> --adopted | gh pr comment <pull> -R <owner/repo> --body-file -)
    ```
+
+   The subshell makes a failed `gh pr view` a non-zero exit, and the tick ends with `failed` before step 3. The body is not replaced. The pipe starts `gh pr comment` anyway, so a comment with an empty archive may stand. Blockers says so.
+
 3. Replace the body with the fixed body on stdin.
    ```
    gh pr edit <pull> -R <owner/repo> --body-file - <<'<delimiter>'

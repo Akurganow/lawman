@@ -23,7 +23,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
@@ -48,11 +48,30 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
+6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   ```
+   bin/journal alarm
+   ```
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role defender`.
+Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+
+```
+bin/journal dispatch take --role defender
+```
+
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+
+```
+bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
+No order.
+LAWMAN_<tick id>_0000000
+```
+
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+
+With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -105,6 +124,10 @@ A related issue is evidence of the case, never a reason to close it.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
+   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
+   - Quote in Holes in the charge and The code as it is the numbers your own read printed.
+   - A cited number that the range does not support makes that exhibit a claim, not an exhibit.
+   - The exhibit of a claim of absence is its search and its control. Run both again on `<sha>`, as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path.
    ```
    git -C precincts/<p> log --format='%h %s' <sha> -- <path>
@@ -117,6 +140,13 @@ A related issue is evidence of the case, never a reason to close it.
    ```
 4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
 5. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
+6. A path that the case reports missing in its Not established section:
+   - Re-read the commit that the case names, with the second command of the "Follow a missing path" section of `lawman/law/exhibits.md`.
+   - A commit from the case enters the command only when it matches `^[0-9a-f]{7,40}$`, as item 2 of that section says.
+   - If the case names no commit, run the whole section.
+   - A refute that closes the case on that ground names the commit and the new place or the removal in Holes in the charge.
+   - The class is `not confirmed` in three cases. The new place is outside the precinct, only a commit subject names it, or the commit removed the path.
+   - Say so when only a commit subject names the place.
 
 ### Step 8: decide
 
@@ -148,7 +178,7 @@ Write the comment in this order:
 Defence
 
 Analysed commit: <sha>
-Tip at defence: <tip sha>
+Tip at defence: <tip>
 
 ## Defence
 <one sentence: defence, return or refute. For refute, its class from the law's Closure classes subsection.>
@@ -209,15 +239,22 @@ Rules:
 - Put every `@` and every quote of third-party text inside a fenced block, git log lines included.
 - Name the department page by its department name, never by a path.
 - Write no home path, no installation path, no token and no login.
+- `<tip>` is the commit that step 2 printed.
 
 ## Report
 
-Three lines:
+Three lines. The second line is exactly one of the `Written:` lines below.
 
 ```
 Coverage: <sha>, issue #<n>, round <r>.
-Written: <comment URL>; closed as <reason> or none.
+Written: <one of the lines below>
 Blockers: <tool, source or tracker errors, the stop token, any facts about evidence, the tip fact if it moved>.
 ```
+
+Write exactly one of the three `Written:` lines. The report has three lines in total.
+
+- `Written: <comment URL>.` for a defence, for a return, and for a refute whose close did not read back as `CLOSED`.
+- `Written: <comment URL>; closed as <class>.` for a refute, after the close read back as `CLOSED`.
+- `Written: none.` when the role wrote nothing.
 
 When the order is empty or stale, the report is the one line of step 1 or step 4.

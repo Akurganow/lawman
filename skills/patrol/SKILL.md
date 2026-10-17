@@ -46,7 +46,7 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 ## Tick
 
-Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards
 
@@ -71,16 +71,29 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
+6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   ```
+   bin/journal alarm
+   ```
 
 ### Step 1: take an order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent`. Any other failure ends it with `failed`.
+1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/law/tick.md` and end the tick with `failed`.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
-2. Run the "Take an order" section with `--role patrol`.
-3. An order with an issue number, or with no department, is not a patrol order. End with `failed`.
+2. Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+   ```
+   bin/journal dispatch take --role patrol
+   ```
+   Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+   ```
+   bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
+   <report>
+   LAWMAN_<tick id>_0000000
+   ```
+   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+3. With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order with an issue number, or with no department, is not a patrol order. End with `failed`. A failed command in this step ends the tick with `failed`.
 
 ### Step 2: fetch the precinct
 
@@ -96,7 +109,7 @@ Run the "Sync the tracker" section.
 bin/journal cap <p> --department <d>
 ```
 
-The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lead can be filed. Create the tree (step 5). Run the "Resolve the department page" section and read the Proof section of the page. Run only the page's `Alarm check:` paragraph, as "The alarm check" below says, then end the tick with `capped`. A page without that paragraph ends the tick with `capped` at once. Read nothing else and sweep nothing.
+The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lead can be filed. Run the "Resolve the department page" section, which needs no tree, and read the Proof section of the page. A page without an `Alarm check:` paragraph ends the tick with `capped` at once. Read nothing else, create no tree and sweep nothing. A page with that paragraph: create the tree (step 5). Run only that paragraph, as "The alarm check" below says. Then end the tick with `capped`.
 
 ### Step 5: create the tree
 

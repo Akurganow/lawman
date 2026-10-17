@@ -52,7 +52,7 @@ printf '\\n%s' "$FAKE_STATUS"
 		chmodSync(join(bin, "curl"), 0o755);
 		writeFileSync(made("reply"), fixture("reply.grade.json"));
 		const command = block
-			.replace("<p0|grade>", "grade")
+			.replaceAll("<p0|grade>", "grade")
 			.replace("<brief, one name: value line per field>", () =>
 				(opts.brief ?? fixture("brief.grade.txt")).trimEnd(),
 			)
@@ -71,7 +71,8 @@ printf '\\n%s' "$FAKE_STATUS"
 	}
 
 	test("the first fenced block under the heading holds the command", () => {
-		expect(block).toContain("bash -c 'set +x\n");
+		expect(block.trimStart().startsWith("(set +x\n")).toBe(true);
+		expect(block).not.toContain("bash -c");
 		expect(block).toContain("https://api.typesafe.ai/v1/systemone");
 	});
 

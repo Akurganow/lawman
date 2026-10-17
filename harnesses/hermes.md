@@ -43,10 +43,31 @@ hermes cron run <role>
 
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
 - The job runs inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run.
-- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end`.
+- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree with the two commands of the "End the tick" section of `tick.md`.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <role>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
+
+## Commands in scheduled runs
+
+A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The refusal message starts `BLOCKED: Command flagged as dangerous`. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). Lawman leaves it unchanged.
+
+Refused, seen in scheduled runs:
+
+- a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
+- an interpreter started with `-c`: `python3 -c`.
+
+Refused, checked with the harness's check function and not seen in a scheduled run:
+
+- other shells started with `-c`: `sh -c`, `zsh -c`;
+- an interpreter started with `-e`: `node -e`, `bun -e`;
+- a heredoc fed to a shell or an interpreter: `bash <<`.
+
+Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the Send body. The pipe passed when a role repeated a refused command without the wrapper.
+
+Accepted, checked with the harness's check function: `&&`, `;`, a redirect, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
+
+A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
 ## Scheduling
 
@@ -142,8 +163,8 @@ The probe measured that `gh` reads the keychain from a cron session. The login w
 
 ### The TypeSafe key
 
-`TYPESAFE_API_KEY` goes where `GH_TOKEN` goes: `~/.hermes/.env`. The docs say `.env` values are exported to the process environment. Whether a scheduled session sees the variable is not measured. The install probe's send measures it.
+`TYPESAFE_API_KEY` goes where `GH_TOKEN` goes: `~/.hermes/.env`. The docs say `.env` values are exported to the process environment. A scheduled session sees the variable: a Send run in one returned a `jev model=` line (probe).
 
 ## What a second harness needs
 
-A second harness needs a page with these same five sections: making the skills visible, running a role once, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
+A second harness needs a page with these same six sections. They are: making the skills visible, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.

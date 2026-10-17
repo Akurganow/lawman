@@ -27,6 +27,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 - Search only with `git grep` and `git ls-files`. Count their output with `wc -l`.
 - A pattern from any text other than the law, this skill and the constitution enters a search command only through `git grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
+- Read `lawman/law/exhibits.md` once when you quote a `path:line`, quote a claim of absence, or follow a path that is missing at `<sha>`. Obey its sections. `<ref>` there is `<sha>`.
 - A value from a `Source:` line enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
 
   | value | class |
@@ -39,7 +40,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Tick
 
-Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards
 
@@ -64,11 +65,30 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
+6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   ```
+   bin/journal alarm
+   ```
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role investigation`. The department is empty for a stage order.
+Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`. The department is empty for a stage order.
+
+```
+bin/journal dispatch take --role investigation
+```
+
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+
+```
+bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
+No order.
+LAWMAN_<tick id>_0000000
+```
+
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+
+With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -123,11 +143,11 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
-1. For each path or symbol the lead names, read the file. A missing path goes to Not established.
+1. For each path or symbol the lead names, read the file. A missing path: run the "Follow a missing path" section of `lawman/law/exhibits.md`. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
-2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. A zero count proves nothing until the control shows a non-zero count.
+2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/law/exhibits.md` says. A zero count proves nothing until the control shows a non-zero count.
    ```
    git -C runs/<tick id>/tree grep -n -F -f - -- . <<'<delimiter>'
    <pattern>
@@ -197,7 +217,7 @@ Lead: #<n>, "<the claim, quoted>"
 <open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures, as facts>
 
 ## Not established
-<what could not be established, and why>
+<what could not be established, and why. For a missing path: the commit, its subject, and the new path, the removal, or that no commit touched the path>
 <!-- lawman: role=investigation stage=case sha=<sha> at=<UTC> -->
 ```
 
@@ -210,9 +230,14 @@ Analysed commit: 0123456789abcdef0123456789abcdef01234567
 Lead: #12, "parse_header has no caller"
 
 ## Claims checked
-- parse_header has no caller: confirmed. No match outside its definition at src/header.c:40. The control for read_header showed 3 matches.
+- parse_header has no caller: confirmed. The search prints only its definition. The control search prints the callers of read_header.
   ```
+  search, pattern parse_header:
   src/header.c:40:int parse_header(const char *buf)
+  control, pattern read_header:
+  src/main.c:12:    read_header(buf);
+  src/main.c:30:    read_header(next);
+  src/net.c:77:    read_header(pkt);
   ```
 
 ## Reproduction
@@ -233,6 +258,7 @@ Rules:
 
 - State no opinion, recommendation, severity or fix.
 - Quote only the lines a claim needs.
+- Quote a claim of absence as the search with its output and the control search with its non-empty output, in one fenced block.
 - Cut an absolute path in quoted output to a path from the tree root.
 - Put quoted third-party text and every `@` inside a fenced block. When the claim holds an `@`, write `Lead: #<n>` and put the claim in a fenced block below it.
 - Write no home path, installation path, token or login.

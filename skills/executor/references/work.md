@@ -77,7 +77,7 @@ Run it before each commit, on the staged diff and on the message. Run it again o
 Count the matches in the added lines of each staged file. A count above zero ends the tick with `failed`. Push nothing from the current part. Parts pushed earlier stay. Blockers holds the path and the count, never the value.
 
 ```
-bash -c 'git -C runs/<tick id>/tree diff --cached --name-only -z | while IFS= read -r -d "" f; do n=$(git -C runs/<tick id>/tree diff --cached -U0 -- "$f" | grep -a "^+" | grep -a -c -F -e "$PWD" -e "$HOME"); if [ "$n" -gt 0 ]; then printf "%s\t%s\n" "$f" "$n"; fi; done'
+git -C runs/<tick id>/tree diff --cached --name-only -z | while IFS= read -r -d "" f; do n=$(git -C runs/<tick id>/tree diff --cached -U0 -- "$f" | grep -a "^+" | grep -a -c -F -e "$PWD" -e "$HOME"); if [ "$n" -gt 0 ]; then printf "%s\t%s\n" "$f" "$n"; fi; done
 ```
 
 No output means a clean diff. Check the commit message and the comment text the same way:
