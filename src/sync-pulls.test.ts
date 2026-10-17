@@ -31,6 +31,15 @@ describe("sync --pulls", () => {
 				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', 99, '1', 'waiting')",
 			);
 		});
+	const expectRejected = (inputs: unknown[]) => {
+		seedOld();
+		for (const input of inputs) {
+			const r = feed(input);
+			expect(r.code).toBe(4);
+			expect(r.err).toContain("cache untouched");
+			expect(stored()).toEqual(OLD);
+		}
+	};
 
 	beforeEach(() => addPrecincts({ main: 1, other: 1 }));
 
@@ -73,25 +82,13 @@ describe("sync --pulls", () => {
 			JSON.stringify([page([], { next: true })]),
 			JSON.stringify([page([], { collabNext: true })]),
 		];
-		seedOld();
-		for (const input of cases) {
-			const r = feed(input);
-			expect(r.code).toBe(4);
-			expect(r.err).toContain("cache untouched");
-			expect(stored()).toEqual(OLD);
-		}
+		expectRejected(cases);
 	});
 
 	test("a pull request of the author without review nodes, or a comment without an id, exits 4", () => {
-		seedOld();
 		const noReviews = [page([{ number: 3, noReviews: true }])];
 		const noId = [page([{ number: 3, comments: [{ body: "x", noId: true }] }])];
-		for (const input of [noReviews, noId]) {
-			const r = feed(input);
-			expect(r.code).toBe(4);
-			expect(r.err).toContain("cache untouched");
-			expect(stored()).toEqual(OLD);
-		}
+		expectRejected([noReviews, noId]);
 	});
 
 	test("a pull request of another author without either field is no failure", () => {

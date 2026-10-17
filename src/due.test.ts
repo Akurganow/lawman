@@ -107,6 +107,22 @@ const pulls = (...rows: [number, number[], string, string?][]) =>
 			);
 	});
 
+const expectWeightZeroEmpty = (role: string, spec: string) => {
+	put({ 1: handed(7) });
+	pulls([7, [1], spec]);
+	expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(0);
+	expect(due(role)).toBe("");
+};
+const expectP0First = (role: string, spec: string) => {
+	put({
+		1: handed(7),
+		2: handed(8, priorityOnly("P3")),
+		3: handed(8, priorityOnly("P0")),
+	});
+	pulls([7, [1], spec], [8, [2, 3], spec]);
+	expect(due(role)).toBe("main\t8\n");
+};
+
 describe("due --role spec-writer", () => {
 	test.each([
 		["none", "main\t7\n"],
@@ -144,22 +160,11 @@ describe("due --role spec-writer", () => {
 	});
 
 	test("a precinct of weight zero has no candidate", () => {
-		put({ 1: handed(7) });
-		pulls([7, [1], "none"]);
-		expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(
-			0,
-		);
-		expect(due("spec-writer")).toBe("");
+		expectWeightZeroEmpty("spec-writer", "none");
 	});
 
 	test("the best source priority puts P0 first", () => {
-		put({
-			1: handed(7),
-			2: handed(8, priorityOnly("P3")),
-			3: handed(8, priorityOnly("P0")),
-		});
-		pulls([7, [1], "none"], [8, [2, 3], "none"]);
-		expect(due("spec-writer")).toBe("main\t8\n");
+		expectP0First("spec-writer", "none");
 	});
 
 	test("rotation breaks a tie, then the lowest number", () => {
@@ -214,22 +219,11 @@ describe("due --role executor", () => {
 	});
 
 	test("a precinct of weight zero has no candidate", () => {
-		put({ 1: handed(7) });
-		pulls([7, [1], "up"]);
-		expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(
-			0,
-		);
-		expect(due("executor")).toBe("");
+		expectWeightZeroEmpty("executor", "up");
 	});
 
 	test("the best source priority puts P0 first", () => {
-		put({
-			1: handed(7),
-			2: handed(8, priorityOnly("P3")),
-			3: handed(8, priorityOnly("P0")),
-		});
-		pulls([7, [1], "up"], [8, [2, 3], "up"]);
-		expect(due("executor")).toBe("main\t8\n");
+		expectP0First("executor", "up");
 	});
 
 	test("rotation follows executor orders, then the lowest number", () => {

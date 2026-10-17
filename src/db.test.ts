@@ -29,6 +29,15 @@ describe("exit codes", () => {
 });
 
 describe("open", () => {
+	const seedSchema = (version: number) => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, version)) old.run(sql);
+		old.run(`PRAGMA user_version = ${version}`);
+		old.run(
+			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('p', 7, 'OPEN', 't', 'c')",
+		);
+		old.close();
+	};
 	test("fresh database reaches the current user_version", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
@@ -103,13 +112,7 @@ describe("open", () => {
 	});
 
 	test("migration 3 keeps the data of a schema 2 database and adds replied_at", () => {
-		const old = new Database(dbFile);
-		for (const sql of MIGRATIONS.slice(0, 2)) old.run(sql);
-		old.run("PRAGMA user_version = 2");
-		old.run(
-			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('p', 7, 'OPEN', 't', 'c')",
-		);
-		old.close();
+		seedSchema(2);
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(
@@ -119,13 +122,7 @@ describe("open", () => {
 	});
 
 	test("migration 4 keeps the data of a schema 3 database and adds pulls", () => {
-		const old = new Database(dbFile);
-		for (const sql of MIGRATIONS.slice(0, 3)) old.run(sql);
-		old.run("PRAGMA user_version = 3");
-		old.run(
-			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('p', 7, 'OPEN', 't', 'c')",
-		);
-		old.close();
+		seedSchema(3);
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT issue, title FROM issues").all()).toEqual([
