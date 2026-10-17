@@ -48,7 +48,7 @@ Before step 1, run `git -C lawman rev-parse HEAD`. Stop if it fails, because the
 10. Run `(cd bin && shasum -a 256 -c SHA256SUMS --ignore-missing)`, and stop unless the line for `<asset>` reads `OK`.
 11. Run `gh attestation verify bin/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml`, show the signer workflow it checked, and stop if it fails.
 12. Run `mv bin/<asset> bin/journal && chmod +x bin/journal`.
-13. Run `bin/journal probe --schema 3`, and stop if it exits non-zero.
+13. Run `bin/journal probe --schema 4`, and stop if it exits non-zero.
 14. Run `shasum -a 256 bin/journal`, and record its first field as `journal_sha256`.
 
 ## Step 6. Measure the scheduled session
@@ -68,7 +68,7 @@ Probe prompt:
 
 ```
 Lawman probe. Run only these commands from this directory, and show each output under its command.
-bin/journal probe --schema 3
+bin/journal probe --schema 4
 gh api user --jq .login
 git --version
 Do not run anything else. Do not write to any repository. Do not take an order.
@@ -92,7 +92,7 @@ Token steps, used when the login is missing in the scheduled session. The schedu
 Finish this step before the developer adds a precinct.
 
 1. List the role folders: every folder `lawman/skills/*/` other than `assembly`. In the roles mode, keep only the roles without a job.
-2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, response-unit 09:05, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15, clerk 10:30. Ask the developer to accept it or name other times and intervals, and wait for the answer.
+2. Propose the default: every role once a day, 1440 minutes, at these local times: duty-desk 09:00, response-unit 09:05, patrol 09:15, investigation 09:30, prosecutor 09:45, defender 10:00, court 10:15, clerk 10:30, spec-writer 10:45. Ask the developer to accept it or name other times and intervals, and wait for the answer.
 3. For each role folder, run `bin/journal role set <role> --every <minutes>`, and stop if it fails.
 4. Outside the roles mode, tell the developer to add the first precinct next, because step 9 runs after it.
 
@@ -103,7 +103,7 @@ Run this step after the first precinct is in the journal. The precinct reference
 1. List the scheduled jobs with the list command the page gives.
 2. Skip a role whose job `[lawman] <role>` is already listed, and tell the developer which ones you skipped.
 3. Ask the developer for the model of each role without a job, one role at a time, and wait for each answer. A developer who names none gets the harness's default model, and the `--model` flag is then omitted.
-4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `5 9 * * *` for response-unit, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court and `30 10 * * *` for clerk, in the machine's local time.
+4. Build each cron expression from its interval with the table below. The default is `0 9 * * *` for duty-desk, `5 9 * * *` for response-unit, `15 9 * * *` for patrol, `30 9 * * *` for investigation, `45 9 * * *` for prosecutor, `0 10 * * *` for defender and `15 10 * * *` for court, `30 10 * * *` for clerk and `45 10 * * *` for spec-writer, in the machine's local time.
 5. Show every create command to the developer, and wait for a yes.
 6. Create one job per role folder without a job, with the create form the page gives:
 
