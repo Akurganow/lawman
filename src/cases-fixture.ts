@@ -90,11 +90,10 @@ export function cache(...pulls: [number, number[], string?][]) {
 	seed((db) => {
 		db.run("DELETE FROM pulls");
 		for (const [number, issues, spec] of pulls)
-			db.run("INSERT INTO pulls VALUES ('main', ?, ?, ?)", [
-				number,
-				issues.join(","),
-				spec ?? "none",
-			]);
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', ?, ?, ?)",
+				[number, issues.join(","), spec ?? "none"],
+			);
 	});
 }
 

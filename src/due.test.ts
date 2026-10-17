@@ -97,16 +97,31 @@ describe("due --role clerk", () => {
 
 const priorityOnly = (priority: string) =>
 	mark("court", "conviction", ` sha=${SHA} priority=${priority}`);
-const pulls = (...rows: [number, number[], string][]) =>
+const pulls = (...rows: [number, number[], string, string?][]) =>
 	seed((db) => {
 		db.run("DELETE FROM pulls");
-		for (const [number, issues, spec] of rows)
-			db.run("INSERT INTO pulls VALUES ('main', ?, ?, ?)", [
-				number,
-				issues.join(","),
-				spec,
-			]);
+		for (const [number, issues, spec, work] of rows)
+			db.run(
+				"INSERT INTO pulls (precinct, number, issues, spec, work) VALUES ('main', ?, ?, ?, ?)",
+				[number, issues.join(","), spec, work ?? "todo"],
+			);
 	});
+
+const expectWeightZeroEmpty = (role: string, spec: string) => {
+	put({ 1: handed(7) });
+	pulls([7, [1], spec]);
+	expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(0);
+	expect(due(role)).toBe("");
+};
+const expectP0First = (role: string, spec: string) => {
+	put({
+		1: handed(7),
+		2: handed(8, priorityOnly("P3")),
+		3: handed(8, priorityOnly("P0")),
+	});
+	pulls([7, [1], spec], [8, [2, 3], spec]);
+	expect(due(role)).toBe("main\t8\n");
+};
 
 describe("due --role spec-writer", () => {
 	test.each([
@@ -145,22 +160,11 @@ describe("due --role spec-writer", () => {
 	});
 
 	test("a precinct of weight zero has no candidate", () => {
-		put({ 1: handed(7) });
-		pulls([7, [1], "none"]);
-		expect(call(BASE, ["precinct", "set", "main", "--weight", "0"]).code).toBe(
-			0,
-		);
-		expect(due("spec-writer")).toBe("");
+		expectWeightZeroEmpty("spec-writer", "none");
 	});
 
 	test("the best source priority puts P0 first", () => {
-		put({
-			1: handed(7),
-			2: handed(8, priorityOnly("P3")),
-			3: handed(8, priorityOnly("P0")),
-		});
-		pulls([7, [1], "none"], [8, [2, 3], "none"]);
-		expect(due("spec-writer")).toBe("main\t8\n");
+		expectP0First("spec-writer", "none");
 	});
 
 	test("rotation breaks a tie, then the lowest number", () => {
@@ -184,5 +188,83 @@ describe("due --role spec-writer", () => {
 		expect(due("spec-writer", "main")).toBe("");
 		expect(due("spec-writer", "side", "main")).toBe("");
 		expect(due("spec-writer", "side")).toBe("main\t7\n");
+	});
+});
+
+describe("due --role executor", () => {
+	test.each([
+		["up", "todo", "main\t7\n"],
+		["up", "returned", "main\t7\n"],
+		["up", "ready", ""],
+		["down", "todo", ""],
+		["waiting", "todo", ""],
+		["none", "todo", ""],
+	])("spec %s, work %s", (spec, work, expected) => {
+		put({ 1: handed(7) });
+		pulls([7, [1], spec, work]);
+		expect(due("executor")).toBe(expected);
+	});
+
+	test("the two roles never pick each other's pull request", () => {
+		put({ 1: handed(7), 2: handed(8) });
+		pulls([7, [1], "none"], [8, [2], "up"]);
+		expect(due("spec-writer")).toBe("main\t7\n");
+		expect(due("executor")).toBe("main\t8\n");
+	});
+
+	test("a pull request without a handed source is not due", () => {
+		put({ 1: human("OPEN") });
+		pulls([7, [1], "up"]);
+		expect(due("executor")).toBe("");
+	});
+
+	test("a precinct of weight zero has no candidate", () => {
+		expectWeightZeroEmpty("executor", "up");
+	});
+
+	test("the best source priority puts P0 first", () => {
+		expectP0First("executor", "up");
+	});
+
+	test("rotation follows executor orders, then the lowest number", () => {
+		put({ 1: handed(7), 2: handed(8), 3: handed(9) });
+		pulls([9, [3], "up"], [8, [2], "up"], [7, [1], "up"]);
+		expect(due("executor")).toBe("main\t7\n");
+		order("executor", 7, T(8));
+		expect(due("executor")).toBe("main\t8\n");
+	});
+
+	test("spec-writer orders do not move the executor rotation and vice versa", () => {
+		put({ 1: handed(7), 2: handed(8), 3: handed(9), 4: handed(10) });
+		pulls([7, [1], "up"], [8, [2], "up"], [9, [3], "none"], [10, [4], "none"]);
+		order("spec-writer", 9, T(8));
+		expect(due("executor")).toBe("main\t7\n");
+		expect(due("spec-writer")).toBe("main\t10\n");
+		order("executor", 7, T(9));
+		expect(due("executor")).toBe("main\t8\n");
+		expect(due("spec-writer")).toBe("main\t10\n");
+	});
+
+	test("an open executor order silences the executor only", () => {
+		put({ 1: handed(7), 2: handed(8) });
+		pulls([7, [1], "up"], [8, [2], "none"]);
+		order("executor", 7, T(8), true);
+		expect(due("executor")).toBe("");
+		expect(due("spec-writer")).toBe("main\t8\n");
+	});
+
+	test("an open spec-writer order does not silence the executor", () => {
+		put({ 1: handed(7), 2: handed(8) });
+		pulls([7, [1], "up"], [8, [2], "none"]);
+		order("spec-writer", 8, T(8), true);
+		expect(due("executor")).toBe("main\t7\n");
+	});
+
+	test("--exclude drops a precinct, one or several", () => {
+		put({ 1: handed(7) });
+		pulls([7, [1], "up"]);
+		expect(due("executor", "main")).toBe("");
+		expect(due("executor", "side", "main")).toBe("");
+		expect(due("executor", "side")).toBe("main\t7\n");
 	});
 });

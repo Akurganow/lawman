@@ -4,14 +4,23 @@ import { DECIDING } from "./decider";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
-export type PullRow = { number: number; issues: string; spec: Vote };
+export type Work = "todo" | "ready" | "returned";
+export type PullRow = {
+	number: number;
+	issues: string;
+	spec: Vote;
+	work: Work;
+	spec_id: string;
+};
 
 type Obj = Record<string, unknown>;
 
 const FINGERPRINT =
 	/^<!-- pipeline-work-fingerprint: [a-z0-9-]+ sources=(#[0-9]+(?:,#[0-9]+)*) -->$/;
-const SPEC_ROLE = "spec-writer";
-const SPEC_STAGE = "spec";
+const SPEC = { role: "spec-writer", stage: "spec" };
+const READY = { role: "executor", stage: "ready" };
+const NO_SPEC_ID = "-";
+const CHANGES_REQUESTED = "CHANGES_REQUESTED";
 
 const reject = (why: string) =>
 	new Fail(EXIT.SYNC_INPUT, `sync input rejected, cache untouched: ${why}`);
@@ -25,6 +34,7 @@ const records = (v: unknown): Obj[] =>
 const loginOf = (v: unknown) => asciiLower(text(dig(v, ["login"])));
 const ascending = (a: number, b: number) => a - b;
 
+const REVIEWS = "latestOpinionatedReviews";
 const REPOSITORY = ["data", "repository"];
 const PULL_NODES = [...REPOSITORY, "pullRequests", "nodes"];
 const PULL_NEXT = [...REPOSITORY, "pullRequests", "pageInfo", "hasNextPage"];
@@ -78,9 +88,15 @@ function sourceNumbers(pull: Obj, repo: string): string {
 	return [...new Set(all)].sort(ascending).join(",");
 }
 
-// the comment that carries the newest counted spec marker
-function specComment(pull: Obj, login: string): Obj | null {
-	let newest: { ord: string; comment: Obj } | null = null;
+type Counted = { ord: string; comment: Obj };
+
+// the comment that carries the newest counted marker of a role and stage
+function newestMarker(
+	pull: Obj,
+	login: string,
+	want: { role: string; stage: string },
+): Counted | null {
+	let newest: Counted | null = null;
 	records(dig(pull, ["comments", "nodes"])).forEach((comment, rank) => {
 		const found = extractMarkers(
 			{
@@ -93,24 +109,50 @@ function specComment(pull: Obj, login: string): Obj | null {
 		);
 		for (const { ord, marker } of found)
 			if (
-				marker.role === SPEC_ROLE &&
-				marker.stage === SPEC_STAGE &&
+				marker.role === want.role &&
+				marker.stage === want.stage &&
 				(newest === null || ord > newest.ord)
 			)
 				newest = { ord, comment };
 	});
-	return (newest as { comment: Obj } | null)?.comment ?? null;
+	return newest;
 }
 
-function specVote(pull: Obj, login: string, allowed: Set<string>): Vote {
-	const comment = specComment(pull, login);
-	if (comment === null) return "none";
-	const decided = (reaction: string) =>
-		records(dig(comment, [reaction, "nodes"])).some((r) =>
-			allowed.has(loginOf(r.user)),
-		);
-	if (decided("down")) return "down";
-	return decided("up") ? "up" : "waiting";
+const reacted = (comment: Obj, reaction: string, allowed: Set<string>) =>
+	records(dig(comment, [reaction, "nodes"])).some((r) =>
+		allowed.has(loginOf(r.user)),
+	);
+
+function specVote(spec: Counted | null, allowed: Set<string>): Vote {
+	if (spec === null) return "none";
+	if (reacted(spec.comment, "down", allowed)) return "down";
+	return reacted(spec.comment, "up", allowed) ? "up" : "waiting";
+}
+
+function workOf(
+	pull: Obj,
+	login: string,
+	allowed: Set<string>,
+	spec: Counted | null,
+): Work {
+	const done = newestMarker(pull, login, READY);
+	if (done === null || spec === null || done.ord <= spec.ord) return "todo";
+	const sentBack = records(dig(pull, [REVIEWS, "nodes"])).some(
+		(review) =>
+			review.state === CHANGES_REQUESTED &&
+			allowed.has(loginOf(review.author)) &&
+			text(review.submittedAt) > text(done.comment.createdAt),
+	);
+	return sentBack || reacted(done.comment, "down", allowed)
+		? "returned"
+		: "ready";
+}
+
+function checkTrustedPull(pull: Obj): void {
+	if (!Array.isArray(dig(pull, [REVIEWS, "nodes"])))
+		throw reject("a pull request has no latestOpinionatedReviews.nodes list");
+	for (const comment of records(dig(pull, ["comments", "nodes"])))
+		if (text(comment.id) === "") throw reject("a comment has no id");
 }
 
 export function readPulls(
@@ -125,10 +167,14 @@ export function readPulls(
 		if (!Number.isInteger(pull.number))
 			throw reject("every pull request needs an integer number");
 		if (loginOf(pull.author) !== asciiLower(login)) continue;
+		checkTrustedPull(pull);
+		const spec = newestMarker(pull, login, SPEC);
 		rows.push({
 			number: pull.number as number,
 			issues: sourceNumbers(pull, asciiLower(repo)),
-			spec: specVote(pull, login, allowed),
+			spec: specVote(spec, allowed),
+			work: workOf(pull, login, allowed, spec),
+			spec_id: text(spec?.comment.id) || NO_SPEC_ID,
 		});
 	}
 	return rows;
@@ -138,8 +184,8 @@ function replacePulls(db: Database, name: string, rows: PullRow[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
 	for (const row of rows)
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec) VALUES (?, ?, ?, ?)",
-			[name, row.number, row.issues, row.spec],
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES (?, ?, ?, ?, ?, ?)",
+			[name, row.number, row.issues, row.spec, row.work, row.spec_id],
 		);
 }
 

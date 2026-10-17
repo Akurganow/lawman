@@ -1,10 +1,10 @@
 # The tick
 
-Eight roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk and the spec writer. The duty desk runs its own tick and does not read this file. The file turns the rules of the law into commands and adds no rule. A skill reads it at item 6 of its step 0 and keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick and does not read this file. The file turns the rules of the law into commands and adds no rule. A skill reads it at item 6 of its step 0 and keeps its own steps.
 
 The issue roles are the response unit, investigation, the prosecutor, the defender, the court and the clerk. Each takes one order on an issue.
 
-The spec writer is the one pull request role. The number of its order is a pull request, because GitHub numbers issues and pull requests in one sequence. `<m>` below is a pull request number.
+The spec writer and the executor are the pull request roles. The number of an order for either role is a pull request, because GitHub numbers issues and pull requests in one sequence. `<m>` below is a pull request number.
 
 The fetch step prints the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`.
 
@@ -76,10 +76,10 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 
 ## Sync the pull requests
 
-The spec writer and the clerk only. `<owner>` and `<repo>` are the two halves of `<owner/repo>`. The query is the argument after `_`. Use its text exactly as written.
+The spec writer, the executor and the clerk only. `<owner>` and `<repo>` are the two halves of `<owner/repo>`. The query is the argument after `_`. Use its text exactly as written.
 
 ```
-bash -o pipefail -c 'gh api graphql --paginate --slurp -f owner=<owner> -f name=<repo> -f query="$1" | bin/journal sync <p> --pulls --author <login>' _ 'query($owner:String!,$name:String!,$endCursor:String){ repository(owner:$owner,name:$name){ collaborators(first:100){pageInfo{hasNextPage} edges{permission node{login}}} pullRequests(states:OPEN,first:50,after:$endCursor,orderBy:{field:CREATED_AT,direction:ASC}){pageInfo{hasNextPage endCursor} nodes{number author{login} body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}} comments(last:100){nodes{author{login} createdAt body up: reactions(content:THUMBS_UP,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}} down: reactions(content:THUMBS_DOWN,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}}}}}}}}'
+bash -o pipefail -c 'gh api graphql --paginate --slurp -f owner=<owner> -f name=<repo> -f query="$1" | bin/journal sync <p> --pulls --author <login>' _ 'query($owner:String!,$name:String!,$endCursor:String){ repository(owner:$owner,name:$name){ collaborators(first:100){pageInfo{hasNextPage} edges{permission node{login}}} pullRequests(states:OPEN,first:50,after:$endCursor,orderBy:{field:CREATED_AT,direction:ASC}){pageInfo{hasNextPage endCursor} nodes{number author{login} body closingIssuesReferences(first:20){nodes{number repository{nameWithOwner}}} comments(last:100){nodes{id author{login} createdAt body up: reactions(content:THUMBS_UP,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}} down: reactions(content:THUMBS_DOWN,first:20,orderBy:{field:CREATED_AT,direction:DESC}){nodes{user{login} createdAt}}}}latestOpinionatedReviews(first:20){nodes{state submittedAt author{login}}}}}}}'
 ```
 
 The output is one line with the count of pull requests stored. Exit 4 means the reply was invalid and the cache is untouched. Exit 4 and any other failure give `stopped-sync`.
@@ -112,13 +112,13 @@ The output is `decider=<yes|no> actor=<login|->`. Exit 4 ends the tick with `fai
 
 ## Read the pull stage
 
-The spec writer only.
+The spec writer and the executor only.
 
 ```
 bin/journal pull <p> <m>
 ```
 
-The output is `need=<spec-writer|none> spec=<none|waiting|up|down|-> sources=<a,b|-> priority=<P0|P1|P2|P3>`. A pull request missing from the cache prints `need=none`. That is a stale order, and the tick ends with `silent`.
+The output is `need=<spec-writer|executor|none> spec=<none|waiting|up|down|-> spec_id=<id|-> work=<todo|ready|returned|-> sources=<a,b|-> priority=<P0|P1|P2|P3>`. `spec_id` is the GraphQL node id of the newest `Spec` comment, or `-` when `spec=none`. A pull request missing from the cache prints `need=none` and `-` in `spec`, `spec_id` and `work`. That is a stale order, and the tick ends with `silent`.
 
 ## Check the intake order
 
@@ -169,7 +169,7 @@ Read the page with the same `show` or file read that fed its lint.
 
 ## Write a comment
 
-Issue roles, and the spec writer and the clerk on a pull request. The skill gives the heading, which is the first line of the comment. The last line of the body is the marker.
+Issue roles, and the spec writer, the executor and the clerk on a pull request. The skill gives the heading, which is the first line of the comment. The last line of the body is the marker.
 
 1. Lint the whole comment, from the heading to the marker. Send it on stdin. Exit 7 gives `stopped-lint`. Write nothing.
    ```
@@ -225,7 +225,7 @@ gh issue view <n> -R <owner/repo> --json state --jq .state
 
 ## End the tick
 
-1. Patrol, investigation and the clerk only. If the skill created the tree, remove it. Keep the status output for Blockers. A failed remove goes to Blockers. A tick that stops before the skill creates the tree runs none of these commands.
+1. Patrol, investigation, the clerk and the executor only. If the skill created the tree, remove it. Keep the status output for Blockers. A failed remove goes to Blockers. A tick that stops before the skill creates the tree runs none of these commands.
    ```
    git -C precincts/<p> worktree remove --force ../../runs/<tick id>/tree
    rmdir runs/<tick id>
