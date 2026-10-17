@@ -130,7 +130,7 @@ describe("case: defender stage", () => {
 		test("the line carries returned right after round", () => {
 			put({ 1: afterCharge(defenderReturn("investigation")) });
 			expect(need(1)).toBe(
-				`need=investigation round=2 returned=defender department=core sha=${SHA} state=OPEN lead=body related=-`,
+				`need=investigation round=2 returned=defender department=core sha=${SHA} state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-`,
 			);
 		});
 	});

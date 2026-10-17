@@ -128,6 +128,8 @@ Decide one of two. The tick outcome equals the decision.
 
 Before writing a conviction, attack it once, as the law's Evidence section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
 
+For a conviction, choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. At `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+
 A tip that differs from `<sha>` is one line of fact in the ruling.
 
 ### Step 9: write the ruling
@@ -157,7 +159,7 @@ Analysed commit: <sha>
 Tip at ruling: <tip sha>
 
 ## Verdict
-<one sentence: conviction, or acquittal with its class from the law's Closure classes subsection>
+<one sentence: conviction with its priority, or acquittal with its class from the law's Closure classes subsection>
 
 ## Grounds
 <the deciding exhibits as path:line at <sha>. Name which exhibits the court re-read and which it took from the record. The form of the list is free.>
@@ -172,7 +174,7 @@ Tip at ruling: <tip sha>
 
 Marker, the last line of the comment. Nothing follows it:
 
-- `conviction`: `<!-- lawman: role=court stage=conviction sha=<sha> at=<UTC> -->`
+- `conviction`: `<!-- lawman: role=court stage=conviction sha=<sha> priority=<P> at=<UTC> -->`
 - `acquittal`: `<!-- lawman: role=court stage=acquittal at=<UTC> -->`
 
 `at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`. The date of the Precedent line is the date of `at`.
@@ -186,7 +188,7 @@ Analysed commit: c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7
 Tip at ruling: e09a5d13b72c8f4a61d9e0b35c7f28a4d6e1b903
 
 ## Verdict
-Conviction: every ground of the charge stands at the analysed commit.
+Conviction, priority P2: every ground of the charge stands at the analysed commit.
 
 ## Grounds
 - `src/config.ts:41`, re-read: `parseConfig` passes an empty `retries` value on without the default.
@@ -199,7 +201,7 @@ In `src/config.ts`, make `parseConfig` apply the default `retries` value when th
 ## Precedent
 - 2026-10-16: A flag that skips the caller's check does not protect `parseConfig` at `src/config.ts:41`.
 
-<!-- lawman: role=court stage=conviction sha=c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7 at=2026-10-16T10:20:00Z -->
+<!-- lawman: role=court stage=conviction sha=c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7 priority=P2 at=2026-10-16T10:20:00Z -->
 ````
 
 Rules:

@@ -1,38 +1,74 @@
 ---
 name: clerk
-description: Runs one tick of a Lawman clerk, which takes one order on a court ruling, proposes its precedent as a pull request, then exits.
+description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
 ---
 
 # Clerk
 
-One tick takes one order on an issue that holds a court ruling. It reads the ruling's Precedent section, proposes a valid entry as a pull request, leaves a comment, and exits.
+One tick takes one order on an issue and does the one job that `bin/journal case` names for it. The clerk is the only role that opens a pull request and the only role that writes the link from an issue to its pull request.
 
-The clerk reads and writes comments. It writes one branch and one pull request through a worktree that it removes at the end.
+The clerk reads and writes comments, pull requests and issue states. It writes one branch through a worktree that it removes at the end.
 
 ## Limits
 
 - Never run code from the precinct.
-- Never merge a pull request, and never push the main branch.
-- An empty tick is a success. Silence is the default.
+- Never merge a pull request, never push the main branch, and never review a pull request.
+- Never add or remove a reaction, and never edit a `Spec` comment.
+- One job per tick. An empty tick is a success. Silence is the default.
 
 The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
 ## Working rules
 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `worktree add`, `worktree remove` and `status --porcelain`.
-- In the tree `runs/<tick id>/tree`, run only `add LAWMAN.md`, `commit` and the one `push` of step 9.
+- In the tree `runs/<tick id>/tree`, run only `add LAWMAN.md`, `commit`, `commit --allow-empty` and the one `push` of the open or precedent recipe.
 - Never check out, reset, clean, branch, tag, merge, stash or push another ref.
 - Read a precinct file only through `git -C precincts/<p> show <tip>:<path>`.
+- Run only these `gh` forms. Each `-R` takes `<owner/repo>`. Each number comes from the order or from `case`.
+  - `api user --jq .login`.
+  - The three fixed queries of `tick.md`: the issue sync, the pull request sync and the decider check.
+  - `issue view <n> --json comments`, and `issue view <n> --json state --jq .state`.
+  - `api repos/<owner/repo>/issues/comments/<id> --jq <filter>`, for the ruling body and the read-back.
+  - `pr view <m> --json state,mergeCommit,isDraft,body`, with `--jq` on a single field, or with fewer fields.
+  - `pr create --draft`, with the fixed title and the fixed body on stdin.
+  - `pr create` with the fixed precedent title and body, for the precedent job only.
+  - `pr edit <m> --body-file -`, with the fixed body only.
+  - `pr ready <m> --undo`, `pr comment <m> --body-file -`, `pr close <m>` and `pr reopen <m>`.
+  - `issue comment <n> --body-file -`, `issue close <n> --reason <class reason>` and `issue reopen <n>`.
+- Never run these:
+  - `gh api` with `-X`, `--method` or `--input`.
+  - `gh api` with any `-f` or `-F` other than the ones the fixed queries carry.
+  - Any GraphQL text other than the fixed queries, and any mutation.
+  - Any `reactions` endpoint.
+  - `pr review`, `pr merge` and any `label` command.
+  - `--edit-last` and `--delete-last`.
+- A write comes first, then its read-back, then the marker. The marker is the last write of a job.
+
+### Class checks
+
+A value that reaches a command or a comment passes its check first. A failed check gives `failed`, except where the table says otherwise.
+
+| Value | Check |
+| :-- | :-- |
+| `<owner/repo>` | The order's value. The journal checked it with `check("repo")` when the precinct was added. |
+| `<login>` | `trusted_login`. The journal runs `check("login")` in `sync` and `decider`. |
+| Issue, pull request and source numbers | Digits as `case` prints them. In a marker they match `^[1-9][0-9]*$`. A marker with any other number counts for nothing. |
+| Pull request URL from `pr create` | `^https://github.com/<owner/repo>/pull/[1-9][0-9]*$`. The pull request number is its last part. |
+| Comment id | The digits after `#issuecomment-`. |
+| Merge commit | `^[0-9a-f]{40}$`. It enters comment text only. |
+| Branch | The `branch` of `case`, which is built from integers. Never read a `headRefName`. |
+| Reaction `content` | The clerk reads none. The journal compares it with two constants. |
+| Ruling, old pull request body, comments | Stdin or a quoted heredoc only. Never an argument. |
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards
 
 1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal probe --schema 3
+   bin/journal probe --schema 4
    ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
@@ -65,85 +101,54 @@ Run the "Fetch the precinct" section. The fetched commit is the tip, and `<ref>`
 
 Run the "Sync the tracker" section.
 
-### Step 4: read the stage
+### Step 4: sync the pull requests
+
+Run the "Sync the pull requests" section.
+
+### Step 5: read the stage
 
 Run the "Read the stage" section.
 
 The order is stale unless `need` is `clerk`. `state` may be `OPEN` or `CLOSED`, and both are valid. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
 
-### Step 5: read the constitution
+Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 
-Run the "Check the constitution" section. No other file of the precinct is read in this tick.
+### Step 6: choose the recipe
 
-### Step 6: read the ruling
+Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
-```
-gh issue view <n> -R <owner/repo> --json comments
-```
+1. `job=state`: run the "Check the decider" section with the issue number `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
+2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
+3. `job=adopt`, `settle`, `open` or `precedent`: run the recipe of that name.
 
-A failed command gives `stopped-issue-read`.
+| `action` | Recipe |
+| :-- | :-- |
+| `close-pull` | **close-pull** |
+| `reopen` | **reopen** |
+| `open` | **open** |
+| `kept` | **kept** |
 
-The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. No such comment ends the tick with `failed`. Its comment id is the digits after `#issuecomment-` in its URL.
+### Step 7: do the job
 
-### Step 7: create the tree
+Run the recipe. It ends with the marker. A recipe that ends the tick early names the token.
 
-```
-git -C precincts/<p> worktree add --detach ../../runs/<tick id>/tree <tip>
-```
+### Step 8: end the tick
 
-The path is relative to the clone, so `../../` leads back to the installation. A failure ends the tick with `failed`.
+The outcome is the token below. After a failed step it is the token that the step names.
 
-### Step 8: read the precedent
-
-The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. The clerk never retypes the ruling text. Pipe the ruling comment straight into the journal. The `--source` URL is the ruling comment's URL.
-
-```
-bash -o pipefail -c 'gh api repos/<owner/repo>/issues/comments/<comment id> --jq .body | bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source https://github.com/<owner/repo>/issues/<n>#issuecomment-<comment id>'
-```
-
-The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
-
-- `entry<TAB><number>`: the line is in the tree. Keep the number. Go to step 9.
-- `none`: go to step 10.
-- `no-entry<TAB><reason>`: go to step 10. Blockers names the reason.
-
-### Step 9: open the pull request
-
-Run this step only for `entry`. The branch is `lawman/precedent-<n>-<number>`, built from the issue number and the entry number.
-
-1. Stage and commit the page. A failed command ends the tick with `failed`.
-   ```
-   git -C runs/<tick id>/tree add LAWMAN.md
-   git -C runs/<tick id>/tree commit -m "Add precedent <number>"
-   ```
-2. Push the branch. A refusal ends the tick with `failed`. Blockers holds the git error line.
-   ```
-   git -C runs/<tick id>/tree push origin HEAD:refs/heads/<branch>
-   ```
-3. Open the pull request. The output is its URL. Keep it. A 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. There is no read-back of the pull request. The `<ruling comment URL>` is the `--source` URL of step 8.
-   ```
-   gh pr create -R <owner/repo> --head <branch> --title "Add precedent <number>" --body "Appends precedent <number> from the court ruling <ruling comment URL>. Merge it to make the precedent binding."
-   ```
-
-### Step 10: write the comment
-
-Write the comment on the issue, whether the issue is open or closed.
-
-Compose the comment from the Comment format section. Write it as the "Write a comment" section says, with the heading `Clerk`.
-
-Use the entry form after `entry`. Use the no-entry form after `none` or `no-entry`.
-
-When the push or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the push, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
-
-### Step 11: end the tick
-
-The outcome is `recorded` after an opened pull request and a read-back `entry` comment. It is `silent` after a read-back `no-entry` comment. Otherwise it is the token that the step ending the tick names.
+| Recipe | Outcome |
+| :-- | :-- |
+| **precedent** | `recorded` after an opened pull request and a read-back `entry` comment. `silent` after a read-back `no-entry` comment. |
+| **open**, **adopt**, **reopen**, **reopen-issue** | `handed` |
+| **close-pull** | `shut`. `silent` when the pull request is not open. |
+| **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
+| **kept** | `kept` |
 
 Run the "End the tick" section. The silence token is `[SILENT]`.
 
 ## Comment format
 
-Write the comment in this order:
+Every comment of the clerk has this order:
 
 ````
 Clerk
@@ -153,17 +158,24 @@ Clerk
 <marker>
 ````
 
-The sentence is one of these two, with its values filled in:
+The marker is the last line of the comment. Nothing follows it. `at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
 
-- Entry: `Precedent <number> is proposed in <pull request URL>. It takes effect when the owner merges it.`
-- No entry, from `none` or `no-entry`: `No precedent entry.`
+The precedent comment is written on the issue. Its sentence and marker:
 
-The marker is the last line of the comment. Nothing follows it:
+| Form | Sentence | Marker |
+| :-- | :-- | :-- |
+| Entry | `Precedent <number> is proposed in <pull request URL>. It takes effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry at=<UTC> -->` |
+| No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry at=<UTC> -->` |
 
-- Entry: `<!-- lawman: role=clerk stage=entry at=<UTC> -->`
-- No entry: `<!-- lawman: role=clerk stage=no-entry at=<UTC> -->`
+The pair comment is written on a source issue. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
 
-`at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
+| Stage | Sentence |
+| :-- | :-- |
+| `handed` | `Pull request #<m> carries this issue.` |
+| `shut`, after close-pull | `Pull request #<m> is closed because its issues are closed.` |
+| `shut`, after settle | `Pull request #<m> was closed, so this issue is closed as declined by the owner.` |
+| `settled` | `Pull request #<m> was merged at <merge commit>, so this issue is closed as gone at <merge commit>.` |
+| `kept` | `The clerk recorded this issue as <open|closed> and changed nothing.` |
 
 A realistic entry comment:
 
@@ -175,14 +187,14 @@ Precedent 3 is proposed in https://github.com/example/widgets/pull/31. It takes 
 <!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
 ````
 
-A realistic no-entry comment:
+A realistic pair comment:
 
 ````
 Clerk
 
-No precedent entry.
+Pull request #31 carries this issue.
 
-<!-- lawman: role=clerk stage=no-entry at=2026-10-16T11:00:00Z -->
+<!-- lawman: role=clerk stage=handed pull=31 issue=open at=2026-10-17T09:15:00Z -->
 ````
 
 Rules:
@@ -196,8 +208,8 @@ Three lines:
 
 ```
 Coverage: <tip>, issue #<n>.
-Written: <comment URL>, plus <pull request URL> for an entry, or none.
+Written: <comment, pull request and issue URLs, or the closures and reopenings with their reasons, or none>.
 Blockers: <tool, source or tracker errors, the stop token, the no-entry reason, any facts about evidence, the state of the clone>.
 ```
 
-When the order is empty or stale, the report is the one line of step 1 or step 4.
+When the order is empty or stale, the report is the one line of step 1 or step 5.

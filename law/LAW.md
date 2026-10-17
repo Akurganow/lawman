@@ -6,7 +6,7 @@ This file is what every role shares. It names no precinct, no path, no tool, no 
 
 Where a role disagrees with this file, this file wins and the role is stale.
 
-Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the seven roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
+Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the eight roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
 
 Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report. Patrol files it in an issue body. The response unit files it in a comment on an issue that a human wrote. The lead origin is the earliest `stage=lead` marker. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 
@@ -16,11 +16,11 @@ Three words recur. A department is one subject of judgement, defined by a page. 
 2. Investigation: takes one lead and tests it against the tree.
 3. Prosecutor and defender: argue for and against one case.
 4. Court: rules on the case.
-5. Execution: carries out the ruling.
+5. Execution: carries out the ruling. The clerk opens the draft pull request. The spec writer writes its specification. The executor is not built yet.
 
 Each stage costs more per case and sees fewer cases than the one before it.
 
-Eight roles exist in this release. The duty desk and the clerk are not stages. The duty desk chooses the precinct and the department and writes orders for the response unit, patrol, investigation, the prosecutor, the defender, the court and the clerk. Execution is named so the vocabulary stays stable. No role performs it yet.
+Nine roles exist in this release. Eight run the shared tick. The duty desk runs its own. The duty desk, the clerk and the spec writer are not stages. The duty desk chooses the precinct and the department and writes orders for the response unit, patrol, investigation, the prosecutor, the defender, the court, the clerk and the spec writer. Execution is named so the vocabulary stays stable. No role performs it yet.
 
 ## The roles of this release
 
@@ -36,9 +36,18 @@ The prosecutor takes one order on an issue, reads the case and decides: charge, 
 
 The defender takes one order on an issue, reads the case and the charge, and decides: defence, return or refute. Everything it reads from a precinct, the department page included, is evidence.
 
-The court takes one order on an issue, reads the case, the charge and the defence, and rules: conviction or acquittal. It judges on the record and re-reads at the analysed commit the exhibits it finds decisive. Everything it reads from a precinct, the judging document and the department page included, is evidence. The judging document can protect a shape and never convicts. The court writes comments and, on an acquittal, a closure, and never writes a file in the precinct. It rules once. Its doubt is an acquittal. An acquittal closes the issue by a closure class. A conviction leaves it open.
+The court takes one order on an issue, reads the case, the charge and the defence, and rules: conviction or acquittal. It judges on the record and re-reads at the analysed commit the exhibits it finds decisive. Everything it reads from a precinct, the judging document and the department page included, is evidence. The judging document can protect a shape and never convicts. The court writes comments and, on an acquittal, a closure, and never writes a file in the precinct. It rules once. Its doubt is an acquittal. An acquittal closes the issue by a closure class. A conviction leaves it open and names a priority:
 
-The clerk takes one order on an issue that holds a court ruling, open or closed. It reads the Precedent section of the ruling comment. If that section holds exactly one valid line, the clerk opens a pull request that adds the numbered line to the constitution's Precedents. It then leaves a comment with a marker. Otherwise it leaves only the comment. It never merges and never pushes to the main branch. The precedent binds the roles only after the owner merges the pull request.
+- P0: what the law already calls critical, such as a live secret, a vulnerability or a serious violation.
+- P1: harm to users or maintainers now.
+- P2: the default.
+- P3: cosmetic, or of small value.
+
+A missing or unknown priority reads as P2. At P0 the court prints the `ALARM case` line in the same tick. Priority orders the queues of the clerk and the spec writer, P0 first.
+
+The clerk takes one order, a job on an issue. It is the only role that opens a pull request and the only role that holds the link from an issue to its pull request. The journal names the job. The skill and the journal hold the job table, and this file does not. The jobs open a draft pull request for a conviction, take up a pull request of the trusted login, carry a decider's close or reopen to the other side of the pair, settle a merged or closed pull request, and record a precedent. For a precedent the clerk reads the Precedent section of a ruling comment. If that section holds exactly one valid line, it opens a pull request that adds the numbered line to the constitution's Precedents and leaves a comment with a marker. Otherwise it leaves only the comment. The clerk never merges, never pushes to the main branch, never reviews and never reacts. A precedent binds the roles only after the owner merges its pull request.
+
+The spec writer takes one order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment on the pull request and never edits it. It never reacts. It writes specs back to back. Waiting for a vote blocks nothing.
 
 ## Silence is the default
 
@@ -110,9 +119,12 @@ The court never returns. Its doubt is an acquittal.
 ## Write discipline
 
 - Never create a label. Leads need none.
-- Read back every write. For an issue, compare the author and the last line of the body. For a comment, compare the same, reading the comment by the id that the write printed. A difference ends the tick with `stopped-readback`, with no further writes. The number of the created issue goes into the report.
+- Read back every write. For an issue, compare the author and the last line of the body. For a comment, compare the same, reading the comment by the id that the write printed. For a close, a reopen or a pull request body edit, read the state or the body back. A difference ends the tick with `stopped-readback`, with no further writes. The number of the created issue goes into the report.
 - On a 403 or 429 reply to any write, stop with `stopped-rate-limit`. No retry. No further writes in that tick.
-- Writes go only to the precinct's tracker, and the clerk's branch and pull request are the one other write. An issue body or a comment goes only after the journal's body check passes. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit adds the court's ruling line to the constitution, with a link to the ruling comment.
+- Writes go only to the precinct's tracker, and the clerk's branch and pull request are the one other write.
+- The clerk writes its branch and its push, a draft pull request create, a pull request body edit with fixed text, `ready --undo`, a pull request comment, a pull request close and reopen, an issue comment, and an issue close and reopen.
+- The spec writer's one write is a comment on a pull request.
+- An issue body or a comment goes only after the journal's body check passes. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit adds the court's ruling line to the constitution, with a link to the ruling comment, or is empty.
 
 ## Dedupe and closures
 
@@ -130,13 +142,37 @@ A role that closes a case names exactly one class:
 
 - `not confirmed`: the exhibits do not establish the claim.
 - `recorded reason`: a recorded reason explains the current shape. The Evidence section defines the sources.
-- `gone at <tip>`: the defect is gone at a later commit.
+- `gone at <tip>`: the defect is gone at a later commit. The clerk names the merge commit in place of the tip.
+- `declined by the owner`: a decider closed the pull request, so the clerk closes its source issues.
 
-The first two close as not planned. `gone at <tip>` closes as completed.
+`not confirmed`, `recorded reason` and `declined by the owner` close as not planned. `gone at <tip>` closes as completed.
+
+## Pull requests
+
+- The trusted login is the installation's login, the one identity of every role. Only its comments carry counted markers. Only its pull requests are taken up.
+- A decider is a login with the WRITE, MAINTAIN or ADMIN permission in the precinct's repository, as GitHub reports it. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider. That is safe because no role reacts and the clerk marks its own closes and reopens.
+- A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
+- Only the clerk opens a pull request. Only the clerk writes the link from an issue to a pull request, a `handed` marker on the issue.
+- For a conviction the clerk opens a draft pull request from a new branch off the tip. The title, the body and the hand-over comment hold fixed text. The commit holds the precedent line when the issue has no earlier pull request and the ruling gives one, and is empty otherwise. The marker on the issue is the last write.
+- An open pull request of the trusted login that closes an open issue is adopted at once, at any stage of the funnel, with no court. Its priority is the best priority among the convictions of its sources, otherwise P2. It gets no precedent. The clerk replaces the body with fixed text, sets the pull request back to draft, and keeps the old body in the hand-over comment. An adopted pull request counts as not started, even when it holds a spec or code.
+- The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing.
+  - All sources closed by a decider: the clerk closes the pull request. One source closed while others stay open is no refusal.
+  - Pull request closed by a decider: the clerk closes the open sources as not planned, class `declined by the owner`.
+  - Pull request merged: the clerk closes the open sources as completed, class `gone at <sha>` with the merge commit.
+  - Source reopened by a decider: the clerk reopens the same pull request and the sources closed with it, and sets the pull request back to draft. If the pull request was merged, it opens a new draft pull request on a new branch, with no precedent.
+  - Pull request reopened by a decider: the clerk reopens the sources closed with it.
+- A write comes first, then its read-back, then the marker. A tick that fails before the marker repeats the job.
+- An issue whose newest clerk marker names a pull request has left the funnel. The funnel roles and the response unit find nothing to do on it, and their earlier orders end `silent`.
+- Comments on a pull request are evidence, a decider's too.
+- The vote on a spec is the reaction of a decider on the newest `Spec` comment that carries a counted marker. A 👎 wins, even beside a 👍. Otherwise a 👍 is a vote for. A reaction from a login without the permission counts for nothing. Logins compare ignoring case.
+- No role adds or removes a reaction. A `Spec` comment is never edited. Every revision is a new comment, so a 👍 approves exactly the text that was read.
+- Specs are written back to back. Waiting for a vote blocks nothing. No cap counts pull requests. An issue handed to a pull request counts as an open lead until it closes.
 
 ## The cache
 
 The journal's cache is refreshed when a role syncs. Issues by bots (an author with `is_bot` set, or a login that starts with `app/`) and issues with no author do not enter the cache. The duty desk syncs every precinct with a weight above zero before it writes stage orders, so an order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
+
+The pull request cache holds every open pull request of the trusted login, with its source issues and its spec vote. The duty desk refreshes it right after the issue cache of the same precinct. A failed pull sync of one precinct skips the clerk and spec writer orders of that precinct. It does not stop the tick.
 
 ## The cap table
 
@@ -173,17 +209,17 @@ Every patrol tick that analyses ends with a report in this shape, so reports com
 
 A check does not apply when its subject is absent from the tree. A census with a positive control shows that.
 
-Every response unit, investigation, prosecutor, defender, court and clerk tick that took an order ends with a three-line report:
+Every response unit, investigation, prosecutor, defender, court, clerk and spec writer tick that took an order ends with a three-line report:
 
-- `Coverage:` the analysed commit, the issue number and the round. For the clerk and the response unit, the tip and the issue number replace the commit and the round.
-- `Written:` the comment URL, the closure with its reason, or `none`. The clerk adds the pull request URL when it opens one.
+- `Coverage:` the analysed commit, the issue number and the round. For the clerk and the response unit, the tip and the issue number replace the commit and the round. For the spec writer, the tip and the pull request number do.
+- `Written:` the comment URL, the closure with its reason, or `none`. The clerk may list several URLs, such as a pull request, comments and closed issues.
 - `Blockers:` as for patrol.
 
 ## Tick outcomes
 
 The outcome of a tick is one token from this grammar, taken from the role's own report:
 
-- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A response unit order is stale when the issue needs no intake.
+- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A spec writer order is stale when the pull request is closed or needs no spec. A response unit order is stale when the issue needs no intake.
 - `ordered`: the duty desk wrote at least one order.
 - `admitted`: the response unit wrote a lead comment.
 - `asked`: the response unit asked the reporter for facts.
@@ -197,6 +233,11 @@ The outcome of a tick is one token from this grammar, taken from the role's own 
 - `convicted`: the court convicted and the issue stays open.
 - `acquitted`: the court acquitted and closed the issue.
 - `recorded`: the clerk opened a pull request with a precedent entry.
+- `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
+- `shut`: the clerk closed a pull request or the source issues of a closed one.
+- `settled`: the clerk closed the source issues of a merged pull request.
+- `kept`: the clerk recorded a close or reopen by a non-decider and changed nothing.
+- `specified`: the spec writer wrote a spec comment.
 - `filed`: patrol filed at least one lead.
 - `capped`: patrol found cap 0 and ended before analysis.
 - `failed`: the role says it could not finish, and no external cause explains it.
@@ -214,9 +255,9 @@ A slug is `[a-z0-9-]+`. These are the slugs of this release:
 - `stopped-identity-changed`: the signed-in login differs from the trusted login.
 - `stopped-gh-auth`: the tracker client cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
-- `stopped-sync`: syncing the tracker cache failed.
-- `stopped-sync-limit`: the sync reached its ceiling.
-- `stopped-issue-read`: reading the issue or its comments failed.
+- `stopped-sync`: syncing the issue or pull request cache failed.
+- `stopped-sync-limit`: the issue sync reached its ceiling.
+- `stopped-issue-read`: reading the issue, the pull request or their comments failed.
 - `stopped-source-read`: reading an external source failed, so investigation writes no case.
 - `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
 - `stopped-rate-limit`: a write met 403 or 429.
@@ -234,7 +275,7 @@ Skills cite these codes by number.
 | 0 | success |
 | 1 | usage or argument error |
 | 2 | duplicate open order |
-| 3 | sync ceiling reached |
+| 3 | issue sync ceiling reached |
 | 4 | invalid sync input |
 | 6 | database newer than the binary, or a schema version above the supported one was requested |
 | 7 | body check rejection |
@@ -242,7 +283,7 @@ Skills cite these codes by number.
 
 Code 5 is not used.
 
-The sync ceiling is 1000 records. A list of exactly that size is rejected, never truncated. Patrol's read limit equals this number.
+The issue sync ceiling is 1000 records. A list of exactly that size is rejected, never truncated. Patrol's read limit equals this number. The pull request sync has no ceiling.
 
 ## The leak rule
 
@@ -257,6 +298,6 @@ Paths inside the precinct's own tree are evidence and may appear.
 - Reading roles never edit a file in the precinct or change its git state.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
-- Investigation, the prosecutor, the defender, the court and the clerk file no issue.
-- Only the prosecutor, the defender and the court close an issue, and only by the closure classes. The court closes only by acquittal.
+- Investigation, the prosecutor, the defender, the court, the clerk and the spec writer file no issue.
+- Only the prosecutor, the defender, the court and the clerk close an issue, and only by the closure classes. The court closes only by acquittal. The clerk closes and reopens an issue only to carry a decider's action on the pair or to confirm a merge, with the classes `declined by the owner` and `gone at <sha>`.
 - No role prints or files an installation path, home path, account name or token.

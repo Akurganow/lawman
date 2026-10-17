@@ -11,10 +11,11 @@ import {
 	withDb,
 } from "./db";
 import { asciiLower, collectIssueMarkers, type GhIssue } from "./markers";
+import { syncPulls } from "./pulls";
 
 export const SYNC_LIMIT = 1000;
 
-const SYNC_USAGE = "sync <precinct> --author <login> [--reset]";
+const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
 const MARKER_PREFIX = "<!-- lawman:";
 
 type SyncIssue = GhIssue & {
@@ -193,18 +194,30 @@ function replaceCache(
 	return stats;
 }
 
-export function sync(args: string[]): void {
-	const rest = args.filter((a) => a !== "--reset");
+// removes one flag from the list, and says whether it was there; a repeat is a usage error
+function takeFlag(args: string[], flag: string): [string[], boolean] {
+	const rest = args.filter((a) => a !== flag);
 	if (args.length - rest.length > 1) throw usage(SYNC_USAGE);
+	return [rest, rest.length < args.length];
+}
+
+export function sync(args: string[]): void {
+	const [withoutReset, reset] = takeFlag(args, "--reset");
+	const [rest, pulls] = takeFlag(withoutReset, "--pulls");
+	if (reset && pulls) throw usage(SYNC_USAGE);
 	const { pos, opt } = parseArgs(rest, 1, ["author"], SYNC_USAGE);
 	const name = check("precinct", pos[0]);
 	const login = check("login", opt.author);
+	if (pulls) {
+		syncPulls(name, login, readStdin());
+		return;
+	}
 	const issues = readIssues(readStdin());
 	withDb((db) => {
 		let stats: SyncStats;
 		try {
 			stats = inTransaction(db, () =>
-				replaceCache(db, name, login, issues, rest.length < args.length),
+				replaceCache(db, name, login, issues, reset),
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;

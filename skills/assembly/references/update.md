@@ -20,7 +20,7 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 
 1. Run `git -C lawman checkout <target>`, and stop if it fails.
 2. Run install step 5 again, which reads the tag now checked out, and stop if any of its checks fails.
-3. Read the schema version that the new `lawman/skills/*/SKILL.md` files name, and set it as `N`.
+3. Read the schema versions that the new `lawman/skills/*/SKILL.md` files name, and set the highest as `N`.
 4. Run `bin/journal probe --schema <N>`, and stop if it fails, because exit 6 means this binary does not support schema `N`.
 
 ## Step 4. Check the precincts

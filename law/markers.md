@@ -1,6 +1,6 @@
 # Marker grammar
 
-Lawman roles record state as HTML-comment markers in GitHub issue bodies and comments. Labels carry no state. The journal parses markers deterministically.
+Lawman roles record state as HTML-comment markers in GitHub issue bodies, issue comments and pull request comments. Labels carry no state. The journal parses markers deterministically.
 
 This file is the single definition of the grammar. The journal parser checks the fields of `lead` and `return`. For other stages it keeps the values as they are. The test fixture mirrors the examples below.
 
@@ -54,7 +54,7 @@ A marker counts only when all of these hold:
 3. The line lies outside a fenced block.
 4. The line is not indented by 4 or more spaces.
 5. The line is not inside a blockquote.
-6. The line is in the issue body or in a comment of the trusted author.
+6. The line is in the issue body or in a comment of the trusted author. A comment on a pull request counts under the same rules as a comment on an issue.
 7. The marker is valid.
 
 A marker quoted anywhere else counts for nothing. An invalid marker is ignored. It displaces no older marker.
@@ -87,7 +87,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry` and `no-entry` and the response-unit stages `await` and `out` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction, spec) carries `sha`, 40 lowercase hex digits of the analysed commit. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 
@@ -100,14 +100,20 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `prosecutor` or `defender` | `return` | the comment that returns a case | `to`, `round` |
 | `defender` | `defence` | the defence comment | `sha` |
 | `defender` | `refute` | the defence comment | none |
-| `court` | `conviction` | the ruling comment | `sha` |
+| `court` | `conviction` | the ruling comment | `sha`, `priority` |
 | `court` | `acquittal` | the ruling comment | none |
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
 | `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
 | `clerk` | `entry` | the comment after it opens a precedent pull request | none |
 | `clerk` | `no-entry` | the comment when the ruling holds no valid precedent line | none |
+| `clerk` | `handoff` | the hand-over comment on a pull request | none |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair | `pull`, `issue` |
+| `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 
+- `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
+- `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
+- `entry` and `no-entry` now follow an acquittal only.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.

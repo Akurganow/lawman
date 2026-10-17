@@ -59,7 +59,7 @@ describe("case: lead origin", () => {
 		addIssue(1);
 		addMarker(1, unitLead("src/a.rs::f::dead-code"));
 		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=- sha=- state=OPEN lead=comment related=-",
+			"need=investigation round=1 returned=- department=- sha=- state=OPEN lead=comment related=- priority=P2 job=- action=- pull=- sources=- branch=-",
 		);
 	});
 
@@ -87,7 +87,10 @@ describe("case: lead origin", () => {
 
 describe("case: related issues", () => {
 	const ID = "src/a.rs::f::dead-code";
-	const related = (n: number) => need(n).split(" ").at(-1);
+	const related = (n: number) =>
+		need(n)
+			.split(" ")
+			.find((f) => f.startsWith("related="));
 
 	test("lists the other issues with the same path and symbol in ascending order", () => {
 		put({

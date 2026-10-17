@@ -1,5 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, T, withLead } from "./cases-fixture";
+import {
+	expectNeed,
+	need,
+	needOnly,
+	order,
+	put,
+	T,
+	withLead,
+} from "./cases-fixture";
 import {
 	addPrecincts,
 	BASE,
@@ -13,7 +21,6 @@ import {
 	refute,
 	returnTo,
 	SHA,
-	seed,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
@@ -51,15 +58,12 @@ describe("case: stage", () => {
 			withLead(caseMark(), returnTo("investigation"), caseMark()),
 			"prosecutor",
 		],
-	])("%s", (_name, spec, expected) => {
-		put({ 1: spec });
-		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
+	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("a closed issue needs nobody", () => {
 		put({ 1: { state: "CLOSED", body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=none round=1 returned=- department=core sha=- state=CLOSED lead=body related=-",
+			"need=none round=1 returned=- department=core sha=- state=CLOSED lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-",
 		);
 	});
 
@@ -103,24 +107,26 @@ describe("case: round, department, sha", () => {
 	test("the line carries the department of the lead origin and the sha of the newest case", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), caseMark()]] } });
 		expect(need(1)).toBe(
-			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN lead=body related=-`,
+			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-`,
 		);
 	});
 
 	test("without a case the sha is a dash", () => {
 		put({ 1: { body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=-",
+			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-",
 		);
 	});
 });
 
 describe("case: failures", () => {
-	test("an issue without a lead origin exits 1", () => {
+	test("an issue without a lead origin prints the clerk line and exits 0", () => {
 		put({ 1: { body: ["no marker"] } });
 		const r = call(BASE, ["case", "main", "1"]);
-		expect(r.code).toBe(1);
-		expect(r.out).toBe("");
+		expect(r.code).toBe(0);
+		expect(r.out).toBe(
+			"need=none round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=- action=- pull=- sources=- branch=-\n",
+		);
 	});
 
 	test("an unknown issue exits 1", () => {
@@ -146,13 +152,6 @@ describe("due", () => {
 		expect(r.code).toBe(0);
 		return r.out;
 	};
-	const order = (role: string, issue: number, at: string, open = false) =>
-		seed((db) =>
-			db.run(
-				"INSERT INTO dispatches (at, precinct, role, issue, outcome) VALUES (?, 'main', ?, ?, ?)",
-				[at, role, issue, open ? null : "ok"],
-			),
-		);
 
 	test("an empty journal has nothing due", () => {
 		expect(due("investigation")).toBe("");

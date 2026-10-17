@@ -1,10 +1,17 @@
 import type { Database } from "bun:sqlite";
-import { check, parseArgs, usage } from "./args";
+import { usage } from "./args";
+import {
+	type ClerkCase,
+	clerkCase,
+	clerkMarkersOf,
+	closedIn,
+	hasPair,
+	pullsOf,
+} from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
-const DUE_USAGE = "due --role <role>";
 
 export type CaseMarker = {
 	role: string;
@@ -42,28 +49,50 @@ const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
 		),
 	);
 
-function stageOf(markers: CaseMarker[]): Need {
+type Funnel = { need: Exclude<Need, "clerk">; ruling?: CaseMarker };
+
+function funnelOf(markers: CaseMarker[]): Funnel {
 	const c = newestOf(markers, "investigation", "case");
-	if (c === undefined) return "investigation";
+	if (c === undefined) return { need: "investigation" };
 	const p = newestOf(markers, "prosecutor");
 	if (p !== undefined && p.ord > c.ord && backToInvestigation(p))
-		return "investigation";
-	if (p === undefined || p.ord < c.ord) return "prosecutor";
-	if (p.stage !== "charge") return "none";
+		return { need: "investigation" };
+	if (p === undefined || p.ord < c.ord) return { need: "prosecutor" };
+	if (p.stage !== "charge") return { need: "none" };
 	const d = newestOf(markers, "defender");
-	if (d === undefined || d.ord < p.ord) return "defender";
-	if (backToInvestigation(d)) return "investigation";
-	if (d.stage !== "defence") return "none";
+	if (d === undefined || d.ord < p.ord) return { need: "defender" };
+	if (backToInvestigation(d)) return { need: "investigation" };
+	if (d.stage !== "defence") return { need: "none" };
 	const r = newestOf(markers, "court");
-	if (r === undefined || r.ord < d.ord) return "court";
-	if (r.stage !== "conviction" && r.stage !== "acquittal") return "none";
-	const k = newestOf(markers, "clerk");
-	return k === undefined || k.ord < r.ord ? "clerk" : "none";
+	if (r === undefined || r.ord < d.ord) return { need: "court" };
+	const ruled = r.stage === "conviction" || r.stage === "acquittal";
+	return { need: "none", ...(ruled ? { ruling: r } : {}) };
 }
 
-export function needOf(state: string, markers: CaseMarker[]): Need {
-	const need = stageOf(markers);
-	return state === "CLOSED" && need !== "clerk" ? "none" : need;
+export type CaseView = { need: Need; clerk: ClerkCase };
+
+// A pair marker means the case left the funnel. Only the clerk is left to act.
+export function caseOf(
+	db: Database,
+	precinct: string,
+	issue: number,
+	state: string,
+	markers: CaseMarker[],
+	led = true,
+): CaseView {
+	const funnel = led ? funnelOf(markers) : { need: "none" as const };
+	const clerk = clerkCase({
+		issue,
+		state,
+		markers,
+		pulls: pullsOf(db, precinct),
+		isClosed: closedIn(db, precinct),
+		ruling: funnel.ruling,
+		others: () => clerkMarkersOf(db, precinct),
+	});
+	if (clerk.job !== "-") return { need: "clerk", clerk };
+	const left = state === "CLOSED" || hasPair(markers);
+	return { need: left ? "none" : funnel.need, clerk };
 }
 
 export function markersOf(db: Database, precinct: string, issue: number) {
@@ -97,59 +126,70 @@ function relatedOf(db: Database, precinct: string, issue: number, id: string) {
 	return numbers.join(",") || "-";
 }
 
+type Origin = {
+	department: string | null;
+	lead_id: string | null;
+	ord: string;
+};
+
+function leadFields(
+	db: Database,
+	name: string,
+	issue: number,
+	markers: CaseMarker[],
+) {
+	const origin = db
+		.query(
+			`SELECT m.department, m.lead_id, m.ord ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
+		)
+		.get(name, issue) as Origin | null;
+	if (origin === null) return null;
+	const sha = newestOf(markers, "investigation", "case")?.fields.sha;
+	const returns = markers.filter(backToInvestigation);
+	const returned = RETURNING_ROLES.filter((r) =>
+		returns.some((m) => m.role === r),
+	);
+	return {
+		round: returns.length + 1,
+		returned: returned.join(",") || "-",
+		department: origin.department ?? "-",
+		sha: sha ?? "-",
+		lead: leadPlace(origin.ord),
+		related: relatedOf(db, name, issue, origin.lead_id ?? ""),
+	};
+}
+
+const NO_LEAD = {
+	round: "-",
+	returned: "-",
+	department: "-",
+	sha: "-",
+	lead: "-",
+	related: "-",
+};
+
 export function caseCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(CASE_USAGE);
 	const [name, issue] = args as [string, string];
 	withDb((db) => {
-		const origin = db
-			.query(
-				`SELECT i.state, m.department, m.lead_id, m.ord ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
-			)
-			.get(name, issue) as {
-			state: string;
-			department: string | null;
-			lead_id: string | null;
-			ord: string;
-		} | null;
-		if (origin === null)
-			throw new Fail(EXIT.USAGE, `no lead origin for ${name} #${issue}`);
+		const row = db
+			.query("SELECT state FROM issues WHERE precinct = ? AND issue = ?")
+			.get(name, issue) as { state: string } | null;
+		if (row === null)
+			throw new Fail(EXIT.USAGE, `unknown issue ${name} #${issue}`);
 		const markers = markersOf(db, name, Number(issue));
-		const sha = newestOf(markers, "investigation", "case")?.fields.sha;
-		const returns = markers.filter(backToInvestigation);
-		const returned = RETURNING_ROLES.filter((r) =>
-			returns.some((m) => m.role === r),
+		const lead = leadFields(db, name, Number(issue), markers);
+		const { need, clerk } = caseOf(
+			db,
+			name,
+			Number(issue),
+			row.state,
+			markers,
+			lead !== null,
 		);
+		const l = lead ?? NO_LEAD;
 		out(
-			`need=${needOf(origin.state, markers)} round=${returns.length + 1} returned=${returned.join(",") || "-"} department=${origin.department ?? "-"} sha=${sha ?? "-"} state=${origin.state} lead=${leadPlace(origin.ord)} related=${relatedOf(db, name, Number(issue), origin.lead_id ?? "")}`,
+			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch}`,
 		);
-	});
-}
-
-type Candidate = { precinct: string; issue: number; state: string };
-
-export function dueCommand(args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["role"], DUE_USAGE);
-	const roleName = check("role", opt.role);
-	withDb((db) => {
-		if (
-			db
-				.query("SELECT 1 FROM dispatches WHERE role = ? AND outcome IS NULL")
-				.get(roleName)
-		)
-			return;
-		const candidates = db
-			.query(
-				`SELECT i.precinct, i.issue, i.state,
-           (SELECT max(d.at) FROM dispatches d
-             WHERE d.role = ? AND d.precinct = i.precinct AND d.issue = i.issue) AS last
-         ${LEAD_ORIGIN_FROM} AND (i.state = 'OPEN' OR ? = 'clerk')
-           AND EXISTS (SELECT 1 FROM precincts p WHERE p.name = i.precinct AND p.weight > 0)
-         ORDER BY last IS NOT NULL, last, i.created_at, i.precinct, i.issue`,
-			)
-			.all(roleName, roleName) as Candidate[];
-		const due = candidates.find(
-			(c) => needOf(c.state, markersOf(db, c.precinct, c.issue)) === roleName,
-		);
-		if (due !== undefined) out(due.precinct, due.issue);
 	});
 }

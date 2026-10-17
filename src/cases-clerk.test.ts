@@ -1,5 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { need, needOnly, put, withLead } from "./cases-fixture";
+import {
+	closed,
+	expectNeed,
+	expectRoundKept,
+	need,
+	needOnly,
+	put,
+	ruled,
+	withLead,
+} from "./cases-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -18,23 +27,16 @@ import {
 tempDb();
 beforeEach(() => addPrecincts({ main: 1 }));
 
-const ruled = (ruling: () => string, ...rest: string[]) =>
-	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
-const closed = (spec: ReturnType<typeof withLead>) => ({
-	...spec,
-	state: "CLOSED",
-});
-
 describe("case: clerk stage", () => {
 	test.each([
 		["an open conviction needs the clerk", ruled(conviction), "clerk"],
 		["an open acquittal needs the clerk", ruled(acquittal), "clerk"],
 		["a closed acquittal needs the clerk", closed(ruled(acquittal)), "clerk"],
-		["a closed conviction needs the clerk", closed(ruled(conviction)), "clerk"],
+		["a closed conviction needs nobody", closed(ruled(conviction)), "none"],
 		[
-			"an entry newer than the conviction needs nobody",
+			"an entry does not answer an open conviction",
 			ruled(conviction, entry()),
-			"none",
+			"clerk",
 		],
 		[
 			"a no-entry newer than the acquittal needs nobody",
@@ -66,10 +68,7 @@ describe("case: clerk stage", () => {
 			closed(withLead(caseMark(), charge(), entry())),
 			"none",
 		],
-	])("%s", (_name, spec, expected) => {
-		put({ 1: spec });
-		expect(needOnly(1)).toBe(`need=${expected}`);
-	});
+	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("a clerk marker leaves the prosecutor need alone", () => {
 		put({ 1: withLead(caseMark(), entry()) });
@@ -77,12 +76,7 @@ describe("case: clerk stage", () => {
 	});
 
 	test("clerk markers leave round and returned unchanged", () => {
-		put({ 1: ruled(conviction, entry()) });
-		expect(need(1).split(" ").slice(0, 3)).toEqual([
-			"need=none",
-			"round=1",
-			"returned=-",
-		]);
+		expectRoundKept(ruled(acquittal, entry()));
 	});
 
 	test("a clerk return marker leaves round and returned unchanged", () => {
@@ -90,12 +84,12 @@ describe("case: clerk stage", () => {
 		expect(need(1).split(" ").slice(1, 3)).toEqual(["round=1", "returned=-"]);
 	});
 
-	test("due for the clerk lists open charges and closed acquittals only", () => {
+	test("due for the clerk lists open convictions and unanswered acquittals", () => {
 		const due = () => call(BASE, ["due", "--role", "clerk"]).out;
 		put({ 1: ruled(conviction) });
 		expect(due()).toBe("main\t1\n");
 		put({
-			1: ruled(conviction, entry()),
+			1: ruled(acquittal, noEntry()),
 			2: closed(ruled(acquittal)),
 		});
 		expect(due()).toBe("main\t2\n");
