@@ -47,7 +47,7 @@ hermes plugins list
 - The second line prints the commit that the assembly records as `law_commit`.
 - The third line lists `lawman` as enabled.
 
-Hermes names the skills of a portable plugin `agent-plugin-<plugin>-<digest>:<skill>`. For `lawman` the skill name is `agent-plugin-lawman-492e59eb:<role>` (read in the harness code). The digest depends only on the plugin name. A bare role name does not resolve to a plugin skill (read in the harness code). Use the qualified name in `--skill`, in `-s` and in the probe check. The official skill `typesafe-ai` keeps its bare name.
+Hermes names the skills of a portable plugin `agent-plugin-<plugin>-<digest>:<skill>`. For `lawman` the skill name is `agent-plugin-lawman-492e59eb:<role>` (read in the harness code). The digest depends only on the plugin name. A bare role name does not resolve to a plugin skill (read in the harness code). Use the qualified name in `--skill` and in `-s`. A scheduled session answers the probe's skill line with either the qualified name or the bare role name (seen in scheduled runs). The official skill `typesafe-ai` keeps its bare name.
 
 A disabled plugin registers no skills. A job that names its skill then starts with the notice "Skill(s) not found and skipped". It runs the bare prompt (read in the harness code). Treat the notice as a stop. Enable the plugin with `hermes plugins enable lawman`.
 

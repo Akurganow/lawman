@@ -57,7 +57,7 @@ Every role runs in a scheduled session. This step measures that session.
 
 1. Create one one-shot job in the form the page gives. Set `--skill` to the skill name of patrol that the harness page gives under "Installing the plugin". Set `--workdir` to `<installation>`, and add the delivery platform and the probe prompt below.
 2. Wait for the run to finish, and read its output with the attempts command the page gives, stopping if it did not finish.
-3. Check that the output holds the probe line, the login, the git version and the exact line `skill=` followed by that skill name. Stop if the probe line is missing.
+3. Check that the output holds the probe line, the login and the git version. Check for one exact line `skill=` with patrol's skill name or the bare `patrol`. Stop if the probe line is missing.
 4. When the login is missing, go to the token steps below.
 5. Record `trusted_login` as the login line.
 6. Create one more one-shot job in the same form, without `--skill`, with the prompt `Reply with two short report lines. Then end with the silence token that the harness page names, alone on the last line.`
