@@ -91,6 +91,17 @@ describe("lint-page", () => {
 		}
 	});
 
+	test("this repository's constitution and its own department pages pass", () => {
+		const constitution = readFileSync(join(ROOT, "LAWMAN.md"), "utf8");
+		expect(lintPage("constitution", constitution).reasons).toEqual([]);
+		const dir = join(ROOT, ".lawman", "departments");
+		for (const file of readdirSync(dir)) {
+			const text = readFileSync(join(dir, file), "utf8");
+			const name = file.slice(0, -".md".length);
+			expect(lintPage("department", text, name).reasons).toEqual([]);
+		}
+	});
+
 	test("a missing heading is named", () => {
 		expect(constitutionReasons(BROKEN.missingHeading)).toEqual([
 			'19: missing heading "Fence"',
