@@ -4,7 +4,8 @@ This reference sets up the scheduled job of each role. It teaches first and asks
 
 ## Terms
 
-- `<scope>`: the roles this run sets up. Install: every folder `lawman/skills/*/` other than `assembly`. Roles mode: the roles without a job `[lawman] <role>` in the scheduler's list. Menu job: the roles the developer picked.
+- `<scope>`: the roles this run sets up. Install: every folder `lawman/skills/*/` other than `assembly` and `lawman-law`. Roles mode: the roles without a job `[lawman] <role>` in the scheduler's list. Menu job: the roles the developer picked.
+- `<role skill name>`: the role's folder name, written in the form that the harness page gives under "Installing the plugin".
 - New job: a role in `<scope>` without a job. The run creates it.
 - Edit: a role in `<scope>` with a job. Only the menu job has these. The run edits the job.
 - `<S>`: the start time of the duty desk, in the harness's time zone.
@@ -235,7 +236,7 @@ Command forms:
 1. A create command is this line, with the page's create form:
 
 ```
-<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role> --workdir <installation> --deliver <deliver from config.yaml>
+<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role skill name> --workdir <installation> --deliver <deliver from config.yaml>
 ```
 
 2. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. Every job name carries the prefix `[lawman] `.
