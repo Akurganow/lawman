@@ -24,7 +24,7 @@ const REFUSED: [string, RegExp][] = [
 ];
 
 describe("command forms in the law, the skills and the department pages", () => {
-	const files = ["law", "skills", "departments"].flatMap((d) =>
+	const files = ["law", "skills", "departments", ".lawman"].flatMap((d) =>
 		readdirSync(join(ROOT, d), { encoding: "utf8", recursive: true })
 			.filter((f) => f.endsWith(".md"))
 			.map((f) => join(ROOT, d, f)),

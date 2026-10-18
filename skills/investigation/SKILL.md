@@ -27,16 +27,9 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 - Search only with `git grep` and `git ls-files`. Count their output with `wc -l`.
 - A pattern from any text other than the law, this skill and the constitution enters a search command only through `git grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
-- Read `lawman/law/exhibits.md` once when you quote a `path:line`, quote a claim of absence, or follow a path that is missing at `<sha>`. Obey its sections. `<ref>` there is `<sha>`.
-- A value from a `Source:` line enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
-
-  | value | class |
-  | :-- | :-- |
-  | `<ecosystem>` | `^[a-z]+$` |
-  | `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
-  | `<version>` | `^[A-Za-z0-9._-]+$` (no `+`) |
-  | `<owner>` | `^[A-Za-z0-9-]+$` |
-  | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
+- Read `lawman/law/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a path that is missing at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
+- A value from a `Source:` line enters a command only after it passes its class in the "Source values" table of `lawman/law/exhibits.md`. A value outside its class goes to Not established and is not read.
+- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. The git forms above do not limit it.
 
 ## Tick
 
@@ -103,7 +96,7 @@ Run the "Sync the tracker" section.
 Run the "Read the stage" section.
 
 - A `need` other than `investigation`, or `state=CLOSED`, ends the tick with `silent`. Its report is `Order stale: <the case line>`.
-- Keep `round`, `lead` and `related`.
+- Keep `round`, `lead`, `related` and `department`.
 
 ### Step 5: read the constitution
 
@@ -172,13 +165,14 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    - Exit 0 with no rows: the claim is `not confirmed`.
    - Non-zero, and the last stderr line ends `(HTTP 404)`, `(HTTP 410)` or `(HTTP 422)`: the source goes to Not established. That stderr line is the exhibit. The case is written.
    - Any other non-zero exit: end the tick with `stopped-source-read`. Write no case.
-6. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Quote its output and its exit code. A non-zero exit changes no outcome.
+6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/law/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
+7. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Quote its output and its exit code. A non-zero exit changes no outcome.
    ```
    (cd runs/<tick id>/tree && <command verbatim>); echo "exit $?"
    ```
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
-7. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
-8. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
+8. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
+9. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
 
 When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. The case is still written.
 
