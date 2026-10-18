@@ -158,7 +158,7 @@ This repository's own page, [internal-affairs](../.lawman/departments/internal-a
 
 **What it watches.** The page judges the text of Lawman by what Lawman's roles did with it. Its evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. The test asks whether a line of the law, a skill or the harness page causes or allows what a source command shows. The page lists five kinds: `exhibit-error`, `wrong-closure`, `template-misread`, `tick-turns` and `outcome-gap`.
 
-**Why it is a special page.** Its evidence lies outside the clone. The page names the paths `skills/` and `src/` and the tools `bin/journal`, `hermes`, `gh` and `git`. A shared page may not.
+**Why it is a special page.** Its evidence lies outside the clone. The page names the paths `skills/` and `journal/src/` and the tools `bin/journal`, `hermes`, `gh` and `git`. A shared page may not.
 
 **Its source commands.** They read five places:
 
