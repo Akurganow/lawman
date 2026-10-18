@@ -1,0 +1,20 @@
+{
+	"$schema": "https://agent-plugins.org/schemas/1.0.0/plugin.schema.json",
+	"name": "lawman",
+	"version": "0.14.0",
+	"description": "Scheduled agent roles that patrol a repository, build a case, rule on it and carry the verdict to a pull request.",
+	"author": {
+		"name": "Alexander Kurganov",
+		"url": "https://github.com/Akurganow"
+	},
+	"homepage": "https://github.com/Akurganow/lawman",
+	"repository": "https://github.com/Akurganow/lawman",
+	"license": "MIT",
+	"keywords": [
+		"agent-skills",
+		"code-review",
+		"issue-triage",
+		"automation",
+		"github"
+	]
+}
