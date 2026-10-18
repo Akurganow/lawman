@@ -20,7 +20,7 @@ You need `git`, the GitHub CLI signed in as the one account every role uses, and
 1. Install the plugin:
 
    ```bash
-   hermes plugins install Akurganow/lawman --enable
+   hermes plugins install Akurganow/lawman --enable --no-deps
    ```
 
 2. Create the installation directory and link the plugin into it:

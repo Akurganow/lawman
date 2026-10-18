@@ -203,6 +203,11 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 		expect(answer("p0", `${body}\n\n200\r`)).toEqual(line(P0_LINE));
 	});
 
+	test("a newline after the status is fine", () => {
+		const body = JSON.stringify(reply("reply.p0.json"));
+		expect(answer("p0", `${body}\n200\n`)).toEqual(line(P0_LINE));
+	});
+
 	test.each([
 		["0.615", "0.61"],
 		["0.995", "0.99"],

@@ -19,11 +19,12 @@ Scheduler check: `hermes cron status` reports whether the gateway is running and
 Install and enable the plugin from its repository.
 
 ```
-hermes plugins install Akurganow/lawman --enable
+hermes plugins install Akurganow/lawman --enable --no-deps
 ```
 
 - `hermes plugins install` takes an owner and repository shorthand. `--enable` enables the plugin at once (stated by `hermes plugins install --help`).
 - A portable package installs disabled without `--enable` (stated by `hermes plugins --help`).
+- The repository holds a `package.json`, so the install offers its Node dependencies. Lawman needs none of them at run time. `--no-deps` skips them (seen in a terminal).
 - Hermes keeps a shallow git clone of the repository, with its `.git` folder (read in the harness code).
 - `hermes plugins update lawman` pulls the newest commit of the default branch into that clone (stated by `hermes plugins update --help`).
 - A plain shallow clone of a tagged commit carries the tag. A fast-forward pull brings later tags (seen in a terminal, with a plain clone).
@@ -70,7 +71,7 @@ These are the forms that this page names for the section "Sync the law" of `tick
 - Create the folder: `mkdir -p runs/sync-<role>-<seven>`. `<seven>` is the first seven characters of the commit.
 - Get the asset and the checksum file: `gh release download <tag> -R <release_repo> -p <asset> -p SHA256SUMS -D runs/sync-<role>-<seven> --clobber`. `<release_repo>` is the key in `config.yaml`.
 - Check the asset against the checksum file: `(cd runs/sync-<role>-<seven> && shasum -a 256 -c SHA256SUMS --ignore-missing)`. The line for the asset reads `OK`.
-- Check where the asset came from: `gh attestation verify runs/sync-<role>-<seven>/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml --source-digest <commit>`. Show the signer workflow that it checked.
+- Check where the asset came from: `gh attestation verify runs/sync-<role>-<seven>/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml --source-digest <commit>`. Exit 0 means the check passed. It prints nothing when its output is not a terminal (seen in a terminal).
 - Make the asset executable: `chmod +x runs/sync-<role>-<seven>/<asset>`.
 - Run the verified asset: `runs/sync-<role>-<seven>/<asset> law-sync --tag <tag> --commit <commit> --installation .`. It renames itself over `bin/journal`.
 - Remove what remains: `rm -f runs/sync-<role>-<seven>/<asset> runs/sync-<role>-<seven>/SHA256SUMS`, then `rmdir runs/sync-<role>-<seven>`.

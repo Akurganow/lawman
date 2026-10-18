@@ -165,13 +165,15 @@ function evidence(name: string, kind: Kind, body: string): string {
 export function answerLine(args: string[], input: string): string {
 	const { name, kind } = kindOf(args);
 	const none = (reason: string) => `jev none reason=${reason}`;
-	const cut = input.lastIndexOf("\n");
-	const tail = input.slice(cut + 1).replace(/\r$/, "");
+	// the request may end the status line with a newline of its own
+	const text = input.replace(/\s+$/, "");
+	const cut = text.lastIndexOf("\n");
+	const tail = text.slice(cut + 1);
 	// curl prints 000 as the status when no reply came
 	if (!STATUS.test(tail) || tail === "000") return none("no-reply");
 	if (tail !== "200") return none(`status-${tail}`);
 	try {
-		return evidence(name, kind, input.slice(0, Math.max(cut, 0)));
+		return evidence(name, kind, text.slice(0, Math.max(cut, 0)));
 	} catch {
 		return none("bad-answer");
 	}

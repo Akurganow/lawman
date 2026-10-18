@@ -83,7 +83,7 @@ bin/journal probe --schema 6
 gh api user --jq .login
 git --version
 Do not run anything else. Do not write to any repository. Do not take an order.
-End with one line: skill=<name of the skill you loaded>
+End with one line: skill=<name of the skill that this job attached, not of a file you read>
 ```
 
 Jev probe lines. Add them before the line "Do not run anything else.", only when the developer answered `yes` in item 10:
