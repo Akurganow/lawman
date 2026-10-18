@@ -44,7 +44,7 @@ function dispatchAdd(db: Database, args: string[]): void {
 	}
 }
 
-export type Taken = {
+type Taken = {
 	id: number;
 	precinct: string;
 	repo: string;

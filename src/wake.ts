@@ -2,8 +2,6 @@ import { check, parseArgs } from "./args";
 import { now, out, withDb } from "./db";
 import { takeableOrders } from "./dispatch";
 
-const DAY_LENGTH = "YYYY-MM-DD".length;
-
 export function wake(args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["role"], "wake --role <r>");
 	const roleName = check("role", opt.role);
@@ -19,5 +17,5 @@ export function wake(args: string[]): void {
 		return;
 	}
 	for (const o of orders) out(`order ${o.id}`);
-	out(`day ${stamp.slice(0, DAY_LENGTH)}`);
+	out(`day ${stamp.slice(0, 10)}`);
 }

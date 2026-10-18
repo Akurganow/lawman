@@ -106,8 +106,6 @@ Manage jobs with these commands:
 
 `pause`, `resume`, `run` and `remove` take a job id or a name. The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
 
-The `Edit` row takes the flags that Editing a job lists (stated by `hermes cron edit --help`). The `--add-skill` flag is not probed.
-
 Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown file with the prompt and the answer.
 
 ### Editing a job

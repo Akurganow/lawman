@@ -1,4 +1,3 @@
-import { hasAlarmCheck } from "./alarm-check";
 import { check, parseArgs, usage } from "./args";
 import { EXIT, out, readStdin } from "./db";
 import { fencedLines, NAME, parseMarker, stripCr } from "./markers";
@@ -186,6 +185,27 @@ function headingReasons(
 
 const sectionEnd = (found: Heading[], k: number, total: number) =>
 	(found[k + 1]?.line ?? total + 1) - 1;
+
+const ALARM_CHECK = "Alarm check:";
+
+// the paragraph opens the Proof section or follows a blank line, outside a fence
+export function hasAlarmCheck(
+	lines: string[],
+	hidden: boolean[],
+	found: Heading[],
+): boolean {
+	const k = found.findIndex((h) => h.name === "Proof");
+	if (k < 0) return false;
+	const from = found[k]?.line ?? 0;
+	return lines
+		.slice(from, sectionEnd(found, k, lines.length))
+		.some(
+			(line, j) =>
+				line.startsWith(ALARM_CHECK) &&
+				!hidden[from + j] &&
+				(j === 0 || (lines[from + j - 1] ?? "").trim() === ""),
+		);
+}
 
 function emptySections(lines: string[], found: Heading[]): string[] {
 	return found.flatMap((h, k) => {

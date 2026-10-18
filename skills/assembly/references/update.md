@@ -32,11 +32,10 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
    1. Run `git -C precincts/<name> switch -c lawman/constitution-v<n> origin/HEAD`, and stop if it fails.
    2. Run `git -C lawman diff <old law_commit>..<target> -- law/constitution.md` to see what the new contract version requires.
    3. Carry every section of `LAWMAN.md` over as it is, and change only what that diff requires. Set `contract_version` to `<n>`.
-   4. For each section that the new contract added or changed, ask the walk question of the "Walk the sections" section in `references/precinct.md`. Ask nothing for the other sections.
+   4. For each section that the new contract added or changed, ask the walk question of the "Walk the sections" section in `references/precinct.md`.
    5. Run `git -C lawman diff --name-status <old law_commit>..<target> -- departments` to find the shared departments added since the old law commit.
    6. For those departments only, ask the judging-document question of the "Departments" section in `references/precinct.md`, and write the lines it describes.
    7. Run the sections "Lint and approval" and "Commit and open the pull request" of the add path, with the branch `lawman/constitution-v<n>` in place of `lawman/constitution`. Use `Amend the Lawman constitution to version <n>` as the commit message and the pull request title.
-   8. Never merge the pull request.
 5. Tell the developer that the precinct's ticks end with `skipped-contract-version` until the amendment merges.
 6. When lint fails for another reason, show the reasons. The precinct's ticks then end with `skipped-bad-constitution`.
 

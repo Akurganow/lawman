@@ -90,15 +90,16 @@ function roleSilent(db: Database, nowMs: number): Candidate[] {
 	}[];
 	return latest
 		.map((r) => {
-			const checkIsLater =
-				r.checked_at !== null && Date.parse(r.checked_at) > Date.parse(r.last);
-			return checkIsLater
-				? {
-						...r,
-						since: r.checked_at as string,
-						detail: `last check ${r.checked_at}`,
-					}
-				: { ...r, since: r.last, detail: `last tick started ${r.last}` };
+			const since =
+				r.checked_at && r.checked_at > r.last ? r.checked_at : r.last;
+			return {
+				...r,
+				since,
+				detail:
+					since === r.last
+						? `last tick started ${r.last}`
+						: `last check ${since}`,
+			};
 		})
 		.filter(
 			(r) =>

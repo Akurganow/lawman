@@ -1,8 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { hasAlarmCheck } from "./alarm-check";
 import { EXIT } from "./db";
+import { hasAlarmCheck } from "./lint";
 import { cli, ROOT } from "./test-helpers";
 
 const PAGES = join(ROOT, "departments");
