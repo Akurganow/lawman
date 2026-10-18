@@ -5,16 +5,46 @@ description: Interactive assembly that installs, amends or extends a Lawman inst
 
 # Assembly
 
-You run the assembly for the developer. The developer starts you from the installation directory. You install, amend or extend the installation with the developer. You never run a tick. The scheduler starts each role, and a role does its own tick.
+You run the assembly for the developer. The developer starts you from any directory. You install, amend or extend the installation with the developer. You never run a tick. The scheduler starts each role, and a role does its own tick.
 
 ## Terms
 
-- `<installation>`: the directory you run from. It holds `lawman/`, `bin/` and `config.yaml`.
+- `<installation>`: the directory chosen under "Choose the installation". It holds `lawman/`, `bin/` and `config.yaml`.
 - `lawman/`: the link to the folder of the installed plugin. The folder holds the law, the role skills and the harness pages.
 - `bin/journal`: the journal binary.
 - `precincts/<owner>-<repo>/`: the full clone of one precinct.
-- The harness page: `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the `harness` value in `config.yaml`. Stop if the page is missing.
+- The harness page: `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the harness recorded under "Choose the installation", later written to `config.yaml`. Stop if the page is missing.
 - The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command.
+
+## Choose the installation
+
+Do this before "Choose the mode". Do it at every start, so that an existing installation is found and kept. Run every later command from the installation folder.
+
+The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder that holds this skill. From this skill's folder, that is `../lawman-law/references/harnesses/`.
+
+1. Detect the harness.
+    1. List `../lawman-law/references/harnesses/*.md` relative to this skill's folder, in name order.
+    2. Read the first section of each page, and run the detection command that section names.
+    3. Record a page as a match when its command exits 0.
+    4. Stop if a page names no detection command, and tell the developer the page needs one.
+    5. Stop if no page matches, and tell the developer to install a harness first.
+    6. When two pages match, ask the developer which one to use.
+    7. Record `harness` as the page's file name without `.md`.
+2. Find the default installation.
+    1. Run the list command the harness page gives for the scheduler's jobs.
+    2. Stop if the command fails, and tell the developer what failed.
+    3. Take the working directory of the first job named `[lawman] <role>`.
+    4. When no such job exists, take `~/.lawman`.
+3. Ask: "Where does the installation live? Default: `<default>`."
+4. Write the chosen path, the default included, as an absolute path.
+5. Create the folder with the form the harness page gives.
+6. Change into the folder with the form the harness page gives.
+7. Link the plugin.
+    1. Run the check the harness page gives for whether `lawman/` reaches the plugin.
+    2. When the check fails, run the link form the harness page gives, and run the check again.
+    3. Stop if the check still fails.
+    4. Tell the developer what failed, the cause and the fix.
+8. Continue under "Choose the mode".
 
 ## Choose the mode
 
