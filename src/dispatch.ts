@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { check, count, parseArgs, subcommand } from "./args";
+import { check, count, parseArgs, subcommand, usage } from "./args";
 import {
 	CLAIM_TTL_MS,
 	EXIT,
@@ -97,7 +97,7 @@ export function dispatch(args: string[]): void {
 }
 
 const TICK_USAGE =
-	"tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]>";
+	"tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
 
 function tickStart(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["role"], TICK_USAGE);
@@ -146,9 +146,61 @@ function tickEnd(db: Database, args: string[]): void {
 	});
 }
 
+type ListedTick = {
+	id: number;
+	role: string;
+	precinct: string | null;
+	department: string | null;
+	outcome: string | null;
+	started_at: string;
+	ended_at: string | null;
+	report: string | null;
+};
+
+const SINGLE_TICK = 1;
+
+function tickList(db: Database, args: string[]): void {
+	const { opt } = parseArgs(args, 0, [], TICK_USAGE, [
+		"limit",
+		"id",
+		"role",
+		"precinct",
+	]);
+	if ((opt.limit === undefined) === (opt.id === undefined))
+		throw usage(TICK_USAGE);
+	const limit =
+		opt.limit === undefined ? SINGLE_TICK : count(opt.limit, "limit", 1);
+	const wanted: Record<string, string | number> = {};
+	if (opt.id !== undefined) wanted.id = count(opt.id, "id", 1);
+	if (opt.role !== undefined) wanted.role = check("role", opt.role);
+	if (opt.precinct !== undefined)
+		wanted.precinct = check("precinct", opt.precinct);
+	const where = Object.keys(wanted).map((column) => `${column} = ?`);
+	const ticks = db
+		.query(
+			`SELECT * FROM ticks ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
+       ORDER BY started_at DESC, id DESC LIMIT ?`,
+		)
+		.all(...Object.values(wanted), limit) as ListedTick[];
+	for (const t of ticks) {
+		out(
+			t.id,
+			t.role,
+			t.precinct ?? "-",
+			t.department ?? "-",
+			t.outcome ?? "running",
+			t.started_at,
+			t.ended_at ?? "-",
+		);
+		for (const line of (t.report ?? "").split("\n"))
+			if (line !== "") out(`| ${line}`);
+	}
+}
+
 const TICK_COMMANDS: Record<string, (db: Database, args: string[]) => void> = {
 	start: tickStart,
 	end: tickEnd,
+	list: tickList,
 };
 
 export function tick(args: string[]): void {
