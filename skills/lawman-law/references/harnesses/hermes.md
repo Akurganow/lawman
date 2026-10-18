@@ -39,7 +39,6 @@ mkdir -p "<installation>"
 cd "<installation>"
 ```
 
-- `<installation>` is an absolute path.
 - The quotes keep a path with spaces in one word.
 - The terminal keeps its working directory between commands (read in the harness code).
 - The harness's check function accepts both lines (checked with the harness's check function).
@@ -51,7 +50,6 @@ ln -sfn "$(dirname "$(hermes config path)")/plugins/lawman" "<installation>/lawm
 ```
 
 - `hermes plugins remove lawman` leaves the old link dangling (read in the harness code). `-f` replaces that link. `-n` stops `ln` from following it (seen in a run, `man ln`).
-- The assembly runs this line. It runs it only when `<installation>/lawman/plugin.json` cannot be read.
 - The harness's check function accepts the line (checked with the harness's check function).
 
 Check the install in this order.
@@ -62,11 +60,11 @@ git -C "<installation>/lawman" rev-parse HEAD
 hermes plugins list
 ```
 
-- The first line proves that the link reaches the plugin. The assembly runs it before the link form, to decide whether the link is needed.
+- The first line proves that the link reaches the plugin.
 - The second line prints the commit that the assembly records as `law_commit`.
 - The third line lists `lawman` as enabled.
 
-When a skill loads, Hermes reports the skill's folder in the loaded text as `[Skill directory: …]` (read in the harness code). The assembly reads that folder before the link exists. It finds the harness pages in `../lawman-law/references/harnesses/` relative to its own folder.
+When a skill loads, Hermes reports the skill's folder in the loaded text as `[Skill directory: …]` (read in the harness code).
 
 Hermes names the skills of a portable plugin `agent-plugin-<plugin>-<digest>:<skill>`. For `lawman` the skill name is `agent-plugin-lawman-492e59eb:<role>` (read in the harness code). The digest depends only on the plugin name. A bare role name does not resolve to a plugin skill (read in the harness code). Use the qualified name in `--skill` and in `-s`. A scheduled session answers the probe's skill line with either the qualified name or the bare role name (seen in scheduled runs). The official skill `typesafe-ai` keeps its bare name.
 
@@ -172,7 +170,7 @@ Manage jobs with these commands:
 
 `pause`, `resume`, `run` and `remove` take a job id or a name. The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
 
-`hermes cron list` prints the name of each job and a `Workdir:` line for each job that has a working directory (read in the harness code). It hides disabled and finished jobs without `--all` (stated by `--help`, `hermes cron list --help`). It shows paused jobs (read in the harness code). A role's job name starts with `[lawman] `. The assembly reads the working directory of the first such job as the default installation.
+`hermes cron list` prints the name of each job and a `Workdir:` line for each job that has a working directory (read in the harness code). It hides disabled and finished jobs without `--all` (stated by `--help`, `hermes cron list --help`). It shows paused jobs (read in the harness code). A role's job name starts with `[lawman] `.
 
 Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown file with the prompt and the answer.
 

@@ -1,10 +1,10 @@
 # Install
 
-Run the steps in this order. Each step names its command and its stop condition. A stop ends the install. Fix the cause, then run the assembly again from step 1. Every step is safe to repeat.
+Run the steps in this order. Each step names its command and its stop condition. A stop ends the install. Fix the cause, then run the assembly again. It restarts at "Choose the installation" in `SKILL.md`, which runs at every start. Every step is safe to repeat.
 
 ## Step 1. Use the harness
 
-Use the harness recorded under "Choose the installation". Record `harness`.
+`SKILL.md` has recorded `harness` under "Choose the installation". Go on to step 2.
 
 ## Step 2. Check the tools
 

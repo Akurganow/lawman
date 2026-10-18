@@ -7,7 +7,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 ### Added
 
 - The assembly asks where the installation lives. The default is the working directory of an existing `[lawman]` job, else `~/.lawman`. It creates the folder and the `lawman` link to the plugin folder.
-- Documentation: a restructured README, `CONTRIBUTING.md`, this changelog, and the pages `docs/pipeline.md`, `docs/harnesses.md`, `docs/configuration.md`, `docs/journal.md`, `docs/departments.md` and `docs/constitution.md`.
+- Documentation: a restructured README, `CONTRIBUTING.md`, this changelog, and the pages `docs/pipeline.md`, `docs/harnesses.md`, `docs/configuration.md`, `docs/journal.md`, `docs/departments.md`, `docs/constitution.md` and `docs/precinct-departments.md`.
 - `docs/harnesses.md` records the layout that serves eight harnesses. The README lists Kiro, OpenClaw, Pi, Oh-My-Pi, Claude Code, Codex and GitHub Copilot CLI as TBD.
 
 ### Changed

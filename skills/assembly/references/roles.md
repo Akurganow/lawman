@@ -258,7 +258,7 @@ Skip this step when no file is new or different.
 ```
 mkdir -p <scripts directory>
 printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts directory>/lawman-<role>.sh
-(cd <installation> && bash <scripts directory>/lawman-<role>.sh)
+(cd "<installation>" && bash <scripts directory>/lawman-<role>.sh)
 ```
 
 3. Show the output of each run.

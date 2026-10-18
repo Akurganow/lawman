@@ -16,36 +16,13 @@ Two things set it apart. The page may name the paths and tools of its precinct. 
 | Installation | `departments/<name>.md` in the installation | Not of one repository | No | In a precinct with a Departments line |
 | Special | `.lawman/departments/<name>.md` in the precinct | Of its precinct | Yes | In a precinct with a Departments line |
 
-A department name resolves in this order: the precinct, the installation, Lawman. The first hit wins and pages are never merged. A special page that shares its name with a shared page therefore hides the shared page in that precinct. It hides it even when the special page is incomplete.
-
-A reviewed merge puts the page on the main branch. That review is why the roles trust the page.
+A special page that shares its name with a shared page hides the shared page in that precinct, even when the special page is incomplete. [Departments](departments.md#the-three-places) gives the resolve order and says why the roles trust a precinct's own page.
 
 A special page joins the rotation through a line of the precinct's Departments section. See [constitution](constitution.md). A page in the precinct that no line admits is not in the rotation, unless a shared page has the same name.
 
 ## The page
 
-A special page has the frontmatter and the nine headings of every page:
-
-```
----
-name: <name>
-contract_version: 1
----
-
-## Mission
-## Kinds
-## Where to look
-## Not findings
-## Proof
-## Anchors
-## Judged by
-## Lead body
-## Identity
-```
-
-The `name` matches the file name without `.md` and the pattern `[a-z][a-z0-9-]*`. A section with nothing to say holds the single word `none`. The contract says what each section holds.
-
-Pipe the page into `bin/journal lint-page department --name <name>`. The check reads the frontmatter, the order of the headings and the empty sections. A page that fails is not in the rotation for that tick.
+A special page has the frontmatter and the nine headings of every page. [Departments](departments.md#what-a-page-holds) lists them, and [the three places](departments.md#the-three-places) names the check that a page must pass.
 
 Three sections matter most for a special page:
 
@@ -125,32 +102,11 @@ The assembly offers a special department when it adds a precinct. Its "Own depar
 
 On yes, the assembly tells you that the "Add a department" job runs after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch. The assembly tells you again at the end to choose that menu job after the merge.
 
-The job asks where the department lives. Answer place (a), a page in the precinct's `.lawman/departments/`. [Departments](departments.md) lists the steps. For place (a) the assembly does this:
-
-- It drafts the page with you in a copy under `runs/add-department-<name>/`, never in the live clone.
-- It runs `lint-page department` on the draft and fixes the reasons it prints.
-- It copies the page to `.lawman/departments/<name>.md` on the branch `lawman/department-<name>`.
-- It writes the Departments line with `bin/journal department-line`, which checks the result against the constitution lint.
-- It checks that the judging document exists, unless you answered `none`.
-- It shows you the diff, then commits, pushes and opens a pull request.
-- It never merges.
-- It removes the copy.
-
-The department enters the rotation once you merge the pull request.
+The job asks where the department lives. Answer place (a), a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
 
 ## How the duty desk rotates it
 
-A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses.
-
-For each patrol order the duty desk does this:
-
-- It picks the precinct by weight. Only a precinct with a weight above zero is picked.
-- It lists the departments of the precinct: the shared page names plus the names on its Departments lines.
-- It sorts the list with `bin/journal rotation`. A department never visited comes first, then the oldest visit.
-- It walks the list from the top and resolves and lints each page.
-- It takes the first department whose page passes and whose cap is above zero.
-
-A new special department has never been visited, so it comes first. A page that fails its check goes into the blockers of the tick, and the walk goes on. A department at cap 0 is skipped unless its page has an `Alarm check:` paragraph. [Departments](departments.md) gives the cap.
+A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses. [Departments](departments.md#the-rotation) gives the rotation steps, the cap rule and the `Alarm check:` skip. A new special department has never been visited, so it comes first.
 
 ## Worked example: internal-affairs
 

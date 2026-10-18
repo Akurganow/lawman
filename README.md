@@ -12,8 +12,6 @@ A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its c
 
 Each role is an Agent Skill. The scheduler starts a role. The role takes one order, does one job and exits. A duty desk writes the orders. Patrol, and a response unit for issues a human filed, produce leads. Each later stage costs more per case and sees fewer cases.
 
-A spec writer writes a `Spec` comment on each pull request. A maintainer answers it with a 👍 or 👎. The executor takes a pull request whose newest spec a maintainer approved with a 👍. It plans the change, writes the code in the pull request's branch and moves the results into the documentation. It passes the CI gate and marks the pull request ready for review. A maintainer can send it back with a 👎 on its comment or with a request for changes. It then waits for the review and the merge.
-
 [Roles and stages](docs/pipeline.md)
 
 ### Harnesses
@@ -118,7 +116,7 @@ TBD
 
 ## What an installation holds
 
-The installation lives outside the plugin, so a plugin update never touches it. It holds `lawman/`, the link to the plugin folder, with `bin/journal`, `journal.sqlite` and `config.yaml` beside it. `precincts/` holds one full clone per precinct. `runs/` holds one working tree per patrol, investigation, clerk or executor tick. `departments/` holds your own department pages for several precincts.
+The installation lives outside the plugin, so a plugin update never touches it. [Configuration](docs/configuration.md) and [Harnesses](docs/harnesses.md#what-lives-outside-the-plugin) name what it holds.
 
 Identity: every role uses one identity, the signed-in `gh` or a token the developer adds at setup. The assembly never asks for a token value.
 

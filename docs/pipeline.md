@@ -98,18 +98,6 @@ A stop is different. It comes from an external cause, such as a failed credentia
 
 State lives in markers. A marker is one HTML-comment line at the end of an issue body or a comment. Labels carry no state. Only the issue body and the comments of the trusted login count. The grammar is in [markers.md](../skills/lawman-law/references/markers.md).
 
-| Role | Stages | Written in |
-| :-- | :-- | :-- |
-| Patrol | `lead` | The body of the issue patrol files |
-| Response unit | `lead`, `await`, `out` | The comment that admits, asks or sends out |
-| Investigation | `case` | The case comment |
-| Prosecutor | `charge`, `decline`, `return` | The decision comment |
-| Defender | `defence`, `refute`, `return` | The defence comment |
-| Court | `conviction`, `acquittal` | The ruling comment |
-| Clerk | `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled`, `kept` | The comments the clerk writes |
-| Spec writer | `spec` | The `Spec` comment on a pull request |
-| Executor | `ready` | The `Executor` comment on a pull request |
-
 The newest marker of a role on an issue wins. Nobody edits an old marker. A role writes a new one.
 
 A case runs in this order: lead, case, charge, defence, ruling, then the clerk's pull request. The journal reads the markers and names the next role. `bin/journal case <precinct> <issue>` prints `need=` with `investigation`, `prosecutor`, `defender`, `court`, `clerk` or `none`. An issue whose newest clerk marker names a pull request has left the funnel.

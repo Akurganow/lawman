@@ -30,10 +30,7 @@ A path is relative to the repository root. It holds no `..` segment and has no l
 - A tool name in prose where a path would do.
 - Anything about the owner's machine, keys or accounts.
 
-Two per-precinct settings live outside the constitution for this reason.
-
-- **Weight.** A weight is a share of duty desk slots. The precinct starts at weight 0 and the assembly raises it later. The journal stores it. See [the journal](journal.md).
-- **The Jev pair.** When you allow TypeSafe Jev, the assembly asks per precinct whether the court may send its brief there. It stores the answer as `<precinct>=<yes|no>` in `typesafe_precincts` of `config.yaml`. See [configuration](configuration.md).
+Two per-precinct settings live outside the constitution for this reason: the weight, which [departments](departments.md#the-rotation) explains, and the Jev pair, which [configuration](configuration.md) explains.
 
 ## How the assembly writes it
 

@@ -40,7 +40,7 @@ CI runs on every push and pull request, in four jobs.
 
 `main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag.
 
-1. Bump the versions, as the next section says.
+1. Bump `journal/package.json` and `plugin.json` to the same version.
 2. Put the entry for the version in `CHANGELOG.md`, with the release date in its heading.
 3. Open a pull request and wait until its CI is green.
 4. Merge the branch into `main` locally.
@@ -52,15 +52,6 @@ CI runs on every push and pull request, in four jobs.
 Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version. If the release workflow fails, `main` stays as it was.
 
 The tag starts the release workflow. It checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets, signs the macOS binaries ad hoc and attests the binaries. It writes and attests `SHA256SUMS` and publishes the release.
-
-## Versions
-
-Bump these two files to the same version:
-
-- `journal/package.json`
-- `plugin.json`
-
-`bun test` fails when they differ. The release workflow fails when `journal --version` differs from the tag.
 
 ## Write law and skill text
 
@@ -82,18 +73,4 @@ Agents read this text and cannot ask what it means. Follow these rules.
 
 ## Add a harness
 
-[docs/harnesses.md](docs/harnesses.md) lists the files each harness reads and the state of each one. To add a harness, write one page: `skills/lawman-law/references/harnesses/<harness>.md`. Nothing changes in the skills or the law.
-
-The page has seven sections, in the order of the Hermes Agent page:
-
-1. Installing the plugin.
-2. Syncing the law.
-3. Running a role once.
-4. Commands in scheduled runs.
-5. Scheduling.
-6. Isolation.
-7. Budget and token.
-
-Section 1 also names the detection command, the scheduler check, the folder and change-directory forms, the link form and the link check. Section 5 also names the job-list command that shows each job's working directory.
-
-Keep the root `plugin.json` as the one manifest. Add another harness manifest only when that harness is built, and make it mirror the root. Keep `package.json` and lockfiles out of the repository root. Then add the harness to the table in `docs/harnesses.md` and update its subsection in the README.
+Follow [Adding a harness](docs/harnesses.md#adding-a-harness).

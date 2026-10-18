@@ -44,10 +44,6 @@ LICENSE
 - The standard requires only `$schema` and `name`. Its schema allows no other top-level field than the ones it lists (stated by the docs, https://agent-plugins.org/schemas/1.0.0/plugin.schema.json).
 - Lawman also fills `version`, `description`, `author.name` and `keywords`, because Kiro lists them as required (stated by the docs, https://kiro.dev/docs/powers/create).
 - Optional fields that Lawman fills are `author.url`, `homepage`, `repository` and `license`.
-- Hermes rejects a root `plugin.json` whose `$schema` differs. It ignores unknown top-level fields (read in the harness code).
-- Codex reads a root `plugin.json` as an Agent Plugins manifest only when its `$schema` matches (read in the harness code).
-- GitHub Copilot CLI prefers a root Agent Plugins manifest over every legacy one (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
-- Oh-My-Pi gives a root `plugin.json` with this schema its portable provider (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md).
 - A test pins the version in `plugin.json` equal to the version of the journal program.
 
 ### The skills
@@ -55,9 +51,6 @@ LICENSE
 - Each skill is `skills/<name>/SKILL.md`, one level under the root.
 - The frontmatter `name` equals the folder name. It holds lowercase letters, digits and single hyphens. It has at most 64 characters.
 - The frontmatter holds only `name` and `description`. The description has 1 to 1024 characters.
-- Hermes requires the folder name and the `name` to match (read in the harness code).
-- Kiro requires them to match (stated by the docs, https://kiro.dev/docs/skills).
-- Oh-My-Pi checks the skills of an Agent Plugins package against a closed set of frontmatter keys (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md).
 - GitHub Copilot CLI reads Agent Plugins skills only from `skills/` (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
 - `lawman-law` sits in `skills/` but is not a role. It holds the shared files. Nothing starts it.
 
@@ -65,14 +58,8 @@ LICENSE
 
 - One file, `.claude-plugin/marketplace.json`, lists the plugin `lawman` with `source` set to `"./"`.
 - The `./` keeps the repository root as the plugin root.
-- Kiro needs `plugin.json` or `POWER.md` at the package root of a power. A power may sit in a folder of a repository (stated by the docs, https://kiro.dev/docs/powers/installation and https://kiro.dev/docs/powers/create).
-- GitHub Copilot CLI installs `OWNER/REPO` from the repository root and `OWNER/REPO:PATH` from a subdirectory (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
 - The repository root as the plugin root is the simplest choice for every harness. It needs no path form per harness.
 - The file serves Claude Code, Codex, GitHub Copilot CLI, Oh-My-Pi and OpenClaw. Each reads it as a fallback or as its catalog.
-- Codex reads `.claude-plugin/marketplace.json` after `.agents/plugins/marketplace.json` (read in the harness code, codex-rs/core-plugins/src/marketplace.rs).
-- GitHub Copilot CLI reads it after `marketplace.json`, `.plugin/marketplace.json` and `.github/plugin/marketplace.json` (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
-- Oh-My-Pi reads it when `.omp-plugin/marketplace.json` is absent (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md).
-- OpenClaw accepts Claude marketplaces and relative path sources from a remote marketplace repository (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/cli/plugins/install.md).
 - Oh-My-Pi upgrades only entries that declare a `version` (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md). The entry carries none today. The Oh-My-Pi phase decides this.
 
 ### What the root does not hold
@@ -91,7 +78,7 @@ LICENSE
 
 ## The harnesses
 
-A cell without a mark rests on a fact with its source in the section "What each harness does". A cell marked `(not verified)` has no such fact.
+A cell without a mark rests on a fact with its source in the section "What each harness does". For Hermes Agent it rests on the Hermes page. A cell marked `(not verified)` has no such fact.
 
 | Harness | Install | Manifest | Skill names | Setup | Scheduler | Status |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -110,23 +97,12 @@ No harness lets a plugin declare a schedule (not verified). Hermes attaches a sk
 
 ### Hermes Agent
 
-- `hermes plugins install` takes an owner and repository shorthand. `--enable` enables the plugin at once (stated by `--help`, `hermes plugins install --help`).
-- A portable package installs disabled without `--enable` (stated by `--help`, `hermes plugins --help`).
-- The install asks about Node dependencies only when the plugin root holds a `package.json`. The root of Lawman holds none (read in the harness code).
-- Hermes keeps a shallow git clone with its `.git` folder (read in the harness code).
-- The clone sits in `plugins/` next to the file that `hermes config path` prints (read in the harness code).
-- `hermes plugins update lawman` pulls the latest changes into that clone (stated by `--help`, `hermes plugins --help`).
-- The pull is `git pull --ff-only`. Hermes stashes local changes in the clone first and puts them back after the pull (read in the harness code, hermes_cli/plugins_cmd_git.py).
 - Hermes looks for `plugin.yaml` first and for `plugin.json` second (read in the harness code).
-- Hermes names the skills of a portable plugin `agent-plugin-<plugin>-<digest>:<skill>`. For `lawman` the digest is `492e59eb` (read in the harness code).
-- A scheduled session answers the probe's skill line with the qualified name or the bare role name (seen in a run).
+- A `plugin.yaml` and an `__init__.py` at the root make Hermes ignore `plugin.json` and run the Python file (read in the harness code, hermes_cli/plugins_discovery.py).
+- Hermes rejects a root `plugin.json` whose `$schema` differs. It ignores unknown top-level fields (read in the harness code).
+- A broken root `plugin.json` makes Hermes refuse the install (read in the harness code, hermes_cli/agent_plugins.py).
+- Hermes requires the folder name and the skill `name` to match (read in the harness code, hermes_cli/agent_plugins.py).
 - The chat command `/agent-plugin-lawman-492e59eb:assembly` works in the CLI, the TUI and the desktop app. It does not work in messengers (read in the harness code, agent/skill_commands.py).
-- `--enable` loads the plugin into a running gateway (read in the harness code, hermes_cli/plugins_activation.py).
-- `hermes plugins remove lawman` removes the plugin folder and leaves the link dangling (read in the harness code).
-- `hermes cron create` takes `--skill`, `--workdir`, `--name`, `--model` and `--deliver` (stated by `--help`, `hermes cron create --help`).
-- `hermes cron list` prints a `Workdir:` line for each job that has one (read in the harness code).
-- The terminal keeps its working directory between commands (read in the harness code).
-- A scheduled run refuses a command that the harness flags as dangerous (seen in a run).
 
 The page for Hermes holds the rest: `skills/lawman-law/references/harnesses/hermes.md`.
 
@@ -225,71 +201,19 @@ The page for Hermes holds the rest: `skills/lawman-law/references/harnesses/herm
 
 These are the ways one harness can break another. Each line says what goes wrong and what the layout does about it. The facts and their marks sit in the sections above.
 
-1. A `package.json` at the root.
-   - Hermes asks the user about Node dependencies at install (read in the harness code, hermes_cli/plugins_cmd_install.py).
-   - Pi and Oh-My-Pi read their own keys from it (stated by the docs, https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/packages.md and https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md).
-   - Oh-My-Pi also takes the plugin version from it (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md).
-   - OpenClaw treats the package as native when the file declares `openclaw.extensions` (read in the harness code, openclaw/src/plugins/discovery.ts and openclaw/src/plugins/bundle-manifest.ts).
-   - Claude Code may run a package install (not verified).
-   - The layout moves the journal program to `journal/`.
-2. A `plugin.yaml` and `__init__.py` at the root.
-   - Hermes then ignores `plugin.json` and runs the Python file (read in the harness code, hermes_cli/plugins_discovery.py).
-   - The layout adds neither.
-3. No root `plugin.json`.
-   - Kiro, GitHub Copilot CLI, Codex and Oh-My-Pi then miss the plugin or demote it. Kiro falls back to the legacy `POWER.md`.
-   - The layout keeps the root `plugin.json`.
-4. A second manifest in `.claude-plugin/` or `.codex-plugin/`.
-   - OpenClaw then reads it before the root manifest (read in the harness code, openclaw/src/plugins/bundle-manifest.ts).
-   - Claude Code reads only `.claude-plugin/plugin.json` (stated by the docs, https://code.claude.com/docs/en/plugins-reference).
-   - Two manifests drift apart. The layout adds a second manifest only in its harness phase, as a mirror of the root.
-5. A broken root `plugin.json`.
-   - Hermes refuses the install (read in the harness code, hermes_cli/agent_plugins.py).
-   - OpenClaw and Codex ignore the file as an Agent Plugins manifest (read in the harness code, openclaw/openclaw/src/plugins/bundle-manifest.ts and codex-rs/utils/plugins/src/plugin_namespace.rs).
-   - The layout keeps the exact `$schema`.
-6. Extra keys in skill frontmatter.
-   - Oh-My-Pi checks the keys against a closed set (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md).
-   - Kiro needs the name to equal the folder (stated by the docs, https://kiro.dev/docs/skills). Hermes needs the same (read in the harness code, hermes_cli/agent_plugins.py).
-   - The layout keeps two keys and the folder name.
-7. An update that deletes files.
-   - Pi cleans untracked files in its clone (read in the harness code, packages/coding-agent/src/core/package-manager.ts).
-   - Oh-My-Pi copies the plugin into a versioned cache (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md). OpenClaw copies it (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/cli/plugins/install.md). Claude Code copies it (stated by the docs, https://code.claude.com/docs/en/plugin-marketplaces).
-   - The layout keeps the installation and the binary outside every clone and cache.
-8. A second marketplace file.
-   - Codex prefers its own marketplace file over `.claude-plugin/marketplace.json` (read in the harness code, codex-rs/core-plugins/src/marketplace.rs).
-   - GitHub Copilot CLI prefers three of its own files (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
-   - Oh-My-Pi prefers `.omp-plugin/marketplace.json` (stated by the docs, https://github.com/can1357/oh-my-pi/blob/main/docs/marketplace.md).
-   - The layout keeps the one catalog.
-9. The `source` of the catalog entry.
-   - Kiro and GitHub Copilot CLI can install a plugin from a subdirectory (stated by the docs, https://kiro.dev/docs/powers/create and https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
-   - So the repository root is not required as the plugin root. It is the simplest choice for every harness, because it needs no path form per harness.
-   - Claude Code then copies the whole repository into its cache (not verified).
-   - The layout uses `"./"`.
-10. Skill names differ per harness.
-    - Hermes uses `agent-plugin-lawman-492e59eb:<skill>` (read in the harness code, hermes_cli/plugins_manifest.py).
-    - Claude Code uses `lawman:<skill>` (stated by the docs, https://code.claude.com/docs/en/plugins-reference). Codex uses it too (read in the harness code, codex-rs/ext/skills/src/loader/namespace.rs).
-    - GitHub Copilot CLI may use it too (not verified).
-    - Pi and Oh-My-Pi use the bare name (stated by the docs, https://github.com/earendil-works/pi/blob/main/packages/coding-agent/docs/skills.md and https://github.com/can1357/oh-my-pi/blob/main/docs/skills.md).
-    - OpenClaw and Kiro may use the bare name (not verified).
-    - A job prompt that names a skill therefore differs per harness. Each harness page gives the form.
-11. Scheduling differs.
-    - Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`).
-    - OpenClaw runs a job in an agent workspace (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/automation/cron-jobs/payloads.md).
-    - The schedulers of Claude Code need an open app or session (stated by the docs, https://code.claude.com/docs/en/desktop-scheduled-tasks and https://code.claude.com/docs/en/scheduled-tasks).
-    - The others may need a headless run under an external cron (not verified).
-12. Setup differs.
-    - Codex has an onboarding skill field in its manifest (read in the harness code, codex-rs/core-plugins/src/manifest.rs).
-    - No other harness was found to have one (not verified).
-    - The layout uses the skill `assembly` everywhere.
-13. File names for commands, hooks and MCP differ.
-    - The names differ per harness (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference).
-    - The layout uses none of them.
-
-## Open points
-
-- Pi, Oh-My-Pi, Kiro, Claude Code, Codex and GitHub Copilot CLI have no plugin-run scheduler. Each needs an external cron with a headless run, or an open app. This is not designed.
-- OpenClaw schedules through `openclaw cron` and an agent whose workspace is the installation. Naming a skill in the cron prompt is not verified.
-- Harnesses that copy the plugin into a versioned cache may break the link `lawman` after an upgrade. This is not verified.
-- Whether Pi installs a root `plugin.json` package without its `package.json` is not verified.
+1. A `package.json` at the root. Hermes, Pi, Oh-My-Pi and OpenClaw read it, and Claude Code may run an install from it (not verified). The layout moves the journal program to `journal/`.
+2. A `plugin.yaml` and `__init__.py` at the root. Hermes then ignores `plugin.json`. The layout adds neither.
+3. No root `plugin.json`. Kiro, GitHub Copilot CLI, Codex and Oh-My-Pi then miss the plugin or demote it. The layout keeps the root `plugin.json`.
+4. A second manifest in `.claude-plugin/` or `.codex-plugin/`. OpenClaw reads it before the root manifest, and the two drift apart. The layout adds a second manifest only in its harness phase, as a mirror of the root.
+5. A broken root `plugin.json`. Hermes refuses the install, and OpenClaw and Codex ignore the file. The layout keeps the exact `$schema`.
+6. Extra keys in skill frontmatter, or a name that differs from its folder. Oh-My-Pi checks the keys. Kiro and Hermes check the name. The layout keeps two keys and the folder name.
+7. An update that deletes files. Pi cleans its clone. Oh-My-Pi, OpenClaw and Claude Code copy the plugin into a cache. The link `lawman` may break after an upgrade (not verified). The layout keeps the installation and the binary outside every clone and cache.
+8. A second marketplace file. Codex, GitHub Copilot CLI and Oh-My-Pi each prefer a file of their own. The layout keeps the one catalog.
+9. The `source` of the catalog entry. Kiro and GitHub Copilot CLI can install from a subdirectory, so the repository root is not required as the plugin root. Claude Code then copies the whole repository into its cache (not verified). The layout uses `"./"`.
+10. Skill names differ per harness. The table above lists each form. A job prompt that names a skill therefore differs, and each harness page gives the form.
+11. Scheduling differs, and the table above lists each scheduler. Several harnesses need an open app or an external cron with a headless run. That design waits for each harness phase.
+12. Setup differs. Codex has an onboarding skill field in its manifest, and no other harness was found to have one (not verified). The layout uses the skill `assembly` everywhere.
+13. File names for commands, hooks and MCP differ per harness (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-plugin-reference). The layout uses none of them.
 
 ## Adding a harness
 
@@ -300,7 +224,9 @@ A new harness needs four things:
 - a row in the table above
 - a live install proof
 
-The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check.
+The page answers the seven sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token.
+
+The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 
 Follow these steps.
 
@@ -308,8 +234,8 @@ Follow these steps.
 2. Check each root file of the layout against what the harness reads. Record every conflict in the list above.
 3. Add no root file unless every harness reads it by the standard.
 4. When the harness needs its own manifest, put it where the harness looks and mirror the root fields.
-5. Write the page with the seven sections of the Hermes page.
-6. Write the five things of "Choose the installation" on the page.
+5. Write the page with the seven sections.
+6. Write the five things of "Choose the installation" and the scheduler check on the page.
 7. Mark every fact on the page by its source.
 8. Run each command that a scheduled session sends through the harness's own approval check.
 9. Replace the TBD text of the README subsection with the real install steps.
@@ -319,9 +245,7 @@ Follow these steps.
 
 A harness is done when all of these hold.
 
-- The page exists and answers the seven sections of the Hermes page. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token.
-- The page gives the detection command and the job-list command that shows each job's working directory.
-- The page gives the folder and change-directory forms, the link form and the link check.
+- The page exists, answers the seven sections and gives the six things above.
 - The README subsection holds the real steps. Only its Uninstall part may hold TBD until the assembly can uninstall.
 - The table row says Supported.
 - A clean harness profile installs the plugin by the README steps alone.
