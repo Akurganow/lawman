@@ -25,7 +25,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       LAWMAN_FENCE_NAMES: ${{ secrets.LAWMAN_FENCE_NAMES }}
-      FENCE_PATHS: law departments skills/duty-desk skills/response-unit skills/patrol skills/investigation skills/prosecutor skills/defender skills/court skills/clerk skills/spec-writer skills/executor
+      FENCE_PATHS: skills :!skills/assembly :!skills/lawman-law/references/harnesses
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - name: Class fence

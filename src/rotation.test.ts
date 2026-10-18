@@ -152,7 +152,14 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 
 	function pipe(listed: string[] | null, precinctLines: string[] = []) {
 		if (listed !== null) {
-			const pages = join(dir, "lawman", "departments");
+			const pages = join(
+				dir,
+				"lawman",
+				"skills",
+				"lawman-law",
+				"references",
+				"departments",
+			);
 			mkdirSync(pages, { recursive: true });
 			for (const file of listed) writeFileSync(join(pages, file), "");
 		}

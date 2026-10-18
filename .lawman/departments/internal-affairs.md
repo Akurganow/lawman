@@ -19,11 +19,11 @@ This department judges the text of Lawman by what Lawman's roles did with it. Th
 
 ## Where to look
 
-The behaviour of the roles lives outside this clone: the journal's tick list, the comments of the roles on the trackers of the precincts, the clones of the other precincts and the records of the scheduled runs. The text that shapes the behaviour lives in this clone: `law/`, `skills/`, `harnesses/`, `departments/` and `src/`. Start from the journal. List the newest ticks of a role, read what each wrote, then read the comment or the session that it names.
+The behaviour of the roles lives outside this clone: the journal's tick list, the comments of the roles on the trackers of the precincts, the clones of the other precincts and the records of the scheduled runs. The text that shapes the behaviour lives in this clone: `skills/`, which holds the law, the departments and the harness pages under `skills/lawman-law/references/`, and `src/`. Start from the journal. List the newest ticks of a role, read what each wrote, then read the comment or the session that it names.
 
 A tick ran under the law commit that the installation's law clone had at the tick's start. That commit is the first column of the newest reflog line whose time is not later than the tick's start. No such line means the reflog is cut or the clone is newer than the tick. The tick then has no law commit: file no lead for it and name the tick in Blockers. Read the text that caused the behaviour at that commit with the numbered-lines read, in the clone of the precinct whose repository is this one. The `precinct list` item names it. A clone that does not hold the commit makes that read a failed run, and no lead follows. Then read the same lines at the analysed commit. Both reads must show the same text.
 
-Judge a comment by the named sections of its format in the skill that writes it, such as Claims checked, Grounds, Holes in the charge and Written. Never match free prose across comments. A text that causes a behaviour is not always the one that names it. Check the four places a role reads before it acts: the rule in `law/tick.md`, the step in the skill, the template in the skill and the table in the law.
+Judge a comment by the named sections of its format in the skill that writes it, such as Claims checked, Grounds, Holes in the charge and Written. Never match free prose across comments. A text that causes a behaviour is not always the one that names it. Check the four places a role reads before it acts: the rule in `skills/lawman-law/references/tick.md`, the step in the skill, the template in the skill and the table in the law.
 
 Cost is turns. Count the calls of a session, the calls the skill does not ask for, the commands the harness refused and the searches for a format. Read the whole record of a run when the claim needs it, the reasoning and the tool output included.
 
@@ -86,4 +86,4 @@ After `Analysed commit` and `Department`, in this order: `What`, `Evidence`, `Wh
 
 ## Identity
 
-`<path>::<symbol>::<kind>`. The path is the file in this clone whose text causes the behaviour. The symbol is the heading of the section, or the key of the rule, in that file. For `outcome-gap` the path is `law/LAW.md` and the symbol is the missing outcome token. The kind is one row of the Kinds table. No line number, count or commit enters the identity.
+`<path>::<symbol>::<kind>`. The path is the file in this clone whose text causes the behaviour. The symbol is the heading of the section, or the key of the rule, in that file. For `outcome-gap` the path is `skills/lawman-law/references/LAW.md` and the symbol is the missing outcome token. The kind is one row of the Kinds table. No line number, count or commit enters the identity.

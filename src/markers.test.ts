@@ -11,11 +11,11 @@ import {
 import {
 	AT,
 	carrier,
+	LAW,
 	LEAD_ID,
 	lead,
 	mark,
 	must,
-	ROOT,
 	ret,
 	returnTo,
 	SHA,
@@ -352,7 +352,7 @@ describe("extractMarkers", () => {
 });
 
 describe("law examples", () => {
-	const law = readFileSync(join(ROOT, "law", "markers.md"), "utf8");
+	const law = readFileSync(join(LAW, "markers.md"), "utf8");
 	const examples = law.slice(law.indexOf("## Examples"));
 	const blocks = [...examples.matchAll(/^(`{3,})\n([\s\S]*?)\n\1$/gm)].map(
 		(m) => m[2],

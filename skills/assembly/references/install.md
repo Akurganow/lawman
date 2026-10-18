@@ -6,7 +6,7 @@ Before step 1, run `git -C lawman rev-parse HEAD`. Stop if it fails, because the
 
 ## Step 1. Detect the harness
 
-1. List `lawman/harnesses/*.md` in name order.
+1. List `lawman/skills/lawman-law/references/harnesses/*.md` in name order.
 2. Read the first section of each page, and run the detection command that section names.
 3. Record a page as a match when its command exits 0.
 4. Stop if a page names no detection command, and tell the developer the page needs one.

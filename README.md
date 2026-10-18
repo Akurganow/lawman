@@ -6,10 +6,10 @@ This release holds the law, the contracts, the marker grammar, the journal, the 
 
 ## How it is laid out
 
-- `law/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers roles leave on issues. `tick.md` holds the steps that the nine roles of a tick share. `exhibits.md` holds how a role reads numbered lines, quotes a claim of absence, follows a missing path and runs a source command.
+- `skills/lawman-law/references/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers roles leave on issues. `tick.md` holds the steps that the nine roles of a tick share. `exhibits.md` holds how a role reads numbered lines, quotes a claim of absence, follows a missing path and runs a source command.
 - `skills/`: the roles, as Agent Skills. `duty-desk` picks a precinct and writes the orders. `response-unit` turns an issue a human filed into a lead comment, asks the reporter one question, or sends the issue out. `patrol` takes its order and files leads. `investigation` builds the case on one lead. `prosecutor` charges, returns or declines the case. `defender` defends, returns or refutes the charge. `court` convicts or acquits the defended case. `clerk` opens a draft pull request for a conviction, adopts the trusted login's open pull requests, keeps an issue and its pull request in step, and records a precedent. `spec-writer` writes one `Spec` comment on a pull request. `executor` builds the change of a pull request a maintainer approved and marks it ready for review. `assembly` sets up an installation, adds precincts and updates the law.
-- `departments/`: department pages shipped with the law. A department is a page, not an agent.
-- `harnesses/`: one page per harness with what a skill cannot know about it.
+- `skills/lawman-law/references/departments/`: department pages shipped with the law. A department is a page, not an agent.
+- `skills/lawman-law/references/harnesses/`: one page per harness with what a skill cannot know about it.
 - `src/journal.ts`: the journal, one program on Bun with SQLite, compiled to a binary per platform and published on releases. `status` and `leads` show the tracker cache as of the last sync. `tick list` prints the ticks and their reports.
 
 A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its constitution. Everything repository-specific lives there, never in the law.
@@ -24,7 +24,7 @@ You need `git`, the GitHub CLI signed in as the one account every role uses, Her
    git clone https://github.com/Akurganow/lawman ~/.lawman/lawman && git -C ~/.lawman/lawman checkout "$(git -C ~/.lawman/lawman describe --tags --abbrev=0)"
    ```
 
-2. Make the skills visible to the harness. For Hermes Agent, add `~/.lawman/lawman/skills` to `skills.external_dirs` in its config, as `harnesses/hermes.md` describes.
+2. Make the skills visible to the harness. For Hermes Agent, add `~/.lawman/lawman/skills` to `skills.external_dirs` in its config, as `skills/lawman-law/references/harnesses/hermes.md` describes.
 
 3. From `~/.lawman`, run the assembly skill in an interactive session and answer its questions. It verifies the tools, downloads the journal binary from the release and checks its checksum and attestation, measures what a scheduled session can do, writes `config.yaml`, adds precincts and creates the scheduled jobs. It asks whether the court may use TypeSafe Jev as priority evidence, which needs `curl` and `TYPESAFE_API_KEY`, and asks again per precinct.
 

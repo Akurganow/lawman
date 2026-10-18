@@ -23,11 +23,14 @@ const REFUSED: [string, RegExp][] = [
 	],
 ];
 
-describe("command forms in the law, the skills and the department pages", () => {
-	const files = ["law", "skills", "departments", ".lawman"].flatMap((d) =>
+const HARNESS_PAGES = join("skills", "lawman-law", "references", "harnesses");
+
+describe("command forms in the skills and the department pages", () => {
+	const files = ["skills", ".lawman"].flatMap((d) =>
 		readdirSync(join(ROOT, d), { encoding: "utf8", recursive: true })
-			.filter((f) => f.endsWith(".md"))
-			.map((f) => join(ROOT, d, f)),
+			.map((f) => join(d, f))
+			.filter((f) => f.endsWith(".md") && !f.startsWith(HARNESS_PAGES))
+			.map((f) => join(ROOT, f)),
 	);
 	for (const [name, form] of REFUSED) {
 		test(`no ${name}`, () => {

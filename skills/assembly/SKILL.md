@@ -13,7 +13,7 @@ You run the assembly for the developer. The developer starts you from the instal
 - `lawman/`: the clone of the law repository.
 - `bin/journal`: the journal binary.
 - `precincts/<owner>-<repo>/`: the full clone of one precinct.
-- The harness page: `lawman/harnesses/<harness>.md`. `<harness>` is the `harness` value in `config.yaml`. Stop if the page is missing.
+- The harness page: `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the `harness` value in `config.yaml`. Stop if the page is missing.
 - The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command.
 
 ## Choose the mode

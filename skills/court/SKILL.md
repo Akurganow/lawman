@@ -15,17 +15,17 @@ The court reads and writes comments. It runs no code from the precinct. It creat
 - The court never returns. Its doubt is an acquittal.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
 ## Working rules
 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - There is no worktree. Follow the "Reading without a tree" section.
-- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. The git forms above do not limit it.
+- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
@@ -70,7 +70,7 @@ Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>departme
 bin/journal dispatch take --role court
 ```
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
 
 ```
 bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
@@ -80,7 +80,7 @@ LAWMAN_<tick id>_0000000
 
 `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
 
-With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -106,7 +106,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
 3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
-5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/law/exhibits.md` says.
+5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ### Step 6: read the issue
 
@@ -133,7 +133,7 @@ A related issue is evidence of the case, never a reason to close it.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
-   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
+   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
    - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
@@ -147,7 +147,7 @@ A related issue is evidence of the case, never a reason to close it.
    <pattern, one per line>
    <delimiter>
    ```
-4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/law/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
+4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
 5. Read the exhibit paths at `origin/HEAD` only when the court considers the class `gone at <tip>`. Run `show origin/HEAD:<path>`. Only this read can show that class.
 
 ### Step 8: decide
@@ -167,7 +167,7 @@ For a conviction, run these items in order:
 4. Choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.
-5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/skills/lawman-law/references/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
 
 When Jev is not allowed, skip items 2 and 3.
 

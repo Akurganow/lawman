@@ -19,7 +19,7 @@ The job runs these sections in order: Clone and read, Draft the constitution, Wa
 ### Draft the constitution
 
 6. Run `git -C precincts/<owner>-<repo> switch -c lawman/constitution`.
-7. Read the constitution contract in `lawman/law/constitution.md` for its shape and its eight headings.
+7. Read the constitution contract in `lawman/skills/lawman-law/references/constitution.md` for its shape and its eight headings.
 8. Write `precincts/<owner>-<repo>/LAWMAN.md` with frontmatter `contract_version: 1` and the title `# Constitution of <owner>/<repo>`.
 9. Add the eight `##` headings in contract order: Read first, Departments, Fence, Regression proof, Not judged, Execution, Executor loads, Precedents.
 10. Fill each section except `Departments` with paths and short facts, and write `none` where nothing applies.
@@ -51,7 +51,7 @@ The walk goes through the draft section by section, in contract order. The `Depa
 
 Every shared department is in the precinct's rotation with no line. The section holds a line only for a department that has a judging document.
 
-19. Run `ls lawman/departments`, and take the page names without `.md` as the shared departments.
+19. Run `ls lawman/skills/lawman-law/references/departments`, and take the page names without `.md` as the shared departments.
 20. Read the `Mission` section of each page. List each shared department with its first sentence, and say that all of them are in the rotation with no line.
 21. Ask the developer one question: "Does this precinct have documents that judge the findings of these shared departments: <names>? These files from the repository look like candidates: <paths from the Clone and read section>. Name each document with the department it judges, or answer none."
 22. Check each path as in the Draft section, and drop a pair whose path is missing, showing the reason.
@@ -89,7 +89,7 @@ Every shared department is in the precinct's rotation with no line. The section 
 39. Run `gh issue list -R <owner>/<repo> --limit 1`, and stop if it fails.
 40. Run `gh pr list -R <owner>/<repo> --limit 1`, and stop if it fails.
 41. Run `git -C precincts/<owner>-<repo> ls-remote origin HEAD`, and stop if it fails.
-42. Compare these three calls with the read calls that `lawman/skills/patrol/SKILL.md` and `lawman/law/tick.md` name, and run any other read call they name with `--limit 1` added.
+42. Compare these three calls with the read calls that `lawman/skills/patrol/SKILL.md` and `lawman/skills/lawman-law/references/tick.md` name, and run any other read call they name with `--limit 1` added.
 
 ### Add the precinct
 
@@ -115,7 +115,7 @@ Every shared department is in the precinct's rotation with no line. The section 
 A line check takes one `Departments` line, its name `<name>`, and a ref.
 
 1. Check the name against `[a-z][a-z0-9-]*` before you build any path, and report a line whose name fails, showing the reason.
-2. Resolve the page in this order, taking the first hit: `.lawman/departments/<name>.md` at the ref in the precinct clone, checked with `ls-tree` first; then `<installation>/departments/<name>.md`; then `lawman/departments/<name>.md`.
+2. Resolve the page in this order, taking the first hit: `.lawman/departments/<name>.md` at the ref in the precinct clone, checked with `ls-tree` first; then `<installation>/departments/<name>.md`; then `lawman/skills/lawman-law/references/departments/<name>.md`.
 3. Run `bin/journal lint-page department --name <name>` with the page on stdin, using `git -C precincts/<owner>-<repo> show <ref>:.lawman/departments/<name>.md` for the precinct copy.
 4. Report the line as out of the rotation when no page resolves or the check exits 8, showing the reason lines the check printed.
 
@@ -160,7 +160,7 @@ For place (b), this run attaches the chosen precinct only. Run the job again for
 Skip this step for place (c).
 
 1. Run `mkdir -p runs/add-department-<name>`.
-2. Read `lawman/law/departments.md` for the shape and the nine headings of a page.
+2. Read `lawman/skills/lawman-law/references/departments.md` for the shape and the nine headings of a page.
 3. Write the draft to `runs/add-department-<name>/page.md` with the developer. A page for place (b) names no path or tool of one repository. Keep local paths, accounts, keys and machine details out of it.
 4. Run `bin/journal lint-page department --name <name> < runs/add-department-<name>/page.md`, and fix the reasons it prints when it exits 8.
 

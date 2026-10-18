@@ -16,7 +16,7 @@ The response unit reads and writes comments. It runs no code and creates no work
 - Leave one comment per tick. A tick asks at most one question.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
 ## Working rules
 
@@ -25,7 +25,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Tick
 
-Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
@@ -63,7 +63,7 @@ Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>departme
 bin/journal dispatch take --role response-unit
 ```
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
 
 ```
 bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
@@ -73,7 +73,7 @@ LAWMAN_<tick id>_0000000
 
 `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
 
-With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -160,7 +160,7 @@ Marker, the last line of the comment. Nothing follows it:
 <!-- lawman: role=response-unit stage=lead department=- id=<path>::<symbol>::reported sha=<ref> at=<UTC> -->
 ```
 
-Encode `<id>` as the section "The `id` value" of `lawman/law/markers.md` describes.
+Encode `<id>` as the section "The `id` value" of `lawman/skills/lawman-law/references/markers.md` describes.
 
 ## Question format
 

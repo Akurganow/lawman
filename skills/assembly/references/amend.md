@@ -7,8 +7,8 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 1. Note the current `law_commit`, `release_tag` and `journal_sha256` from `config.yaml`.
 2. Run `git -C lawman fetch --tags`, and stop if it fails.
 3. Set the target to the latest tag from `git -C lawman tag --sort=-v:refname | head -n 1`, unless the developer names another tag.
-4. Run `git -C lawman diff --stat <law_commit>..<target> -- law departments skills harnesses`.
-5. Show the contract versions at both commits, reading `contract_version` in `law/constitution.md` and the `Contract version` line in `law/departments.md` with `git -C lawman show <commit>:<path>`.
+4. Run `git -C lawman diff --stat <law_commit>..<target> -- skills`.
+5. Show the contract versions at both commits, reading `contract_version` in `skills/lawman-law/references/constitution.md` and the `Contract version` line in `skills/lawman-law/references/departments.md` with `git -C lawman show <commit>:<path>`.
 6. Ask the developer to confirm the target, and stop unless they confirm it.
 
 ## Step 2. Check the installation
@@ -30,10 +30,10 @@ Use this reference when `config.yaml` no longer matches the law clone. Update mo
 3. When the file's `contract_version` is lower than the new contract version `<n>`, draft an amendment.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
    1. Run `git -C precincts/<name> switch -c lawman/constitution-v<n> origin/HEAD`, and stop if it fails.
-   2. Run `git -C lawman diff <old law_commit>..<target> -- law/constitution.md` to see what the new contract version requires.
+   2. Run `git -C lawman diff <old law_commit>..<target> -- skills/lawman-law/references/constitution.md` to see what the new contract version requires.
    3. Carry every section of `LAWMAN.md` over as it is, and change only what that diff requires. Set `contract_version` to `<n>`.
    4. For each section that the new contract added or changed, ask the walk question of the "Walk the sections" section in `references/precinct.md`.
-   5. Run `git -C lawman diff --name-status <old law_commit>..<target> -- departments` to find the shared departments added since the old law commit.
+   5. Run `git -C lawman diff --name-status <old law_commit>..<target> -- skills/lawman-law/references/departments` to find the shared departments added since the old law commit.
    6. For those departments only, ask the judging-document question of the "Departments" section in `references/precinct.md`, and write the lines it describes.
    7. Run the sections "Lint and approval" and "Commit and open the pull request" of the add path, with the branch `lawman/constitution-v<n>` in place of `lawman/constitution`. Use `Amend the Lawman constitution to version <n>` as the commit message and the pull request title.
 5. Tell the developer that the precinct's ticks end with `skipped-contract-version` until the amendment merges.
