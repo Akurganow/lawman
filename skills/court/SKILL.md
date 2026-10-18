@@ -15,24 +15,26 @@ The court reads and writes comments. It runs no code from the precinct. It creat
 - The court never returns. Its doubt is an acquittal.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
 ## Working rules
 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - There is no worktree. Follow the "Reading without a tree" section.
-- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. The git forms above do not limit it.
+- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 3
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 3
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role court
@@ -48,11 +50,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    grep -cE '^typesafe_precincts: (.* )?<p>=yes( .*)?$' config.yaml
    ```
    Jev is allowed when `typesafe` is `yes` and the precinct is allowed.
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -70,7 +68,7 @@ Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>departme
 bin/journal dispatch take --role court
 ```
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
 
 ```
 bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
@@ -78,9 +76,9 @@ No order.
 LAWMAN_<tick id>_0000000
 ```
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
 
-With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -106,7 +104,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
 3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
-5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/law/exhibits.md` says.
+5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ### Step 6: read the issue
 
@@ -133,7 +131,7 @@ A related issue is evidence of the case, never a reason to close it.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
-   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
+   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
    - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
@@ -147,7 +145,7 @@ A related issue is evidence of the case, never a reason to close it.
    <pattern, one per line>
    <delimiter>
    ```
-4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/law/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
+4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
 5. Read the exhibit paths at `origin/HEAD` only when the court considers the class `gone at <tip>`. Run `show origin/HEAD:<path>`. Only this read can show that class.
 
 ### Step 8: decide
@@ -163,11 +161,11 @@ For a conviction, run these items in order:
 
 1. Decide alone whether the conviction is `P0`. Never raise this decision later.
 2. When Jev is allowed, write the brief by the "Brief" section. Use kind `p0` for the court's own `P0`. Otherwise use kind `grade`.
-3. Run the command of the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and run the command once more.
+3. Follow the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
 4. Choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.
-5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/law/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+5. When the final priority is `P0`, print the `ALARM case` line as the "Alarm" section of `lawman/skills/lawman-law/references/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
 
 When Jev is not allowed, skip items 2 and 3.
 
@@ -187,7 +185,7 @@ When the ruling comment landed and the close failed, the issue stays open. `need
 
 The outcome is `convicted` after a written conviction. It is `acquitted` after a written acquittal whose close read back as `CLOSED`. Otherwise it is the token that the step ending the tick names.
 
-Run the "End the tick" section. The silence token is `[SILENT]`.
+Run the "End the tick" section. The harness page names the silence form.
 
 ## Brief
 
@@ -230,27 +228,30 @@ not_established: Whether the token still works.
 
 ## Send
 
-Run this command once. `<p0|grade>` is the kind, written in both places. The brief goes in the heredoc, one `name: value` line per field. `<delimiter>` is the tick's delimiter. Check that no line of the brief equals it.
+Ask the service for its judgment once, with the brief. `<p0|grade>` is the kind. Write it the same way in both places.
 
-```
-(set +x
-[ -n "${TYPESAFE_API_KEY:-}" ] || { echo "jev none reason=no-key"; exit 0; }
-body=$(bin/journal jev request --kind <p0|grade>) || { echo "jev none reason=brief"; exit 0; }
-printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPESAFE_API_KEY") -H "Content-Type: application/json" --data-binary @- -w "\n%{http_code}" https://api.typesafe.ai/v1/systemone | bin/journal jev answer --kind <p0|grade>) <<'<delimiter>'
-<brief, one name: value line per field>
-<delimiter>
-```
+1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, print `jev none reason=no-key` and stop this step.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
+3. Run `bin/journal jev request --kind <p0|grade>`. Give it the brief on standard input, one `name: value` line per field. It prints the request body. When it fails, print `jev none reason=brief` and stop this step.
+4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
+5. Run `bin/journal jev answer --kind <p0|grade>`. Give it the response body and the status line on standard input. It prints one `jev` line.
 
-The command prints one `jev` line. A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
+The brief enters a command by the rule for multi-line text in the working rules of `lawman/skills/lawman-law/references/tick.md`. A task text that names a delimiter uses that one. Check that no line of the brief equals the delimiter.
+
+A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
 
 Rules:
 
-- Run the command untraced and unchanged. Do not retry it. Set no timeout.
-- A non-zero exit, or a harness timeout, is not a failed command. When the command printed no line at all, record `jev none reason=failed` in Blockers.
+- Never print, echo or trace the key.
+- Never run a command that prints the key to you.
+- Never put the key on a command line or into a file.
+- Never send the brief to any place other than the endpoint above.
+- Write no file for the brief or the reply. Pipe them from command to command.
+- Run the request once. Do not retry it. Set no timeout.
+- A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.
 - Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
-- The key comes only from `TYPESAFE_API_KEY`. It reaches curl through process substitution. Never print it and never put it on a command line.
-- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the command.
-- Make no other request to the service in a tick. Only the Send command uses the key.
+- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps.
+- Make no other request to the service in a tick. Only this section uses the key.
 
 ## Ruling format
 

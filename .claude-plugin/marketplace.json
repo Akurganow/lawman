@@ -1,0 +1,16 @@
+{
+	"name": "lawman",
+	"owner": {
+		"name": "Alexander Kurganov"
+	},
+	"plugins": [
+		{
+			"name": "lawman",
+			"source": "./",
+			"description": "Scheduled agent roles that patrol a repository, build a case, rule on it and carry the verdict to a pull request."
+		}
+	],
+	"metadata": {
+		"description": "Scheduled agent roles that patrol a repository, build a case, rule on it and carry the verdict to a pull request."
+	}
+}

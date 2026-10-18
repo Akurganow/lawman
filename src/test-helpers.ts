@@ -18,6 +18,7 @@ export function must<T>(value: T | null | undefined): T {
 export const issueOf = (n: number) => must(issues.find((i) => i.number === n));
 
 export const ROOT = join(import.meta.dir, "..");
+export const LAW = join(ROOT, "skills", "lawman-law", "references");
 const SRC = join(ROOT, "src", "journal.ts");
 const HARNESS = `
 const j = await import(${JSON.stringify(SRC)});

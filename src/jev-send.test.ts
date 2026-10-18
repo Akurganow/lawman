@@ -1,138 +1,62 @@
 import { describe, expect, test } from "bun:test";
-import {
-	chmodSync,
-	existsSync,
-	mkdirSync,
-	readFileSync,
-	writeFileSync,
-} from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { dir, ROOT, tempDb } from "./test-helpers";
+import { ROOT } from "./test-helpers";
 
-const FIXTURES = join(ROOT, "src", "fixtures", "jev");
-const fixture = (name: string) => readFileSync(join(FIXTURES, name), "utf8");
+const skill = readFileSync(join(ROOT, "skills", "court", "SKILL.md"), "utf8");
+const sections = skill.split(/^## Send$/m);
+const send = (sections[1] ?? "").split(/^## /m)[0] ?? "";
+const lines = send.split("\n");
 
-describe("the Send block of the court skill", () => {
-	const DUMMY = "dummy-key-not-a-real-secret";
-	const DELIMITER = "LAWMAN_TEST";
-	const FAKE_CURL = `#!/bin/bash
-: > "$FAKE_DIR/argv"
-for a in "$@"; do printf '%s\\n' "$a" >> "$FAKE_DIR/argv"; done
-prev=
-for a in "$@"; do
-	if [ "$prev" = -H ] && [ "\${a#@}" != "$a" ]; then cat "\${a#@}" >> "$FAKE_DIR/headers"; fi
-	prev=$a
-done
-cat > "$FAKE_DIR/body"
-if [ "$FAKE_EXIT" != 0 ]; then printf '\\n000'; exit "$FAKE_EXIT"; fi
-cat "$FAKE_DIR/reply"
-printf '\\n%s' "$FAKE_STATUS"
-`;
+const RULES = [
+	"Never print, echo or trace the key.",
+	"Never run a command that prints the key to you.",
+	"Never put the key on a command line or into a file.",
+	"Never send the brief to any place other than the endpoint above.",
+	"Write no file for the brief or the reply. Pipe them from command to command.",
+	"Run the request once. Do not retry it. Set no timeout.",
+	"A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.",
+	"Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.",
+	"The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps.",
+	"Make no other request to the service in a tick. Only this section uses the key.",
+];
 
-	const skill = readFileSync(join(ROOT, "skills", "court", "SKILL.md"), "utf8");
-	const block = (skill.split(/^## Send$/m)[1] ?? "").split("```")[1] ?? "";
-
-	tempDb();
-	const made = (name: string) => join(dir, name);
-	const saw = (name: string) =>
-		existsSync(made(name)) ? readFileSync(made(name), "utf8") : null;
-
-	function send(
-		key: string | null,
-		opts: { brief?: string; status?: string; exit?: number } = {},
-	) {
-		const bin = made("bin");
-		mkdirSync(bin);
-		writeFileSync(
-			join(bin, "journal"),
-			`#!/bin/sh\nexec bun ${join(ROOT, "src", "journal.ts")} "$@"\n`,
-		);
-		writeFileSync(join(bin, "curl"), FAKE_CURL);
-		chmodSync(join(bin, "journal"), 0o755);
-		chmodSync(join(bin, "curl"), 0o755);
-		writeFileSync(made("reply"), fixture("reply.grade.json"));
-		const command = block
-			.replaceAll("<p0|grade>", "grade")
-			.replace("<brief, one name: value line per field>", () =>
-				(opts.brief ?? fixture("brief.grade.txt")).trimEnd(),
-			)
-			.replaceAll("<delimiter>", DELIMITER);
-		const r = Bun.spawnSync(["bash", "-c", command], {
-			cwd: dir,
-			env: {
-				PATH: `${bin}:${process.env.PATH ?? ""}`,
-				...(key === null ? {} : { TYPESAFE_API_KEY: key }),
-				FAKE_DIR: dir,
-				FAKE_STATUS: opts.status ?? "200",
-				FAKE_EXIT: String(opts.exit ?? 0),
-			},
-		});
-		return { code: r.exitCode, out: r.stdout.toString() };
-	}
-
-	test("the first fenced block under the heading holds the command", () => {
-		expect(block.trimStart().startsWith("(set +x\n")).toBe(true);
-		expect(block).toContain("https://api.typesafe.ai/v1/systemone");
+describe("the Send section of the court skill", () => {
+	test("the court skill holds one Send section", () => {
+		expect(sections).toHaveLength(2);
 	});
 
-	test("the block is untraced: no pipefail, set -x, -v or --trace", () => {
-		for (const banned of ["pipefail", "set -x", " -v", "--trace"])
-			expect(block).not.toContain(banned);
+	test("the section holds no fenced block", () => {
+		expect(send).not.toContain("```");
 	});
 
-	test("the key value never reaches curl's arguments", () => {
-		send(DUMMY);
-		expect(saw("argv")).not.toBeNull();
-		expect(saw("argv")).not.toContain(DUMMY);
+	test("the section names no curl", () => {
+		expect(send).not.toContain("curl");
 	});
 
-	test("the header file holds the Bearer line", () => {
-		send(DUMMY);
-		expect(saw("headers")).toBe(`Authorization: Bearer ${DUMMY}\n`);
+	test("the section names no variable name of the key", () => {
+		expect(send).not.toContain("TYPESAFE_API_KEY");
 	});
 
-	test("the body is the request JSON of the brief", () => {
-		send(DUMMY);
-		expect(JSON.parse(saw("body") ?? "null")).toEqual(
-			JSON.parse(fixture("request.grade.json")),
-		);
+	test("the section names the request and answer commands", () => {
+		expect(send).toContain("bin/journal jev request --kind");
+		expect(send).toContain("bin/journal jev answer --kind");
 	});
 
-	test("a docs-shaped 200 prints the jev model line", () => {
-		expect(send(DUMMY)).toEqual({
-			code: 0,
-			out: "jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90\n",
-		});
+	test("the section names the endpoint", () => {
+		expect(send).toContain("https://api.typesafe.ai/v1/systemone");
 	});
 
-	test.each([
-		["unset", null],
-		["empty", ""],
-	])("the %s key prints no-key and never calls curl", (_name, key) => {
-		expect(send(key)).toEqual({ code: 0, out: "jev none reason=no-key\n" });
-		expect(saw("argv")).toBeNull();
+	test("the section names the config line that gives the key place", () => {
+		expect(send).toContain("typesafe_key");
 	});
 
-	test("a brief the journal rejects prints reason=brief", () => {
-		const brief = `${fixture("brief.grade.txt")}extra_field: x\n`;
-		expect(send(DUMMY, { brief })).toEqual({
-			code: 0,
-			out: "jev none reason=brief\n",
-		});
-		expect(saw("argv")).toBeNull();
+	test("the section names the no-key and brief reasons", () => {
+		expect(send).toContain("jev none reason=no-key");
+		expect(send).toContain("jev none reason=brief");
 	});
 
-	test("a 401 prints reason=status-401", () => {
-		expect(send(DUMMY, { status: "401" })).toEqual({
-			code: 0,
-			out: "jev none reason=status-401\n",
-		});
-	});
-
-	test("a connection failure prints reason=no-reply", () => {
-		expect(send(DUMMY, { exit: 7 })).toEqual({
-			code: 0,
-			out: "jev none reason=no-reply\n",
-		});
+	test.each(RULES)("the rule is present as a line: %s", (rule) => {
+		expect(lines).toContain(`- ${rule}`);
 	});
 });

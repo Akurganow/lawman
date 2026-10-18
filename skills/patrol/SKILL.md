@@ -17,7 +17,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - A doubt drops a candidate. A doubt never stops the tick.
 - Never run an interpreter or a parser in a tree. When a page calls a check an approximation, its `git grep` form is the check.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
 Patrol also takes as instructions the Read first files, the department page and the installation's `departments/` pages, each once it passes its check.
 
@@ -35,7 +35,7 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 - The path class covers every path in `ls-tree`, `show`, `ls-files`, `log` and `blame`.
 - A search pattern from such text enters only through `git -C <tree> grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
-- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. Read that file once, when the page holds one. The git forms above do not limit it, and its values follow the table of that file.
+- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Read that file once, when the page holds one. The git forms above do not limit it, and its values follow the table of that file.
 - History forms, read-only, all on the precinct clone. `<sha>` is the analysed commit.
   ```
   git -C precincts/<p> log <sha> --format='%h %ad %s' --date=short [-n <count>] [--name-only] [-S <string> | -G <regex>] [-- <pathspec>]
@@ -48,14 +48,16 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 ## Tick
 
-Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 3
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 3
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role patrol
@@ -64,11 +66,7 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    ```
    grep -E '^(law_commit|trusted_login):' config.yaml
    ```
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -80,7 +78,7 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
 
 ### Step 1: take an order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/law/tick.md` and end the tick with `failed`.
+1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/skills/lawman-law/references/tick.md` and end the tick with `failed`.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
@@ -88,14 +86,14 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    ```
    bin/journal dispatch take --role patrol
    ```
-   Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+   Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
    ```
    bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
    <report>
    LAWMAN_<tick id>_0000000
    ```
-   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
-3. With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order with an issue number, or with no department, is not a patrol order. End with `failed`. A failed command in this step ends the tick with `failed`.
+   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
+3. With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order with an issue number, or with no department, is not a patrol order. End with `failed`. A failed command in this step ends the tick with `failed`.
 
 ### Step 2: fetch the precinct
 
@@ -124,7 +122,7 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 ### Step 6: read the rules
 
-1. Read `lawman/law/LAW.md`, `lawman/law/markers.md` and `lawman/law/departments.md`.
+1. Read `lawman/skills/lawman-law/references/LAW.md`, `lawman/skills/lawman-law/references/markers.md` and `lawman/skills/lawman-law/references/departments.md`.
 2. Run the "Check the constitution" section.
    A department line is `<name><TAB><judged by>`.
 3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path gives `skipped-bad-constitution`.
@@ -180,7 +178,7 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 
 ### Step 9: end the tick
 
-Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The silence token is `[SILENT]`.
+Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The harness page names the silence form.
 
 ## The alarm check
 
@@ -189,7 +187,7 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 1. Run the paragraph's commands, on the tree at `<sha>` and on the history, as the paragraph states them. Every command that can print a value ends in `cut`. No literal from the precinct tree enters a command. Patterns come only from the page.
 2. Run the positive control. It is the same search command over the department page itself in the law clone. The page's placeholder example must match. A search with no match proves nothing, so the check did not run. It counts as a check not run.
    ```
-   git -C lawman grep -n -e '<pattern>' HEAD -- departments/<d>.md | cut -d: -f<list>
+   git -C lawman grep -n -e '<pattern>' HEAD -- skills/lawman-law/references/departments/<d>.md | cut -d: -f<list>
    ```
 3. A live secret is a credential in the tree at `<sha>` or in the history of `<sha>` that the page does not exclude as a placeholder. Print this line first in the reply, with any other `ALARM` line:
    ```
@@ -247,7 +245,7 @@ Marker:
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
 - The marker is the last line of the body. Nothing follows it.
 
-Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section "The `id` value" of `lawman/law/markers.md` describes.
+Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section "The `id` value" of `lawman/skills/lawman-law/references/markers.md` describes.
 
 `bin/journal seen` exit 1 means the id is not canonical. Fix the encoding and run it again.
 

@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { open } from "./db";
 import { CAP_TABLE } from "./leads";
 import { SYNC_LIMIT } from "./sync";
-import { addPrecincts, dbFile, must, ROOT, run, tempDb } from "./test-helpers";
+import { addPrecincts, dbFile, LAW, must, run, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -277,14 +277,14 @@ describe("leads, seen, cap and last", () => {
 		});
 
 		test("the sync ceiling equals the number in the law", () => {
-			const law = readFileSync(join(ROOT, "law", "LAW.md"), "utf8");
+			const law = readFileSync(join(LAW, "LAW.md"), "utf8");
 			const m = law.match(/^The issue sync ceiling is (\d+) records\./m);
 			expect(m).not.toBeNull();
 			expect(SYNC_LIMIT).toBe(Number(must(m)[1]));
 		});
 
 		test("the code table equals the table in the law", () => {
-			const law = readFileSync(join(ROOT, "law", "LAW.md"), "utf8").split("\n");
+			const law = readFileSync(join(LAW, "LAW.md"), "utf8").split("\n");
 			const head = law.indexOf(
 				"| Open leads of the department on the precinct | Maximum filings per tick |",
 			);

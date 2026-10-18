@@ -3,9 +3,9 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { hasAlarmCheck } from "./lint";
-import { cli, ROOT } from "./test-helpers";
+import { cli, LAW, ROOT } from "./test-helpers";
 
-const PAGES = join(ROOT, "departments");
+const PAGES = join(LAW, "departments");
 const VALID = readFileSync(
 	join(ROOT, "src", "fixtures", "pages", "department-valid.md"),
 	"utf8",

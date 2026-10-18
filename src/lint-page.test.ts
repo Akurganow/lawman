@@ -3,7 +3,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { CONSTITUTION_HEADINGS, DEPARTMENT_HEADINGS, lintPage } from "./lint";
-import { cli, must, ROOT } from "./test-helpers";
+import { cli, LAW, must, ROOT } from "./test-helpers";
 
 describe("lint-page", () => {
 	const pages = join(ROOT, "src", "fixtures", "pages");
@@ -45,7 +45,7 @@ describe("lint-page", () => {
 		lintPage("constitution", text).reasons;
 
 	const headingsOf = (file: string) => {
-		const text = readFileSync(join(ROOT, "law", file), "utf8");
+		const text = readFileSync(join(LAW, file), "utf8");
 		const block = must(
 			must(text.split("\n## Headings, in order\n")[1]).split("\n## ")[0],
 		);
@@ -76,7 +76,7 @@ describe("lint-page", () => {
 	test("the department example and the shipped abstractions page pass", () => {
 		expect(reasons("department-valid.md", "department")).toEqual([]);
 		const shipped = readFileSync(
-			join(ROOT, "departments", "abstractions.md"),
+			join(LAW, "departments", "abstractions.md"),
 			"utf8",
 		);
 		expect(lintPage("department", shipped, "abstractions").reasons).toEqual([]);
@@ -91,7 +91,7 @@ describe("lint-page", () => {
 	};
 
 	test("every file in departments/ is a page that passes the department lint", () => {
-		expectPagesPass(join(ROOT, "departments"));
+		expectPagesPass(join(LAW, "departments"));
 	});
 
 	test("this repository's constitution and its own department pages pass", () => {
@@ -316,7 +316,7 @@ describe("lint-page", () => {
 
 		test("the shipped abstractions page passes through stdin", () => {
 			const shipped = readFileSync(
-				join(ROOT, "departments", "abstractions.md"),
+				join(LAW, "departments", "abstractions.md"),
 				"utf8",
 			);
 			expect(feed(["department", "--name", "abstractions"], shipped)).toEqual({

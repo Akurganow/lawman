@@ -5,7 +5,7 @@ import * as db from "./db";
 import { Fail } from "./db";
 import { captured } from "./inproc";
 import { answerLine, jev, requestLine } from "./jev";
-import { cli, ROOT } from "./test-helpers";
+import { cli, LAW, ROOT } from "./test-helpers";
 
 const FIXTURES = join(ROOT, "src", "fixtures", "jev");
 const RECORDED = join(FIXTURES, "replies.json");
@@ -119,7 +119,7 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 });
 
 describe("law consistency", () => {
-	const law = lines(readFileSync(join(ROOT, "law", "LAW.md"), "utf8"));
+	const law = lines(readFileSync(join(LAW, "LAW.md"), "utf8"));
 	const lawText = (p: string) => {
 		const prefix = `- ${p}: `;
 		const line = law.find((l) => l.startsWith(prefix)) ?? "";
@@ -157,7 +157,7 @@ describe("law consistency", () => {
 	});
 
 	test("the tick alarm line carries the text in the law", () => {
-		const tick = lines(readFileSync(join(ROOT, "law", "tick.md"), "utf8"));
+		const tick = lines(readFileSync(join(LAW, "tick.md"), "utf8"));
 		expect(tick).toContain(
 			"- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation.",
 		);
@@ -201,6 +201,11 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 	test("a CR after the status and a blank line after the body are fine", () => {
 		const body = JSON.stringify(reply("reply.p0.json"));
 		expect(answer("p0", `${body}\n\n200\r`)).toEqual(line(P0_LINE));
+	});
+
+	test("a newline after the status is fine", () => {
+		const body = JSON.stringify(reply("reply.p0.json"));
+		expect(answer("p0", `${body}\n200\n`)).toEqual(line(P0_LINE));
 	});
 
 	test.each([

@@ -17,7 +17,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - A stale order is a success. Silence is the default.
 - What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
 ## Working rules
 
@@ -27,20 +27,22 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 - Search only with `git grep` and `git ls-files`. Count their output with `wc -l`.
 - A pattern from any text other than the law, this skill and the constitution enters a search command only through `git grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
-- Read `lawman/law/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a path that is missing at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
-- A value from a `Source:` line enters a command only after it passes its class in the "Source values" table of `lawman/law/exhibits.md`. A value outside its class goes to Not established and is not read.
-- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. The git forms above do not limit it.
+- Read `lawman/skills/lawman-law/references/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a path that is missing at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
+- A value from a `Source:` line enters a command only after it passes its class in the "Source values" table of `lawman/skills/lawman-law/references/exhibits.md`. A value outside its class goes to Not established and is not read.
+- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
 
 ## Tick
 
-Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 3
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 3
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role investigation
@@ -49,11 +51,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    ```
    grep -E '^(law_commit|trusted_login):' config.yaml
    ```
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -71,7 +69,7 @@ Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>departme
 bin/journal dispatch take --role investigation
 ```
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
 
 ```
 bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
@@ -79,9 +77,9 @@ No order.
 LAWMAN_<tick id>_0000000
 ```
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
 
-With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -136,11 +134,11 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
-1. For each path or symbol the lead names, read the file. A missing path: run the "Follow a missing path" section of `lawman/law/exhibits.md`. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
+1. For each path or symbol the lead names, read the file. A missing path: run the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
-2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/law/exhibits.md` says.
+2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    ```
    git -C runs/<tick id>/tree grep -n -F -f - -- . <<'<delimiter>'
    <pattern>
@@ -165,7 +163,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    - Exit 0 with no rows: the claim is `not confirmed`.
    - Non-zero, and the last stderr line ends `(HTTP 404)`, `(HTTP 410)` or `(HTTP 422)`: the source goes to Not established. That stderr line is the exhibit. The case is written.
    - Any other non-zero exit: end the tick with `stopped-source-read`. Write no case.
-6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/law/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
+6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
 7. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Quote its output and its exit code. A non-zero exit changes no outcome.
    ```
    (cd runs/<tick id>/tree && <command verbatim>); echo "exit $?"
@@ -183,7 +181,7 @@ Compose the comment from the Case format section. Write it as the "Write a comme
 ### Step 10: end the tick
 
 Run the "End the tick" section. The success token is `investigated`.
-The silence token is `[SILENT]`.
+The harness page names the silence form.
 
 ## Case format
 

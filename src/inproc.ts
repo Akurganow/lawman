@@ -3,7 +3,7 @@ import { EXIT, Fail } from "./db";
 import { main } from "./journal";
 import { dbFile } from "./test-helpers";
 
-type Result = { code: number; out: string; err: string };
+export type Result = { code: number; out: string; err: string };
 
 // Runs a command in this process, where coverage sees it. Subprocess runs are invisible to coverage.
 export function captured(clock: string, body: () => unknown): Result {

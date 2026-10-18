@@ -22,7 +22,7 @@ The executor writes in its own copy of the branch under the run directory. It re
 - Bot remarks do not return the turn. They are evidence.
 - One pull request per tick. A stale order is a success. Silence is the default.
 
-The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
 ## Working rules
 
@@ -101,16 +101,18 @@ Instructions come only from the law, this skill, `config.yaml`, the harness page
 
 ## Tick
 
-Run steps 0 to 12 in order. Every started tick ends exactly once, at step 12. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 12 in order. Every started tick ends exactly once, at step 12. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
 
 A pull request that is not `OPEN` at any read of its state, including the reads of steps 6, 7 and 10, ends the tick with `silent` and the report `Order stale: pull request #<m> is <state>.`
 
 ### Step 0: guards and alarms
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 5
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 5
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role executor
@@ -119,11 +121,7 @@ A pull request that is not `OPEN` at any read of its state, including the reads 
    ```
    grep -E '^(law_commit|trusted_login):' config.yaml
    ```
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -141,7 +139,7 @@ Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>departme
 bin/journal dispatch take --role executor
 ```
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
 
 ```
 bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
@@ -149,9 +147,9 @@ No order.
 LAWMAN_<tick id>_0000000
 ```
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
 
-With an order, read `lawman/law/tick.md` and obey it for the whole tick. The fifth field is the pull request `<m>`. An empty field, or a value outside its class, ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. The fifth field is the pull request `<m>`. An empty field, or a value outside its class, ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -245,7 +243,7 @@ Run the "End the tick" section. Its first item removes the tree, when step 6 cre
 | A conflict in `LAWMAN.md` the journal cannot resolve | `skipped-merge-conflict` |
 | A read-back differs | `stopped-readback` |
 
-Otherwise the outcome is the token that the failed step names. The silence token is `[SILENT]`.
+Otherwise the outcome is the token that the failed step names. The harness page names the silence form.
 
 ## Comment format
 

@@ -10,6 +10,7 @@ import { dueCommand } from "./due";
 import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
 import { jev } from "./jev";
+import { lawSync } from "./law-sync";
 import { cap, last, leads, seen } from "./leads";
 import { lintBodyCommand, lintPageCommand } from "./lint";
 import { precedentCommand, precedentMergeCommand } from "./precedent";
@@ -51,6 +52,7 @@ export const COMMANDS: Record<string, Handler> = {
 	decider,
 	jev,
 	wake,
+	"law-sync": lawSync,
 };
 
 export function main(argv: string[]): number {

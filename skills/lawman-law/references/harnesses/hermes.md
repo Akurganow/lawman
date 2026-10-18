@@ -5,33 +5,78 @@ This page holds everything a Lawman skill cannot know about Hermes Agent (Nous R
 Terms used below:
 
 - `<installation>`: the Lawman installation directory, for example `~/.lawman`.
-- `lawman`: the clone of the law repository inside the installation.
-- `<role>`: a skill name, such as the duty desk or patrol skill.
+- `<role>`: a role's folder name, such as `patrol` or `duty-desk`.
+- `lawman`: the link in the installation to the folder of the installed plugin.
+- `<skill name>`: a role's skill name in the plugin's form, `agent-plugin-lawman-492e59eb:<role>`.
 - `<model>` and `<platform>`: the developer's model and alarm delivery target.
 
-## Making the skills visible
+## Installing the plugin
 
 Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to detect this harness.
 
 Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway.
 
-Hermes reads skills from `~/.hermes/skills/` and from extra directories listed in its config. Add the law clone's skills directory with the harness's own editor, `hermes config edit`, under the `skills` section (the value is a list, which `hermes config set` does not take):
+Install and enable the plugin from its repository.
 
-```yaml
-skills:
-  external_dirs:
-    - <installation>/lawman/skills
+```
+hermes plugins install Akurganow/lawman --enable --no-deps
 ```
 
-Write the path in full. The docs state that `~` and `${VAR}` are expanded and that a missing directory is skipped silently. A typo therefore fails without an error.
+- `hermes plugins install` takes an owner and repository shorthand. `--enable` enables the plugin at once (stated by `hermes plugins install --help`).
+- A portable package installs disabled without `--enable` (stated by `hermes plugins --help`).
+- The repository holds a `package.json`, so the install offers its Node dependencies. Lawman needs none of them at run time. `--no-deps` skips them (seen in a terminal).
+- Hermes keeps a shallow git clone of the repository, with its `.git` folder (read in the harness code).
+- `hermes plugins update lawman` pulls the newest commit of the default branch into that clone (stated by `hermes plugins update --help`).
+- A plain shallow clone of a tagged commit carries the tag. A fast-forward pull brings later tags (seen in a terminal, with a plain clone).
 
-A skill in `~/.hermes/skills/` or in a project hides an external skill of the same name. The docs say such a shadowing is logged. Keep Lawman skill names unique.
+The plugin folder is `plugins/` next to the file that `hermes config path` prints (read in the harness code). No command prints it. Create the installation directory, then link its `lawman` to that folder.
 
-External directories are not a write-protection boundary. The docs say the agent can edit skills there if the process may write to them. The law clone stays clean for that reason, and every tick checks it.
+```
+ln -s "$(dirname "$(hermes config path)")/plugins/lawman" <installation>/lawman
+```
 
-To check a skill is listed, run `hermes skills list`. In a chat session, `/skills list` does the same. The docs state `hermes skills list --source hub` for hub skills. They do not state what a bare `hermes skills list` shows, so look for the role name in its output.
+Check the install in this order.
+
+```
+test -f <installation>/lawman/plugin.json
+git -C <installation>/lawman rev-parse HEAD
+hermes plugins list
+```
+
+- The first line proves that the link reaches the plugin.
+- The second line prints the commit that the assembly records as `law_commit`.
+- The third line lists `lawman` as enabled.
+
+Hermes names the skills of a portable plugin `agent-plugin-<plugin>-<digest>:<skill>`. For `lawman` the skill name is `agent-plugin-lawman-492e59eb:<role>` (read in the harness code). The digest depends only on the plugin name. A bare role name does not resolve to a plugin skill (read in the harness code). Use the qualified name in `--skill` and in `-s`. A scheduled session answers the probe's skill line with either the qualified name or the bare role name (seen in scheduled runs). The official skill `typesafe-ai` keeps its bare name.
+
+A disabled plugin registers no skills. A job that names its skill then starts with the notice "Skill(s) not found and skipped". It runs the bare prompt (read in the harness code). Treat the notice as a stop. Enable the plugin with `hermes plugins enable lawman`.
+
+`hermes plugins remove lawman` removes the plugin folder and leaves the link dangling (read in the harness code). Remove the link by hand.
+
+Hermes adds a banner that lists the sibling skills to every plugin skill that it serves (read in the harness code).
 
 The official TypeSafe skill is named `typesafe-ai`. Its page, https://docs.typesafe.ai/agent-skill, gives `npx skills add typesafe-ai/skills --skill typesafe-ai` for agents other than Claude Code, and asks the installer to choose the agent. The page names no Hermes route. `hermes skills install <identifier>` is the harness's own route. Its `--help` says the identifier is a skill identifier or a direct HTTP(S) URL to a `SKILL.md` file. Which identifier works for `typesafe-ai` is not probed.
+
+The skill listing command is `hermes skills list`. It shows `typesafe-ai` by its bare name in the Name column (seen in a run).
+
+## Syncing the law
+
+These are the forms that this page names for the section "Sync the law" of `tick.md`. Run each from the installation directory.
+
+- Read the commit that the law folder holds: `git -C lawman rev-parse HEAD`.
+- Read whether the law folder has a local change: `git -C lawman status --porcelain`. No output means no change.
+- Read the release tag of that commit: `git -C lawman describe --tags --exact-match`. It prints the tag and fails when the commit has none.
+- Read a file at a commit: `git -C lawman show <commit>:<path>`. `<path>` is relative to the law folder.
+- List a folder at a commit: `git -C lawman ls-tree --name-only <commit> <folder>/`.
+- Compute the checksum of the journal: `shasum -a 256 bin/journal`. The first field is the sum.
+- Read the platform: `uname -s` and `uname -m`. Write the first in lower case. Map `x86_64` to `x64` and `aarch64` to `arm64`.
+- Create the folder: `mkdir -p runs/sync-<role>-<seven>`. `<seven>` is the first seven characters of the commit.
+- Get the asset and the checksum file: `gh release download <tag> -R <release_repo> -p <asset> -p SHA256SUMS -D runs/sync-<role>-<seven> --clobber`. `<release_repo>` is the key in `config.yaml`.
+- Check the asset against the checksum file: `(cd runs/sync-<role>-<seven> && shasum -a 256 -c SHA256SUMS --ignore-missing)`. The line for the asset reads `OK`.
+- Check where the asset came from: `gh attestation verify runs/sync-<role>-<seven>/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml --source-digest <commit>`. Exit 0 means the check passed. It prints nothing when its output is not a terminal (seen in a terminal).
+- Make the asset executable: `chmod +x runs/sync-<role>-<seven>/<asset>`.
+- Run the verified asset: `runs/sync-<role>-<seven>/<asset> law-sync --tag <tag> --commit <commit> --installation .`. It renames itself over `bin/journal`.
+- Remove what remains: `rm -f runs/sync-<role>-<seven>/<asset> runs/sync-<role>-<seven>/SHA256SUMS`, then `rmdir runs/sync-<role>-<seven>`.
 
 ## Running a role once
 
@@ -46,7 +91,7 @@ hermes cron run <role>
 - A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree with the first two commands of the "End the tick" section of `tick.md`.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
-`hermes chat --oneshot -q "<tick prompt>" -s <role>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
+`hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
 
 ## Commands in scheduled runs
 
@@ -77,7 +122,7 @@ Create one job per role:
 
 ```
 hermes cron create "<cron expression>" "<tick prompt>" \
-  --name "[lawman] <role>" --skill <role> --workdir <installation> \
+  --name "[lawman] <role>" --skill <skill name> --workdir <installation> \
   --model <model> --deliver <platform>
 ```
 
@@ -140,9 +185,11 @@ Every tick must be idempotent under a catch-up run. The law already requires thi
 
 ### Silence
 
-An empty tick answers exactly `[SILENT]`. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
+A successful tick answers its brief report lines and then `[SILENT]` alone on the last line. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
 
-Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (probe). The docs do not describe this injection. Skills therefore say only: answer `[SILENT]` when there is nothing to report. Skills do not repeat the explanation.
+Hermes suppresses delivery when `[SILENT]` is the whole response, or its own first line or last line, trimmed and ignoring case. A token inside a sentence is delivered (read in the harness code).
+
+Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). The skills ask for the report first and the token alone on the last line. Skills do not repeat the explanation.
 
 An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 
@@ -218,8 +265,12 @@ The probe measured that `gh` reads the keychain from a cron session. The login w
 
 ### The TypeSafe key
 
-`TYPESAFE_API_KEY` goes where `GH_TOKEN` goes: `~/.hermes/.env`. The docs say `.env` values are exported to the process environment. A scheduled session sees the variable: a Send run in one returned a `jev model=` line (probe).
+The key may live in any place that a scheduled session can read. The assembly records that place in `typesafe_key` of `config.yaml`.
+
+`~/.hermes/.env` is one such place. The docs say `.env` values are exported to the process environment. A scheduled session sees such a variable: a Send run in one returned a `jev model=` line (seen in scheduled runs).
+
+Hand the key to a request on standard input, or through a process substitution that feeds a header. The page lists process substitution as accepted under "Commands in scheduled runs". Never put the key in the text of a command.
 
 ## What a second harness needs
 
-A second harness needs a page with these same six sections. They are: making the skills visible, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
+A second harness needs a page with these same seven sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.

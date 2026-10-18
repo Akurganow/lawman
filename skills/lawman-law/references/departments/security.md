@@ -102,7 +102,7 @@ The two placeholders for the positive control follow. Neither is a secret.
 `-----BEGIN EXAMPLE PRIVATE KEY-----`
 `https://example-user:example-pass@host.invalid/`
 Run the positive control first.
-`git -C lawman grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' HEAD -- departments/security.md | cut -d: -f2,3`
+`git -C lawman grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' HEAD -- skills/lawman-law/references/departments/security.md | cut -d: -f2,3`
 It must print the two lines that hold the placeholders. When it prints nothing,
 no clean result counts. Then search the tree.
 `git -C <tree> grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' | cut -d: -f1,2`
