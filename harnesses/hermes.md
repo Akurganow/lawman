@@ -163,7 +163,7 @@ Seen when the commands ran in a terminal, read only:
 
 Not established: whether a scheduled session finds `hermes` and `jq` on its `PATH`, and whether the terminal of a scheduled session sees the session id. The journal stores no session id. A tick is matched to its session by the role and a time window.
 
-Checked with the harness's check function: the export commands, a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script pass as written, also inside `(set -o pipefail; …)`. None of this was seen in a scheduled run.
+Checked with the harness's check function: the export commands pass as written.
 
 ## Isolation
 

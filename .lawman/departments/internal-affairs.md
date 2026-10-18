@@ -41,8 +41,8 @@ Cost is turns. Count the calls of a session, the calls the skill does not ask fo
 
 Each item below is a source command. A placeholder takes a value of its class and nothing else. Take `<id>` from the output of the session listing below and from no other text. Take the `<n>` of the `--id` item from the first column of a tick line. The `gh api` and `git -C precincts` items read only the repositories and clones of the precincts that the `precinct list` item prints.
 
-- Source command: `bin/journal tick list --limit <n> --role <name>`. The ticks of one role, newest first. Each tick is one line of facts, then its report with `| ` before each line. Use it to find a tick, not to quote one.
-- Source command: `bin/journal tick list --limit <n> --precinct <name>`. The ticks that took an order on one precinct. Use it to find a tick, not to quote one.
+- Source command: `bin/journal tick list --limit <n> --role <name>`. The ticks of one role, newest first. Each tick is one line of facts, then its report with `| ` before each line.
+- Source command: `bin/journal tick list --limit <n> --precinct <name>`. The ticks that took an order on one precinct.
 - Source command: `bin/journal tick list --id <n>`. One tick, in the form above. Quote a tick only through this item.
 - Source command: `bin/journal precinct list`. The repository of each precinct, by its name. Quote the name and the repository only.
 - Source command: `hermes sessions export --source cron --title <name> --after <utc> --before <utc> --dry-run -`. The ids of the scheduled sessions of one role in a window. A window with no session prints a line that starts with `Would export 0`. A window whose two bounds are equal prints an error text and exits 0. That run failed.
