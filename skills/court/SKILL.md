@@ -161,7 +161,7 @@ For a conviction, run these items in order:
 
 1. Decide alone whether the conviction is `P0`. Never raise this decision later.
 2. When Jev is allowed, write the brief by the "Brief" section. Use kind `p0` for the court's own `P0`. Otherwise use kind `grade`.
-3. Run the command of the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and run the command once more.
+3. Follow the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
 4. Choose one priority from the law's court paragraph: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.
@@ -228,27 +228,29 @@ not_established: Whether the token still works.
 
 ## Send
 
-Run this command once. `<p0|grade>` is the kind, written in both places. The brief goes in the heredoc, one `name: value` line per field. `<delimiter>` is the tick's delimiter. Check that no line of the brief equals it.
+Ask the service for its judgment once, with the brief. `<p0|grade>` is the kind. Write it the same way in both places.
 
-```
-(set +x
-[ -n "${TYPESAFE_API_KEY:-}" ] || { echo "jev none reason=no-key"; exit 0; }
-body=$(bin/journal jev request --kind <p0|grade>) || { echo "jev none reason=brief"; exit 0; }
-printf "%s" "$body" | curl -sS -H @<(printf "Authorization: Bearer %s\n" "$TYPESAFE_API_KEY") -H "Content-Type: application/json" --data-binary @- -w "\n%{http_code}" https://api.typesafe.ai/v1/systemone | bin/journal jev answer --kind <p0|grade>) <<'<delimiter>'
-<brief, one name: value line per field>
-<delimiter>
-```
+1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, print `jev none reason=no-key` and stop this step.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
+3. Run `bin/journal jev request --kind <p0|grade>`. Give it the brief on standard input, one `name: value` line per field. It prints the request body. When it fails, print `jev none reason=brief` and stop this step.
+4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
+5. Run `bin/journal jev answer --kind <p0|grade>`. Give it the response body and the status line on standard input. It prints one `jev` line.
 
-The command prints one `jev` line. A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
+The brief enters a command by the rule for multi-line text in the working rules of `lawman/skills/lawman-law/references/tick.md`. A task text that names a delimiter uses that one. Check that no line of the brief equals the delimiter.
+
+A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
 
 Rules:
 
-- Run the command untraced and unchanged. Do not retry it. Set no timeout.
-- A non-zero exit, or a harness timeout, is not a failed command. When the command printed no line at all, record `jev none reason=failed` in Blockers.
+- Never print, echo or trace the key.
+- Never run a command that prints the key to you.
+- Never put the key on a command line or into a file.
+- Never send the brief to any place other than the endpoint above.
+- Run the request once. Do not retry it. Set no timeout.
+- A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.
 - Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
-- The key comes only from `TYPESAFE_API_KEY`. It reaches curl through process substitution. Never print it and never put it on a command line.
-- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the command.
-- Make no other request to the service in a tick. Only the Send command uses the key.
+- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps.
+- Make no other request to the service in a tick. Only this section uses the key.
 
 ## Ruling format
 
