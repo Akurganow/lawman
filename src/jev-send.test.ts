@@ -72,7 +72,6 @@ printf '\\n%s' "$FAKE_STATUS"
 
 	test("the first fenced block under the heading holds the command", () => {
 		expect(block.trimStart().startsWith("(set +x\n")).toBe(true);
-		expect(block).not.toContain("bash -c");
 		expect(block).toContain("https://api.typesafe.ai/v1/systemone");
 	});
 

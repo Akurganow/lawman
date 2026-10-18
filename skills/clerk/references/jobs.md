@@ -81,7 +81,7 @@ The journal reads the Precedent section of the ruling. On an entry, it adds the 
 (set -o pipefail; gh api repos/<owner/repo>/issues/comments/<comment id> --jq .body | bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>)
 ```
 
-The subshell makes a failed `gh api` a non-zero exit. The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
+The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
 
 - `entry<TAB><number>`: the line is in the tree. Keep the number.
 - `none`: no line was added.
@@ -199,7 +199,7 @@ Taken up by the clerk as a draft that counts as not started.
    (set -o pipefail; gh pr view <pull> -R <owner/repo> --json body --jq .body | bin/journal handoff --sources <sources> --adopted | gh pr comment <pull> -R <owner/repo> --body-file -)
    ```
 
-   The subshell makes a failed `gh pr view` a non-zero exit, and the tick ends with `failed` before step 3. The body is not replaced. The pipe starts `gh pr comment` anyway, so a comment with an empty archive may stand. Blockers says so.
+   When `gh pr view` fails, the pipe still starts `gh pr comment`, so a comment with an empty archive may stand. Blockers says so.
 
 3. Replace the body with the fixed body on stdin.
    ```

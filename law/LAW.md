@@ -6,7 +6,7 @@ This file is what every role shares. It names no precinct, no path, no tool, no 
 
 Where a role disagrees with this file, this file wins and the role is stale.
 
-Four more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the nine roles of a tick share, and adds no rule. Each owns its subject and none repeats another.
+Five more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the nine roles of a tick share. The exhibits file says how a role reads numbered lines, quotes a claim of absence and follows a missing path. Each owns its subject and none repeats another.
 
 Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report. Patrol files it in an issue body. The response unit files it in a comment on an issue that a human wrote. The lead origin is the earliest `stage=lead` marker. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 

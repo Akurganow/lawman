@@ -4,7 +4,7 @@ A role reads this file when it quotes a line, quotes a claim of absence, or meet
 
 ## Read numbered lines
 
-Quote a `path:line` only from output that prints the line number at `<ref>`: this command, or a `grep -n` line of the same commit. Never count lines by eye. `<from>` and `<to>` are digits.
+Quote a `path:line` only from output that prints the line number at `<ref>`: this command, or a `grep -n` line of the same commit. `<from>` and `<to>` are digits.
 
 ```
 git -C precincts/<p> show <ref>:<path> | nl -ba | sed -n '<from>,<to>p'
@@ -45,4 +45,4 @@ A path that a lead, a case or a charge names is missing at `<ref>`. Follow it th
    Output: the path moved inside the precinct. Read the claim at the new path with the "Read numbered lines" section, and say so. No output: the path is gone at `<ref>` too. Repeat from item 1 with the new path.
 4. No line names `<path>`. If the first line shows two parent hashes, the commit is a merge. Say so, and treat the move as not established. Otherwise that commit removed the path. This does not prove that the file is gone. A rename with a heavy edit shows as a removal and an addition. The subject may name the new place.
 
-The result is the commit with its subject, and the new path, the removal, or the fact that no commit touched the path. A place that only the subject names is a fact about the subject, not a path you read. The subject is evidence, so it goes in a fenced block.
+The result is the commit with its subject, and the new path, the removal, or the fact that no commit touched the path. A place that only the subject names is a fact about the subject, not a path you read. The subject is evidence, so it goes in a fenced block. A case closes with the class `not confirmed` when its path moved out of the precinct, or the commit removed it. The same class applies when only a commit subject names the new place. The decision names the commit and the new place or the removal.

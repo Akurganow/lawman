@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, readFileSync, statSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { ROOT } from "./test-helpers";
 
@@ -23,17 +23,11 @@ const REFUSED: [string, RegExp][] = [
 	],
 ];
 
-function pages(dir: string): string[] {
-	return readdirSync(dir).flatMap((name) => {
-		const path = join(dir, name);
-		if (statSync(path).isDirectory()) return pages(path);
-		return path.endsWith(".md") ? [path] : [];
-	});
-}
-
 describe("command forms in the law, the skills and the department pages", () => {
 	const files = ["law", "skills", "departments"].flatMap((d) =>
-		pages(join(ROOT, d)),
+		readdirSync(join(ROOT, d), { encoding: "utf8", recursive: true })
+			.filter((f) => f.endsWith(".md"))
+			.map((f) => join(ROOT, d, f)),
 	);
 	for (const [name, form] of REFUSED) {
 		test(`no ${name}`, () => {

@@ -118,19 +118,14 @@ A related issue is evidence of the case, never a reason to close it.
 
 1. Re-read the decisive exhibit of each claim at `<sha>`, through `show`, or through `grep` on `<sha>`.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
-   - Quote in Grounds the numbers your own read printed.
-   - A cited number that the range does not support makes that exhibit a claim, not an exhibit.
-   - The decisive exhibit of a claim of absence is its search and its control. Run both again on `<sha>`, as the "Quote a claim of absence" section says.
+   - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
 3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:
    - Re-read the commit that the case names, with the second command of the "Follow a missing path" section of `lawman/law/exhibits.md`.
-   - A commit from the case enters the command only when it matches `^[0-9a-f]{7,40}$`, as item 2 of that section says.
    - If the case names no commit, run the whole section.
    - A decision that closes the case on that ground names the commit and the new place or the removal in its Grounds.
-   - The class is `not confirmed` in three cases. The new place is outside the precinct, only a commit subject names it, or the commit removed the path.
-   - Say so when only a commit subject names the place.
 
 ### Step 8: decide
 
@@ -202,8 +197,6 @@ Coverage: <sha>, issue #<n>, round <r>.
 Written: <one of the lines below>
 Blockers: <tool, source or tracker errors, the stop token, any facts about evidence, the tip fact if it moved>.
 ```
-
-Write exactly one of the three `Written:` lines. The report has three lines in total.
 
 - `Written: <comment URL>.` for a charge, for a return, and for a decline whose close did not read back as `CLOSED`.
 - `Written: <comment URL>; closed as <class>.` for a decline, after the close read back as `CLOSED`.

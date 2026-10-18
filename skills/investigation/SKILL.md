@@ -147,7 +147,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    ```
    git -C precincts/<p> show <sha>:<path>
    ```
-2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/law/exhibits.md` says. A zero count proves nothing until the control shows a non-zero count.
+2. Search with a quoted heredoc of patterns, one per line. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/law/exhibits.md` says.
    ```
    git -C runs/<tick id>/tree grep -n -F -f - -- . <<'<delimiter>'
    <pattern>
@@ -258,7 +258,6 @@ Rules:
 
 - State no opinion, recommendation, severity or fix.
 - Quote only the lines a claim needs.
-- Quote a claim of absence as the search with its output and the control search with its non-empty output, in one fenced block.
 - Cut an absolute path in quoted output to a path from the tree root.
 - Put quoted third-party text and every `@` inside a fenced block. When the claim holds an `@`, write `Lead: #<n>` and put the claim in a fenced block below it.
 - Write no home path, installation path, token or login.

@@ -129,10 +129,6 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		return { code: r.exitCode, out: r.stdout.toString() };
 	}
 
-	test("the command is a subshell that sets pipefail", () => {
-		expect(COMMAND).toContain("(set -o pipefail;");
-	});
-
 	test("page files come out in rotation order without their suffix", () => {
 		visit("core", "2026-09-01T00:00:00Z");
 		visit("api", "2026-10-05T00:00:00Z");

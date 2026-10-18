@@ -133,13 +133,9 @@ A related issue is evidence of the case, never a reason to close it.
    git -C precincts/<p> show <sha>:<path>
    ```
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
-   - A cited number that the range does not support makes that exhibit a claim, not an exhibit.
    - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
-   - A commit from the case enters the command only when it matches `^[0-9a-f]{7,40}$`, as item 2 of that section says.
    - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
-   - The class is `not confirmed` in three cases. The new place is outside the precinct, only a commit subject names it, or the commit removed the path.
-   - Say so when only a commit subject names the place.
-   - Re-read a claim of absence as its search and its control, as the "Quote a claim of absence" section says.
+   - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path that the court re-reads.
    ```
    git -C precincts/<p> log --format='%h %s' <sha> -- <path>
@@ -342,8 +338,6 @@ Coverage: <sha>, issue #<n>, round <r>.
 Written: <one of the lines below>
 Blockers: <tool, source or tracker errors, the stop token, any facts about evidence, the tip fact if it moved>.
 ```
-
-Write exactly one of the three `Written:` lines. The report has three lines in total.
 
 - `Written: <comment URL>.` for a conviction, and for an acquittal whose close did not read back as `CLOSED`.
 - `Written: <comment URL>; closed as <class>.` for an acquittal, after the close read back as `CLOSED`.

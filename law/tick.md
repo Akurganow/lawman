@@ -56,7 +56,7 @@ The last output is the fetched commit. A failed command gives `stopped-git-fetch
 gh issue list -R <owner/repo> --state all --limit 1000 --json number,state,stateReason,title,createdAt,closedAt,author,body,comments | bin/journal sync <p> --author <login>
 ```
 
-A failed `gh` prints nothing, so the journal reads an empty input and exits 4. The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`.
+The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`.
 
 ## Sync the pull requests
 
