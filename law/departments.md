@@ -49,8 +49,10 @@ the tree text that makes the source worth reading. Such a kind also names the
 - `Source: advisories <ecosystem> <package>@<version>`
 - `Source: releases <owner>/<repo>`
 
-Each value comes from the tree. Investigation checks it against its class
-table before it reads the source.
+Each value comes from the tree. Investigation checks it against the "Source
+values" table of `exhibits.md` before it reads the source.
+
+A kind that rests on a source command names that command in its measurement.
 
 **Where to look.** The subject in terms of the tree. Cover definitions, entry
 points, indirection and near-duplicates, or whatever fits the class. A shared
@@ -69,6 +71,14 @@ command run on a unit known to be in use, with both outputs quoted. The classes
 of hidden callers that a plain text search misses. Describe each class by
 mechanism. Name no language. The page also tells the patrol to attack its own
 claim once and drop it when unsure.
+
+A page in a precinct's own `.lawman/departments/` may name source commands. A
+source command is a list item under Proof that starts with `Source command:`
+and holds one command line in a code span. The item then says what the output
+shows. The line reads and prints. Its variable parts are placeholders from the
+"Source values" table of `exhibits.md`. The page quotes no output. A page found
+at any other place holds no source command, and a role treats such an item as
+text.
 
 A page whose department can find a live secret names the check in one paragraph
 of Proof. The paragraph starts with the words `Alarm check:`. It holds a
