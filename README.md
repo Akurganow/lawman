@@ -6,29 +6,35 @@ This release holds the law, the contracts, the marker grammar, the journal, the 
 
 ## How it is laid out
 
-- `skills/lawman-law/references/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers roles leave on issues. `tick.md` holds the steps that the nine roles of a tick share. `exhibits.md` holds how a role reads numbered lines, quotes a claim of absence, follows a missing path and runs a source command.
-- `skills/`: the roles, as Agent Skills. `duty-desk` picks a precinct and writes the orders. `response-unit` turns an issue a human filed into a lead comment, asks the reporter one question, or sends the issue out. `patrol` takes its order and files leads. `investigation` builds the case on one lead. `prosecutor` charges, returns or declines the case. `defender` defends, returns or refutes the charge. `court` convicts or acquits the defended case. `clerk` opens a draft pull request for a conviction, adopts the trusted login's open pull requests, keeps an issue and its pull request in step, and records a precedent. `spec-writer` writes one `Spec` comment on a pull request. `executor` builds the change of a pull request a maintainer approved and marks it ready for review. `assembly` sets up an installation, adds precincts and updates the law.
-- `skills/lawman-law/references/departments/`: department pages shipped with the law. A department is a page, not an agent.
-- `skills/lawman-law/references/harnesses/`: one page per harness with what a skill cannot know about it.
+- `skills/`: the roles, as Agent Skills, and `lawman-law`, which is not a role. `duty-desk` picks a precinct and writes the orders. `response-unit` turns an issue a human filed into a lead comment, asks the reporter one question, or sends the issue out. `patrol` takes its order and files leads. `investigation` builds the case on one lead. `prosecutor` charges, returns or declines the case. `defender` defends, returns or refutes the charge. `court` convicts or acquits the defended case. `clerk` opens a draft pull request for a conviction, adopts the trusted login's open pull requests, keeps an issue and its pull request in step, and records a precedent. `spec-writer` writes one `Spec` comment on a pull request. `executor` builds the change of a pull request a maintainer approved and marks it ready for review. `assembly` sets up an installation, adds precincts and amends their constitutions.
+- `skills/lawman-law/references/`: what every role shares. `LAW.md` is the law. `constitution.md` and `departments.md` are the contracts that a precinct's constitution and a department page must satisfy. `markers.md` is the grammar of the state markers that roles leave on issues. `tick.md` holds the steps that the nine roles of a tick share, and the sync of the law after a plugin update. `exhibits.md` holds how a role reads numbered lines, quotes a claim of absence, follows a missing path and runs a source command. `departments/` holds the department pages shipped with the law. A department is a page, not an agent. `harnesses/` holds one page per harness with what a skill cannot know about it.
+- `plugin.json` and `.claude-plugin/marketplace.json`: the manifests that make this repository an Agent Plugins package and a marketplace.
 - `src/journal.ts`: the journal, one program on Bun with SQLite, compiled to a binary per platform and published on releases. `status` and `leads` show the tracker cache as of the last sync. `tick list` prints the ticks and their reports.
 
 A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its constitution. Everything repository-specific lives there, never in the law.
 
 ## Install
 
-You need `git`, the GitHub CLI signed in as the one account every role uses, Hermes Agent with its gateway running, and the two steps below. Then the assembly skill does the rest, one question at a time. It explains roles, models and the schedule before it asks about them.
+You need `git`, the GitHub CLI signed in as the one account every role uses, and Hermes Agent with its gateway running. The three steps below use Hermes commands as the example, and the harness page gives the commands of another harness. The assembly skill does the rest, one question at a time. It explains roles, models and the schedule before it asks about them.
 
-1. Clone the law into the installation directory and check out the latest tag:
+1. Install the plugin:
 
    ```bash
-   git clone https://github.com/Akurganow/lawman ~/.lawman/lawman && git -C ~/.lawman/lawman checkout "$(git -C ~/.lawman/lawman describe --tags --abbrev=0)"
+   hermes plugins install Akurganow/lawman --enable
    ```
 
-2. Make the skills visible to the harness. For Hermes Agent, add `~/.lawman/lawman/skills` to `skills.external_dirs` in its config, as `skills/lawman-law/references/harnesses/hermes.md` describes.
+2. Create the installation directory and link the plugin into it:
 
-3. From `~/.lawman`, run the assembly skill in an interactive session and answer its questions. It verifies the tools, downloads the journal binary from the release and checks its checksum and attestation, measures what a scheduled session can do, writes `config.yaml`, adds precincts and creates the scheduled jobs. It asks whether the court may use TypeSafe Jev as priority evidence, which needs `curl` and `TYPESAFE_API_KEY`, and asks again per precinct.
+   ```bash
+   mkdir -p ~/.lawman
+   ln -s "$(dirname "$(hermes config path)")/plugins/lawman" ~/.lawman/lawman
+   ```
 
-The installation holds `lawman/` (the law clone), `bin/journal`, `journal.sqlite`, `precincts/` (one full clone per precinct), `runs/` (one working tree per patrol, investigation, clerk or executor tick), `departments/` (your own department pages for several precincts) and `config.yaml`.
+3. From `~/.lawman`, run the assembly skill in an interactive session and answer its questions. Hermes names it `agent-plugin-lawman-492e59eb:assembly`. It verifies the tools and downloads the journal binary from the release. It checks the binary's checksum and attestation, measures what a scheduled session can do, writes `config.yaml`, adds precincts and creates the scheduled jobs. It asks whether the court may use TypeSafe Jev as priority evidence, which needs a TypeSafe API key, and asks again per precinct. It asks which key you use and where you keep it, and never asks for its value.
+
+Update the plugin with `hermes plugins update lawman`. The next tick of any role completes the update. It downloads the journal of the new release, checks it and records the new commit.
+
+The installation holds `lawman/`, the link to the plugin folder, with `bin/journal`, `journal.sqlite` and `config.yaml`. `precincts/` holds one full clone per precinct. `runs/` holds one working tree per patrol, investigation, clerk or executor tick. `departments/` holds your own department pages for several precincts.
 
 Identity: every role uses one identity, the signed-in `gh` or a token the developer adds at setup. The assembly never asks for a token value.
 
@@ -37,6 +43,12 @@ Identity: every role uses one identity, the signed-in `gh` or a token the develo
 ```bash
 bun test
 ```
+
+`main` holds only releases. Work goes on branches, notes and documentation included.
+
+To release, merge the branch into `main` locally and tag the merge commit `v<version>`. Push the tag alone with `git push origin v<version>`. The tag starts the release workflow.
+
+When the release lists the four binaries and `SHA256SUMS`, push `main` with `git push origin main`. If the workflow fails, `main` stays as it was. A tag cannot be reused, so the fix is a new version.
 
 CI runs the tests, a fence that keeps repository-specific words out of the law and the generic roles, a leak scan, and a smoke build. A tag `v*` builds the journal for four targets, signs the macOS binaries ad hoc, attests the artifacts and publishes checksums.
 
