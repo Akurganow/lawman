@@ -78,12 +78,12 @@ Every role runs in a scheduled session. This step measures that session.
 Probe prompt:
 
 ```
-Lawman probe. Run only these commands from this directory, and show each output under its command.
+Lawman probe. Begin the answer with one line: skill=<name of the skill that this job attached, not of a file you read>
+Run only these commands from this directory, and show each output under its command.
 bin/journal probe --schema 6
 gh api user --jq .login
 git --version
 Do not run anything else. Do not write to any repository. Do not take an order.
-End with one line: skill=<name of the skill that this job attached, not of a file you read>
 ```
 
 Jev probe lines. Add them before the line "Do not run anything else.", only when the developer answered `yes` in item 10:

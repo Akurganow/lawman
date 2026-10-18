@@ -13,6 +13,7 @@ const RULES = [
 	"Never run a command that prints the key to you.",
 	"Never put the key on a command line or into a file.",
 	"Never send the brief to any place other than the endpoint above.",
+	"Write no file for the brief or the reply. Pipe them from command to command.",
 	"Run the request once. Do not retry it. Set no timeout.",
 	"A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.",
 	"Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.",
