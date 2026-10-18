@@ -2,7 +2,7 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
-## [0.15.0] - Unreleased
+## [0.15.0] - 2026-10-19
 
 ### Added
 
