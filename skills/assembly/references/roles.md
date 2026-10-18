@@ -252,7 +252,7 @@ Command forms:
 
 Skip this step when no file is new or different.
 
-1. Run `bin/journal probe --schema 6`. Stop if it exits non-zero, and tell the developer to update the installation by running the assembly again.
+1. Run `bin/journal probe --schema 6`. Stop if it exits non-zero, and tell the developer to run one role once, then run the assembly again.
 2. For each new or different file, create the directory, write the file and run it once from the installation. Replace the placeholders.
 
 ```

@@ -57,6 +57,8 @@ Hermes adds a banner that lists the sibling skills to every plugin skill that it
 
 The official TypeSafe skill is named `typesafe-ai`. Its page, https://docs.typesafe.ai/agent-skill, gives `npx skills add typesafe-ai/skills --skill typesafe-ai` for agents other than Claude Code, and asks the installer to choose the agent. The page names no Hermes route. `hermes skills install <identifier>` is the harness's own route. Its `--help` says the identifier is a skill identifier or a direct HTTP(S) URL to a `SKILL.md` file. Which identifier works for `typesafe-ai` is not probed.
 
+The skill listing command is `hermes skills list`. It shows `typesafe-ai` by its bare name in the Name column (seen in a run).
+
 ## Syncing the law
 
 These are the forms that this page names for the section "Sync the law" of `tick.md`. Run each from the installation directory.
