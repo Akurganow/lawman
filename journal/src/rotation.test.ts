@@ -5,6 +5,7 @@ import {
 	cli,
 	dbFile,
 	dir,
+	JOURNAL,
 	order,
 	precinct,
 	ROOT,
@@ -168,7 +169,7 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		const shim = join(bin, "journal");
 		writeFileSync(
 			shim,
-			`#!/bin/sh\nexec bun ${join(ROOT, "src", "journal.ts")} "$@"\n`,
+			`#!/bin/sh\nexec bun ${join(JOURNAL, "src", "journal.ts")} "$@"\n`,
 		);
 		chmodSync(shim, 0o755);
 		const command = COMMAND.replace("<name>", PRECINCT).replace("<lines>", () =>

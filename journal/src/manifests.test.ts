@@ -2,8 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import pkg from "../package.json";
-
-const ROOT = join(import.meta.dir, "..");
+import { ROOT } from "./test-helpers";
 
 function readJson(path: string): unknown {
 	return JSON.parse(readFileSync(join(ROOT, path), "utf8"));

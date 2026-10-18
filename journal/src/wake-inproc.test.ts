@@ -1,8 +1,11 @@
+import type { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { rmSync } from "node:fs";
 import * as db from "./db";
 import { inproc } from "./inproc";
 import {
 	BASE,
+	dbFile,
 	later,
 	order,
 	precinct,
@@ -30,8 +33,36 @@ describe("wake in process", () => {
 
 	test("a taken order shows again only after the claim limit", () => {
 		seed((d) => order(d, "main", "patrol", { takenAt: BASE }));
+		expect(wake(later(24, -1)).out).toBe("idle\n");
 		expect(wake(later(24)).out).toBe("idle\n");
 		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nday /);
+	});
+
+	test("agrees with dispatch take on every case, the boundary second included", () => {
+		const cases: Record<string, (d: Database) => void> = {
+			none: () => {},
+			untaken: (d) => order(d, "main", "patrol"),
+			closed: (d) => order(d, "main", "patrol", { outcome: "silent" }),
+			taken: (d) => order(d, "main", "patrol", { takenAt: BASE }),
+			other: (d) => order(d, "main", "judge"),
+		};
+		const clocks = [BASE, later(24, -1), later(24), later(24, 1)];
+		for (const [name, body] of Object.entries(cases)) {
+			for (const clock of clocks) {
+				for (const file of [dbFile, `${dbFile}-wal`, `${dbFile}-shm`])
+					rmSync(file, { force: true });
+				seed((d) => {
+					precinct(d, "main");
+					body(d);
+				});
+				const ready = wake(clock).out !== "idle\n";
+				expect([name, clock, take(clock).out !== ""]).toEqual([
+					name,
+					clock,
+					ready,
+				]);
+			}
+		}
 	});
 
 	test("records the check time of a role that has a row", () => {

@@ -3,11 +3,11 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { withDepartmentLine } from "./department-line";
 import { lintPage } from "./lint";
-import { cli, ROOT } from "./test-helpers";
+import { cli, JOURNAL } from "./test-helpers";
 
 describe("department-line", () => {
 	const VALID = readFileSync(
-		join(ROOT, "src", "fixtures", "pages", "constitution-valid.md"),
+		join(JOURNAL, "src", "fixtures", "pages", "constitution-valid.md"),
 		"utf8",
 	);
 	const LAST_LINE = "- docs-drift: judged by none\n";

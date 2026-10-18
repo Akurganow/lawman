@@ -16,7 +16,7 @@ import {
 	leftovers,
 	type Runner,
 } from "./law-sync-test-fixture";
-import { dir, ROOT, tempDb } from "./test-helpers";
+import { dir, JOURNAL, tempDb } from "./test-helpers";
 
 const COMPILE_TIMEOUT_MS = 120_000;
 const scratch = mkdtempSync(join(tmpdir(), "lawman-compiled-"));
@@ -25,7 +25,7 @@ const compiled = join(scratch, "journal");
 beforeAll(() => {
 	const build = Bun.spawnSync(
 		["bun", "build", "--compile", "src/journal.ts", "--outfile", compiled],
-		{ cwd: ROOT },
+		{ cwd: JOURNAL },
 	);
 	expect(build.exitCode).toBe(0);
 }, COMPILE_TIMEOUT_MS);
@@ -83,7 +83,7 @@ describe("law-sync, CLI only", () => {
 	});
 
 	test("the source names no network, version-control or process word", () => {
-		const source = readFileSync(join(ROOT, "src", "law-sync.ts"), "utf8");
+		const source = readFileSync(join(JOURNAL, "src", "law-sync.ts"), "utf8");
 		expect(source).not.toMatch(/\b(fetch|http|git|gh|spawn|child_process)\b/i);
 	});
 });

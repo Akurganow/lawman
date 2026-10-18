@@ -3,11 +3,11 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { hasAlarmCheck } from "./lint";
-import { cli, LAW, ROOT } from "./test-helpers";
+import { cli, JOURNAL, LAW } from "./test-helpers";
 
 const PAGES = join(LAW, "departments");
 const VALID = readFileSync(
-	join(ROOT, "src", "fixtures", "pages", "department-valid.md"),
+	join(JOURNAL, "src", "fixtures", "pages", "department-valid.md"),
 	"utf8",
 );
 const ALARM = "Alarm check: look for a secret and print positions only.";
@@ -78,7 +78,7 @@ describe("lint-page alarm-check line", () => {
 
 	test("a constitution page with such a paragraph prints nothing", () => {
 		const text = readFileSync(
-			join(ROOT, "src", "fixtures", "pages", "constitution-valid.md"),
+			join(JOURNAL, "src", "fixtures", "pages", "constitution-valid.md"),
 			"utf8",
 		).replace("## Fence\n", `## Fence\n\n${ALARM}\n`);
 		const r = lintConstitution(text);

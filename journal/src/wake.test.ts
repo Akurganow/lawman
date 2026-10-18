@@ -1,13 +1,12 @@
 import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { MIGRATIONS } from "./db";
 import {
 	BASE,
 	call,
 	cli,
-	dbFile,
 	dir,
 	later,
 	order,
@@ -50,37 +49,6 @@ describe("wake", () => {
 		expect(wake().out).toBe(`order ${id}\nday ${DAY}\n`);
 		expect(take().code).toBe(0);
 		expect(wake().out).toBe("idle\n");
-	});
-
-	test("prints a taken order older than the claim limit and not one second inside it", () => {
-		seedOrders((db) => order(db, "main", "patrol", { takenAt: BASE }));
-		expect(wake(later(24, -1)).out).toBe("idle\n");
-		expect(wake(later(24)).out).toBe("idle\n");
-		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nday /);
-	});
-
-	test("agrees with dispatch take on every case, the boundary second included", () => {
-		const cases: Record<string, (db: Database) => void> = {
-			none: () => {},
-			untaken: (db) => order(db, "main", "patrol"),
-			closed: (db) => order(db, "main", "patrol", { outcome: "silent" }),
-			taken: (db) => order(db, "main", "patrol", { takenAt: BASE }),
-			other: (db) => order(db, "main", "judge"),
-		};
-		const clocks = [BASE, later(24, -1), later(24), later(24, 1)];
-		for (const [name, body] of Object.entries(cases)) {
-			for (const clock of clocks) {
-				for (const file of [dbFile, `${dbFile}-wal`, `${dbFile}-shm`])
-					rmSync(file, { force: true });
-				seedOrders(body);
-				const ready = wake(clock).out !== "idle\n";
-				expect([name, clock, take(clock).out !== ""]).toEqual([
-					name,
-					clock,
-					ready,
-				]);
-			}
-		}
 	});
 
 	test("the day line follows the UTC date and two calls the same day print the same bytes", () => {

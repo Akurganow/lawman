@@ -17,9 +17,10 @@ export function must<T>(value: T | null | undefined): T {
 
 export const issueOf = (n: number) => must(issues.find((i) => i.number === n));
 
-export const ROOT = join(import.meta.dir, "..");
+export const ROOT = join(import.meta.dir, "..", "..");
+export const JOURNAL = join(ROOT, "journal");
 export const LAW = join(ROOT, "skills", "lawman-law", "references");
-const SRC = join(ROOT, "src", "journal.ts");
+const SRC = join(JOURNAL, "src", "journal.ts");
 const HARNESS = `
 const j = await import(${JSON.stringify(SRC)});
 j.COMMANDS["open-db"] = () => { j.open().close(); };
@@ -49,7 +50,7 @@ export function cli(
 	stdin?: string,
 ) {
 	const r = Bun.spawnSync(["bun", "src/journal.ts", ...args], {
-		cwd: ROOT,
+		cwd: JOURNAL,
 		env: env(extra),
 		stdin: stdin === undefined ? undefined : Buffer.from(stdin),
 	});
@@ -62,7 +63,7 @@ export function cli(
 
 export function harness(extra: Record<string, string>) {
 	return Bun.spawn(["bun", "-e", HARNESS], {
-		cwd: ROOT,
+		cwd: JOURNAL,
 		env: env(extra),
 		stdout: "pipe",
 		stderr: "pipe",

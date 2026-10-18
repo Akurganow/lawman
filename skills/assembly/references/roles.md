@@ -236,7 +236,7 @@ Command forms:
 1. A create command is this line, with the page's create form:
 
 ```
-<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role skill name> --workdir <installation> --deliver <deliver from config.yaml>
+<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role skill name> --workdir "<installation>" --deliver <deliver from config.yaml>
 ```
 
 2. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. Every job name carries the prefix `[lawman] `.
@@ -258,7 +258,7 @@ Skip this step when no file is new or different.
 ```
 mkdir -p <scripts directory>
 printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts directory>/lawman-<role>.sh
-(cd <installation> && bash <scripts directory>/lawman-<role>.sh)
+(cd "<installation>" && bash <scripts directory>/lawman-<role>.sh)
 ```
 
 3. Show the output of each run.

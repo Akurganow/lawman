@@ -3,10 +3,10 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
 import { CONSTITUTION_HEADINGS, DEPARTMENT_HEADINGS, lintPage } from "./lint";
-import { cli, LAW, must, ROOT } from "./test-helpers";
+import { cli, JOURNAL, LAW, must, ROOT } from "./test-helpers";
 
 describe("lint-page", () => {
-	const pages = join(ROOT, "src", "fixtures", "pages");
+	const pages = join(JOURNAL, "src", "fixtures", "pages");
 	const page = (name: string) => readFileSync(join(pages, name), "utf8");
 	const reasons = (
 		name: string,

@@ -1,18 +1,10 @@
 # Install
 
-Run the steps in this order. Each step names its command and its stop condition. A stop ends the install. Fix the cause, then run the assembly again from step 1. Every step is safe to repeat.
+Run the steps in this order. Each step names its command and its stop condition. A stop ends the install. Fix the cause, then run the assembly again. It restarts at "Choose the installation" in `SKILL.md`, which runs at every start. Every step is safe to repeat.
 
-Before step 1, stop if `lawman/skills/lawman-law/references/harnesses/` is missing. Tell the developer to install the plugin and to link it into the installation, as the README says.
+## Step 1. Use the harness
 
-## Step 1. Detect the harness
-
-1. List `lawman/skills/lawman-law/references/harnesses/*.md` in name order.
-2. Read the first section of each page, and run the detection command that section names.
-3. Record a page as a match when its command exits 0.
-4. Stop if a page names no detection command, and tell the developer the page needs one.
-5. Stop if no page matches, and tell the developer to install a harness first.
-6. When two pages match, ask the developer which one to use.
-7. Record `harness` as the page's file name without `.md`.
+`SKILL.md` has recorded `harness` under "Choose the installation". Go on to step 2.
 
 ## Step 2. Check the tools
 

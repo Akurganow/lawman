@@ -26,15 +26,18 @@ jobs:
         with:
           bun-version: "1.4.2"
       - name: Check the version against the tag
+        working-directory: journal
         run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
       - name: Test
+        working-directory: journal
         run: bun test
       - name: Compile
-        run: bun build --compile --target=${{ matrix.target }} src/journal.ts --outfile journal-${{ matrix.target }}
+        working-directory: journal
+        run: bun build --compile --target=${{ matrix.target }} src/journal.ts --outfile ../journal-${{ matrix.target }}
       - name: Sign ad-hoc with entitlements (macOS)
         if: runner.os == 'macOS'
         run: |
-          codesign --force --sign - --entitlements entitlements.plist journal-${{ matrix.target }}
+          codesign --force --sign - --entitlements journal/entitlements.plist journal-${{ matrix.target }}
           codesign --verify --verbose journal-${{ matrix.target }}
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
