@@ -39,7 +39,7 @@ The walk goes through the draft section by section, in contract order. The `Depa
 | Not judged | Pathspecs that no department judges | patrol |
 | Execution | Where a role may run the tree's code | investigation, executor |
 | Executor loads | Skills and rules the executor loads before it changes code | executor |
-| Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court |
+| Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court, spec writer |
 
 14. For a section with a drafted value, ask one question. Say what the section holds and which roles read it. Show the drafted lines and the files they came from. Ask: keep, change or add.
 15. Apply the answer to the draft. Accept paths and short facts only, and turn a longer answer into a path or a short fact.

@@ -51,7 +51,7 @@ Send the report through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first 
 
 ### Step 0: Guards
 
-0.1. Run `bin/journal probe --schema 5`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
+0.1. Run `bin/journal probe --schema 6`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 0.2. Run `bin/journal tick start --role duty-desk`. Keep the printed number as `<id>`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop.
 

@@ -8,7 +8,7 @@ This reference sets up the scheduled job of each role. It teaches first and asks
 - New job: a role in `<scope>` without a job. The run creates it.
 - Edit: a role in `<scope>` with a job. Only the menu job has these. The run edits the job.
 - `<S>`: the start time of the duty desk, in the harness's time zone.
-- `<scripts directory>`: the directory for gate files that the harness page gives under "Run gate".
+- `<scripts directory>`: the directory for gate files. Derive it with the command that the harness page names under "Run gate".
 
 ## Rules
 
@@ -58,7 +58,7 @@ Before step 1, stop if "Schedule forms and time zone" names no schedule form, an
     - That the provider is a separate flag.
     - How a job resolves its model at run time.
 4. State that a job with its own model leaves the fallback chain when "Models" says so. State that `default` keeps the chain.
-5. Show the effort levels that "Models" names.
+5. Run the command that "Models" names for the effort levels, and show them.
 6. In the menu job, state that the job list shows no model when "Editing a job" says so. The current model of a job is then unknown.
 7. When "Models" names no read command, say so, and ask names only in steps 4 and 5: no provider and no effort.
 8. Never run an internal function of the harness to list models.
@@ -193,7 +193,7 @@ For each role in `<scope>`, in the order of the guide in step 2:
 1. Decides: whether the schedule is written. Why: the timetable shows the runs, the intervals and the alarm limits that follow. Used by: the jobs and the journal's alarms.
 2. For each role in `<scope>` whose schedule is not `keep`, show its runs, its time and its interval in minutes.
 3. Set the interval by the form. Every day: 1440. Chosen weekdays: the longest gap between two chosen days, counted cyclically, in days times 1440. One day of the month: 44640. One weekday gives 10080, and Monday and Thursday give 5760.
-4. Show the alarm limits that follow the interval. An order raises `order-untaken` when it waits longer than the larger of 48 hours and the interval plus 24 hours. A taken order adds the 24-hour claim limit.
+4. Show each role's `order-untaken` limit in hours. An order raises it when it waits longer than the larger of 48 hours and the interval plus 24 hours. A taken order adds the 24-hour claim limit. One weekday gives 192 hours, and Monday and Thursday give 120.
 5. Show that a role with no tick start and no gate check for three intervals raises `role-silent`. A role that never ended a tick never raises it.
 6. Name the queue that builds behind each role that runs less often than the stage before it. Say in words which stage delivers more cases than the next stage takes.
 7. For the investigation queue, run `bin/journal status`, add the `n` of its `leads <department> <n>` lines, and say how many leads wait today.
@@ -215,7 +215,7 @@ For each role in `<scope>`, in the order of the guide in step 2:
 
 > Roles that only take work a person or an earlier stage made gain the most: response unit, prosecutor, defender, court, clerk, spec writer, executor. The duty desk takes no order and never gets a gate.
 
-5. Show `<scripts directory>` as the page gives it.
+5. Derive `<scripts directory>` with the page's command, and show the result.
 6. In the menu job, read each job's gate from the `Monitor:` line of the list command's output.
 7. Ask which roles get a gate. The answer is `none`, `all but the duty desk`, or a list of roles. In the menu job, also accept `keep`.
 8. Refuse the duty desk, and ask again.
