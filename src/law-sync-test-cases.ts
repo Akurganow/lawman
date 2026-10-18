@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { MIGRATIONS } from "./db";
+import type { Result } from "./inproc";
 import {
 	CONFIG,
 	configOf,
@@ -18,7 +19,6 @@ import {
 	noDatabase,
 	OLD_BINARY,
 	OLD_COMMIT,
-	type Result,
 	type Runner,
 	shasum,
 	snapshot,

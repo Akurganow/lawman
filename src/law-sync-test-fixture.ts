@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import {
 	mkdirSync,
 	readdirSync,
@@ -6,8 +7,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { dirname, join } from "node:path";
-
-export type Result = { code: number; out: string; err: string };
+import type { Result } from "./inproc";
 
 // Both law-sync test files run the same cases through a runner of their own.
 export type Runner = {
@@ -91,10 +91,8 @@ export const flags = (root: string) => [
 export const configOf = (root: string) =>
 	readFileSync(join(root, "config.yaml"), "utf8");
 
-export function shasum(path: string): string {
-	const r = Bun.spawnSync(["shasum", "-a", "256", path]);
-	return r.stdout.toString().split(" ")[0] ?? "";
-}
+export const shasum = (path: string) =>
+	createHash("sha256").update(readFileSync(path)).digest("hex");
 
 const UNREADABLE = "unreadable";
 

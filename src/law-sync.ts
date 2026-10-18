@@ -143,12 +143,5 @@ export function lawSync(
 ): void {
 	const { opt } = parseArgs(args, 0, ["tag", "commit", "installation"], USAGE);
 	if (!TAG.test(opt.tag) || !COMMIT.test(opt.commit)) throw usage(USAGE);
-	let lines: string[];
-	try {
-		lines = sync(opt, execPath);
-	} catch (e) {
-		if (e instanceof Fail) throw e;
-		throw new Fail(EXIT.USAGE, e instanceof Error ? e.message : String(e));
-	}
-	for (const line of lines) out(line);
+	for (const line of sync(opt, execPath)) out(line);
 }
