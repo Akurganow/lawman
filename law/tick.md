@@ -218,6 +218,9 @@ gh issue view <n> -R <owner/repo> --json state --jq .state
    git -C precincts/<p> status --porcelain
    ```
 2. End the tick. Send the report on stdin. Pass the precinct and the order id at every outcome after the order was taken, so the order closes with the same outcome. That includes `silent` for a stale order, every `skipped-*`, every `stopped-*` and `failed`. Without an order, leave out `--precinct` and `--dispatch`.
+
+   The order id is the first field that `dispatch take` printed. If it is lost, `bin/journal status` prints each open order as `order <id> <precinct> <role> …`. Take the id from the line of your role, precinct and issue.
+
    ```
    bin/journal tick end <tick id> --outcome <token> --precinct <p> --dispatch <order id> <<'<delimiter>'
    <report>

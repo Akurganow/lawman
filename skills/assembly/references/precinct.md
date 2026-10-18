@@ -1,10 +1,12 @@
 # Precinct
 
-Ask the developer which job to run: add a precinct, re-check one, raise a weight, or add a department. Then follow that section.
+This reference holds four jobs: add a precinct, re-check a precinct, raise a weight and add a department. The menu picks one. Follow its section.
 
 The precinct name is `<owner>-<repo>`, lowercased, with every character outside `a-z0-9` replaced by `-` and runs of `-` collapsed to one. The journal accepts only lowercase letters, digits and hyphens. Stop if the derived name still fails that pattern, and tell the developer.
 
 ## Add a precinct
+
+The job runs these sections in order: Clone and read, Draft the constitution, Walk the sections, Departments, Own department, Lint and approval, Commit and open the pull request, Issue templates, Measure access, Add the precinct. Name each section when it starts.
 
 ### Clone and read
 
@@ -21,63 +23,97 @@ The precinct name is `<owner>-<repo>`, lowercased, with every character outside 
 8. Write `precincts/<owner>-<repo>/LAWMAN.md` with frontmatter `contract_version: 1` and the title `# Constitution of <owner>/<repo>`.
 9. Add the eight `##` headings in contract order: Read first, Departments, Fence, Regression proof, Not judged, Execution, Executor loads, Precedents.
 10. Fill each section except `Departments` with paths and short facts, and write `none` where nothing applies.
-11. Check each path with `git -C precincts/<owner>-<repo> ls-tree HEAD -- <path>`, and drop a line whose path is missing, showing the reason.
-12. Keep local paths, accounts, keys, machine details and weights out of the draft.
+11. Note the files each drafted line came from.
+12. Check each path with `git -C precincts/<owner>-<repo> ls-tree HEAD -- <path>`, and drop a line whose path is missing, showing the reason.
+13. Keep local paths, accounts, keys, machine details and weights out of the draft.
+
+### Walk the sections
+
+The walk goes through the draft section by section, in contract order. The `Departments` section has its own section below.
+
+| Section | Holds | Read by |
+| :-- | :-- | :-- |
+| Read first | Files every role reads before work | patrol, response unit, spec writer, executor |
+| Fence | What CI already rejects | patrol, executor |
+| Regression proof | Commands that prove no regression | investigation, prosecutor, defender, court, spec writer |
+| Not judged | Pathspecs that no department judges | patrol |
+| Execution | Where a role may run the tree's code | investigation, executor |
+| Executor loads | Skills and rules the executor loads before it changes code | executor |
+| Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court |
+
+14. Take the sections of the table in its order.
+15. For a section with a drafted value, ask one question. Say what the section holds and which roles read it. Show the drafted lines and the files they came from. Ask: keep, change or add.
+16. Apply the answer to the draft. Accept paths and short facts only, and turn a longer answer into a path or a short fact.
+17. Check each new path as in the Draft section, and drop a line whose path is missing, showing the reason.
+18. After the last drafted section, ask one closing question for all sections that drafted `none`. Name them, say what each holds and who reads it, and ask for a path or a short fact for any of them.
+19. Apply the answer to the closing question as in steps 16 and 17.
 
 ### Departments
 
 Every shared department is in the precinct's rotation with no line. The section holds a line only for a department that has a judging document.
 
-13. Run `ls lawman/departments`, and take the page names without `.md` as the shared departments.
-14. Ask the developer one question: "Does this precinct have documents that judge the findings of these shared departments: <names>? These files from the repository look like candidates: <paths from step 3>. Name each document with the department it judges, or answer none."
-15. Check each path as in step 11, and drop a pair whose path is missing, showing the reason.
-16. Write one line `- <name>: judged by <path>` under `Departments` for each remaining pair. A shared department without a document gets no line.
-17. When no line was written, write the word `none` under `Departments`.
+20. Run `ls lawman/departments`, and take the page names without `.md` as the shared departments.
+21. Read the `Mission` section of each page, and take its first sentence.
+22. List each shared department with that sentence.
+23. Say that all of them are in the rotation with no line.
+24. Ask the developer one question: "Does this precinct have documents that judge the findings of these shared departments: <names>? These files from the repository look like candidates: <paths from the Clone and read section>. Name each document with the department it judges, or answer none."
+25. Check each path as in the Draft section, and drop a pair whose path is missing, showing the reason.
+26. Write one line `- <name>: judged by <path>` under `Departments` for each remaining pair. A shared department without a document gets no line.
+27. When no line was written, write the word `none` under `Departments`.
+
+### Own department
+
+The same offer runs at every precinct add, at install too.
+
+28. Ask the developer: "A repository may have its own department, a special police for rules only that repository has. It can live in the repository itself or in your installation. It joins the rotation next to the shared departments. Do you want to add one for <owner>/<repo>?"
+29. On yes, tell the developer: "The 'Add a department' job runs after the constitution's pull request merges, because it reads `LAWMAN.md` from the main branch."
+30. Remember the answer for the finish. Add no department line to the draft.
 
 ### Lint and approval
 
-18. Run `bin/journal lint-page constitution < precincts/<owner>-<repo>/LAWMAN.md`, and fix the reasons it prints when it exits 8.
-19. Show the full draft to the developer, and wait for approval.
-20. When the developer asks for changes, apply them and go back to step 18.
+31. Run `bin/journal lint-page constitution < precincts/<owner>-<repo>/LAWMAN.md`, and fix the reasons it prints when it exits 8.
+32. Show the full draft to the developer, and wait for approval.
+33. When the developer asks for changes, apply them and go back to the first step of this section.
 
 ### Commit and open the pull request
 
-21. On approval, run `git -C precincts/<owner>-<repo> status --porcelain`, and stop unless only `LAWMAN.md` is listed.
-22. Run `git -C precincts/<owner>-<repo> add LAWMAN.md`, then `git -C precincts/<owner>-<repo> commit -m "Add the Lawman constitution"`.
-23. Run `git -C precincts/<owner>-<repo> push -u origin lawman/constitution`, and stop if it fails.
-24. Run `gh pr create -R <owner>/<repo> --head lawman/constitution --title "Add the Lawman constitution" --body "Adds LAWMAN.md. Review the paths and the department lines."`, and stop if it fails, showing the link.
-25. Never merge, and do not run `gh pr merge`.
+34. On approval, run `git -C precincts/<owner>-<repo> status --porcelain`, and stop unless only `LAWMAN.md` is listed.
+35. Run `git -C precincts/<owner>-<repo> add LAWMAN.md`, then `git -C precincts/<owner>-<repo> commit -m "Add the Lawman constitution"`.
+36. Run `git -C precincts/<owner>-<repo> push -u origin lawman/constitution`, and stop if it fails.
+37. Run `gh pr create -R <owner>/<repo> --head lawman/constitution --title "Add the Lawman constitution" --body "Adds LAWMAN.md. Review the paths and the department lines."`, and stop if it fails, showing the link.
+38. Never merge, and do not run `gh pr merge`.
 
 ### Issue templates
 
-26. Run `git -C precincts/<owner>-<repo> ls-tree HEAD -- .github/ISSUE_TEMPLATE/`.
-27. Read `config.yml` and the templates in that folder if they exist.
-28. Compare their fields with the "What intake needs" section of `lawman/skills/response-unit/SKILL.md`, and name the missing ones.
-29. Show the developer the list as a recommendation, and write it nowhere.
+39. Run `git -C precincts/<owner>-<repo> ls-tree HEAD -- .github/ISSUE_TEMPLATE/`.
+40. Read `config.yml` and the templates in that folder if they exist.
+41. Compare their fields with the "What intake needs" section of `lawman/skills/response-unit/SKILL.md`, and name the missing ones.
+42. Show the developer the list as a recommendation, and write it nowhere.
 
 ### Measure access
 
-30. Run `gh issue list -R <owner>/<repo> --limit 1`, and stop if it fails.
-31. Run `gh pr list -R <owner>/<repo> --limit 1`, and stop if it fails.
-32. Run `git -C precincts/<owner>-<repo> ls-remote origin HEAD`, and stop if it fails.
-33. Compare steps 30 to 32 with the read calls that `lawman/skills/patrol/SKILL.md` and `lawman/law/tick.md` name, and run any other read call they name with `--limit 1` added.
+43. Run `gh issue list -R <owner>/<repo> --limit 1`, and stop if it fails.
+44. Run `gh pr list -R <owner>/<repo> --limit 1`, and stop if it fails.
+45. Run `git -C precincts/<owner>-<repo> ls-remote origin HEAD`, and stop if it fails.
+46. Compare these three calls with the read calls that `lawman/skills/patrol/SKILL.md` and `lawman/law/tick.md` name, and run any other read call they name with `--limit 1` added.
 
 ### Add the precinct
 
-34. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
-35. When `typesafe` is `yes` in `config.yaml`, ask: "May the court send its brief about a conviction in <owner>/<repo> to api.typesafe.ai? The brief states facts about the code in the court's own words and holds no issue text. Answer yes or no."
-36. When step 35 asked the question, set `<owner>-<repo>=<answer>` in `typesafe_precincts`. Replace `none`, replace an existing pair for that name, and never append a second one. Write `config.yaml`, and read it back.
-37. When this is the first precinct and the scheduled jobs of the roles are not listed, run install step 9 now.
-38. Tell the developer to return after the pull request merges.
+47. Explain the weight: "A weight is a share of patrol slots. A precinct with a weight and no merged constitution wastes its slot, because its tick ends `skipped-no-constitution`. The precinct starts at weight 0."
+48. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight 0`, and stop if it fails, showing the message.
+49. When `typesafe` is `yes` in `config.yaml`, ask: "May the court send its brief about a conviction in <owner>/<repo> to api.typesafe.ai? The brief states facts about the code in the court's own words and holds no issue text. Answer yes or no."
+50. When the previous step asked the question, set `<owner>-<repo>=<answer>` in `typesafe_precincts`. Replace `none`, replace an existing pair for that name, and never append a second one. Write `config.yaml`, and read it back.
+51. Tell the developer to return after the pull request merges, and to choose the menu job "raise a weight" then.
+52. When the developer said yes in the Own department section, tell them to choose the menu job "add a department" after the merge too.
 
 ## Re-check a precinct
 
 1. Choose the precinct from `bin/journal precinct list`.
 2. Run `git -C precincts/<owner>-<repo> fetch origin`, and stop if it fails.
 3. Run `git -C precincts/<owner>-<repo> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution`, and show the reasons on exit 8.
-4. Run the line check on every department line that step 3 printed, with `origin/HEAD` as the ref.
-5. Run steps 26 to 29, using `origin/HEAD` in place of `HEAD`.
-6. Run the read calls from the measurement section.
+4. Run the line check on every department line that the previous step printed, with `origin/HEAD` as the ref.
+5. Run the Issue templates section of the add path, using `origin/HEAD` in place of `HEAD`.
+6. Run the read calls from the Measure access section of the add path.
 7. Report the result, and change no weight.
 
 ### Line check
@@ -93,9 +129,16 @@ A resolved page that fails hides the later places, so never fall back to them.
 
 ## Raise a weight
 
-1. Choose the precinct from `bin/journal precinct list`.
-2. Ask the developer for the weight, and wait for the answer.
-3. Run `bin/journal precinct set <owner>-<repo> --weight <n>`, and stop if it fails.
+1. Run `bin/journal precinct list`, and note whether any precinct has a weight above zero.
+2. Choose the precinct from that list.
+3. Ask the developer for the weight, and wait for the answer.
+4. Run `bin/journal precinct set <owner>-<repo> --weight <n>`, and stop if it fails.
+5. Skip the rest unless step 1 found no weight above zero and `<n>` is above zero.
+6. Run the list command from the harness page, and take the `[lawman]` jobs that it shows as paused.
+7. Skip the rest when no job is paused.
+8. Ask one question: "The first precinct has a weight now. These jobs are paused: <roles>. Which should resume? Answer all, none, or a list. A job created paused first runs at its next slot."
+9. Run the resume command from the harness page for each chosen job, and touch no other job.
+10. Run the list command again, and show that the chosen jobs are active.
 
 ## Add a department
 

@@ -110,16 +110,25 @@ function brokenCount(db: Database, name: string, department: string): number {
 	return row.n;
 }
 
+export function capOf(
+	db: Database,
+	name: string,
+	department: string,
+): { cap: number; open: number } {
+	const origins = leadOrigins(db, name).filter(
+		(o) => o.state === "OPEN" && o.department === department,
+	);
+	const open = origins.length + brokenCount(db, name, department);
+	return { cap: capFor(open), open };
+}
+
 export function cap(args: string[]): void {
 	const { pos, opt } = parseArgs(args, 1, ["department"], CAP_USAGE);
 	const name = check("precinct", pos[0]);
 	const department = check("department", opt.department);
 	withDb((db) => {
-		const origins = leadOrigins(db, name).filter(
-			(o) => o.state === "OPEN" && o.department === department,
-		);
-		const open = origins.length + brokenCount(db, name, department);
-		out(`cap=${capFor(open)} open=${open}`);
+		const { cap, open } = capOf(db, name, department);
+		out(`cap=${cap} open=${open}`);
 	});
 }
 

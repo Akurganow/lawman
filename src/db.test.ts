@@ -158,7 +158,7 @@ describe("open", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(5);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT * FROM pulls").all()).toEqual([
 			{
 				precinct: "p",
@@ -172,6 +172,20 @@ describe("open", () => {
 		db.run(
 			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES ('p', 4, '', 'up', 'ready', 'IC_1')",
 		);
+		db.close();
+	});
+
+	test("migration 6 keeps the roles of a schema 5 database and adds an empty checked_at", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 5)) old.run(sql);
+		old.run("PRAGMA user_version = 5");
+		old.run("INSERT INTO roles (name, every_minutes) VALUES ('patrol', 30)");
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(6);
+		expect(db.query("SELECT * FROM roles").all()).toEqual([
+			{ name: "patrol", every_minutes: 30, checked_at: null },
+		]);
 		db.close();
 	});
 
@@ -216,10 +230,11 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "6"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "6"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "7"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

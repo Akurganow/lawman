@@ -1,6 +1,6 @@
 import { check, parseArgs } from "./args";
 import { out, readStdin, withDb } from "./db";
-import { lastVisits } from "./leads";
+import { capOf, lastVisits } from "./leads";
 
 const ROTATION_USAGE =
 	"rotation <precinct> --role <role> (stdin: department names, one per line)";
@@ -25,6 +25,7 @@ export function rotation(args: string[]): void {
 		);
 		const at = (department: string) => visits.get(department) ?? "";
 		names.sort((a, b) => compare(at(a), at(b)) || compare(a, b));
-		for (const department of names) out(department, at(department) || NEVER);
+		for (const department of names)
+			out(department, at(department) || NEVER, capOf(db, name, department).cap);
 	});
 }

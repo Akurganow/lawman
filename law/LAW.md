@@ -207,7 +207,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.
 - No department has an exception to the cap for leads. The alarm check at cap 0 is not one, and it files nothing.
-- A weight is a share of duty desk slots, not of leads. A capped slot is spent like any other.
+- A weight is a share of duty desk slots, not of leads. The duty desk skips a department at cap 0 unless its page has an `Alarm check:` paragraph. When every department of a precinct is skipped, it takes the next precinct.
 
 ## The report
 

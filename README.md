@@ -16,7 +16,7 @@ A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its c
 
 ## Install
 
-You need `git`, the GitHub CLI signed in as the one account every role uses, Hermes Agent with its gateway running, and the two steps below. Then the assembly skill does the rest, one question at a time.
+You need `git`, the GitHub CLI signed in as the one account every role uses, Hermes Agent with its gateway running, and the two steps below. Then the assembly skill does the rest, one question at a time. It explains roles, models and the schedule before it asks about them.
 
 1. Clone the law into the installation directory and check out the latest tag:
 

@@ -1,3 +1,4 @@
+import { hasAlarmCheck } from "./alarm-check";
 import { check, parseArgs, usage } from "./args";
 import { EXIT, out, readStdin } from "./db";
 import { fencedLines, NAME, parseMarker, stripCr } from "./markers";
@@ -112,7 +113,11 @@ export function lintBodyCommand(args: string[]): number {
 
 type FrontKeys = Map<string, { value: string; line: number }>;
 type Heading = { name: string; line: number };
-export type PageLint = { reasons: string[]; departments: [string, string][] };
+export type PageLint = {
+	reasons: string[];
+	departments: [string, string][];
+	alarmCheck?: true;
+};
 
 export function readFrontmatter(
 	lines: string[],
@@ -277,6 +282,12 @@ export function lintPage(
 	}
 	page.reasons.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 	if (page.reasons.length > 0) page.departments = [];
+	if (
+		kind === "department" &&
+		page.reasons.length === 0 &&
+		hasAlarmCheck(lines, hidden, found)
+	)
+		page.alarmCheck = true;
 	return page;
 }
 
@@ -290,5 +301,6 @@ export function lintPageCommand(args: string[]): number {
 	const page = lintPage(kind, readStdin(), expected);
 	for (const reason of page.reasons) out(reason);
 	for (const [name, judgedBy] of page.departments) out(name, judgedBy);
+	if (page.alarmCheck) out("alarm-check");
 	return page.reasons.length > 0 ? EXIT.LINT_PAGE : EXIT.OK;
 }

@@ -44,7 +44,7 @@ function dispatchAdd(db: Database, args: string[]): void {
 	}
 }
 
-type Taken = {
+export type Taken = {
 	id: number;
 	precinct: string;
 	repo: string;
@@ -52,20 +52,28 @@ type Taken = {
 	issue: number | null;
 };
 
+export function takeableOrders(
+	db: Database,
+	roleName: string,
+	stamp: string,
+): Taken[] {
+	const stale = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
+	return db
+		.query(
+			`SELECT d.id, d.precinct, p.repo, d.department, d.issue FROM dispatches d
+         JOIN precincts p ON p.name = d.precinct
+         WHERE d.role = ? AND d.outcome IS NULL AND (d.taken_at IS NULL OR d.taken_at < ?)
+         ORDER BY d.at, d.id`,
+		)
+		.all(roleName, stale) as Taken[];
+}
+
 function dispatchTake(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["role"], DISPATCH_USAGE);
 	const roleName = check("role", opt.role);
 	const stamp = now();
-	const stale = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
 	const order = inTransaction(db, () => {
-		const row = db
-			.query(
-				`SELECT d.id, d.precinct, p.repo, d.department, d.issue FROM dispatches d
-         JOIN precincts p ON p.name = d.precinct
-         WHERE d.role = ? AND d.outcome IS NULL AND (d.taken_at IS NULL OR d.taken_at < ?)
-         ORDER BY d.at, d.id LIMIT 1`,
-			)
-			.get(roleName, stale) as Taken | null;
+		const row = takeableOrders(db, roleName, stamp)[0];
 		if (row)
 			db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [
 				stamp,

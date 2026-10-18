@@ -15,6 +15,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - Never file more than the cap allows.
 - An empty tick is a success. Silence is the default.
 - A doubt drops a candidate. A doubt never stops the tick.
+- Never run an interpreter or a parser in a tree. When a page calls a check an approximation, its `git grep` form is the check.
 
 The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 

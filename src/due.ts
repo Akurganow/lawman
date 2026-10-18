@@ -1,12 +1,11 @@
 import type { Database } from "bun:sqlite";
-import { check, parseArgs, usage } from "./args";
+import { check, parseArgs, splitExcluded } from "./args";
 import { caseOf, markersOf } from "./cases";
 import { DEFAULT_PRIORITY } from "./clerk-jobs";
 import { LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { stageOf } from "./pull-stage";
 
 const DUE_USAGE = "due --role <role> [--exclude <precinct>]…";
-const EXCLUDE_FLAG = "--exclude";
 const CLERK = "clerk";
 const SPEC_WRITER = "spec-writer";
 const EXECUTOR = "executor";
@@ -17,19 +16,6 @@ const ALL_ISSUES = "FROM issues i WHERE true";
 type Entry = { precinct: string; number: number; priority: string };
 type IssueRow = { precinct: string; issue: number; state: string; led: number };
 type PullRow = { precinct: string; number: number };
-
-// --exclude repeats, which parseArgs does not allow
-function splitExcluded(args: string[]): { excluded: string[]; rest: string[] } {
-	const excluded: string[] = [];
-	const rest: string[] = [];
-	for (let i = 0; i < args.length; i += 2) {
-		const [flag, value] = [args[i], args[i + 1]];
-		if (flag !== EXCLUDE_FLAG) rest.push(...args.slice(i, i + 2));
-		else if (value === undefined) throw usage(DUE_USAGE);
-		else excluded.push(check("precinct", value));
-	}
-	return { excluded, rest };
-}
 
 const lastOrder = (precinct: string, issue: string) =>
 	`(SELECT max(d.at) FROM dispatches d
@@ -81,7 +67,7 @@ function pullEntries(db: Database, role: string, excluded: string[]) {
 }
 
 export function dueCommand(args: string[]): void {
-	const { excluded, rest } = splitExcluded(args);
+	const { excluded, rest } = splitExcluded(args, DUE_USAGE);
 	const { opt } = parseArgs(rest, 0, ["role"], DUE_USAGE);
 	const role = check("role", opt.role);
 	withDb((db) => {

@@ -14,6 +14,7 @@ import {
 } from "./db";
 
 const ORDER_UNTAKEN_MS = 48 * HOUR_MS;
+const ORDER_INTERVAL_GRACE_MS = 24 * HOUR_MS;
 const TICK_HUNG_MS = 2 * HOUR_MS;
 const ROLE_SILENT_INTERVALS = 3;
 const TICK_FAILING_RUN = 3;
@@ -27,7 +28,9 @@ function ageMs(nowMs: number, since: string): number {
 function orderUntaken(db: Database, nowMs: number): Candidate[] {
 	const open = db
 		.query(
-			"SELECT id, precinct, role, at, taken_at FROM dispatches WHERE outcome IS NULL",
+			`SELECT d.id, d.precinct, d.role, d.at, d.taken_at, r.every_minutes
+       FROM dispatches d LEFT JOIN roles r ON r.name = d.role
+       WHERE d.outcome IS NULL`,
 		)
 		.all() as {
 		id: number;
@@ -35,9 +38,16 @@ function orderUntaken(db: Database, nowMs: number): Candidate[] {
 		role: string;
 		at: string;
 		taken_at: string | null;
+		every_minutes: number | null;
 	}[];
-	const limit = (o: { taken_at: string | null }) =>
-		ORDER_UNTAKEN_MS + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
+	const limit = (o: {
+		taken_at: string | null;
+		every_minutes: number | null;
+	}) =>
+		Math.max(
+			ORDER_UNTAKEN_MS,
+			(o.every_minutes ?? 0) * MINUTE_MS + ORDER_INTERVAL_GRACE_MS,
+		) + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
 	return open
 		.filter((o) => ageMs(nowMs, o.taken_at ?? o.at) > limit(o))
 		.map((o) => ({
@@ -67,23 +77,35 @@ function tickHung(db: Database, nowMs: number): Candidate[] {
 function roleSilent(db: Database, nowMs: number): Candidate[] {
 	const latest = db
 		.query(
-			`SELECT r.name, r.every_minutes, max(t.started_at) AS last FROM roles r
+			`SELECT r.name, r.every_minutes, r.checked_at, max(t.started_at) AS last FROM roles r
        JOIN ticks t ON t.role = r.name
        WHERE EXISTS (SELECT 1 FROM ticks e WHERE e.role = r.name AND e.ended_at IS NOT NULL)
        GROUP BY r.name`,
 		)
-		.all() as { name: string; every_minutes: number; last: string }[];
+		.all() as {
+		name: string;
+		every_minutes: number;
+		checked_at: string | null;
+		last: string;
+	}[];
 	return latest
+		.map((r) => {
+			const checkIsLater =
+				r.checked_at !== null && Date.parse(r.checked_at) > Date.parse(r.last);
+			return checkIsLater
+				? {
+						...r,
+						since: r.checked_at as string,
+						detail: `last check ${r.checked_at}`,
+					}
+				: { ...r, since: r.last, detail: `last tick started ${r.last}` };
+		})
 		.filter(
 			(r) =>
-				ageMs(nowMs, r.last) >
+				ageMs(nowMs, r.since) >
 				ROLE_SILENT_INTERVALS * r.every_minutes * MINUTE_MS,
 		)
-		.map((r) => ({
-			kind: "role-silent",
-			ref: r.name,
-			detail: `last tick started ${r.last}`,
-		}));
+		.map((r) => ({ kind: "role-silent", ref: r.name, detail: r.detail }));
 }
 
 function tickFailing(db: Database): Candidate[] {

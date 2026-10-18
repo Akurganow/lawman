@@ -221,6 +221,8 @@ Lead: #<n>, "<the claim, quoted>"
 <!-- lawman: role=investigation stage=case sha=<sha> at=<UTC> -->
 ```
 
+The quoted claim in the `Lead:` line depends on the case line. With `lead=body`, quote the issue title as written, without the lead prefix. With `lead=comment`, quote the first line under `## What` of the lead comment. The case line decides the lead, whatever markers the issue lacks.
+
 Example, round 1:
 
 ````
