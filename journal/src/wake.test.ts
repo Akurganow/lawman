@@ -51,13 +51,6 @@ describe("wake", () => {
 		expect(wake().out).toBe("idle\n");
 	});
 
-	test("prints a taken order older than the claim limit and not one second inside it", () => {
-		seedOrders((db) => order(db, "main", "patrol", { takenAt: BASE }));
-		expect(wake(later(24, -1)).out).toBe("idle\n");
-		expect(wake(later(24)).out).toBe("idle\n");
-		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nday /);
-	});
-
 	test("the day line follows the UTC date and two calls the same day print the same bytes", () => {
 		seedOrders((db) => order(db, "main", "patrol"));
 		const evening = "2026-05-01T23:59:59Z";

@@ -33,6 +33,7 @@ describe("wake in process", () => {
 
 	test("a taken order shows again only after the claim limit", () => {
 		seed((d) => order(d, "main", "patrol", { takenAt: BASE }));
+		expect(wake(later(24, -1)).out).toBe("idle\n");
 		expect(wake(later(24)).out).toBe("idle\n");
 		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nday /);
 	});
