@@ -21,6 +21,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 - In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
 - There is no worktree. Follow the "Reading without a tree" section.
+- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. The git forms above do not limit it.
 
 ## Tick
 
@@ -119,7 +120,7 @@ A related issue is evidence of the case, never a reason to close it.
 1. Re-read the decisive exhibit of each claim at `<sha>`, through `show`, or through `grep` on `<sha>`.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
-2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
+2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/law/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
 3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:

@@ -34,6 +34,7 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 - The path class covers every path in `ls-tree`, `show`, `ls-files`, `log` and `blame`.
 - A search pattern from such text enters only through `git -C <tree> grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
+- A source command of the department page runs as the "Run a source" section of `lawman/law/exhibits.md` says. Read that file once, when the page holds one. The git forms above do not limit it, and its values follow the table of that file.
 - History forms, read-only, all on the precinct clone. `<sha>` is the analysed commit.
   ```
   git -C precincts/<p> log <sha> --format='%h %ad %s' --date=short [-n <count>] [--name-only] [-S <string> | -G <regex>] [-- <pathspec>]
@@ -133,7 +134,7 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 
 ### Step 7: sweep
 
-1. Run only read commands in the tree. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Add `':(exclude)<pathspec>'` for each line of the Not judged section. Add none when that section says `none`.
+1. Run only read commands in the tree, and the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Add `':(exclude)<pathspec>'` for each line of the Not judged section. Add none when that section says `none`.
    ```
    git -C runs/<tick id>/tree grep -n -e '<pattern>' -- . ':(exclude)<pathspec>'
    ```
@@ -146,7 +147,7 @@ The path is relative to the clone, so `../../` leads back to the installation. T
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
 10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` or `declined` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
-11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source.
+11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page.
 12. Order the survivors by value, highest first.
 
 ### Step 8: file the leads

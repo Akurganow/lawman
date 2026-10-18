@@ -67,6 +67,8 @@ Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around t
 
 Accepted, checked with the harness's check function: `&&`, `;`, a redirect, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
 
+Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter, a pipe into `sed -E` with a quoted script, and such a pipeline inside `(set -o pipefail; …)`. None of these was seen in a scheduled run.
+
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
 ## Scheduling
@@ -132,6 +134,36 @@ An alarm line in an answer defeats silence. The answer is then delivered, as the
 - a comma-separated list, such as `origin,all`.
 
 The probe delivered a report to a messaging platform through a running gateway. The developer confirms receipt. A role cannot see whether a message arrived.
+
+### Run records
+
+A scheduled run leaves two records. The output file named above holds the prompt and the final answer. The session store holds every turn. Read the store only with the harness's own commands. Never open its file.
+
+Stated by `hermes sessions export --help`:
+
+- `hermes sessions export --session-id <id> --format jsonl --redact -` prints one session as one JSON object on standard output and writes no file. A JSONL export needs the `-`. `--redact` removes secrets from the content.
+- A filter lists the matching sessions with `--dry-run -` and exports nothing. The filters in use are `--source cron`, `--title <text>` (the title contains the text), `--after <time>` and `--before <time>`. A time is a duration ago or an ISO timestamp.
+- A filtered export includes pinned and archived sessions.
+
+Read in the harness code:
+
+- The terminal tool appends the standard binary directories and the user's local binary directory to `PATH`.
+
+Seen when the commands ran in a terminal, read only:
+
+- A timestamp that ends in `Z` is read as UTC. The dry-run prints it in local time.
+- `hermes sessions list` shows the recent sessions only.
+- The id of a scheduled session starts with `cron_` and holds the job id. The session starts a few seconds before the journal's `tick start`. Most titles carry no `[lawman]` prefix, so match the role name alone.
+- The object holds the model, the cost, the working directory and the stored system prompt next to `messages`. A page filters it with `jq` and prints the messages only.
+- A message holds `role`, `content`, `reasoning`, `tool_name` and `tool_calls`. A call holds `function.name` and `function.arguments`, a string.
+- A command that the harness refused comes back as a `tool` message whose content holds `BLOCKED: Command flagged as dangerous`.
+- Home paths occur in message content. A page replaces them with `sed -E`.
+- A window whose `--after` is not earlier than `--before` prints `Error: Empty start-time window` and exits with code 0. A window that holds no session prints `Would export 0 session(s)` and exits with code 0. An unknown `--session-id` prints `No session` and exits with code 1.
+- A pipeline exits with the code of its last command. A failed `hermes` before `sed` gives code 0 and no data. Under `set -o pipefail` the same pipeline exits with a code other than 0.
+
+Not established: whether a scheduled session finds `hermes` and `jq` on its `PATH`, and whether the terminal of a scheduled session sees the session id. The journal stores no session id. A tick is matched to its session by the role and a time window.
+
+Checked with the harness's check function: the export commands, a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script pass as written, also inside `(set -o pipefail; …)`. None of this was seen in a scheduled run.
 
 ## Isolation
 
