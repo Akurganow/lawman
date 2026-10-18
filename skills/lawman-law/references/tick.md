@@ -1,6 +1,6 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick and does not read this file. The file turns the rules of the law into commands. A skill reads it in its step 1, once it has taken an order, and keeps its own steps. A tick that fails before then reads it to end the tick.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads only the section "Sync the law" of this file, in its item 0.1. The file turns the rules of the law into commands. A skill reads the section "Sync the law" in item 1 of its step 0. It reads the rest in its step 1, once it has taken an order, and keeps its own steps. A tick that fails before then reads it to end the tick.
 
 The issue roles are the response unit, investigation, the prosecutor, the defender, the court and the clerk. Each takes one order on an issue.
 
@@ -11,6 +11,35 @@ The fetch step prints the fetched commit. `<ref>` below is the commit at which t
 ## One end
 
 Every started tick ends exactly once, at the last step of the skill. A failed step ends the tick with the outcome that the step names and goes straight to that last step. A command that fails with no outcome named for it ends the tick with `failed`. Items 1 and 2 of step 0 are the exception. No tick record exists before `tick start` succeeds, so their failures are answered, not recorded.
+
+## Sync the law
+
+Every role does this inside the first item of step 0. It completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips it.
+
+Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.
+
+Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
+
+Otherwise do these steps in order. A step that fails ends the section with a stop. A stop uses the token `stopped-law-drift` unless the step names another.
+
+1. Confirm that the law folder has no local change. A local change is a stop with the token `stopped-dirty-law` and the reason "the law folder has a local change".
+2. Confirm that the folder's commit carries a release tag. Check the tag against `[A-Za-z0-9._-]+` before you use it anywhere. Without a tag, the reason is "the law is not on a release". A tag that does not match has the reason "the tag is not safe".
+3. Create the new folder `runs/sync-<role>-<first seven characters of the commit>`. Get the journal asset of this platform and the checksum file from the release of that tag into it. When the release or an asset is missing, the reason is "binary not ready". Any other failure has the reason "the release download failed".
+4. Check the asset against the checksum file. Check where the asset came from and that it was built from the commit, in the way the harness page names for the release host. A failed checksum has the reason "the checksum failed". A failed provenance check has the reason "the provenance check failed".
+5. Make the asset file executable and run it with `<path> law-sync --tag <tag> --commit <commit> --installation .`. `<path>` is the asset file in the folder of step 3. The file renames itself over `bin/journal`. Keep every `ALARM` line that it prints for the answer. The line `synced <tag>` confirms the sync. A non-zero exit is a stop, and its standard error is the reason.
+
+The asset is named `journal-bun-<os>-<arch>`. `<os>` is the lower-case operating system name. `<arch>` is `x64` or `arm64`. The checksum file is named `SHA256SUMS`.
+
+The journal command reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool.
+
+Never do these:
+
+- Write into the law folder.
+- Replace `bin/journal` or `config.yaml` by any means other than `law-sync`.
+- Run any file other than the asset that step 4 verified.
+- Continue the tick after a stop.
+
+A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The next tick tries again.
 
 ## Working rules
 
@@ -229,8 +258,9 @@ gh issue view <n> -R <owner/repo> --json state --jq .state
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 3. Answer. Print every `ALARM` line verbatim first. Then:
    - For `failed` or a `stopped-*` token, add the report.
-   - For any other outcome with no `ALARM` line, answer the silence token that the skill names.
-   - With an `ALARM` line, never answer the silence token.
+   - For any other outcome with no `ALARM` line, answer the brief report. Then write the silence form that the harness page names.
+   - The brief report is a few short thesis lines. They give the outcome token, the precinct and the order or issue, what the tick wrote with its URL, and the counts. They hold no reason and no detail. Write `none` where a part does not apply.
+   - With an `ALARM` line, never answer the silence form.
 
 ## Alarm
 

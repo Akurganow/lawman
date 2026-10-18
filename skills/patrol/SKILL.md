@@ -52,10 +52,12 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
 
 ### Step 0: guards
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 3
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 3
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role patrol
@@ -64,11 +66,7 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    ```
    grep -E '^(law_commit|trusted_login):' config.yaml
    ```
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -94,7 +92,7 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    <report>
    LAWMAN_<tick id>_0000000
    ```
-   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
 3. With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order with an issue number, or with no department, is not a patrol order. End with `failed`. A failed command in this step ends the tick with `failed`.
 
 ### Step 2: fetch the precinct
@@ -180,7 +178,7 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 
 ### Step 9: end the tick
 
-Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The silence token is `[SILENT]`.
+Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The harness page names the silence form.
 
 ## The alarm check
 

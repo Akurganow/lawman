@@ -29,10 +29,12 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
 
 ### Step 0: guards and alarms
 
-1. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal probe --schema 3
-   ```
+1. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 3
+      ```
 2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    ```
    bin/journal tick start --role court
@@ -48,11 +50,7 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    grep -cE '^typesafe_precincts: (.* )?<p>=yes( .*)?$' config.yaml
    ```
    Jev is allowed when `typesafe` is `yes` and the precinct is allowed.
-4. Check the law clone. A `HEAD` that differs from `law_commit`, or a failed command, ends the tick with `stopped-law-drift`. Any status output, or a failed command, ends it with `stopped-dirty-law`.
-   ```
-   git -C lawman rev-parse HEAD
-   git -C lawman status --porcelain
-   ```
+4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
    ```
    gh api user --jq .login
@@ -78,7 +76,7 @@ No order.
 LAWMAN_<tick id>_0000000
 ```
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
 
 With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
@@ -187,7 +185,7 @@ When the ruling comment landed and the close failed, the issue stays open. `need
 
 The outcome is `convicted` after a written conviction. It is `acquitted` after a written acquittal whose close read back as `CLOSED`. Otherwise it is the token that the step ending the tick names.
 
-Run the "End the tick" section. The silence token is `[SILENT]`.
+Run the "End the tick" section. The harness page names the silence form.
 
 ## Brief
 

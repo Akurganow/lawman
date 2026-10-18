@@ -59,7 +59,7 @@ A run that files nothing is a successful run. In a healthy precinct it is the co
 
 Five merely plausible leads teach the reader to ignore all of them. The one real finding is ignored with them. When in doubt, the doubt goes in the report, never in the tracker.
 
-A successful tick, empty or not, answers the harness page's silence token. Its report lives in the journal. Only alarm lines, a failure and a stop are delivered to the owner.
+A successful tick, empty or not, answers a brief report of what the session did. The silence form that the harness page names follows the report. The brief report names the outcome, the precinct and the order, what the tick wrote, and the counts. It holds no detail. The full report lives in the journal. Only alarm lines, a failure and a stop are delivered to the owner.
 
 ## Evidence
 
