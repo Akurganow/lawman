@@ -82,24 +82,22 @@ describe("lint-page", () => {
 		expect(lintPage("department", shipped, "abstractions").reasons).toEqual([]);
 	});
 
-	test("every file in departments/ is a page that passes the department lint", () => {
-		const dir = join(ROOT, "departments");
+	const expectPagesPass = (dir: string) => {
 		for (const file of readdirSync(dir)) {
 			const text = readFileSync(join(dir, file), "utf8");
 			const name = file.slice(0, -".md".length);
 			expect(lintPage("department", text, name).reasons).toEqual([]);
 		}
+	};
+
+	test("every file in departments/ is a page that passes the department lint", () => {
+		expectPagesPass(join(ROOT, "departments"));
 	});
 
 	test("this repository's constitution and its own department pages pass", () => {
 		const constitution = readFileSync(join(ROOT, "LAWMAN.md"), "utf8");
 		expect(lintPage("constitution", constitution).reasons).toEqual([]);
-		const dir = join(ROOT, ".lawman", "departments");
-		for (const file of readdirSync(dir)) {
-			const text = readFileSync(join(dir, file), "utf8");
-			const name = file.slice(0, -".md".length);
-			expect(lintPage("department", text, name).reasons).toEqual([]);
-		}
+		expectPagesPass(join(ROOT, ".lawman", "departments"));
 	});
 
 	test("a missing heading is named", () => {

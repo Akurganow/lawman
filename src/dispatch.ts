@@ -157,8 +157,6 @@ type ListedTick = {
 	report: string | null;
 };
 
-const SINGLE_TICK = 1;
-
 function tickList(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, [], TICK_USAGE, [
 		"limit",
@@ -168,20 +166,18 @@ function tickList(db: Database, args: string[]): void {
 	]);
 	if ((opt.limit === undefined) === (opt.id === undefined))
 		throw usage(TICK_USAGE);
-	const limit =
-		opt.limit === undefined ? SINGLE_TICK : count(opt.limit, "limit", 1);
-	const wanted: Record<string, string | number> = {};
-	if (opt.id !== undefined) wanted.id = count(opt.id, "id", 1);
-	if (opt.role !== undefined) wanted.role = check("role", opt.role);
-	if (opt.precinct !== undefined)
-		wanted.precinct = check("precinct", opt.precinct);
-	const where = Object.keys(wanted).map((column) => `${column} = ?`);
+	const id = opt.id === undefined ? null : count(opt.id, "id", 1);
+	const limit = opt.limit === undefined ? 1 : count(opt.limit, "limit", 1);
+	const role = opt.role === undefined ? null : check("role", opt.role);
+	const precinct =
+		opt.precinct === undefined ? null : check("precinct", opt.precinct);
 	const ticks = db
 		.query(
-			`SELECT * FROM ticks ${where.length ? `WHERE ${where.join(" AND ")}` : ""}
-       ORDER BY started_at DESC, id DESC LIMIT ?`,
+			`SELECT * FROM ticks
+       WHERE (?1 IS NULL OR id = ?1) AND (?2 IS NULL OR role = ?2) AND (?3 IS NULL OR precinct = ?3)
+       ORDER BY started_at DESC, id DESC LIMIT ?4`,
 		)
-		.all(...Object.values(wanted), limit) as ListedTick[];
+		.all(id, role, precinct, limit) as ListedTick[];
 	for (const t of ticks) {
 		out(
 			t.id,

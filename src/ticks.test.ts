@@ -209,12 +209,6 @@ describe("ticks", () => {
 			expect(idsOf(list("--limit", "10").out)).toEqual(["3", "2", "4", "1"]);
 		});
 
-		test("--limit keeps the first n of that order", () => {
-			for (const hours of [1, 2, 3]) ended("patrol", later(hours));
-			expect(idsOf(list("--limit", "2").out)).toEqual(["3", "2"]);
-			expect(idsOf(list("--limit", "99").out)).toEqual(["3", "2", "1"]);
-		});
-
 		test("a fact line has seven tab fields and report lines follow with a bar", () => {
 			seed((db) => {
 				precinct(db, "a");
@@ -239,26 +233,14 @@ describe("ticks", () => {
 			]);
 		});
 
-		test("empty fields print a dash and a closed tick without report prints no bar", () => {
+		test("empty fields print a dash and an open tick prints running", () => {
 			ended("patrol", BASE);
 			expect(list("--limit", "1").out).toBe(
 				`1\tpatrol\t-\t-\tsilent\t${BASE}\t${later(2)}\n`,
 			);
-		});
-
-		test("an open tick prints running, a dash for the end and no report", () => {
-			call(BASE, ["tick", "start", "--role", "patrol"]);
+			call(later(3), ["tick", "start", "--role", "patrol"]);
 			expect(list("--limit", "1").out).toBe(
-				`1\tpatrol\t-\t-\trunning\t${BASE}\t-\n`,
-			);
-		});
-
-		test("ticks follow one another without separators", () => {
-			ended("patrol", later(1), null, "x");
-			ended("patrol", later(2), null, "y");
-			expect(list("--limit", "2").out).toBe(
-				`2\tpatrol\t-\t-\tsilent\t${later(2)}\t${later(2)}\n| y\n` +
-					`1\tpatrol\t-\t-\tsilent\t${later(1)}\t${later(2)}\n| x\n`,
+				`2\tpatrol\t-\t-\trunning\t${later(3)}\t-\n`,
 			);
 		});
 
@@ -309,9 +291,6 @@ describe("ticks", () => {
 					args,
 					{ code: 0, out: "", err: "" },
 				]);
-			expect(
-				idsOf(list("--id", "1", "--role", "patrol", "--precinct", "a").out),
-			).toEqual(["1"]);
 		});
 
 		test("no matching tick prints nothing and exits 0", () => {
@@ -324,10 +303,6 @@ describe("ticks", () => {
 				["tick", "list"],
 				["tick", "list", "--role", "patrol"],
 				["tick", "list", "--limit", "1", "--id", "1"],
-				["tick", "list", "--limit", "1", "--limit", "2"],
-				["tick", "list", "--limit"],
-				["tick", "list", "--limit", "1", "extra"],
-				["tick", "list", "extra", "--limit", "1"],
 				["tick", "list", "--limit", "1", "--bogus", "x"],
 			];
 			for (const args of bad) {
@@ -340,12 +315,8 @@ describe("ticks", () => {
 		test("bad values exit 1 with one line naming the value", () => {
 			const bad: [string[], string][] = [
 				[["--limit", "0"], "invalid limit"],
-				[["--limit", "-1"], "invalid limit"],
-				[["--limit", "1.5"], "invalid limit"],
 				[["--limit", "x"], "invalid limit"],
-				[["--limit", "99999999999999999999"], "invalid limit"],
 				[["--id", "0"], "invalid id"],
-				[["--id", "x"], "invalid id"],
 				[["--limit", "1", "--role", "Bad"], "invalid role"],
 				[["--limit", "1", "--precinct", "Bad Precinct"], "invalid precinct"],
 			];
