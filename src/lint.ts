@@ -112,7 +112,11 @@ export function lintBodyCommand(args: string[]): number {
 
 type FrontKeys = Map<string, { value: string; line: number }>;
 type Heading = { name: string; line: number };
-export type PageLint = { reasons: string[]; departments: [string, string][] };
+export type PageLint = {
+	reasons: string[];
+	departments: [string, string][];
+	alarmCheck?: true;
+};
 
 export function readFrontmatter(
 	lines: string[],
@@ -181,6 +185,27 @@ function headingReasons(
 
 const sectionEnd = (found: Heading[], k: number, total: number) =>
 	(found[k + 1]?.line ?? total + 1) - 1;
+
+const ALARM_CHECK = "Alarm check:";
+
+// the paragraph opens the Proof section or follows a blank line, outside a fence
+export function hasAlarmCheck(
+	lines: string[],
+	hidden: boolean[],
+	found: Heading[],
+): boolean {
+	const k = found.findIndex((h) => h.name === "Proof");
+	if (k < 0) return false;
+	const from = found[k]?.line ?? 0;
+	return lines
+		.slice(from, sectionEnd(found, k, lines.length))
+		.some(
+			(line, j) =>
+				line.startsWith(ALARM_CHECK) &&
+				!hidden[from + j] &&
+				(j === 0 || (lines[from + j - 1] ?? "").trim() === ""),
+		);
+}
 
 function emptySections(lines: string[], found: Heading[]): string[] {
 	return found.flatMap((h, k) => {
@@ -277,6 +302,12 @@ export function lintPage(
 	}
 	page.reasons.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
 	if (page.reasons.length > 0) page.departments = [];
+	if (
+		kind === "department" &&
+		page.reasons.length === 0 &&
+		hasAlarmCheck(lines, hidden, found)
+	)
+		page.alarmCheck = true;
 	return page;
 }
 
@@ -290,5 +321,6 @@ export function lintPageCommand(args: string[]): number {
 	const page = lintPage(kind, readStdin(), expected);
 	for (const reason of page.reasons) out(reason);
 	for (const [name, judgedBy] of page.departments) out(name, judgedBy);
+	if (page.alarmCheck) out("alarm-check");
 	return page.reasons.length > 0 ? EXIT.LINT_PAGE : EXIT.OK;
 }

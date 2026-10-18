@@ -1,7 +1,15 @@
 import type { Database } from "bun:sqlite";
-import { check, count, parseArgs, subcommand, usage } from "./args";
+import {
+	check,
+	count,
+	parseArgs,
+	splitExcluded,
+	subcommand,
+	usage,
+} from "./args";
 import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
 
+const NEXT_USAGE = "next --role <role> [--exclude <precinct>]…";
 const PRECINCT_USAGE =
 	"precinct <add <name> --repo <owner/repo> --weight <n>|set <name> --weight <n>|list>";
 
@@ -91,9 +99,10 @@ type Admitted = { name: string; repo: string; weight: number; credit: number };
 export function pickNext(
 	db: Database,
 	roleName: string,
+	excluded: string[] = [],
 ): { name: string; repo: string } | null {
 	return inTransaction(db, () => {
-		const admitted = db
+		const rows = db
 			.query(
 				`SELECT name, repo, weight, credit FROM precincts p
          WHERE weight > 0 AND NOT EXISTS (
@@ -102,6 +111,7 @@ export function pickNext(
          ORDER BY name`,
 			)
 			.all(roleName) as Admitted[];
+		const admitted = rows.filter((p) => !excluded.includes(p.name));
 		if (admitted.length === 0) return null;
 		const total = admitted.reduce((sum, p) => sum + p.weight, 0);
 		const bump = db.query(
@@ -123,10 +133,11 @@ export function pickNext(
 }
 
 export function next(args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["role"], "next --role <role>");
+	const { excluded, rest } = splitExcluded(args, NEXT_USAGE);
+	const { opt } = parseArgs(rest, 0, ["role"], NEXT_USAGE);
 	const roleName = check("role", opt.role);
 	withDb((db) => {
-		const pick = pickNext(db, roleName);
+		const pick = pickNext(db, roleName, excluded);
 		if (pick) out(pick.name, pick.repo);
 	});
 }

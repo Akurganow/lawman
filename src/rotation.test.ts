@@ -26,6 +26,30 @@ const rotation = (names: string[], role = "patrol") =>
 const visit = (department: string, at: string, role = "patrol") =>
 	seed((db) => order(db, PRECINCT, role, { department, at, outcome: "filed" }));
 const lines = (r: { out: string }) => r.out.split("\n").filter((l) => l !== "");
+let nextIssue = 1;
+// a broken lead has the title prefix but no lead marker
+const openLead = (department: string, broken = false) =>
+	seed((db) => {
+		const n = nextIssue++;
+		db.run(
+			"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES (?, ?, 'OPEN', ?, 't')",
+			[PRECINCT, n, `[Lead] ${department}: x`],
+		);
+		if (!broken)
+			db.run("INSERT INTO markers VALUES (?, ?, ?, ?, ?, ?, ?, '{}', 'raw')", [
+				PRECINCT,
+				n,
+				"2026-10-14T09:00:00Z|000000|000001",
+				"patrol",
+				"lead",
+				department,
+				`src/f${n}.rs::f::dead-code`,
+			]);
+	});
+const capOf = (department: string) =>
+	cli(["cap", PRECINCT, "--department", department], { LAWMAN_DB: dbFile })
+		.out.trim()
+		.match(/^cap=(\d)/)?.[1];
 
 describe("rotation", () => {
 	test("unvisited departments come first by name, then the oldest visit first", () => {
@@ -35,11 +59,11 @@ describe("rotation", () => {
 		const r = rotation(["web", "zeta", "api", "core", "beta"]);
 		expect(r.code).toBe(0);
 		expect(lines(r)).toEqual([
-			"beta\t-",
-			"zeta\t-",
-			"core\t2026-09-01T00:00:00Z",
-			"web\t2026-10-01T00:00:00Z",
-			"api\t2026-10-05T00:00:00Z",
+			"beta\t-\t3",
+			"zeta\t-\t3",
+			"core\t2026-09-01T00:00:00Z\t3",
+			"web\t2026-10-01T00:00:00Z\t3",
+			"api\t2026-10-05T00:00:00Z\t3",
 		]);
 	});
 
@@ -47,8 +71,8 @@ describe("rotation", () => {
 		visit("web", "2026-10-01T00:00:00Z");
 		visit("api", "2026-10-01T00:00:00Z");
 		expect(lines(rotation(["web", "api"]))).toEqual([
-			"api\t2026-10-01T00:00:00Z",
-			"web\t2026-10-01T00:00:00Z",
+			"api\t2026-10-01T00:00:00Z\t3",
+			"web\t2026-10-01T00:00:00Z\t3",
 		]);
 	});
 
@@ -57,20 +81,20 @@ describe("rotation", () => {
 		visit("web", "2026-09-01T00:00:00Z");
 		visit("core", "2026-10-03T00:00:00Z");
 		expect(lines(rotation(["web", "core"]))).toEqual([
-			"core\t2026-10-03T00:00:00Z",
-			"web\t2026-10-09T00:00:00Z",
+			"core\t2026-10-03T00:00:00Z\t3",
+			"web\t2026-10-09T00:00:00Z\t3",
 		]);
 	});
 
 	test("orders of other roles do not count as visits", () => {
 		visit("web", "2026-10-01T00:00:00Z", "investigation");
-		expect(lines(rotation(["web"]))).toEqual(["web\t-"]);
+		expect(lines(rotation(["web"]))).toEqual(["web\t-\t3"]);
 	});
 
 	test("repeated names print once", () => {
 		expect(lines(rotation(["web", "api", "web", "api"]))).toEqual([
-			"api\t-",
-			"web\t-",
+			"api\t-\t3",
+			"web\t-\t3",
 		]);
 	});
 
@@ -89,6 +113,27 @@ describe("rotation", () => {
 			expect(r.code).toBe(0);
 			expect(r.out).toBe("");
 		}
+	});
+
+	test.each([
+		[0, "3"],
+		[2, "3"],
+		[3, "1"],
+		[4, "1"],
+		[5, "0"],
+	])("%i open leads give the third field %s", (open, want) => {
+		for (let i = 0; i < open; i++) openLead("core");
+		expect(lines(rotation(["core"]))).toEqual([`core\t-\t${want}`]);
+		expect(capOf("core")).toBe(want);
+	});
+
+	test("an open broken lead counts, other departments do not", () => {
+		for (let i = 0; i < 2; i++) openLead("core");
+		openLead("core", true);
+		openLead("web");
+		const r = lines(rotation(["core", "web", "idle"]));
+		expect(r).toEqual(["core\t-\t1", "idle\t-\t3", "web\t-\t3"]);
+		expect(capOf("core")).toBe("1");
 	});
 
 	test("a missing role exits 1", () => {
@@ -135,9 +180,9 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		const r = pipe(["api.md", "core.md", "web.md"]);
 		expect(r.code).toBe(0);
 		expect(lines(r)).toEqual([
-			"web\t-",
-			"core\t2026-09-01T00:00:00Z",
-			"api\t2026-10-05T00:00:00Z",
+			"web\t-\t3",
+			"core\t2026-09-01T00:00:00Z\t3",
+			"api\t2026-10-05T00:00:00Z\t3",
 		]);
 	});
 
@@ -146,16 +191,16 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		const r = pipe(["api.md"], ["billing", "audit"]);
 		expect(r.code).toBe(0);
 		expect(lines(r)).toEqual([
-			"audit\t-",
-			"billing\t-",
-			"api\t2026-10-05T00:00:00Z",
+			"audit\t-\t3",
+			"billing\t-\t3",
+			"api\t2026-10-05T00:00:00Z\t3",
 		]);
 	});
 
 	test("a precinct line that repeats a page name prints once", () => {
 		const r = pipe(["api.md", "web.md"], ["web", "billing"]);
 		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual(["api\t-", "billing\t-", "web\t-"]);
+		expect(lines(r)).toEqual(["api\t-\t3", "billing\t-\t3", "web\t-\t3"]);
 	});
 
 	test("a directory without page files gives only the precinct lines", () => {
@@ -173,7 +218,7 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 	test("an empty directory still lists the precinct lines", () => {
 		const r = pipe([], ["billing"]);
 		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual(["billing\t-"]);
+		expect(lines(r)).toEqual(["billing\t-\t3"]);
 	});
 
 	test("a missing page directory fails the pipeline", () => {

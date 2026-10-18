@@ -17,6 +17,7 @@ import { next, precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
 import { rotation } from "./rotation";
 import { sync } from "./sync";
+import { wake } from "./wake";
 
 export { open } from "./db";
 
@@ -49,6 +50,7 @@ export const COMMANDS: Record<string, Handler> = {
 	handoff: handoffCommand,
 	decider,
 	jev,
+	wake,
 };
 
 export function main(argv: string[]): number {

@@ -190,10 +190,10 @@ export function inTransaction<T>(db: Database, body: () => T): T {
 	}
 }
 
-export function withDb(body: (db: Database) => void): void {
+export function withDb<T = void>(body: (db: Database) => T): T {
 	const db = open();
 	try {
-		body(db);
+		return body(db);
 	} finally {
 		db.close();
 	}

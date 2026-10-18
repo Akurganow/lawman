@@ -14,6 +14,12 @@ import {
 
 tempDb();
 
+const alarmsOnce = (at: string, pattern: RegExp) => {
+	const r = alarm(at);
+	expect(r.out).toMatch(pattern);
+	expect(r.out.trim().split("\n")).toHaveLength(1);
+};
+
 describe("alarms and status", () => {
 	describe("alarm kinds", () => {
 		test("order-untaken fires after 48 hours and not before", () => {
@@ -22,8 +28,7 @@ describe("alarms and status", () => {
 				order(db, "a", "patrol");
 			});
 			expect(alarm(later(48))).toMatchObject({ code: 0, out: "" });
-			const r = alarm(later(48, 1));
-			expect(r.out).toMatch(/^ALARM order-untaken 1 .+\n$/);
+			expect(alarm(later(48, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
 		});
 
 		test("an order that was taken or closed does not alarm", () => {
@@ -109,9 +114,7 @@ describe("alarms and status", () => {
 					"a",
 				),
 			);
-			const r = alarm(later(7));
-			expect(r.out).toMatch(/^ALARM tick-failing patrol\/a .+\n$/);
-			expect(r.out.trim().split("\n")).toHaveLength(1);
+			alarmsOnce(later(7), /^ALARM tick-failing patrol\/a .+\n$/);
 		});
 
 		test("a newer success ends tick-failing", () => {
@@ -144,9 +147,7 @@ describe("alarms and status", () => {
 				tick(db, "patrol", later(1), later(1, 60), "stopped-dirty-law");
 				tick(db, "patrol", later(2), later(2, 60), "stopped-gh-auth");
 			});
-			const r = alarm(later(3));
-			expect(r.out).toMatch(/^ALARM tick-failing patrol\/- .+\n$/);
-			expect(r.out.trim().split("\n")).toHaveLength(1);
+			alarmsOnce(later(3), /^ALARM tick-failing patrol\/- .+\n$/);
 		});
 
 		test("broken-lead fires for a [Lead] issue without a lead marker", () => {

@@ -125,6 +125,19 @@ describe("precinct and role commands", () => {
 		db.close();
 	});
 
+	test("role set keeps the check time of an existing role", () => {
+		run(["role", "set", "patrol", "--every", "30"]);
+		const db = open(dbFile);
+		db.run("UPDATE roles SET checked_at = '2026-05-01T00:00:00Z'");
+		db.close();
+		expect(run(["role", "set", "patrol", "--every", "45"]).code).toBe(0);
+		const after = open(dbFile);
+		expect(
+			after.query("SELECT every_minutes, checked_at FROM roles").all(),
+		).toEqual([{ every_minutes: 45, checked_at: "2026-05-01T00:00:00Z" }]);
+		after.close();
+	});
+
 	test("precinct set updates weight and resets every credit to 0", () => {
 		addPrecincts({ a: 2, b: 1 });
 		run(["next", "--role", "patrol"]);
@@ -239,5 +252,53 @@ describe("next", () => {
 	test("ties go to the smaller name", () => {
 		addPrecincts({ b: 1, a: 1 });
 		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
+	});
+});
+
+describe("next --exclude", () => {
+	const next = (...excluded: string[]) =>
+		run([
+			"next",
+			"--role",
+			"patrol",
+			...excluded.flatMap((name) => ["--exclude", name]),
+		]);
+
+	test("an excluded precinct is skipped", () => {
+		addPrecincts({ a: 1, b: 1 });
+		expect(next("a").out).toBe("b\to/b\n");
+	});
+
+	test("the flag repeats", () => {
+		addPrecincts({ a: 1, b: 1, c: 1 });
+		expect(next("a", "b").out).toBe("c\to/c\n");
+	});
+
+	test("all precincts excluded prints nothing and changes no credit", () => {
+		addPrecincts({ a: 3, b: 1 });
+		expect(next("a", "b")).toMatchObject({ code: 0, out: "" });
+		expect(credits()).toEqual({ a: 0, b: 0 });
+	});
+
+	test("an excluded precinct gets no credit change", () => {
+		addPrecincts({ a: 3, b: 2, c: 1 });
+		expect(next("a").out).toBe("b\to/b\n");
+		expect(credits()).toEqual({ a: 0, b: -1, c: 1 });
+	});
+
+	test("a name that is no precinct changes nothing", () => {
+		addPrecincts({ a: 1 });
+		expect(next("ghost").out).toBe("a\to/a\n");
+	});
+
+	test("a flag without a value or with a bad name exits 1", () => {
+		addPrecincts({ a: 1 });
+		for (const args of [
+			["next", "--role", "patrol", "--exclude"],
+			["next", "--role", "patrol", "--exclude", "Bad"],
+			["next", "--role", "patrol", "--bogus", "a"],
+		])
+			expect([args, run(args).code]).toEqual([args, 1]);
+		expect(credits()).toEqual({ a: 0 });
 	});
 });

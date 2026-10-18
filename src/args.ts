@@ -21,6 +21,22 @@ export function usage(text: string): Fail {
 	return new Fail(EXIT.USAGE, `usage: journal ${text}`);
 }
 
+// --exclude repeats, which parseArgs does not allow
+export function splitExcluded(
+	args: string[],
+	text: string,
+): { excluded: string[]; rest: string[] } {
+	const excluded: string[] = [];
+	const rest: string[] = [];
+	for (let i = 0; i < args.length; i += 2) {
+		const [flag, value] = [args[i], args[i + 1]];
+		if (flag !== "--exclude") rest.push(...args.slice(i, i + 2));
+		else if (value === undefined) throw usage(text);
+		else excluded.push(check("precinct", value));
+	}
+	return { excluded, rest };
+}
+
 type Parsed<P extends 0 | 1, N extends string, O extends string> = {
 	pos: P extends 1 ? [string] : [];
 	opt: Record<N, string> & Partial<Record<O, string>>;

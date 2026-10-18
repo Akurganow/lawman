@@ -84,6 +84,7 @@ hermes cron create "<cron expression>" "<tick prompt>" \
 - `--workdir` is required and absolute. It is also the terminal's working directory.
 - Each job starts a fresh agent session.
 - `--skill` repeats on create to attach several skills (stated by `hermes cron create --help`, not probed).
+- The optional flags `--provider`, `--reasoning-effort`, `--monitor-script`, `--paused` (stated by `hermes cron create --help`).
 
 Schedule forms:
 
@@ -101,13 +102,35 @@ Manage jobs with these commands:
 | Remove | `hermes cron remove <role>` |
 | Attempts | `hermes cron runs <id>` |
 | Run now | `hermes cron run <role>` |
-| Add a skill | `hermes cron edit <job id> --add-skill <skill>` |
+| Edit | `hermes cron edit <job id>` |
 
 `pause`, `resume`, `run` and `remove` take a job id or a name. The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
 
-"Add a skill" is stated by `hermes cron edit --help`, which says it appends a skill without replacing the job's list. It is not probed.
-
 Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown file with the prompt and the answer.
+
+### Editing a job
+
+`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. It prints a `Monitor:` line for a gated job (read in the harness code).
+
+### Schedule forms and time zone
+
+Five-field cron with weekdays and days of the month (stated by the docs). Read the time zone with `hermes config get timezone` (seen in a terminal). The variable `HERMES_TIMEZONE` overrides it. Schedules match that zone's wall clock. Unset means the machine's zone (read in the harness code).
+
+### Models
+
+Read the current model with `hermes config get model --json` (stated by the docs). Read the cron defaults with `hermes config get cron.model` and `hermes config get cron.model_provider`. An empty line means unset (seen in a terminal). No command lists models. `hermes model` needs a terminal and writes the default (read in the harness code). The harness stores a name unchecked, in the provider's own form. The provider is a separate flag. At fire time the job's model wins, then `cron.model`, then the main model (read in the harness code). A job with its own model leaves the fallback chain (stated by the docs). `hermes cron create --help` lists the effort levels (stated by `--help`).
+
+### Paused jobs
+
+`--paused` on create, `resume` to start. A job created paused has no stored slot, so `resume` sets its next future slot. A job paused after it ran keeps its passed slot. The default catch-up setting then starts it once at once (read in the harness code).
+
+### Run gate
+
+`--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+
+### Order and overlap
+
+Same-minute jobs run in parallel. A job still running skips its next slot. The CLI has no chaining, so order comes from the clock (read in the harness code).
 
 ### Catch-up
 
