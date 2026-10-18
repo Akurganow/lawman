@@ -160,18 +160,21 @@ export function probe(args: string[]): void {
 	) {
 		throw new Fail(EXIT.USAGE, "usage: journal probe [--schema N]");
 	}
-	if (schema !== undefined && Number(schema) > MIGRATIONS.length) {
-		throw new Fail(
-			EXIT.SCHEMA,
-			`schema ${schema} is newer than this binary (${MIGRATIONS.length})`,
-		);
-	}
+	if (schema !== undefined) requireSchema(Number(schema));
 	const db = open();
 	try {
 		out(probeLine(db));
 	} finally {
 		db.close();
 	}
+}
+
+export function requireSchema(needed: number): void {
+	if (needed > MIGRATIONS.length)
+		throw new Fail(
+			EXIT.SCHEMA,
+			`schema ${needed} is newer than this binary (${MIGRATIONS.length})`,
+		);
 }
 
 export function out(...fields: (string | number)[]): void {

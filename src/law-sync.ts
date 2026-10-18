@@ -11,7 +11,7 @@ import {
 } from "node:fs";
 import { join, resolve } from "node:path";
 import { parseArgs, usage } from "./args";
-import { EXIT, Fail, MIGRATIONS, out } from "./db";
+import { EXIT, Fail, out, requireSchema } from "./db";
 
 const USAGE = "law-sync --tag <tag> --commit <commit> --installation <folder>";
 const TAG = /^[A-Za-z0-9._-]+$/;
@@ -124,13 +124,7 @@ function sync(opt: Options, execPath: string): string[] {
 	if (configValue(config, "law_commit") === undefined)
 		throw new Fail(EXIT.USAGE, "config.yaml has no law_commit value");
 	const law = contractVersion(root);
-	const needed = highestSchema(root);
-	// the same check as probe --schema
-	if (needed > MIGRATIONS.length)
-		throw new Fail(
-			EXIT.SCHEMA,
-			`schema ${needed} is newer than this binary (${MIGRATIONS.length})`,
-		);
+	requireSchema(highestSchema(root));
 	const sum = createHash("sha256").update(readFileSync(execPath)).digest("hex");
 	const next = rewriteConfig(config, { tag: opt.tag, commit: opt.commit, sum });
 	const mode = statSync(configPath).mode & PERMISSION_BITS;

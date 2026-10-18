@@ -52,6 +52,12 @@ export function defineCases(runner: Runner): void {
 		expect(result).toMatchObject({ code: 0, err: "" });
 		return result;
 	};
+	const syncedSum = () => {
+		const exe = runner.exe(root, "tick1");
+		const sum = shasum(exe);
+		sync(exe);
+		return sum;
+	};
 	const unchanged = (exe: string, args: string[], code?: number) => {
 		const before = snapshot(root);
 		const result = sync(exe, args);
@@ -94,9 +100,7 @@ export function defineCases(runner: Runner): void {
 	describe("config rewrite", () => {
 		test("keeps unknown lines, comments and order, and appends what is absent", () => {
 			lay(root);
-			const exe = runner.exe(root, "tick1");
-			const sum = shasum(exe);
-			sync(exe);
+			const sum = syncedSum();
 			expect(configOf(root)).toBe(
 				`${CONFIG.replace(OLD_COMMIT, LAW_COMMIT)}release_tag: ${TAG}\njournal_sha256: ${sum}\ntypesafe_key: ${TYPESAFE_ENV}\namended_law_commit: ${OLD_COMMIT}\n`,
 			);
@@ -105,9 +109,7 @@ export function defineCases(runner: Runner): void {
 		test("replaces present keys in place and never overwrites a present default", () => {
 			const text = `release_tag: v0.1.0\nlaw_commit: ${OLD_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: 0\namended_law_commit: ${"a".repeat(40)}\n`;
 			lay(root, { config: text });
-			const exe = runner.exe(root, "tick1");
-			const sum = shasum(exe);
-			sync(exe);
+			const sum = syncedSum();
 			expect(configOf(root)).toBe(
 				`release_tag: ${TAG}\nlaw_commit: ${LAW_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: ${sum}\namended_law_commit: ${"a".repeat(40)}\n`,
 			);
