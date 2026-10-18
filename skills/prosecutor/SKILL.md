@@ -24,7 +24,7 @@ The law in `lawman/law/LAW.md` and the tick steps in `lawman/law/tick.md` govern
 
 ## Tick
 
-Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 5 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/law/tick.md` then, and end the tick as its "End the tick" section says.
 
 ### Step 0: guards and alarms
 
@@ -49,11 +49,30 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    ```
    gh api user --jq .login
    ```
-6. Read `lawman/law/tick.md` and obey it for the whole tick. Then run its "Alarms before work" section.
+6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   ```
+   bin/journal alarm
+   ```
 
 ### Step 1: take an order
 
-Run the "Take an order" section with `--role prosecutor`.
+Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+
+```
+bin/journal dispatch take --role prosecutor
+```
+
+Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/law/tick.md`, then end the tick with `failed`.
+
+```
+bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
+No order.
+LAWMAN_<tick id>_0000000
+```
+
+`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer every `ALARM` line verbatim, or `[SILENT]` when there is none.
+
+With an order, read `lawman/law/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
 
 ### Step 2: fetch the precinct
 
@@ -98,9 +117,15 @@ A related issue is evidence of the case, never a reason to close it.
 ### Step 7: re-read the exhibits
 
 1. Re-read the decisive exhibit of each claim at `<sha>`, through `show`, or through `grep` on `<sha>`.
+   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/law/exhibits.md` says.
+   - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`. Any other quoted output is a claim, not an exhibit.
 3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
 4. Search with a pattern from the case only through the heredoc form.
+5. A path that the case reports missing in its Not established section:
+   - Re-read the commit that the case names, with the second command of the "Follow a missing path" section of `lawman/law/exhibits.md`.
+   - If the case names no commit, run the whole section.
+   - A decision that closes the case on that ground names the commit and the new place or the removal in its Grounds.
 
 ### Step 8: decide
 
@@ -134,7 +159,7 @@ Write the comment in this order:
 Decision
 
 Analysed commit: <sha>
-Tip at decision: <tip sha>
+Tip at decision: <tip>
 
 ## Decision
 <one sentence: charge, return or decline. For decline, its class from the law's Closure classes subsection>
@@ -161,15 +186,20 @@ Rules:
 - Quote only the lines the ground needs.
 - Put every `@` and every quote of third-party text inside a fenced block.
 - Write no home path, no installation path, no token and no login.
+- `<tip>` is the commit that step 2 printed.
 
 ## Report
 
-Three lines:
+Three lines. The second line is exactly one of the `Written:` lines below.
 
 ```
 Coverage: <sha>, issue #<n>, round <r>.
-Written: <comment URL>; closed as <reason> or none.
+Written: <one of the lines below>
 Blockers: <tool, source or tracker errors, the stop token, any facts about evidence, the tip fact if it moved>.
 ```
+
+- `Written: <comment URL>.` for a charge, for a return, and for a decline whose close did not read back as `CLOSED`.
+- `Written: <comment URL>; closed as <class>.` for a decline, after the close read back as `CLOSED`.
+- `Written: none.` when the role wrote nothing.
 
 When the order is empty or stale, the report is the one line of step 1 or step 4.
