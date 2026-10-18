@@ -6,8 +6,8 @@ import {
 	call,
 	dbFile,
 	env,
+	JOURNAL,
 	later,
-	ROOT,
 	run,
 	tempDb,
 } from "./test-helpers";
@@ -142,7 +142,7 @@ describe("dispatch", () => {
 			Bun.spawn(
 				["bun", "src/journal.ts", "dispatch", "take", "--role", "patrol"],
 				{
-					cwd: ROOT,
+					cwd: JOURNAL,
 					env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
 					stdout: "pipe",
 					stderr: "pipe",

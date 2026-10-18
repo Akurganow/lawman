@@ -21,17 +21,17 @@ contract_version: 1
 
 ## Regression proof
 
-- bun install --frozen-lockfile
-- bun run check
-- bun test
+- cd journal && bun install --frozen-lockfile
+- cd journal && bun run check
+- cd journal && bun test
 
 ## Not judged
 
-- bun.lock
-- src/fixtures
-- src/cases-fixture.ts
-- src/clerk-jobs-fixture.ts
-- src/pulls-fixture.ts
+- journal/bun.lock
+- journal/src/fixtures
+- journal/src/cases-fixture.ts
+- journal/src/clerk-jobs-fixture.ts
+- journal/src/pulls-fixture.ts
 
 ## Execution
 

@@ -4,7 +4,7 @@ import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import pkg from "../package.json";
 import { MIGRATIONS } from "./db";
-import { cli, dbFile, dir, harness, ROOT, tempDb } from "./test-helpers";
+import { cli, dbFile, dir, harness, JOURNAL, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -66,12 +66,12 @@ describe("cli", () => {
 
 describe("source constraints", () => {
 	test("the journal never starts processes or touches the network", () => {
-		const sources = readdirSync(join(ROOT, "src")).filter(
+		const sources = readdirSync(join(JOURNAL, "src")).filter(
 			(f) => f.endsWith(".ts") && !f.includes("test"),
 		);
 		expect(sources).toContain("journal.ts");
 		for (const file of sources) {
-			const src = readFileSync(join(ROOT, "src", file), "utf8");
+			const src = readFileSync(join(JOURNAL, "src", file), "utf8");
 			for (const banned of [
 				"spawn",
 				"Bun.$",

@@ -5,9 +5,9 @@ import * as db from "./db";
 import { Fail } from "./db";
 import { captured } from "./inproc";
 import { answerLine, jev, requestLine } from "./jev";
-import { cli, LAW, ROOT } from "./test-helpers";
+import { cli, JOURNAL, LAW } from "./test-helpers";
 
-const FIXTURES = join(ROOT, "src", "fixtures", "jev");
+const FIXTURES = join(JOURNAL, "src", "fixtures", "jev");
 const RECORDED = join(FIXTURES, "replies.json");
 const fixture = (name: string) => readFileSync(join(FIXTURES, name), "utf8");
 const compact = (name: string) =>

@@ -5,7 +5,7 @@ contract_version: 1
 
 ## Mission
 
-This department judges the text of Lawman by what Lawman's roles did with it. The evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. Four defects count: a role's comment misleads a reader, a role closed a case wrongly, a line of a template reads as something other than what happened, and a run spent turns on what a line of Lawman text causes. A defect of the tree alone belongs to the other departments. Test: does a line of the law, a skill or the harness page, read at the law commit the tick ran under, cause or allow the behaviour that a source command shows?
+This department judges the text of Lawman by what Lawman's roles did with it. The evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. Five defects count. A role's comment misleads a reader. A role closed a case wrongly. A line of a template reads as something other than what happened. A run spent turns on what a line of Lawman text causes. A tick ended with an outcome that the law's Tick outcomes list does not hold. A defect of the tree alone belongs to the other departments. Test: does a line of the law, a skill or the harness page, read at the law commit the tick ran under, cause or allow the behaviour that a source command shows?
 
 ## Kinds
 
@@ -19,7 +19,7 @@ This department judges the text of Lawman by what Lawman's roles did with it. Th
 
 ## Where to look
 
-The behaviour of the roles lives outside this clone: the journal's tick list, the comments of the roles on the trackers of the precincts, the clones of the other precincts and the records of the scheduled runs. The text that shapes the behaviour lives in this clone: `skills/`, which holds the law, the departments and the harness pages under `skills/lawman-law/references/`, and `src/`. Start from the journal. List the newest ticks of a role, read what each wrote, then read the comment or the session that it names.
+The behaviour of the roles lives outside this clone: the journal's tick list, the comments of the roles on the trackers of the precincts, the clones of the other precincts and the records of the scheduled runs. The text that shapes the behaviour lives in this clone: `skills/`, which holds the law, the departments and the harness pages under `skills/lawman-law/references/`, and `journal/src/`. Start from the journal. List the newest ticks of a role, read what each wrote, then read the comment or the session that it names.
 
 A tick ran under the law commit that the installation's law clone had at the tick's start. That commit is the first column of the newest reflog line whose time is not later than the tick's start. No such line means the reflog is cut or the clone is newer than the tick. The tick then has no law commit: file no lead for it and name the tick in Blockers. Read the text that caused the behaviour at that commit with the numbered-lines read, in the clone of the precinct whose repository is this one. The `precinct list` item names it. A clone that does not hold the commit makes that read a failed run, and no lead follows. Then read the same lines at the analysed commit. Both reads must show the same text.
 

@@ -6,6 +6,7 @@ import {
 	dbFile,
 	dir,
 	env,
+	JOURNAL,
 	order,
 	precinct,
 	ROOT,
@@ -35,7 +36,7 @@ function gate() {
 	const wrapper = join(installation, "bin", "journal");
 	writeFileSync(
 		wrapper,
-		`#!/bin/bash\nexec ${process.execPath} ${join(ROOT, "src", "journal.ts")} "$@"\n`,
+		`#!/bin/bash\nexec ${process.execPath} ${join(JOURNAL, "src", "journal.ts")} "$@"\n`,
 	);
 	chmodSync(wrapper, 0o755);
 	const file = join(dir, `lawman-${ROLE}.sh`);
