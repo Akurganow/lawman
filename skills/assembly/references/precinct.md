@@ -102,7 +102,7 @@ The rows for a constitution that passes lint:
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Constitution: "Constitution found, passes lint" (found). Show no draft, no branch and no pull request.
-- Weight: 1. The constitution is already in place, so patrol can start at the next slot (default).
+- Weight: 1. The constitution is already in place (default).
 - TypeSafe: on or off, as `typesafe` says in `config.yaml` (current).
 - Issue templates: the missing fields as a recommendation, or none (found).
 
@@ -136,14 +136,13 @@ Then decide.
 
 ### Add the precinct
 
-63. Run `bin/journal precinct list`, and note whether any precinct has a weight above zero.
-64. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight <w>`, and stop if it fails, showing the message. `<w>` is the Weight row of the proposal.
-65. When `<w>` is above zero and step 63 found no weight above zero, run steps 10 to 15 of "Raise a weight".
-66. When the call asked the TypeSafe consent, set `<owner>-<repo>=<answer>` in `typesafe_precincts`.
-67. Replace `none`, replace an existing pair for that name, and never append a second one.
-68. Write `config.yaml`, and read it back.
-69. When the job opened a pull request, tell the developer to choose "Precincts", then "raise a weight", after it merges.
-70. Tell the developer that the job "add a department" also follows the merge, for a department of the repository's own.
+63. Run `bin/journal precinct add <owner>-<repo> --repo <owner>/<repo> --weight <w>`, and stop if it fails, showing the message. `<w>` is the Weight row of the proposal. A new draft always takes 0.
+64. When the call asked the TypeSafe consent, set `<owner>-<repo>=<answer>` in `typesafe_precincts`.
+65. Replace `none`, replace an existing pair for that name, and never append a second one.
+66. Write `config.yaml`, and read it back.
+67. When `<w>` is above zero, run steps 10 to 15 of "Raise a weight".
+68. When the job opened a pull request, tell the developer to choose "Precincts", then "raise a weight", after it merges.
+69. Tell the developer that the job "add a department" also follows the merge, for a department of the repository's own.
 
 ## Re-check a precinct
 
@@ -172,7 +171,7 @@ A resolved page that fails hides the later places, so never fall back to them.
 
 Ask in the question tool.
 
-1. Run `bin/journal precinct list`, and note whether any precinct has a weight above zero.
+1. Run `bin/journal precinct list`.
 2. Show the weight table as the proposal, one row for each precinct with its repository and its current weight.
 3. Ask in the question tool, and offer "Keep as is" first.
 4. Take a precinct name with its new weight as free text.
@@ -180,7 +179,7 @@ Ask in the question tool.
 6. Ask in the question tool to apply or change.
 7. Run the next step for each changed row.
 8. Run `bin/journal precinct set <owner>-<repo> --weight <n>`, and stop if it fails.
-9. Skip the rest unless step 1 found no weight above zero and an edit sets a weight above zero.
+9. Skip the rest unless an edit sets a weight above zero.
 10. Run the list command from the harness page, and take the `[lawman]` jobs that it shows as paused. Skip the rest when none is paused.
 11. Show the paused jobs as rows, with the line: a job created paused first runs at its next slot.
 12. Ask in the question tool which jobs resume, with several-choice.

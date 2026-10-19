@@ -6,7 +6,8 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 
 ### Changed
 
-- A repository whose constitution is already in place and passes lint joins at weight 1, and the assembly offers to resume the paused jobs at once. A new draft still starts at weight 0 until its pull request merges.
+- A repository whose constitution is already in place and passes lint joins at weight 1. A new draft still starts at weight 0 until its pull request merges.
+- Whenever a weight above zero is set and a job is paused, the assembly offers to resume it. A declined offer comes back at the next weight.
 
 ## [0.16.4] - 2026-10-19
 

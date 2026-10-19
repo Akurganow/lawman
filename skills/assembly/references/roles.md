@@ -212,6 +212,6 @@ printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts dir
 
 ## Finish
 
-1. Name the paused jobs and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
+1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
 2. Name every file written outside the installation, with its path. Say that this assembly never deletes them.
 3. List the jobs that changed and what changed.
