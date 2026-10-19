@@ -175,9 +175,9 @@ A tick that ends `failed` means the role could not finish and no external cause 
 
 A tick that ends `skipped-*` means the precinct or the department cannot be worked now, for example `skipped-no-constitution`. It delivers nothing. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
 
-### Short reports
+### Reports
 
-A brief report comes with an alarm. It holds a few thesis lines. They give the outcome token, the precinct and the order, what the tick wrote with its URL, and the counts. The full report lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
 
 ## What the maintainer does
 

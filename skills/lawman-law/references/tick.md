@@ -258,9 +258,8 @@ gh issue view <n> -R <owner/repo> --json state --jq .state
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 3. Answer. Print every `ALARM` line verbatim first. Then:
    - For `failed`, add the report.
-   - With an `ALARM` line, add the brief report, and never answer the silence form.
+   - With an `ALARM` line, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form that the harness page names, alone. The journal holds the report.
-   - The brief report is a few short thesis lines. They give the outcome token, the precinct and the order or issue, what the tick wrote with its URL, and the counts. They hold no reason and no detail. Write `none` where a part does not apply.
 
 ## Alarm
 

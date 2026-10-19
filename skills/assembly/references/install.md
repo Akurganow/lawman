@@ -90,7 +90,7 @@ Proposes: one row for each route, with its source.
 - Label a route whose state the harness cannot report as not checked.
 - Label the file-only route: alarms and failures stay in files.
 
-Decides: which routes receive the alarms, the failures and the stops. Ask in the question tool.
+Decides: which routes receive the alarms and the failures. Ask in the question tool.
 
 - Offer several choices where the harness allows several routes, and one choice where it allows one.
 - Keep the file-only route among the visible choices, even when the list is long.
@@ -187,7 +187,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 
 - The items of "Finish" in `references/roles.md`.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
-- What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. Its report arrives on the delivery routes.
+- What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
 - When TypeSafe is on and the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
 - For roles and precincts: the menu of the assembly changes them later.
