@@ -98,3 +98,25 @@ The assembly reads one section of this file only when the developer asks for tha
 1. Tell the developer:
 
 > The gate file is `lawman-<role>.sh` in the harness's scripts directory. The extension makes the harness run it with `bash`. The harness ignores the interpreter line, which stays for readers. The file holds two lines. The first is `#!/bin/bash`. The second is `exec bin/journal wake --role <role>`. It has no pipe, no `grep` and no `|| true`. The journal's exit status is the file's status.
+
+## The sections of a constitution
+
+| Section | Holds | Read by |
+| :-- | :-- | :-- |
+| Read first | Files every role reads before work | patrol, response unit, spec writer, executor |
+| Fence | What CI already rejects | patrol, executor |
+| Regression proof | Commands that prove no regression | investigation, prosecutor, defender, court, spec writer |
+| Not judged | Pathspecs that no department judges | patrol |
+| Execution | Where a role may run the tree's code | investigation, executor |
+| Executor loads | Skills and rules the executor loads before it changes code | executor |
+| Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court, spec writer |
+
+## The weight
+
+A weight is a share of patrol slots. A precinct with a weight and no merged constitution wastes its slot, because its tick ends `skipped-no-constitution`. The precinct starts at weight 0.
+
+## The own department
+
+A repository may have its own department, a special police for rules only that repository has. It can live in the repository itself or in your installation. It joins the rotation next to the shared departments.
+
+The 'Add a department' job runs after the constitution's pull request merges, because it reads `LAWMAN.md` from the main branch.
