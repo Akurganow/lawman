@@ -148,7 +148,7 @@ The first run of a gated role always starts a session. A gate check counts as ac
 
 ## What reaches the developer
 
-Silence is the default. A successful tick answers a brief report, then the silence form of the harness. The harness delivers nothing. Only alarms, failures and stops reach you.
+Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you, and a stop of the law sync or of the duty desk.
 
 ### Alarms
 
@@ -171,13 +171,13 @@ The journal marks a new alarm as notified. Later the duty desk repeats it once a
 
 ### Failures and stops
 
-A tick that ends `failed` means the role could not finish and no external cause explains it. A tick that ends `stopped-*` means an external cause stopped it. Examples are a failed login, a failed fetch, a rate limit and a drifted installation. Both deliver the report of the tick.
+A tick that ends `failed` means the role could not finish and no external cause explains it. A tick that ends `stopped-*` means an external cause stopped it. Examples are a failed login, a failed fetch, a rate limit and a drifted installation. A failed tick delivers its report. A stopped tick delivers nothing, unless the stop comes from the law sync or the duty desk. Those stop every role, and the duty desk prints the alarms, so nothing else would tell you.
 
-A tick that ends `skipped-*` means the precinct or the department cannot be worked now, for example `skipped-no-constitution`. It delivers nothing. Three such ticks in a row, of one role on one precinct, raise `tick-failing`.
+A tick that ends `skipped-*` means the precinct or the department cannot be worked now, for example `skipped-no-constitution`. It delivers nothing. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
 
 ### Short reports
 
-A brief report holds a few thesis lines. They give the outcome token, the precinct and the order, what the tick wrote with its URL, and the counts. The full report lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+A brief report comes with an alarm. It holds a few thesis lines. They give the outcome token, the precinct and the order, what the tick wrote with its URL, and the counts. The full report lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
 
 ## What the maintainer does
 

@@ -73,7 +73,7 @@ Name the `<owner>/<repo>` of item 2 `release_repo`.
 
 ## Delivery
 
-Alarms, failures and stops arrive on the delivery routes. Successful ticks never do.
+Alarms and failures arrive on the delivery routes, and so does a stop of the law sync or of the duty desk. Other ticks never do.
 
 Finds: every route the harness can deliver to, the file-only route included. For each route it finds three facts.
 

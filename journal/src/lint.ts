@@ -57,8 +57,9 @@ const BODY_RULES: [string, RegExp][] = [
 		/(?<![A-Za-z0-9_.-])\/(?:Users|home)\/[^\s/]|~\/|\$\{?HOME\b|(?<![A-Za-z0-9_.-])\.lawman(?![A-Za-z0-9_.-])(?!\/departments\/)/,
 	],
 	["GitHub token", /gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}/],
-	["image embed", /!\[|<(?:img|picture)/i],
 ];
+// GitHub renders no image inside code, so a quoted `vec![1]` is text
+const IMAGE_EMBED = /!\[|<(?:img|picture)/i;
 
 const PATH_RULES: [string, (path: string) => boolean][] = [
 	["path holds ..", (path) => path.includes("..")],
@@ -70,8 +71,10 @@ function lineReasons(line: string, fenced: boolean): string[] {
 	const reasons = BODY_RULES.filter(([, re]) => re.test(line)).map(
 		([reason]) => reason,
 	);
-	if (!fenced && MENTION.test(line.replace(CODE_SPAN, "")))
-		reasons.push("@ mention");
+	if (fenced) return reasons;
+	const prose = line.replace(CODE_SPAN, "");
+	if (IMAGE_EMBED.test(prose)) reasons.push("image embed");
+	if (MENTION.test(prose)) reasons.push("@ mention");
 	return reasons;
 }
 

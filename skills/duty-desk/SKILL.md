@@ -209,11 +209,9 @@ Build the answer from these rules:
 
 - If the tick stopped or failed, write one line `<outcome>: <reason>` first. A probe failure writes its line from step 0.1 instead.
 - Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim.
-- If neither applies, write the brief report. Then write the silence form that the harness page names.
+- If neither applies, write the silence form that the harness page names, alone. The journal holds the report.
 
-The brief report is a few short thesis lines. They give the outcome token, the precinct and the department chosen, the orders written with their ids, and the counts of precincts synced. They hold no reason and no detail. Write `none` where a part does not apply.
-
-Never write the silence form together with an `ALARM` line or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the brief report and the silence form.
+Never write the silence form together with an `ALARM` line or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.
 
 ## Report
 
