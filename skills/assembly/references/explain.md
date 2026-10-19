@@ -111,7 +111,7 @@
 
 ## The weight
 
-A weight is a share of patrol slots. A precinct with a weight and no merged constitution wastes its slot, because its tick ends `skipped-no-constitution`. The precinct starts at weight 0.
+A weight is a share of patrol slots. A precinct with a weight and no merged constitution wastes its slot, because its tick ends `skipped-no-constitution`. A precinct with a new draft starts at weight 0. A precinct whose constitution is already in place starts at weight 1.
 
 ## The own department
 
