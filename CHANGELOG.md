@@ -2,6 +2,21 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.0] - 2026-10-19
+
+### Changed
+
+- The assembly asks through the harness's own question tool, with choices. It proposes each part of the setup in one message, and the developer approves before it writes.
+- Delivery routes come as choices that the harness lists. A file-only route says that alarms stay in files.
+- The assembly finds whether the TypeSafe key is in place and never reads its value.
+- Explanations moved to `skills/assembly/references/explain.md`. The assembly reads them only when the developer asks.
+
+### Removed
+
+- The delivery test, the scheduled-session probe, the silence probe and the paid key probe.
+- The model check.
+- The release repository confirm.
+
 ## [0.15.0] - 2026-10-19
 
 ### Added
