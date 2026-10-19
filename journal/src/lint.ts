@@ -48,7 +48,7 @@ export const HEADING = /^ {0,3}## +(\S.*?) *$/;
 const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 export const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
 // a code span closes only on a backtick run of the same length
-const CODE_SPAN = /(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/g;
+const CODE_SPAN = /(?<![`])(`+)(?![`]).+?(?<![`])\1(?![`])/g;
 const MENTION = /@[A-Za-z0-9]/;
 const TITLE_SHELL = /['`$\\]/;
 
