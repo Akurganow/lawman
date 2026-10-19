@@ -93,6 +93,25 @@ A cell without a mark rests on a fact with its source in the section "What each 
 
 No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). No other harness was found to do both (not verified).
 
+## Asking the developer
+
+The assembly asks the developer through the harness's question tool. Each row names that tool for one harness.
+
+| Harness | Question tool | Several values | Limits |
+| :-- | :-- | :-- | :-- |
+| Hermes Agent | `clarify` (read in the harness code) | yes (read in the harness code) | 1 to 5 questions, up to 4 choices, extra choices dropped without an error (read in the harness code) |
+| Claude Code | `AskUserQuestion` (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | yes (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | 1 to 4 questions, 2 to 4 options (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) |
+| Codex | `request_user_input` (read in the harness code) | no (read in the harness code) | 1 to 3 questions, 2 to 3 options, Plan mode only by default (read in the harness code) |
+| GitHub Copilot CLI | `ask_user` (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference) | (not verified) | (not verified) |
+| OpenClaw | `ask_user` (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | yes (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | 1 to 3 questions, 2 to 4 options (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) |
+| Oh-My-Pi | `ask` (read in the harness code) | yes (read in the harness code) | no hard limit (read in the harness code) |
+| Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
+| Pi | none built in (read in the harness code) | (not verified) | (not verified) |
+
+A harness page names the question tool in its own section. When the page has none, the model finds the tool itself.
+
+A harness without a question tool uses the plain numbered message. The plain message does not serve messengers.
+
 ## What each harness does
 
 ### Hermes Agent
@@ -224,7 +243,7 @@ A new harness needs four things:
 - a row in the table above
 - a live install proof
 
-The page answers the seven sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token.
+The page answers the eight sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer.
 
 The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 
@@ -234,7 +253,7 @@ Follow these steps.
 2. Check each root file of the layout against what the harness reads. Record every conflict in the list above.
 3. Add no root file unless every harness reads it by the standard.
 4. When the harness needs its own manifest, put it where the harness looks and mirror the root fields.
-5. Write the page with the seven sections.
+5. Write the page with the eight sections.
 6. Write the five things of "Choose the installation" and the scheduler check on the page.
 7. Mark every fact on the page by its source.
 8. Run each command that a scheduled session sends through the harness's own approval check.
@@ -245,7 +264,7 @@ Follow these steps.
 
 A harness is done when all of these hold.
 
-- The page exists, answers the seven sections and gives the six things above.
+- The page exists, answers the eight sections and gives the six things above.
 - The README subsection holds the real steps. Only its Uninstall part may hold TBD until the assembly can uninstall.
 - The table row says Supported.
 - A clean harness profile installs the plugin by the README steps alone.

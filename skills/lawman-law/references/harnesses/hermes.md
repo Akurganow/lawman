@@ -224,7 +224,7 @@ An alarm line in an answer defeats silence. The answer is then delivered, as the
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-The probe delivered a report to a messaging platform through a running gateway. The developer confirms receipt. A role cannot see whether a message arrived.
+A role cannot see whether a message arrived.
 
 ### Run records
 
@@ -292,6 +292,15 @@ The key may live in any place that a scheduled session can read. The assembly re
 
 Hand the key to a request on standard input, or through a process substitution that feeds a header. The page lists process substitution as accepted under "Commands in scheduled runs". Never put the key in the text of a command.
 
+## Asking the developer
+
+The question tool is `clarify` (read in the harness code).
+
+- A call holds 1 to 5 questions (read in the harness code).
+- A question holds up to 4 choices. The tool drops extra choices without an error (read in the harness code).
+- A question can take several choices (read in the harness code).
+- The tool adds its own free-text row (read in the harness code).
+
 ## What a second harness needs
 
-A second harness needs a page with these same seven sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
+A second harness needs a page with these same eight sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
