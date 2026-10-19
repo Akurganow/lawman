@@ -10,7 +10,7 @@ Round one covers Installation, Delivery, Models, Schedule, Gates, TypeSafe and t
 
 1. Find the facts of every part.
 2. For each part, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change.
+3. Ask for one approval to apply, offering apply and change. The approval names the gate files and each job.
 
 Before the approval, write only the installation folder, the plugin link and the repository clones. After it, Apply writes in this order.
 
@@ -19,7 +19,7 @@ Before the approval, write only the installation folder, the plugin link and the
 3. Write the gate files.
 4. Create the jobs.
 
-Round two runs "Add a precinct" for each chosen repository. It comes after the writes of round one, because it needs the journal. The summary comes last.
+Round two runs "Add a precinct" from "Clone and read" on, for each chosen repository. It comes after the writes of round one, because it needs the journal. The summary comes last.
 
 ## Installation
 
@@ -96,7 +96,6 @@ Decides: which routes receive the alarms, the failures and the stops. Ask in the
 - Keep the file-only route among the visible choices, even when the list is long.
 - Offer a delivery route as the unit, never a chat. A specific chat goes in the free-text answer.
 - An empty answer asks again. Delivery has no default.
-- The file-only route takes no other route with it. When the answer holds both, ask again.
 
 Result: `deliver` names the chosen routes in the form the create command takes.
 
@@ -179,7 +178,7 @@ Apply starts after the approval of round one.
 
 Round one asks which repositories to add, as `references/precinct.md` describes.
 
-Round two runs the section "Add a precinct" of `references/precinct.md` once for each chosen repository. Each repository has its own proposal and its own approval.
+Round two runs the section "Add a precinct" of `references/precinct.md` from "Clone and read" on, once for each chosen repository. Each repository has its own proposal and its own approval.
 
 ## Summary
 
@@ -191,6 +190,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - When TypeSafe is on and the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
 - For roles and precincts: the menu of the assembly changes them later.
+- Delivery and TypeSafe are set at install. The menu does not change them.
 
 When TypeSafe is on and the official skill was missing at install, add these items.
 

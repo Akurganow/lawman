@@ -41,7 +41,7 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 - It fills each section except Departments with paths and short facts.
 - It writes `none` where nothing applies.
 - It drops each line whose path is missing.
-- It proposes the sections, the judging documents of the shared departments and the own department in one proposal. You keep, change or add lines.
+- It proposes the sections and the judging documents of the shared departments in one proposal. You keep, change or add lines. The proposal notes that "Add a department" follows the merge.
 - It checks the draft with `bin/journal lint-page constitution`.
 - It shows you the full draft and waits for your approval.
 - It commits, pushes and opens the pull request "Add the Lawman constitution".
@@ -52,7 +52,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 
 - **Absent.** The assembly drafts the constitution, as the list above shows.
 - **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no pull request follow. You add the precinct at weight 0, or skip it.
-- **Fails lint.** The proposal shows the reasons. The assembly skips the repository and overwrites nothing. Fix the file by pull request, then add the precinct again.
+- **Fails lint.** The assembly shows the reasons. The assembly skips the repository and overwrites nothing. Fix the file by pull request, then add the precinct again.
 
 ## How it changes
 

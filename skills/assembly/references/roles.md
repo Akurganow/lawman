@@ -64,7 +64,7 @@ When "Models" names no way to read the default, say so. Then ask for model names
 
 1. Offer the choice "Use the harness default", as the recommendation.
 2. Offer the choice "Name models per tier".
-3. On a rerun and in the menu, put the choice "Keep as is" first, and move the recommendation to it.
+3. In the menu, put the choice "Keep as is" first, and move the recommendation to it.
 4. After "Name models per tier", ask for the model of each tier that has a role in `<scope>`.
 5. Batch the tiers in one call.
 6. Offer the models that the harness lists as choices.
@@ -98,7 +98,7 @@ Why: the model sets the quality and the cost of every run.
 1. Offer the choice "Every day", as the recommendation.
 2. Offer the choice "Economy", which uses the Economy column.
 3. Offer the choice "Custom", with the days named in free text, in the forms of "Day forms".
-4. On a rerun and in the menu, put the choice "Keep as is" first, and move the recommendation to it.
+4. In the menu, put the choice "Keep as is" first, and move the recommendation to it.
 5. Take a new start time or one role's days as a typed edit of the proposal.
 
 Why: a role takes one case per run, so its days set the speed and the cost.
@@ -152,7 +152,7 @@ Write no file that carries the mark identical.
 
 ## Day forms
 
-1. Take the form from the free text of "Custom": every day, chosen weekdays with the days named, or one day of the month from 1 to 28. In the menu job, also accept `keep`.
+1. Take the form from the free text of "Custom". The forms are every day, chosen weekdays with the days named, or one day of the month from 1 to 28. In the menu job, also accept `keep`.
 2. Accept no form that runs more often than daily.
 
 ## Interval by form
@@ -212,6 +212,6 @@ printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts dir
 
 ## Finish
 
-1. Name the paused jobs and the job that resumes them: "Raise a weight". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
+1. Name the paused jobs and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
 2. Name every file written outside the installation, with its path. Say that this assembly never deletes them.
 3. List the jobs that changed and what changed.

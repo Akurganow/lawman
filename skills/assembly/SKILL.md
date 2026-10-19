@@ -153,7 +153,7 @@ contract_version: <constitution contract version that the precinct constitutions
 amended_law_commit: <law commit at which the precinct constitutions were last brought in line>
 ```
 
-The journal command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills any missing key from its defaults. This assembly writes the other keys.
+The journal command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills any missing key from its defaults. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
 
 ## Finish
 
