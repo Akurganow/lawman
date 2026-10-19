@@ -95,6 +95,7 @@ describe("lint-body", () => {
 			"1: image embed",
 		]);
 		expect(reasonsOf("`![shot](a.png)``")).toEqual(["1: image embed"]);
+		expect(reasonsOf("\\`![shot](a.png)\\`")).toEqual(["1: image embed"]);
 	});
 
 	test("an @ mention is rejected outside code", () => {

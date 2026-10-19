@@ -65,3 +65,27 @@ jobs:
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - run: git check-ignore -q docs/gangsta/x
+
+  # Hermes refuses a plugin update unless its scanner rates the tree safe.
+  # The scanner comes from the newest Hermes, the one users update to.
+  hermes-scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
+        with:
+          path: plugin
+          persist-credentials: false
+      - run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git hermes
+      - name: Plugin scan
+        run: |
+          python3 -I - <<'EOF'
+          import sys
+          sys.path.insert(0, "hermes")
+          from pathlib import Path
+          from tools.plugin_guard import scan_plugin
+          result = scan_plugin(Path("plugin"), source="community")
+          for f in result.findings:
+              print(f.severity, f.file, f.pattern_id)
+          print("verdict:", result.verdict)
+          sys.exit(0 if result.verdict == "safe" else 1)
+          EOF

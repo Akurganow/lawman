@@ -2,6 +2,15 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.4] - 2026-10-19
+
+### Fixed
+
+- The code span pattern of the body lint holds no form that the Hermes plugin scanner rates as an inline shell snippet. That rating blocks a plugin update. CI now runs the scanner of the newest Hermes on every push and pull request.
+- An escaped backtick no longer opens a code span in the body lint, so an image after it is caught again.
+- "Add a department" sends a change of a reused installation page back to the choice of the place.
+- The law says that a stopped tick of the duty desk is delivered.
+
 ## [0.16.3] - 2026-10-19
 
 ### Changed
@@ -158,6 +167,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - The first release: the law, the journal, the duty desk, patrol, the assembly and the Hermes Agent harness page.
 - CI with a fence for repository-specific words. A release workflow builds four binaries, signs the macOS ones ad hoc and publishes checksums.
 
+[0.16.4]: https://github.com/Akurganow/lawman/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/Akurganow/lawman/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/Akurganow/lawman/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/Akurganow/lawman/compare/v0.16.0...v0.16.1

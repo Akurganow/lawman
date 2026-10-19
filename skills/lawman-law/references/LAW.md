@@ -59,7 +59,7 @@ A run that files nothing is a successful run. In a healthy precinct it is the co
 
 Five merely plausible leads teach the reader to ignore all of them. The one real finding is ignored with them. When in doubt, the doubt goes in the report, never in the tracker.
 
-A tick that succeeds, skips or stops answers only the silence form that the harness page names. The report lives in the journal. Only alarm lines, a failure, a stop of the law sync and a stop of the duty desk are delivered to the owner. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise an alarm.
+A tick that succeeds or skips answers only the silence form that the harness page names. So does a stopped tick of every role but the duty desk. The report lives in the journal. Only alarm lines, a failure, a stop of the law sync and a stop of the duty desk are delivered to the owner. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise an alarm.
 
 ## Evidence
 
