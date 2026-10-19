@@ -151,12 +151,13 @@ Apply starts after the approval of round one.
 
 1. Run `uname -s` and `uname -m`, lowercase the OS name, map `x86_64` to `x64` and `aarch64` to `arm64`, and stop on any other OS or CPU.
 2. Set `<asset>` to `journal-bun-<os>-<arch>`.
-3. Run `mkdir -p bin`, then `gh release download <release_tag> -R <release_repo> -p <asset> -p SHA256SUMS -D bin/ --clobber`, and stop if it fails.
-4. Run `(cd bin && shasum -a 256 -c SHA256SUMS --ignore-missing)`, and stop unless the line for `<asset>` reads `OK`.
-5. Run `gh attestation verify bin/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml`, show the signer workflow it checked, and stop if it fails.
-6. Run `mv bin/<asset> bin/journal && chmod +x bin/journal`.
-7. Run `bin/journal probe --schema 6`, and stop if it exits non-zero.
-8. Run `shasum -a 256 bin/journal`, and record its first field as `journal_sha256`.
+3. Run `mkdir -p bin runs/install-journal`, then `gh release download <release_tag> -R <release_repo> -p <asset> -p SHA256SUMS -D runs/install-journal --clobber`, and stop if it fails.
+4. Run `(cd runs/install-journal && shasum -a 256 -c SHA256SUMS --ignore-missing)`, and stop unless the line for `<asset>` reads `OK`.
+5. Run `gh attestation verify runs/install-journal/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml`, show the signer workflow it checked, and stop if it fails.
+6. Run `mv runs/install-journal/<asset> bin/journal && chmod +x bin/journal`.
+7. Run `rm -f runs/install-journal/SHA256SUMS`, then `rmdir runs/install-journal`.
+8. Run `bin/journal probe --schema 6`, and stop if it exits non-zero.
+9. Run `shasum -a 256 bin/journal`, and record its first field as `journal_sha256`.
 
 ### Write the config
 
