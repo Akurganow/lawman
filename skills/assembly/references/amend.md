@@ -19,7 +19,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 
 1. Run `bin/journal precinct list`, then `git -C precincts/<name> fetch origin` for each precinct, and stop if a fetch fails.
 2. Run `git -C precincts/<name> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution` for each precinct.
-3. When the file's `contract_version` is lower than `<n>`, draft an amendment.
+3. When the file's `contract_version` is lower than `<n>`, draft an amendment. Skip a precinct that already has an open pull request from `lawman/constitution-v<n>`, and name it as waiting for that merge.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
    1. Run `git -C precincts/<name> switch -c lawman/constitution-v<n> origin/HEAD`, and stop if it fails.
    2. Use the comparison of step 1 item 4 to see what the new contract version requires.
