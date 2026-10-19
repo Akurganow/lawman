@@ -246,7 +246,7 @@ When the judging document is not `none`, run `git -C runs/add-department-<name>/
 1. Run `git -C runs/add-department-<name>/tree add LAWMAN.md`, plus `.lawman/departments/<name>.md` for place (a).
 2. Run `git -C runs/add-department-<name>/tree diff --cached`, and show the diff to the developer. For place (b), show the page and `departments/<name>.md` as its destination too.
 3. Ask in the question tool, and offer "Open the pull request" (recommended) and "Change".
-4. On change, apply the changes, then go back to step 4 (places a and b) or step 3 (place c).
+4. On change, apply the changes, then go back to step 4 for a new page, or to step 3 for place (c) and for a reused page.
 5. For place (b), on approval, when the page is new, create `departments/` in the installation when it is missing, then copy the draft to `departments/<name>.md`.
 6. Run `git -C runs/add-department-<name>/tree commit -m "Add the <name> department"`.
 7. Run `git -C runs/add-department-<name>/tree push -u origin lawman/department-<name>`, and stop if it fails.
