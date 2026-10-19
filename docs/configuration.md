@@ -41,7 +41,7 @@ Every value above is a placeholder. `hermes` is the name of the one shipped harn
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
 | `trusted_login` | The login of the GitHub account signed in when the assembly ran. Every role uses this one identity. | The assembly at install |
-| `deliver` | The delivery routes for alarms and failures, one or several. | The assembly at install |
+| `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief. | The assembly when it adds a precinct |
 | `typesafe_key` | The place where the assembly found the TypeSafe API key, or where you will put it, in words. `none` when TypeSafe is off. Never the value. | The assembly at install, or `law-sync` as a default |

@@ -90,7 +90,7 @@ Proposes: one row for each route, with its source.
 - Label a route whose state the harness cannot report as not checked.
 - Label the file-only route: alarms and failures stay in files.
 
-Decides: which routes receive the alarms and the failures. Ask in the question tool.
+Decides: which routes receive the alarms, the failures and the stops of the law sync or the duty desk. Ask in the question tool.
 
 - Offer several choices where the harness allows several routes, and one choice where it allows one.
 - Keep the file-only route among the visible choices, even when the list is long.
