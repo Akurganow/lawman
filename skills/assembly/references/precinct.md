@@ -217,7 +217,7 @@ For place (b), this run attaches the chosen precinct only. Run the job again for
 
 ### Step 4. Draft the page
 
-Skip this step for place (c).
+Skip this step for place (c). Skip it for place (b) when the installation already holds `departments/<name>.md`, and reuse that page.
 
 1. Run `mkdir -p runs/add-department-<name>`.
 2. Read `lawman/skills/lawman-law/references/departments.md` for the shape and the nine headings of a page.
@@ -247,7 +247,7 @@ When the judging document is not `none`, run `git -C runs/add-department-<name>/
 2. Run `git -C runs/add-department-<name>/tree diff --cached`, and show the diff to the developer. For place (b), show the page and `departments/<name>.md` as its destination too.
 3. Ask in the question tool, and offer "Open the pull request" (recommended) and "Change".
 4. On change, apply the changes, then go back to step 4 (places a and b) or step 3 (place c).
-5. For place (b), on approval, create `departments/` in the installation when it is missing, then copy the draft to `departments/<name>.md`.
+5. For place (b), on approval, when the page is new, create `departments/` in the installation when it is missing, then copy the draft to `departments/<name>.md`.
 6. Run `git -C runs/add-department-<name>/tree commit -m "Add the <name> department"`.
 7. Run `git -C runs/add-department-<name>/tree push -u origin lawman/department-<name>`, and stop if it fails.
 8. Run `gh pr create -R <owner>/<repo> --head lawman/department-<name> --title "Add the <name> department" --body "Adds the <name> department to the rotation. Review the changed files."`, and stop if it fails, showing the link.
