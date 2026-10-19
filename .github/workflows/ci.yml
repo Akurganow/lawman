@@ -74,7 +74,8 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
         with:
           path: plugin
-      - run: git clone --depth 1 --filter=blob:none https://github.com/NousResearch/hermes-agent.git hermes
+          persist-credentials: false
+      - run: git clone --depth 1 https://github.com/NousResearch/hermes-agent.git hermes
       - name: Plugin scan
         run: |
           python3 -I - <<'EOF'
