@@ -86,6 +86,17 @@ describe("lint-body", () => {
 		}
 	});
 
+	test("an image embed inside code passes, one outside it does not", () => {
+		expect(
+			reasonsOf("```", "let v = vec![1, 2];", "<img src=x>", "```"),
+		).toEqual([]);
+		expect(reasonsOf("the `vec![1]` macro and `<img>` tag")).toEqual([]);
+		expect(reasonsOf("the `vec![1]` macro and ![shot](a.png)")).toEqual([
+			"1: image embed",
+		]);
+		expect(reasonsOf("`![shot](a.png)``")).toEqual(["1: image embed"]);
+	});
+
 	test("an @ mention is rejected outside code", () => {
 		expect(reasonsOf("thanks @someone")).toEqual(["1: @ mention"]);
 		expect(reasonsOf("mail a@b.example")).toEqual(["1: @ mention"]);

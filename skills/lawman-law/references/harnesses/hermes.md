@@ -206,11 +206,11 @@ Every tick must be idempotent under a catch-up run. The law already requires thi
 
 ### Silence
 
-A successful tick answers its brief report lines and then `[SILENT]` alone on the last line. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
+A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
 
 Hermes suppresses delivery when `[SILENT]` is the whole response, or its own first line or last line, trimmed and ignoring case. A token inside a sentence is delivered (read in the harness code).
 
-Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). The skills ask for the report first and the token alone on the last line. Skills do not repeat the explanation.
+Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). A report written before the token once led the model to drop the token, and the report was delivered (seen in a run). So the skills answer the token alone. Skills do not repeat the explanation.
 
 An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 

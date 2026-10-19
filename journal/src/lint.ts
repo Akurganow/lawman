@@ -47,7 +47,8 @@ const FRONTMATTER_KEY = /^([a-z_]+):\s*(.*?)\s*$/;
 export const HEADING = /^ {0,3}## +(\S.*?) *$/;
 const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 export const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
-const CODE_SPAN = /(`+).+?\1/g;
+// a code span closes only on a backtick run of the same length
+const CODE_SPAN = /(?<!`)(`+)(?!`).+?(?<!`)\1(?!`)/g;
 const MENTION = /@[A-Za-z0-9]/;
 const TITLE_SHELL = /['`$\\]/;
 
@@ -57,8 +58,9 @@ const BODY_RULES: [string, RegExp][] = [
 		/(?<![A-Za-z0-9_.-])\/(?:Users|home)\/[^\s/]|~\/|\$\{?HOME\b|(?<![A-Za-z0-9_.-])\.lawman(?![A-Za-z0-9_.-])(?!\/departments\/)/,
 	],
 	["GitHub token", /gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}/],
-	["image embed", /!\[|<(?:img|picture)/i],
 ];
+// GitHub renders no image inside code, so a quoted `vec![1]` is text
+const IMAGE_EMBED = /!\[|<(?:img|picture)/i;
 
 const PATH_RULES: [string, (path: string) => boolean][] = [
 	["path holds ..", (path) => path.includes("..")],
@@ -70,8 +72,10 @@ function lineReasons(line: string, fenced: boolean): string[] {
 	const reasons = BODY_RULES.filter(([, re]) => re.test(line)).map(
 		([reason]) => reason,
 	);
-	if (!fenced && MENTION.test(line.replace(CODE_SPAN, "")))
-		reasons.push("@ mention");
+	if (fenced) return reasons;
+	const prose = line.replace(CODE_SPAN, "");
+	if (IMAGE_EMBED.test(prose)) reasons.push("image embed");
+	if (MENTION.test(prose)) reasons.push("@ mention");
 	return reasons;
 }
 

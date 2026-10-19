@@ -2,6 +2,16 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.3] - 2026-10-19
+
+### Changed
+
+- A tick that succeeds, skips or stops answers only the silence form. Its report stays in the journal. Only alarms, failures and stops of the law sync or the duty desk reach the delivery routes.
+
+### Fixed
+
+- The body lint no longer reads a quoted `vec![...]` or another `![` inside code as an image embed. Investigation stopped on such quotes from Rust code.
+
 ## [0.16.2] - 2026-10-19
 
 ### Fixed
@@ -148,6 +158,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - The first release: the law, the journal, the duty desk, patrol, the assembly and the Hermes Agent harness page.
 - CI with a fence for repository-specific words. A release workflow builds four binaries, signs the macOS ones ad hoc and publishes checksums.
 
+[0.16.3]: https://github.com/Akurganow/lawman/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/Akurganow/lawman/compare/v0.16.1...v0.16.2
 [0.16.1]: https://github.com/Akurganow/lawman/compare/v0.16.0...v0.16.1
 [0.16.0]: https://github.com/Akurganow/lawman/compare/v0.15.0...v0.16.0
