@@ -6,7 +6,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 
 ### Fixed
 
-- The code span pattern of the body lint holds no form that the Hermes plugin scanner rates as an inline shell snippet. That rating blocks a plugin update.
+- The code span pattern of the body lint holds no form that the Hermes plugin scanner rates as an inline shell snippet. That rating blocks a plugin update. CI now runs the scanner of the newest Hermes on every push and pull request.
 - An escaped backtick no longer opens a code span in the body lint, so an image after it is caught again.
 - "Add a department" sends a change of a reused installation page back to the choice of the place.
 - The law says that a stopped tick of the duty desk is delivered.

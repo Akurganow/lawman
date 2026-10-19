@@ -29,12 +29,13 @@ Every change updates the documentation it affects in the same pull request.
 
 ## What CI runs
 
-CI runs on every push and pull request, in four jobs.
+CI runs on every push and pull request, in five jobs.
 
 - `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary and runs it with `--version`.
 - `fence` keeps repository-specific words out of `skills/`, except `skills/assembly` and the harness pages. The patterns sit in `fence-patterns.txt`.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
+- `hermes-scan` runs the plugin scanner of the newest Hermes on the tree. Hermes refuses an update unless the verdict is safe, so the job fails on any other verdict.
 
 ## Release
 
