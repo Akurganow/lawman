@@ -6,7 +6,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 
 ### Fixed
 
-- The install downloads the journal into a temporary folder and removes it after the checks, so no checksum file stays in `bin/`.
+- The install downloads the journal and `SHA256SUMS` into a temporary folder and checks them. It moves the journal to `bin/journal` and removes the folder, so no checksum file stays in `bin/`.
 
 ## [0.16.1] - 2026-10-19
 
