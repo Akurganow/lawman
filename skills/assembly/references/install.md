@@ -108,29 +108,7 @@ Never:
 
 ## Models, Schedule and Gates
 
-Run the parts Models, Schedule and Gates of `references/roles.md` for all roles in round one. They ask in the question tool. They write nothing before the approval of this install.
-
-Models:
-
-- Finds the harness's default model and the providers that hold a credential, by name only.
-- Proposes every role on the harness default.
-- Decides the harness default or named models per tier.
-- Never checks a model by running it.
-
-Schedule:
-
-- Finds the time zone and the existing plan definitions.
-- Proposes a start at 09:00 in that zone, with a table of days and time for every role.
-- Decides every day, economy, or custom days named in free text.
-- Never asks about intervals, hour thresholds or queue counts. Install computes and records each interval.
-
-Gates:
-
-- Finds the scripts folder, the state of each gate file as new, identical or different, and the roles that gain most from a gate.
-- Proposes the recommended set. The duty desk never gets a gate.
-- Decides by an edit of the row.
-- Shows a different file before the approval.
-- Never overwrites a different file that the developer has not seen.
+Run "Part Models", "Part Schedule" and "Part Gates" of `references/roles.md` for all roles in round one. They write nothing before the approval of this install.
 
 ## TypeSafe
 
