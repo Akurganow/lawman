@@ -38,7 +38,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path.
    16. Use the branch lawman/constitution-v<n> in place of lawman/constitution.
    17. Use "Amend the Lawman constitution to version <n>" as the commit message and the pull request title.
-   18. On "Skip", write nothing for the precinct. The amend state stays open, so the next start enters amend again.
+   18. On "Skip", write nothing for the precinct.
 5. Tell the developer that the precinct's ticks end with `skipped-contract-version` until the amendment merges.
 6. When lint fails for another reason, show the reasons. The precinct's ticks then end with `skipped-bad-constitution`.
 
@@ -49,4 +49,3 @@ When the developer skipped a precinct, skip item 1 and name the skipped precinct
 1. Set `contract_version` to `<n>` and `amended_law_commit` to `law_commit`. Keep the other keys. Write `config.yaml`, and read it back.
 2. Tell the developer the new contract version and the pull requests that the amendment opened.
 3. If a folder under `lawman/skills/` other than `assembly` and `lawman-law` has no scheduler job `[lawman] <role>`, tell the developer to run the assembly again. That enters the roles mode.
-4. To change the schedule, models or gates, run the assembly and choose "Roles" in the menu.

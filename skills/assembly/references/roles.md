@@ -22,7 +22,6 @@ This reference sets up the scheduled job of each role. It follows the shape of e
 - The tiers, the plans, the clock order and the gate recommendation are advice. The developer may override each one.
 - The sections "Command forms" and "Create or edit" use two words for answers. A keep answer is the choice "Keep as is". A default answer is the choice "Use the harness default".
 - Ask in the developer's language when it is not English. Keep every fact.
-- Explain a topic only when the developer asks. Read its section of `references/explain.md`.
 
 Before the first part, stop if "Schedule forms and time zone" names no schedule form, and tell the developer the page lacks one.
 
@@ -92,7 +91,7 @@ Why: the model sets the quality and the cost of every run.
 - The schedule of each existing job, and the plan it matches.
 - The start time of the existing duty desk job, when one exists.
 
-**Proposes.** Send the Role, Days and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. The latest start is 21:44. That start keeps every role on the same day. It is schedule arithmetic, not a gate.
+**Proposes.** Send the Role, Days and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. Refuse a start later than 21:44, so that every role runs on the same day.
 
 **Decides.** Ask in the question tool.
 

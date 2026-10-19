@@ -1,7 +1,5 @@
 # Explanations
 
-The assembly reads one section of this file only when the developer asks for that topic.
-
 ## Roles
 
 1. Say: "The tiers are advice. No comparison between models is measured yet."

@@ -176,16 +176,15 @@ Apply starts after the approval of round one.
 
 ## Repositories
 
-Round one asks which repositories to add, as `references/precinct.md` describes. An empty answer means none.
+Round one asks which repositories to add, as `references/precinct.md` describes.
 
-Round two runs the section "Add a precinct" of `references/precinct.md` once for each chosen repository. Each repository has its own proposal and its own approval. With TypeSafe on, the same call asks the consent for that repository.
+Round two runs the section "Add a precinct" of `references/precinct.md` once for each chosen repository. Each repository has its own proposal and its own approval.
 
 ## Summary
 
 Follow "Finish" in `SKILL.md`. Name these items.
 
-- The paused jobs, and the step that resumes them: "Raise a weight".
-- Every file written outside the installation, with its path. Say that the assembly never deletes them.
+- The items of "Finish" in `references/roles.md`.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
 - What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. Its report arrives on the delivery routes.
 - "Add a department" as the step after a constitution merges.

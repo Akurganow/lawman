@@ -63,10 +63,9 @@ Take the first mode that holds.
     - Ask in the question tool, with one single-choice question and three choices: "Keep as is" (recommended), "Roles" and "Precincts".
     - For "Keep as is", end the mode with the words "Nothing changed".
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. Read `references/precinct.md` and follow the section with the job's name.
-    - For "Roles", run `references/roles.md` for all roles. Put "Keep as is" first on each of its three questions: models, schedule and gates.
+    - For "Roles", run `references/roles.md` for all roles.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
     - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, run gate, gate file, constitution sections, weight and own department.
-    - Read a section of `references/explain.md` only when the developer asks.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
 
@@ -154,7 +153,7 @@ contract_version: <constitution contract version that the precinct constitutions
 amended_law_commit: <law commit at which the precinct constitutions were last brought in line>
 ```
 
-The journal command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills any missing key from its defaults. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
+The journal command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills any missing key from its defaults. This assembly writes the other keys.
 
 ## Finish
 
