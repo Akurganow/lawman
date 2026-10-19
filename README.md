@@ -22,7 +22,7 @@ Lawman installs as an Agent Plugins package, with one manifest at the repository
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds twelve keys, among them the harness, the law commit, the release, the trusted login, the delivery platform and the TypeSafe answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds twelve keys, among them the harness, the law commit, the release, the trusted login, the delivery routes and the TypeSafe answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -42,13 +42,13 @@ A department is a page, not an agent. One generic patrol reads the page and swee
 
 ### The constitution
 
-A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once, and the owner reviews it. Later amendments come from the owner and from court rulings.
+A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings.
 
 [Writing a constitution](docs/constitution.md)
 
 ## Install
 
-Lawman runs inside an agent harness, on that harness's own schedule. You need `git` and the GitHub CLI signed in as the one account every role uses. The assembly skill sets up the rest, one question at a time.
+Lawman runs inside an agent harness, on that harness's own schedule. You need `git` and the GitHub CLI signed in as the one account every role uses. The assembly skill sets up the rest.
 
 ### Hermes Agent
 
@@ -66,11 +66,13 @@ Hermes Agent runs each role as a scheduled job. It needs its gateway running.
    /agent-plugin-lawman-492e59eb:assembly
    ```
 
-The assembly asks where the installation lives. The default is the working directory of an existing `[lawman]` job, else `~/.lawman`. It creates the folder and the `lawman` link to the plugin folder. Then it explains the roles, the models and the schedule before it asks about them. It verifies the tools and downloads the journal binary from the release. It checks the binary's checksum and attestation. It proves the installation with one probe job that measures what a scheduled session can do. It writes `config.yaml`, creates the scheduled jobs and adds precincts.
+The assembly finds what it can by itself, then sends one message for each part of the setup. You decide with choices, then approve before it writes.
 
-It asks whether the court may use TypeSafe Jev as priority evidence. That needs a TypeSafe API key, and the assembly asks again for each precinct. It asks which key you use and where you keep it. It never asks for the value.
+After you approve, the assembly installs the [journal](docs/journal.md), writes [`config.yaml`](docs/configuration.md) and creates one paused job for each role of the [pipeline](docs/pipeline.md). For each chosen repository without a [constitution](docs/constitution.md), it opens a pull request with a draft.
 
-Run the assembly again to change the installation. It reads `config.yaml` and offers a menu. The menu adds a precinct, re-checks one, raises a weight, adds a department, or changes the schedule and the models.
+TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
+
+Run the assembly again to change the installation. It offers keep as is, roles or precincts.
 
 #### Update
 

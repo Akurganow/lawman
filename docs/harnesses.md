@@ -93,6 +93,25 @@ A cell without a mark rests on a fact with its source in the section "What each 
 
 No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). No other harness was found to do both (not verified).
 
+## Asking the developer
+
+The assembly asks the developer through the harness's question tool. Each row names that tool for one harness.
+
+| Harness | Question tool | Several values | Limits |
+| :-- | :-- | :-- | :-- |
+| Hermes Agent | `clarify` (read in the harness code) | yes (read in the harness code) | 1 to 5 questions, up to 4 choices, extra choices dropped without an error (read in the harness code) |
+| Claude Code | `AskUserQuestion` (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | yes (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | 1 to 4 questions, 2 to 4 options (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) |
+| Codex | `request_user_input` (read in the harness code) | no (read in the harness code) | 1 to 3 questions, 2 to 3 options, Plan mode only by default (read in the harness code) |
+| GitHub Copilot CLI | `ask_user` (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference) | (not verified) | (not verified) |
+| OpenClaw | `ask_user` (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | yes (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | 1 to 3 questions, 2 to 4 options (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) |
+| Oh-My-Pi | `ask` (read in the harness code) | yes (read in the harness code) | no hard limit (read in the harness code) |
+| Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
+| Pi | none built in (read in the harness code) | (not verified) | (not verified) |
+
+A harness page names the question tool in its own section. When the page has none, the model finds the tool itself.
+
+A harness without a question tool uses the plain numbered message. The plain message does not serve messengers.
+
 ## What each harness does
 
 ### Hermes Agent

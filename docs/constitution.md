@@ -34,26 +34,30 @@ Two per-precinct settings live outside the constitution for this reason: the wei
 
 ## How the assembly writes it
 
-The assembly writes a draft once, when you add a precinct. You review it. The assembly never merges.
+The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`. You review it. The assembly never merges.
 
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
 - It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the eight headings.
 - It fills each section except Departments with paths and short facts.
 - It writes `none` where nothing applies.
 - It drops each line whose path is missing.
-- It walks the sections with you, one question each. You keep, change or add lines.
-- It asks which documents judge the shared departments.
-- It asks whether the precinct needs a department of its own.
+- It proposes the sections, the judging documents of the shared departments and the own department in one proposal. You keep, change or add lines.
 - It checks the draft with `bin/journal lint-page constitution`.
 - It shows you the full draft and waits for your approval.
 - It commits, pushes and opens the pull request "Add the Lawman constitution".
 
 Merge that pull request. Until then every tick on the precinct ends `skipped-no-constitution`. A precinct with a weight and no merged constitution wastes its slot. So the precinct starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
 
+The assembly reads the repository's `LAWMAN.md` before it drafts one. The file is in one of three states:
+
+- **Absent.** The assembly drafts the constitution, as the list above shows.
+- **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no pull request follow. You add the precinct at weight 0, or skip it.
+- **Fails lint.** The proposal shows the reasons. The assembly skips the repository and overwrites nothing. Fix the file by pull request, then add the precinct again.
+
 ## How it changes
 
 - **You amend it.** Later amendments come from you as the owner.
-- **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. It asks the walk question for each section that the contract added or changed. Merge the pull request to bring the precinct back.
+- **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. The sections that the contract added or changed appear as rows of the proposal. Merge the pull request to bring the precinct back.
 - **The court adds precedents.** A ruling may carry one line in its Precedent section. The clerk assigns the number, adds the link to the ruling comment and opens a pull request. The number is one more than the highest in the section, and the first is 1. Numbers never repeat. A precedent binds the roles only after you merge its pull request.
 
 A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.

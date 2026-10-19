@@ -1,6 +1,6 @@
 # Configuration
 
-An installation keeps its settings in one file, `config.yaml`. The file holds the facts that only your installation knows. They are the harness, the signed-in login, the delivery platform and the release that the journal came from.
+An installation keeps its settings in one file, `config.yaml`. The file holds the facts that only your installation knows. They are the harness, the signed-in login, the delivery routes and the release that the journal came from.
 
 ## Where it lives
 
@@ -40,11 +40,11 @@ Every value above is a placeholder. `hermes` is the name of the one shipped harn
 | `release_tag` | The tag of the release that the law and the journal came from. | The assembly at install, then `law-sync` |
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
-| `trusted_login` | The login that the scheduled session reports. Every role uses this one identity. | The assembly at install |
-| `deliver` | The delivery platform for alarms, failures and stops. | The assembly at install |
+| `trusted_login` | The login of the GitHub account signed in when the assembly ran. Every role uses this one identity. | The assembly at install |
+| `deliver` | The delivery routes for alarms, failures and stops, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief. | The assembly when it adds a precinct |
-| `typesafe_key` | Where the TypeSafe API key lives, in words or as a variable name, or `none`. Never the value. | The assembly at install, or `law-sync` as a default |
+| `typesafe_key` | The place where the assembly found the TypeSafe API key, or where you will put it, in words. `none` when TypeSafe is off. Never the value. | The assembly at install, or `law-sync` as a default |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
 

@@ -98,11 +98,11 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 
 ## Adding one
 
-The assembly offers a special department when it adds a precinct. Its "Own department" step describes the idea as a special police for rules only that repository has. It asks whether the repository wants one. It also says the department can live in the repository or in the installation.
+The assembly offers a special department when it adds a precinct. The repository proposal holds an own-department row. The assembly explains the idea only when you ask.
 
-On yes, the assembly tells you that the "Add a department" job runs after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch. The assembly tells you again at the end to choose that menu job after the merge.
+The summary names "Add a department" as the step after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch.
 
-The job asks where the department lives. Answer place (a), a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
+The job asks where the department lives. Choose the place that is a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
 
 ## How the duty desk rotates it
 
@@ -153,6 +153,6 @@ The checks catch little of this. `lint-page department` reads the frontmatter, t
 - [LAW.md](../skills/lawman-law/references/LAW.md): the evidence rules, the leak rule and the cap table.
 - [tick.md](../skills/lawman-law/references/tick.md): "Resolve the department page".
 - [duty desk](../skills/duty-desk/SKILL.md): steps 6 to 8 choose the department.
-- [precinct.md](../skills/assembly/references/precinct.md): "Own department" and "Add a department".
+- [precinct.md](../skills/assembly/references/precinct.md): "Add a department".
 - [lint.ts](../journal/src/lint.ts): the page and body checks.
 - [internal-affairs](../.lawman/departments/internal-affairs.md): the worked example.
