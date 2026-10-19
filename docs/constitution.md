@@ -46,12 +46,12 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 - It shows you the full draft and waits for your approval.
 - It commits, pushes and opens the pull request "Add the Lawman constitution".
 
-Merge that pull request. Until then every tick on the precinct ends `skipped-no-constitution`. A precinct with a weight and no merged constitution wastes its slot. So the precinct starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
+Merge that pull request. Until then every tick on the precinct ends `skipped-no-constitution`. A precinct with a weight and no merged constitution wastes its slot. So a precinct with a new draft starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
 
 The assembly reads the repository's `LAWMAN.md` before it drafts one. The file is in one of three states:
 
 - **Absent.** The assembly drafts the constitution, as the list above shows.
-- **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no pull request follow. You add the precinct at weight 0, or skip it.
+- **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no pull request follow. You add the precinct at weight 1, or skip it. The assembly then offers to resume any paused job.
 - **Fails lint.** The assembly shows the reasons. The assembly skips the repository and overwrites nothing. Fix the file by pull request, then add the precinct again.
 
 ## How it changes

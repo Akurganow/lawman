@@ -68,7 +68,7 @@ Hermes Agent runs each role as a scheduled job. It needs its gateway running.
 
 The assembly finds what it can by itself, then sends one message for each part of the setup. You decide with choices, then approve before it writes.
 
-After you approve, the assembly installs the [journal](docs/journal.md), writes [`config.yaml`](docs/configuration.md) and creates one paused job for each role of the [pipeline](docs/pipeline.md). For each chosen repository without a [constitution](docs/constitution.md), it opens a pull request with a draft.
+After you approve, the assembly installs the [journal](docs/journal.md), writes [`config.yaml`](docs/configuration.md) and creates one paused job for each role of the [pipeline](docs/pipeline.md). For each chosen repository without a [constitution](docs/constitution.md), it opens a pull request with a draft. A repository whose constitution is already in place joins at weight 1, and the assembly offers to resume the jobs.
 
 TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 

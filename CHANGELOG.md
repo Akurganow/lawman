@@ -2,6 +2,13 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.16.5] - 2026-10-19
+
+### Changed
+
+- A repository whose constitution is already in place and passes lint joins at weight 1. A new draft still starts at weight 0 until its pull request merges.
+- Whenever a weight above zero is set and a job is paused, the assembly offers to resume it. A declined offer comes back at the next weight.
+
 ## [0.16.4] - 2026-10-19
 
 ### Fixed
@@ -167,6 +174,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - The first release: the law, the journal, the duty desk, patrol, the assembly and the Hermes Agent harness page.
 - CI with a fence for repository-specific words. A release workflow builds four binaries, signs the macOS ones ad hoc and publishes checksums.
 
+[0.16.5]: https://github.com/Akurganow/lawman/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/Akurganow/lawman/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/Akurganow/lawman/compare/v0.16.2...v0.16.3
 [0.16.2]: https://github.com/Akurganow/lawman/compare/v0.16.1...v0.16.2
