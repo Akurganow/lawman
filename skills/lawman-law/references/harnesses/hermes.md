@@ -303,4 +303,4 @@ The question tool is `clarify` (read in the harness code).
 
 ## What a second harness needs
 
-A second harness needs a page with these same seven sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
+A second harness needs a page with these same eight sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.

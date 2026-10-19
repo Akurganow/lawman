@@ -91,7 +91,7 @@ Why: the model sets the quality and the cost of every run.
 - The schedule of each existing job, and the plan it matches.
 - The start time of the existing duty desk job, when one exists.
 
-**Proposes.** Send the Role, Days and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. Refuse a start later than 21:44, so that every role runs on the same day.
+**Proposes.** Send the Role, Days, Economy and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. Refuse a start later than 21:44, so that every role runs on the same day.
 
 **Decides.** Ask in the question tool.
 
@@ -121,10 +121,10 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 
 **Proposes.** Send the Role and Gate columns of the defaults table, with the mark of each gate file. Propose the recommended set. The duty desk never gets a gate.
 
-**Decides.** Ask in the question tool.
+**Decides.**
 
-1. In install, take an edit of the Gate column.
-2. In the roles mode, offer the choices "Recommended", "All but the duty desk" and "None".
+1. In install, ask nothing here. Take an edit of the Gate column as a typed edit of the proposal.
+2. In the roles mode, ask in the question tool, and offer the choices "Recommended", "All but the duty desk" and "None".
 3. In the menu, offer the same three choices, and put the choice "Keep as is" first as the recommendation.
 4. Refuse the duty desk, and ask again.
 
@@ -152,7 +152,7 @@ Write no file that carries the mark identical.
 
 ## Day forms
 
-1. Ask for a form: every day, chosen weekdays with the days named, or one day of the month from 1 to 28. In the menu job, also accept `keep`.
+1. Take the form from the free text of "Custom": every day, chosen weekdays with the days named, or one day of the month from 1 to 28. In the menu job, also accept `keep`.
 2. Accept no form that runs more often than daily.
 
 ## Interval by form

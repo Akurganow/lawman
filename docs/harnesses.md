@@ -243,7 +243,7 @@ A new harness needs four things:
 - a row in the table above
 - a live install proof
 
-The page answers the seven sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, and budget and token.
+The page answers the eight sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer.
 
 The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 
@@ -253,7 +253,7 @@ Follow these steps.
 2. Check each root file of the layout against what the harness reads. Record every conflict in the list above.
 3. Add no root file unless every harness reads it by the standard.
 4. When the harness needs its own manifest, put it where the harness looks and mirror the root fields.
-5. Write the page with the seven sections.
+5. Write the page with the eight sections.
 6. Write the five things of "Choose the installation" and the scheduler check on the page.
 7. Mark every fact on the page by its source.
 8. Run each command that a scheduled session sends through the harness's own approval check.
@@ -264,7 +264,7 @@ Follow these steps.
 
 A harness is done when all of these hold.
 
-- The page exists, answers the seven sections and gives the six things above.
+- The page exists, answers the eight sections and gives the six things above.
 - The README subsection holds the real steps. Only its Uninstall part may hold TBD until the assembly can uninstall.
 - The table row says Supported.
 - A clean harness profile installs the plugin by the README steps alone.

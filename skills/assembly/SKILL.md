@@ -37,7 +37,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
     4. When no such job exists, take `~/.lawman`.
 3. Settle the folder.
     1. When step 2 found a job, an installation exists. Keep its folder and ask nothing.
-    2. With no installation, ask in the question tool: "Where does the installation live?"
+    2. With no installation, ask in the question tool: "Where does the installation live?" The why line: the folder holds the journal, the clones and the settings.
     3. Offer the default first, and take another path as free text.
 4. Write the chosen path, the default included, as an absolute path.
 5. Create the folder with the form the harness page gives.
@@ -62,7 +62,7 @@ Take the first mode that holds.
     - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
     - Ask in the question tool, with one single-choice question and three choices: "Keep as is" (recommended), "Roles" and "Precincts".
     - For "Keep as is", end the mode with the words "Nothing changed".
-    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. Read `references/precinct.md` and follow the section with the job's name.
+    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
     - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, run gate, gate file, constitution sections, weight and own department.

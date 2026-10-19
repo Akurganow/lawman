@@ -96,6 +96,7 @@ Decides: which routes receive the alarms, the failures and the stops. Ask in the
 - Keep the file-only route among the visible choices, even when the list is long.
 - Offer a delivery route as the unit, never a chat. A specific chat goes in the free-text answer.
 - An empty answer asks again. Delivery has no default.
+- The file-only route takes no other route with it. When the answer holds both, ask again.
 
 Result: `deliver` names the chosen routes in the form the create command takes.
 
@@ -131,7 +132,7 @@ After a yes:
 When the key is found, ask nothing more. When it is not found, ask in the question tool with one question and three choices. The why line reads: "Maybe the key already lies somewhere you know."
 
 - The key lies elsewhere. The developer names the place in free text.
-- The developer will put the key in the page's place.
+- The developer will put the key in the page's place (recommended).
 - Turn TypeSafe off.
 
 Result: typesafe is yes or no. `typesafe_key` names the place in words, or reads none when TypeSafe is off. The consent to send a brief stays per repository, and round two asks it.
@@ -187,6 +188,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - The items of "Finish" in `references/roles.md`.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
 - What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. Its report arrives on the delivery routes.
+- When TypeSafe is on and the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
 - For roles and precincts: the menu of the assembly changes them later.
 

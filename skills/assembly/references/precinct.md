@@ -14,10 +14,10 @@ Each repository gets one proposal and one decision call. The call is that reposi
 
 Ask in the question tool.
 
-1. Find the repository of the starting directory, when it is one.
+1. Find the repository of the directory the assembly started in, when it is one.
 2. Find a short list of the signed-in account's recent repositories.
-3. Show them in one message, one row for each repository, marked found.
-4. Offer several-choice, with the starting directory's repository first, up to the tool's limit.
+3. Show them in one message, one row for each repository, marked found or already a precinct.
+4. Offer several-choice, with that directory's repository first, up to the tool's limit.
 5. Show the candidates beyond the limit as rows, and take them as free text.
 6. Take `<owner>/<repo>` as free text for any other repository.
 7. Ask again when the answer comes back empty. A typed "none" adds no precinct.
@@ -117,7 +117,7 @@ Then decide.
 > May the court send its brief about a conviction in <owner>/<repo> to api.typesafe.ai? The repository is <private|public>. The brief states facts about the code in the court's own words and holds no issue text. The service charges for each input token.
 
 49. Offer "No" first and "Yes" second for the consent.
-50. Treat a skip, an empty answer, a cancel or a timeout as "Skip", and a missing consent as "No".
+50. Treat a skip or an empty answer as "Skip", and a missing consent as "No".
 51. On "Skip", write nothing for the repository, and go on with the next one.
 52. On "Change", apply the rule "Bulk edits" of `SKILL.md` to the rows.
 53. After a change to a draft line, check each new path as in the Draft section.
@@ -140,7 +140,7 @@ Then decide.
 64. When the call asked the TypeSafe consent, set `<owner>-<repo>=<answer>` in `typesafe_precincts`.
 65. Replace `none`, replace an existing pair for that name, and never append a second one.
 66. Write `config.yaml`, and read it back.
-67. Tell the developer to choose "Precincts", then "raise a weight", after the pull request merges.
+67. When the job opened a pull request, tell the developer to choose "Precincts", then "raise a weight", after it merges.
 68. For a constitution that passed lint, tell the developer that "raise a weight" is open now.
 69. Tell the developer that the job "add a department" also follows the merge, for a department of the repository's own.
 
