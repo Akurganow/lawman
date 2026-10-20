@@ -2,6 +2,8 @@ on:
   push:
     tags:
       - "v*"
+    branches:
+      - release-trial
 
 permissions:
   contents: read
@@ -26,6 +28,7 @@ jobs:
         with:
           bun-version: "1.4.2"
       - name: Check the version against the tag
+        if: github.ref_type == 'tag'
         working-directory: journal
         run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
       - name: Test
@@ -61,15 +64,48 @@ jobs:
       - name: Write checksums
         working-directory: dist
         run: shasum -a 256 journal-* > SHA256SUMS
-      - name: Attest binaries
+      - name: Attest journal-bun-darwin-arm64
+        id: attest-darwin-arm64
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
-          subject-path: dist/journal-*
+          subject-path: dist/journal-bun-darwin-arm64
+      - name: Attest journal-bun-darwin-x64
+        id: attest-darwin-x64
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/journal-bun-darwin-x64
+      - name: Attest journal-bun-linux-x64
+        id: attest-linux-x64
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/journal-bun-linux-x64
+      - name: Attest journal-bun-linux-arm64
+        id: attest-linux-arm64
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
+        with:
+          subject-path: dist/journal-bun-linux-arm64
+      - name: Place the provenance files beside the binaries
+        env:
+          ARM64_DARWIN: ${{ steps.attest-darwin-arm64.outputs.bundle-path }}
+          X64_DARWIN: ${{ steps.attest-darwin-x64.outputs.bundle-path }}
+          X64_LINUX: ${{ steps.attest-linux-x64.outputs.bundle-path }}
+          ARM64_LINUX: ${{ steps.attest-linux-arm64.outputs.bundle-path }}
+        run: |
+          cp "$ARM64_DARWIN" dist/journal-bun-darwin-arm64.sigstore.json
+          cp "$X64_DARWIN" dist/journal-bun-darwin-x64.sigstore.json
+          cp "$X64_LINUX" dist/journal-bun-linux-x64.sigstore.json
+          cp "$ARM64_LINUX" dist/journal-bun-linux-arm64.sigstore.json
       - name: Attest checksums
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4.2.2
         with:
           subject-path: dist/SHA256SUMS
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: dist
+          path: dist/*
+          if-no-files-found: error
       - name: Publish release
+        if: github.ref_type == 'tag'
         working-directory: dist
         env:
           GH_TOKEN: ${{ github.token }}
