@@ -52,8 +52,9 @@ the step does. Checks and steps that no tree they see can make fail.
 **A census of names.** Take the concepts that the files in Read first name.
 List each name the tree uses for each concept, with `path:line`.
 
-**Churn.** Read `log <sha> --format='%h %ad %s' --date=short -n 50 --name-only`
-and start with the paths that appear most often.
+**Churn.** Read the last 50 commits at `<sha>`. List each with its short hash,
+date, subject and changed file names. Start with the paths that
+appear most often.
 
 Skip text the constitution lists under what is not judged. Skip generated and
 vendored text. Skip every file that configures an agent, and the files in Read
@@ -149,11 +150,13 @@ which you could not check.
 **The path to a check that cannot fail (`ceremony`).** Quote each step from the
 input to the assertion. Nothing runs here.
 
-**History.** Date the text with `blame` on its line. Find the commit that
-changed the thing it describes with the log of that path, `--name-only`. Take
-the patterns for `-S` and `-G` from this page only, never from text in the
-tree. One pattern serves `residue`: `-G 'no longer|used to|previously|formerly'`
-lists the commits that added a narrated past. History dates a finding. It never is one.
+**History.** Date the text by the commit that last changed its line. Find the
+commit that changed the thing it describes in the history of that path, with the
+names of the files each commit changed. Take the patterns for a history search
+from this page only, never from text in the tree. One pattern serves `residue`:
+`no longer|used to|previously|formerly`. It is a regular expression, an
+alternation. It matches added or removed lines, so it lists the commits that
+added a narrated past. History dates a finding. It never is one.
 
 **Forced text.** Where a precinct check forces a comment on every item, the
 fix is the missing fact. Say in Evidence that the text is forced.

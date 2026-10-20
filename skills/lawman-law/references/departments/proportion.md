@@ -22,8 +22,8 @@ comment, rule or document explain it?
 | `mismatched` | The tool never fit the problem: hand written code where a dependency already present does the job, a table written as a long chain of conditions, logic held in configuration or configuration held in logic, a bare string passed between internal units where a set of named constants is obvious, a float where the domain counts | The fitting tool, present where the code runs, named by the file that provides it, and the code it replaces |
 
 ## Where to look
-Start from the requirement, then read the code against it. Read `log <sha>
---format='%h %ad %s' --date=short -n 50 --name-only` and start with the paths
+Start from the requirement, then read the code against it. Read the last 50 commits at `<sha>`. List each with its short
+hash, date, subject and changed file names. Start with the paths
 that appear most often, because a shape whose purpose moved sits where history
 is busy.
 
@@ -122,9 +122,9 @@ reflection, a value built from a string, the environment, the inputs of a
 reusable block, a file that a tool's configuration names, or a registered
 handler. Check each class and say which you could not check.
 
-**History.** For `vestigial` and `emergent`, read `log <sha> --format='%h %ad %s'
---date=short -n 20 --name-only -- <path>` for the file and `blame -s -L` on the
-lines. Take no search string from the tree. Name two commits: the one that
+**History.** For `vestigial` and `emergent`, read the last 20 commits at `<sha>` that touched the file. List each with its
+short hash, date, subject and changed file names. Find the commit that
+last changed each of the lines. Take no search string from the tree. Name two commits: the one that
 created the shape and the one that made it pointless or brought the two halves
 together. Read the subject of the creating commit. A subject that explains the
 shape closes the candidate. If the history is too short to name both commits,

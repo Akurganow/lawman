@@ -18,9 +18,9 @@ the agent of this precinct load one picture or two?
 | kind | meaning | measurement |
 | :-- | :-- | :-- |
 | `contradiction` | Two agent files order incompatible things and neither yields. Text that leaves the other side possible is not a contradiction | Both lines as `path:line` with the verbatim text, the line that ranks one above the other or the note that none exists, and the last commit to change each line |
-| `dangling` | A file names what the tree does not hold: a skill, role, path, heading, import, marker or section, or a link whose target is missing | The reference verbatim as `path:line`, the empty `ls-tree` output for the name on the analysed commit, the same check on a name that exists, and for a heading the search of the target file for it. For a link, the text `show` prints for it is the reference |
+| `dangling` | A file names what the tree does not hold: a skill, role, path, heading, import, marker or section, or a link whose target is missing | The reference verbatim as `path:line`, the empty listing of the name at the analysed commit, the same check on a name that exists, and for a heading the search of the target file for it. For a link, the text that a read of the file prints for it is the reference |
 | `unloadable` | A file that a loader must parse cannot be parsed or cannot be matched: front matter that does not close or breaks, a `name` that differs from its directory or its declared name, a scoped rule that other files rely on every session | `path:line` of the break and the quoted line, both names side by side, or the scope line and the files that rely on the rule |
-| `restated` | One rule, limit, number, list or paragraph stands in two files with no owner, one concept carries two names, a count states the size of a set the tree lists, or a plain copy differs from the file it copies | Every place verbatim as `path:line`, the count beside the census, which file should own the fact, and for a copy the two `ls-tree` lines with their differing hashes |
+| `restated` | One rule, limit, number, list or paragraph stands in two files with no owner, one concept carries two names, a count states the size of a set the tree lists, or a plain copy differs from the file it copies | Every place verbatim as `path:line`, the count beside the census, which file should own the fact, and for a copy the two entries at the analysed commit with their differing content hashes |
 | `unlisted` | The precinct declares a set and an entity differs from the declaration: present but not named, or named but absent | The declaration as `path:line`, the set the tree holds, and the difference in both directions |
 | `orphan` | An agent file that nothing reads: a skill no list, binding or file names, a reference file no file points to | The reference count over the whole tree, every site as `path:line`, the search it came from, the positive control, and the hidden reader check |
 
@@ -35,7 +35,7 @@ Show the census in the report. Name files by their role, never by a harness.
 - Skills, each with its definition file. `SKILL.md` is one example.
 - Agent and subagent definitions, commands, prompts and hooks.
 - Harness settings and tool connections.
-- Every vendor directory and each entry in it. List it with `ls-tree`.
+- Every vendor directory and each entry in it. List each entry from the tree of the analysed commit.
 
 **The census of declarations.** Lists, manifests and bindings that name a set
 of agent files. Lists inside the root instruction file. The lines of the
@@ -95,19 +95,19 @@ the correct output is no lead.
 Commands, not intuition. Quote every command and its output. A check whose
 output cannot be quoted is not a finding.
 
-**The census.** `ls-files` for the agent files, and `ls-tree` for the mode of
+**The census.** List the agent files at the analysed commit, and the mode of
 each vendor entry.
 
-**The reference check.** For each name or path in a document, `ls-tree` on the
-analysed commit, then the same check on a name known to exist.
+**The reference check.** For each name or path in a document, look it up at the
+analysed commit, then do the same for a name known to exist.
 
 **The heading check.** Search the target file for the heading quoted in the
 reference.
 
-**The history of a missing name.** `log` with the path of the missing target
-shows whether it once existed.
+**The history of a missing name.** The history of the missing target's path
+shows whether the target once existed.
 
-**The unloadable approximation.** There is no parser. Search with `git grep` for
+**The unloadable approximation.** There is no parser. Search the tree for
 the `name:` and `description:` lines, and for a value that holds a colon and a
 space with no quotes. Say in the lead that this is an approximation.
 
@@ -119,10 +119,10 @@ documents, settings and scripts. Give each site as `path:line`. Run the same
 search on a file known to be read, and quote both outputs.
 
 **The two sided quote.** Quote both lines of a contradiction or a restatement
-with `path:line`. Run `blame` on each line. Say which side changed last. The cause is for
+with `path:line`. Find the commit that last changed each line. Say which side changed last. The cause is for
 investigation.
 
-**The copy check.** Compare the hashes on the two `ls-tree` lines.
+**The copy check.** Compare the content hashes of the two entries.
 
 **Home paths.** Quote no line that holds a home path. Give `path:line` and
 retell the line. Put an `@` import inside a code span.

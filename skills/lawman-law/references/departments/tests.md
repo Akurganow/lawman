@@ -53,8 +53,8 @@ decision that a plain value could make.
 assertion repeated in two automation definitions. A stated breakage in a test's
 name or comment, grouped by the mutation it names.
 
-**History.** Read the log of a test file, with the path, and `blame` on its
-assertion lines. Look for edits in commits that changed no behaviour, and for
+**History.** Read the history of a test file, and the commit that last changed
+each of its assertion lines. Look for edits in commits that changed no behaviour, and for
 tests born with a fix.
 
 Skip the content of fixtures, generated files and the programs under test.
@@ -126,8 +126,8 @@ and traced, and the lead says it was not run. Confidence stops at
 - **A positive control for every census.** Run the same search on a known
   occurrence. A count of zero proves nothing until the control reports a non
   zero count.
-- **The history of the test.** Read the log and `blame` of the file with its
-  path. A test that was born with a fix, or that was edited in commits that
+- **The history of the test.** Read the history of the file, and the commit that
+  last changed each of its lines. A test that was born with a fix, or that was edited in commits that
   changed no behaviour, shows in the subjects.
 - **Attack your own claim once.** Look for a recorded reason, a contract that
   only this test guards, a distinct input. When one holds, drop the candidate.

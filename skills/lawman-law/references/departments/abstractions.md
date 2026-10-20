@@ -143,9 +143,10 @@ say which you could not check.
 - A file that a tool's configuration names.
 - A file read at run time: a template, a fixture, a data file.
 
-**History.** For `dead`, read `log <sha> --format='%h %ad %s' --date=short -n 20
---name-only -- <path>` for the file that defines the unit, and `blame -s -L` on
-the lines around its last use. Take no search string from the tree. Quote the
+**History.** For `dead`, read the last 20 commits at `<sha>` that touched the file
+that defines the unit. List each with its short hash, date, subject and changed
+file names. Find the commit that last changed the lines around its
+last use. Take no search string from the tree. Quote the
 commit that removed the last caller. Say whether the unit was ever wired in or
 was cut loose, because the two need different remedies.
 
