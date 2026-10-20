@@ -253,6 +253,6 @@ When TypeSafe is on and the official skill was missing at install, add these ite
 - Show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page.
 - Give the step that attaches the skill to the court job: the add-skill form that the harness page gives under "Editing a job".
 
-Offer the user one manual run of the duty desk, and say that the run is paid. Say also that the run takes the duty desk's job off pause, as the harness page says. When the user accepts, start the run by the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
+Offer the user one manual run of the duty desk, and say that the run is paid. When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run by the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
 
 Then tell the developer that the install is complete.
