@@ -10,6 +10,7 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
+import { inputRejected, text, timeOf } from "./form";
 import { asciiLower, collectIssueMarkers, type GhIssue } from "./markers";
 import { syncPulls } from "./pulls";
 
@@ -33,13 +34,13 @@ type SyncStats = {
 	skipped: number;
 };
 
-const text = (v: unknown) => (typeof v === "string" ? v : "");
 const textOrNull = (v: unknown) =>
 	typeof v === "string" && v !== "" ? v : null;
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === "object" && v !== null;
 const syncInput = (why: string) =>
-	new Fail(EXIT.SYNC_INPUT, `sync input rejected, cache untouched: ${why}`);
+	inputRejected("issues", `sync input rejected, cache untouched: ${why}`);
+const timeField = (v: unknown, what: string) => timeOf(v, what, syncInput);
 
 function readIssue(raw: unknown): SyncIssue {
 	if (
@@ -49,6 +50,7 @@ function readIssue(raw: unknown): SyncIssue {
 	) {
 		throw syncInput("every element needs an integer number and a state");
 	}
+	const closed = textOrNull(raw.closedAt);
 	const login = isRecord(raw.author) ? text(raw.author.login) : "";
 	const comments = Array.isArray(raw.comments)
 		? raw.comments.filter(isRecord)
@@ -59,8 +61,8 @@ function readIssue(raw: unknown): SyncIssue {
 		state: raw.state,
 		stateReason: textOrNull(raw.stateReason),
 		title: text(raw.title),
-		createdAt: text(raw.createdAt),
-		closedAt: textOrNull(raw.closedAt),
+		createdAt: timeField(raw.createdAt, "an issue createdAt"),
+		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
 		author: login === "" ? null : { login },
 		body: text(raw.body),
 		comments: comments.map((c) => ({
@@ -69,7 +71,7 @@ function readIssue(raw: unknown): SyncIssue {
 					? { login: text(c.author.login) }
 					: null,
 			body: text(c.body),
-			createdAt: text(c.createdAt),
+			createdAt: timeField(c.createdAt, "a comment createdAt"),
 		})),
 	};
 }
@@ -86,7 +88,7 @@ function readIssues(input: string): SyncIssue[] {
 	if (issues.length === SYNC_LIMIT) {
 		throw new Fail(
 			EXIT.SYNC_LIMIT,
-			`${SYNC_LIMIT} issues reached the gh limit: the list may be truncated, cache untouched`,
+			`${SYNC_LIMIT} issues reached the limit: the list may be truncated, cache untouched`,
 		);
 	}
 	return issues;

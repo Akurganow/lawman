@@ -6,18 +6,22 @@ A stop ends the install. Each stop says what failed, the cause and the fix. Fix 
 
 ## Order
 
-Round one covers Installation, Delivery, Models, Schedule, Gates, TypeSafe and the choice of repositories.
+The install finds what is available before it checks any file or role. It finds the repository host and the tools that reach it. For each tool, it finds the account the host reports. It finds where the repositories keep their issues, and how the install verifies Lawman's own release. Round two finds each repository's access before that repository's proposal. When no tool reaches the host, offer choices that fit this machine. When the host reports no account, ask the user to sign in. When the user declines, say plainly that the roles cannot work without it, and end the install. Every role writes as that account.
+
+Round one covers Installation, Host, Delivery, Models, Schedule and Gates, TypeSafe, and the choice of repositories.
 
 1. Find the facts of every part.
 2. For each part, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names the gate files and each job.
+3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, the gate files and each job.
 
 Before the approval, write only the installation folder, the plugin link and the repository clones. After it, Apply writes in this order.
 
-1. Install the journal.
-2. Write `config.yaml`.
-3. Write the gate files.
-4. Create the jobs.
+1. Write `host.md`.
+2. Install a verifier the user chose.
+3. Install the journal.
+4. Write `config.yaml`.
+5. Write the gate files.
+6. Create the jobs.
 
 Round two runs "Add a precinct" from "Clone and read" on, for each chosen repository. It comes after the writes of round one, because it needs the journal. The summary comes last.
 
@@ -27,11 +31,9 @@ Finds:
 
 - The harness, from "Choose the installation" in `SKILL.md`.
 - An existing installation.
-- Whether the version-control tool and the GitHub tool are present.
 - Whether the scheduler runs, by the check that the harness page names.
 - Whether the plugin is enabled, by the checks that the harness page names under "Installing the plugin", in the page's order.
 - The release repository and the release tag, from the plugin's own clone, by the items of "Find the release" below.
-- The GitHub account signed in to this session.
 
 Proposes, as rows with their source:
 
@@ -40,36 +42,74 @@ Proposes, as rows with their source:
 | Folder | `<installation>` | current, default or yours |
 | Harness | the harness page | found |
 | Release | tag and repository | found, not editable |
-| GitHub account | the login, which becomes `trusted_login` | found, not editable |
-
-The why line for the login: every role writes as this account, and only its markers count.
 
 Decides: nothing when an installation exists. "Choose the installation" in `SKILL.md` asks the folder question when none exists.
 
 Stops:
 
-- The version-control tool is missing. Tell the developer to install it.
-- The GitHub tool is missing. Tell the developer to install it.
 - The scheduler check fails. Show the start instruction that the harness page gives.
 - The harness page names no scheduler check. Tell the developer the page lacks one.
 - A check under "Installing the plugin" fails. Stop at the first one, and show the page's note for it.
-- No GitHub account is signed in to this session. Tell the developer that Lawman needs one signed-in account for every role. Tell them to sign in, then start the assembly again.
 - The plugin clone's origin is not a GitHub form, or the law commit has no release tag. The items of "Find the release" give both stops.
 
 Never:
 
 - Ask the developer to confirm the release repository.
 - Test the harness.
-- Start a scheduled session to read the login.
 
 ### Find the release
 
-1. Run `git -C lawman remote get-url origin` to read the law clone's origin.
+1. Read the law clone's origin.
 2. Parse the owner and repo, accepting only the forms `https://github.com/<owner>/<repo>` and `git@github.com:<owner>/<repo>` with an optional `.git`, and stop on any other form.
-3. Confirm that the law folder's commit carries a release tag, reading it the way the harness page names under "Syncing the law". Stop if it has none, because the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one.
+3. Confirm that the law folder's commit carries a release tag. Stop if it has none, because the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one.
 4. Record the tag that item 3 read as `release_tag`.
 
 Name the `<owner>/<repo>` of item 2 `release_repo`.
+
+## Host
+
+In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them.
+
+Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. When no tool fits, ask whether the user wants to install one, and offer choices that fit this machine. Apply installs the chosen tool. The user may decline. Then say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing, and record the refusal in the notes.
+
+Finds:
+
+- The repository host, and each tool on this machine that reaches it.
+- Whether the version-control tool is present.
+- For each tool that reaches the host, the account the host reports.
+- Where the chosen tool keeps its credential. Learn the place and never the value.
+- How the host keeps issues and their templates, and anything particular to this host.
+- For each host action the role skills name, how this machine does it with the chosen tool. That covers handing host data to the journal in its forms.
+- The verifier of Lawman's release, by the paragraph above.
+
+Proposes, as rows with their source. The rows are the notes, the recorded actions included.
+
+| Row | Value | Source |
+| :-- | :-- | :-- |
+| Host | the repository host | found |
+| Tool | the tool in use | found or yours |
+| Account | the login the host reports, which becomes `trusted_login` at install | found, not editable |
+| Credential | the place it lives, never its value | found |
+| Issues and templates | how the host keeps them | found |
+| Host actions | one row for each action, with how this machine does it | found |
+| Verifier | the verifier, or the refusal | found, chosen or declined |
+
+The why line for the login: every role writes as this account, and only its markers count.
+
+Decides: ask in the question tool.
+
+- The tool, when several reach the host. The user chooses.
+- The verifier, when several fit, or whether to install one when none fits, or to decline.
+- The host, when the finds do not show it.
+
+Stops:
+
+- The version-control tool is missing. Tell the developer to install it.
+- No tool reaches the host, or the host reports no account for the chosen tool. Act as "Order" says.
+
+Never:
+
+- Start a scheduled session to read the login.
 
 ## Delivery
 
@@ -147,25 +187,38 @@ Never:
 
 Apply starts after the approval of round one.
 
+### Write the host notes
+
+Write `<installation>/host.md` as the approved Host rows show, by the head of "Host".
+
+### Install a verifier
+
+When the notes name a verifier that is not on this machine, install it.
+
 ### Install the journal
 
-1. Run `uname -s` and `uname -m`, lowercase the OS name, map `x86_64` to `x64` and `aarch64` to `arm64`, and stop on any other OS or CPU.
-2. Set `<asset>` to `journal-bun-<os>-<arch>`.
-3. Run `mkdir -p bin runs/install-journal`, then `gh release download <release_tag> -R <release_repo> -p <asset> -p SHA256SUMS -D runs/install-journal --clobber`, and stop if it fails.
-4. Run `(cd runs/install-journal && shasum -a 256 -c SHA256SUMS --ignore-missing)`, and stop unless the line for `<asset>` reads `OK`.
-5. Run `gh attestation verify runs/install-journal/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml`, show the signer workflow it checked, and stop if it fails.
-6. Run `mv runs/install-journal/<asset> bin/journal && chmod +x bin/journal`.
-7. Run `rm -f runs/install-journal/SHA256SUMS`, then `rmdir runs/install-journal`.
-8. Run `bin/journal probe --schema 6`, and stop if it exits non-zero.
-9. Run `shasum -a 256 bin/journal`, and record its first field as `journal_sha256`.
+Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier the host notes name, confirm three facts. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the notes name a verifier, a check that cannot run or that reports anything but success is a stop. Notes that are missing or name neither a verifier nor a refusal are a stop too. When the notes record that the user declined a verifier, skip the signature check. None of this needs an account on the release host.
+
+At install, also confirm that the verifier rejects a changed copy of the binary. Never run the copy, and remove every file of the test. A verifier that accepts the copy is a stop.
+
+1. Find the OS and the CPU of this machine, name the OS in lowercase, read `x86_64` as `x64` and `aarch64` as `arm64`, and stop on any other OS or CPU.
+2. Set `<asset>` to `journal-bun-<os>-<arch>`, and set `<provenance>` to `<asset>.sigstore.json`.
+3. Create `bin` and `runs/install-journal`, then fetch `<asset>`, `<provenance>` and `SHA256SUMS` of `<release_tag>` from `<release_repo>` into `runs/install-journal`, replacing files that lie there, and stop if the fetch fails.
+4. Check `<asset>` against the line for it in `SHA256SUMS`, and stop unless they match.
+5. When the notes name a verifier, check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
+6. When the notes name a verifier, run its first test as the second paragraph above says.
+7. Move `runs/install-journal/<asset>` to `bin/journal` and make it executable.
+8. Remove `SHA256SUMS` and `<provenance>` from `runs/install-journal`, then remove the empty folder.
+9. Run `bin/journal probe --schema 6`, and stop if it exits non-zero.
+10. Compute the SHA-256 digest of `bin/journal`, and record it as `journal_sha256`.
 
 ### Write the config
 
-1. Read the commit that the law folder holds, the way the harness page names under "Syncing the law".
+1. Read the commit that the law folder holds.
 2. Record that commit as `law_commit`.
 3. Read `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, and record it.
 4. Write `<installation>/config.yaml` with the twelve keys listed in `SKILL.md`.
-5. Take `trusted_login` from Installation, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe.
+5. Take `trusted_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe.
 6. Write `typesafe_precincts` as none.
 7. Write `amended_law_commit` equal to `law_commit`.
 8. Read the file back, and stop if a key is missing or a value is empty.
@@ -187,7 +240,8 @@ Follow "Finish" in `SKILL.md`. Name these items.
 
 - The items of "Finish" in `references/roles.md`.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
-- What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
+- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
+- When the user declined a verifier, name both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
 - When TypeSafe is on and the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
 - For roles and precincts: the menu of the assembly changes them later.
@@ -197,5 +251,7 @@ When TypeSafe is on and the official skill was missing at install, add these ite
 
 - Show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page.
 - Give the step that attaches the skill to the court job: the add-skill form that the harness page gives under "Editing a job".
+
+Offer the user one manual run of the duty desk, and say that the run is paid. When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run by the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
 
 Then tell the developer that the install is complete.

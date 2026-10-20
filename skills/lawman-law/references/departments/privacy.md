@@ -82,9 +82,10 @@ each other.
 the call. Give each site as `path:line`. Run the same search on one call known
 to be described by the promise, and quote both outputs.
 
-**The history.** `log <sha> --format='%h %ad %s' --date=short -n 20 --name-only
--- <path>` for the promise and for the code, and `blame -s -L` on each line,
-show which side changed last. The cause is for investigation.
+**The history.** Read the last 20 commits at `<sha>` that touched the promise and
+the code. List each with its short hash, date, subject and changed file names.
+Find the commit that last changed each line. Together they show which side
+changed last. The cause is for investigation.
 
 **Nothing runs.** The code is the exhibit. An effect outside the process is not
 shown. Name it in Not checked.

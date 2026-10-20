@@ -100,9 +100,9 @@ precinct's regression proof.
 - **A positive control.** Run the same search on a known occurrence in the
   tree. A count of zero proves nothing until the control reports a non zero
   count.
-- **The history of the line.** Read `blame -s -L` for the defective lines, and
-  `log <sha> --format='%h %ad %s' --date=short -n 20 --name-only -- <path>` for
-  the file. Look for a change made on purpose, with the reason in the subject.
+- **The history of the line.** Find the commit that last changed each defective line.
+  Read the last 20 commits at `<sha>` that touched the file. List each with its
+  short hash, date, subject and changed file names. Look for a change made on purpose, with the reason in the subject.
 - **Hidden guarantees.** Check each before filing, and say which you could not
   check.
   - A step upstream that validates or normalises the input.

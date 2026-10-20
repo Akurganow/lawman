@@ -18,7 +18,7 @@ Two things set it apart. The page may name the paths and tools of its precinct. 
 
 A special page that shares its name with a shared page hides the shared page in that precinct, even when the special page is incomplete. [Departments](departments.md#the-three-places) gives the resolve order and says why the roles trust a precinct's own page.
 
-A special page joins the rotation through a line of the precinct's Departments section. See [constitution](constitution.md). A page in the precinct that no line admits is not in the rotation, unless a shared page has the same name.
+A special page joins the rotation through a line of the precinct's Departments section. See [constitution](constitution.md). The duty desk never lists a page in the precinct that no line admits, unless a shared page has the same name.
 
 ## The page
 
@@ -59,7 +59,7 @@ Patrol runs a source command when its search of the page needs one. Investigatio
 - A case, a charge, a defence or a lead quotes the output of a command that stands under no Regression proof.
 - A claim needs a read outside the clone.
 
-A role other than patrol reads the page again at `origin/HEAD`. A quoted command counts as a source command when it equals an item with every placeholder replaced by a value of its class. Any other command, and its output, is a claim and not an exhibit.
+A role other than patrol reads the page again at the tip of the precinct's default branch. A quoted command counts as a source command when it equals an item with every placeholder replaced by a value of its class. Any other command, and its output, is a claim and not an exhibit.
 
 ### How they run
 
@@ -142,7 +142,7 @@ A page is a file in the precinct's repository. The leak rule of the law names a 
 - **A variable part outside the Source values table.** The contract takes placeholders from that table.
 - **A tool as a kind.** A kind names a symptom.
 
-If a department can find a live secret, add an `Alarm check:` paragraph under Proof. Every command of it that can print a value ends in `cut`, so the value never reaches the output.
+If a department can find a live secret, add an `Alarm check:` paragraph under Proof. Its search yields only a path and a line, never the matched text, so the value never reaches the output.
 
 The checks catch little of this. `lint-page department` reads the frontmatter, the headings and the empty sections. It scans no text for owner facts. `bin/journal lint-body` rejects home paths, installation paths and tokens, but it runs on the bodies of leads and comments and not on pages. This repository's CI also scans every file for home paths and GitHub tokens. The review before the merge is the check that matters.
 

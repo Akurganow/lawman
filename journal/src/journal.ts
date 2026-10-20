@@ -7,6 +7,7 @@ import { decider } from "./decider";
 import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
 import { dueCommand } from "./due";
+import { form } from "./form";
 import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
 import { jev } from "./jev";
@@ -50,6 +51,7 @@ export const COMMANDS: Record<string, Handler> = {
 	pull: pullCommand,
 	handoff: handoffCommand,
 	decider,
+	form,
 	jev,
 	wake,
 	"law-sync": lawSync,

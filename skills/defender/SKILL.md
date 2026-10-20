@@ -18,9 +18,9 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
+- A clone changes only by bringing it up to date, as the "Fetch the precinct" section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the "Reading without a tree" section.
-- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
+- A source command of the department page that passes its check runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The read-only rule above does not limit it.
 
 ## Tick
 
@@ -39,14 +39,8 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    bin/journal tick start --role defender
    ```
 3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-   ```
-   grep -E '^(law_commit|trusted_login):' config.yaml
-   ```
-4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-   ```
-   gh api user --jq .login
-   ```
+4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
    ```
    bin/journal alarm
@@ -94,51 +88,35 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence.
+3. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the "Check the constitution" section says. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
 5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ### Step 6: read the issue
 
-```
-gh issue view <n> -R <owner/repo> --json title,body,author,comments,state
-```
+Read issue `<n>` of `<owner/repo>` from the host, as the host notes record: title, body, author, comments and state. Read every page of the comments.
 
-A failed command gives `stopped-issue-read`.
+A failed read gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The charge is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=prosecutor stage=charge`. A missing case or charge ends the tick with `failed`.
 
 The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Keep the line under the `## Cost and risk` heading of the lead carrier when there is one. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
-When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
-```
-gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
-```
+When `related` is not `-`, read each issue it names the same way. A failed read is a fact for Blockers and stops nothing.
 
 A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read the exhibit of each ground in the charge and each claim in the case, at `<sha>`. Run `show`. Or search with `grep` on `<sha>`.
-   ```
-   git -C precincts/<p> show <sha>:<path>
-   ```
+1. Re-read the exhibit of each ground in the charge and each claim in the case, at `<sha>`.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
-2. Read the history of each exhibit path.
-   ```
-   git -C precincts/<p> log --format='%h %s' <sha> -- <path>
-   ```
-3. Search for the callers and tests of each symbol the charge names. Use a pattern from the charge only through the heredoc form.
-   ```
-   git -C precincts/<p> grep -n -F -f - <sha> -- . <<'<delimiter>'
-   <pattern, one per line>
-   <delimiter>
-   ```
+2. Read the history of each exhibit path up to `<sha>`: the short hash and the subject of each commit that touched it.
+3. Search the tree at `<sha>` for the callers and tests of each symbol the charge names. Use a pattern from the charge only through the heredoc form.
 4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
-5. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
+5. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 6. A path that the case reports missing in its Not established section:
-   - Re-read the commit that the case names, with the second command of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.
+   - Re-read the commit that the case names, with item 2 of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.
    - If the case names no commit, run the whole section.
    - A refute that closes the case on that ground names the commit and the new place or the removal in Holes in the charge.
 
@@ -181,7 +159,7 @@ Tip at defence: <tip>
 <what the grounds do not establish on the exhibits; alternative explanations; each with an exhibit path:line at <sha>>
 
 ## The code as it is
-<why the code has this shape: git log lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>; the cost against the harm, quoting the line under the lead's Cost and risk heading when there is one>
+<why the code has this shape: commit history lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>; the cost against the harm, quoting the line under the lead's Cost and risk heading when there is one>
 
 ## Question
 <only for return: exactly one question>
@@ -194,7 +172,7 @@ Marker, the last line of the comment. Nothing follows it:
 - `return`: `<!-- lawman: role=defender stage=return to=investigation round=<round> at=<UTC> -->`
 - `refute`: `<!-- lawman: role=defender stage=refute at=<UTC> -->`
 
-`at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
+`at` is the `<UTC>` of the "Write a comment" section.
 
 A realistic defence:
 
@@ -230,7 +208,7 @@ Rules:
 - Leave out `## Question` unless the decision is return.
 - A section with nothing to say holds the single word `none`.
 - Quote only the lines a ground needs.
-- Put every `@` and every quote of third-party text inside a fenced block, git log lines included.
+- Put every `@` and every quote of third-party text inside a fenced block, commit subjects included.
 - Name the department page by its department name, never by a path.
 - Write no home path, no installation path, no token and no login.
 - `<tip>` is the commit that step 2 printed.

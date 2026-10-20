@@ -127,9 +127,9 @@ which you could not check.
 Put the claim and the missing source in Not checked, in words. Add no `Source:`
 line, because that line belongs to dependencies.
 
-**History.** Date the claim with `blame` on its line. Find the commit that
-changed the claimed thing with the log of that path, `--name-only`. History
-dates a finding. It never is one.
+**History.** Date the claim by the commit that last changed its line. Find the
+commit that changed the claimed thing in the history of that path, with the
+names of the files each commit changed. History dates a finding. It never is one.
 
 **Attack your own claim once.** Look for an anchor the search could not see, a
 recorded reason, or a claim that describes a past release on purpose. When one

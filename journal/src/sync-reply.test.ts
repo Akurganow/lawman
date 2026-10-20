@@ -35,6 +35,7 @@ describe("reply time", () => {
 				number: 60,
 				state: "OPEN",
 				title: "x",
+				createdAt: "2026-10-14T09:00:00Z",
 				author: { login: author },
 				comments,
 			},

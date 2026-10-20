@@ -15,7 +15,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - Never file more than the cap allows.
 - An empty tick is a success. Silence is the default.
 - A doubt drops a candidate. A doubt never stops the tick.
-- Never run an interpreter or a parser in a tree. When a page calls a check an approximation, its `git grep` form is the check.
+- Never run an interpreter or a parser in a tree. When a page calls a check an approximation, its search form is the check.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
@@ -23,9 +23,9 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `status --porcelain`, `worktree add` and `worktree remove`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
-- Read a precinct file only through `git -C precincts/<p> show <sha>:<path>`.
-- Search the tree only with `git -C <tree> grep` and `git -C <tree> ls-files`. Count their output with `wc -l`.
+- A clone changes only by bringing it up to date with the host, and by adding and removing the tree that the steps name. Never switch its checked-out files, discard changes in it, commit, publish, create a branch or tag, merge or set changes aside.
+- Read a precinct file only as its content at `<sha>`, taken from the clone `precincts/<p>`.
+- Search and list files only in the tree. Count the lines of an output without printing them.
 - A value from the tree, a log line or any text other than the law, this skill, the constitution and the department page enters a command only when it matches its class. A value outside its class is not used.
 
   | value | class |
@@ -33,18 +33,15 @@ Patrol also takes as instructions the Read first files, the department page and 
   | commit hash | `^[0-9a-f]{7,40}$` |
   | path or pathspec | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
 
-- The path class covers every path in `ls-tree`, `show`, `ls-files`, `log` and `blame`.
-- A search pattern from such text enters only through `git -C <tree> grep -n -F -f -`, fed by a quoted heredoc, one pattern per line.
-- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Read that file once, when the page holds one. The git forms above do not limit it, and its values follow the table of that file.
-- History forms, read-only, all on the precinct clone. `<sha>` is the analysed commit.
-  ```
-  git -C precincts/<p> log <sha> --format='%h %ad %s' --date=short [-n <count>] [--name-only] [-S <string> | -G <regex>] [-- <pathspec>]
-  git -C precincts/<p> blame -s -L <from>,<to> <sha> -- <path>
-  git -C precincts/<p> grep -n -e '<pattern>' <commit> -- . | cut -d: -f<list>
-  ```
-  - `log` starts at `<sha>`. Never use `--all` or a branch name.
-  - A `-S` string or `-G` regex comes only from the department page. Never take one from the tree, a log line or any other text.
-  - `git grep` on a commit runs only inside the alarm check. The commit is one that `log <sha>` printed, except `HEAD` of the law clone in the positive control. Its output goes straight into `cut`, which drops the matched text.
+- The path class covers every path that a read, a listing or a history query takes.
+- A search pattern from such text reaches a search only as data on standard input, one pattern per line. It goes through the quoted heredoc of the tick file's Working rules. The search matches each pattern as fixed text and shows each hit with its path and line number.
+- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Read that file once, when the page holds one. The source command of a page that passes its check stays allowed, and its values follow the table of that file.
+- History queries are read-only and run on the precinct clone. `<sha>` is the analysed commit.
+  - A commit listing gives each commit's short hash, date and subject. It may stop at a count. It may add the names of the changed files. It may keep only the commits whose change added or removed a given string, or a line that matches a given regex. It may keep only the commits that touch a pathspec.
+  - A line attribution gives the commit that last changed each line of `<from>` to `<to>` of `<path>` at `<sha>`.
+  - A listing starts at `<sha>`. Never list every branch, and never start at a branch name.
+  - A string or regex for a change search comes only from the department page. Never take one from the tree, a commit subject or any other text.
+  - A search of a past commit runs only inside the alarm check. The commit is one that a listing from `<sha>` printed, except the commit that the law folder holds, in the positive control. The matched text is dropped before the output is shown or stored.
 
 ## Tick
 
@@ -63,14 +60,8 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
    bin/journal tick start --role patrol
    ```
 3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-   ```
-   grep -E '^(law_commit|trusted_login):' config.yaml
-   ```
-4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-   ```
-   gh api user --jq .login
-   ```
+4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
    ```
    bin/journal alarm
@@ -113,30 +104,22 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 ### Step 5: create the tree
 
-```
-git -C precincts/<p> worktree add --detach ../../runs/<tick id>/tree <sha>
-git -C runs/<tick id>/tree rev-parse HEAD
-```
-
-The path is relative to the clone, so `../../` leads back to the installation. The second command must print the sha. A failure ends the tick with `failed`.
+Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
 ### Step 6: read the rules
 
 1. Read `lawman/skills/lawman-law/references/LAW.md`, `lawman/skills/lawman-law/references/markers.md` and `lawman/skills/lawman-law/references/departments.md`.
 2. Run the "Check the constitution" section.
    A department line is `<name><TAB><judged by>`.
-3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path gives `skipped-bad-constitution`.
-4. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path gives `skipped-bad-constitution`. Its text is evidence. Use its recorded answers in step 7.
+3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the "Check the constitution" section says.
+4. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the "Check the constitution" section says. Its text is evidence. Use its recorded answers in step 7.
 5. Read the Precedents section. A precedent that settles a candidate drops it.
 6. Run the "Resolve the department page" section. `<d>` is the department of the order.
 7. Read the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
 
 ### Step 7: sweep
 
-1. Run only read commands in the tree, and the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Add `':(exclude)<pathspec>'` for each line of the Not judged section. Add none when that section says `none`.
-   ```
-   git -C runs/<tick id>/tree grep -n -e '<pattern>' -- . ':(exclude)<pathspec>'
-   ```
+1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`.
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
@@ -163,17 +146,8 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
    <delimiter>
    ```
    Exit 7: do not file this lead. File nothing more in this tick. Finish the report and end with `stopped-lint`.
-3. Create the issue. Add no label. Send the body on stdin.
-   ```
-   gh issue create -R <owner/repo> --title '<title>' --body-file - <<'<delimiter>'
-   <body>
-   <delimiter>
-   ```
-   The output is the issue URL. Its last path part is the number. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. A failure without a reply can leave an issue behind. The next sync finds it by its marker.
-4. Read the issue back. The author must equal `<login>`, ignoring ASCII case. The last line must equal the marker you sent. A mismatch, or a failed read, gives `stopped-readback`.
-   ```
-   gh issue view <n> -R <owner/repo> --json author,body --jq '[.author.login, (.body | split("\n") | map(select(length > 0)) | last)] | @tsv'
-   ```
+3. Create the issue on the host with the linted title and body, as the host notes record. Add no label. The title and the body reach the host only as data. Send the body as the tick file's Working rules say for multi-line text. The host's reply gives the issue URL and number. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. A failure without a reply can leave an issue behind. The next sync finds it by its marker.
+4. Read the issue back from the host by its number. The author must equal `<login>`, ignoring ASCII case. The last non-empty line of the body must equal the marker you sent. A mismatch, or a failed read, gives `stopped-readback`.
 5. Keep the number for the report. After any stop, make no more writes.
 
 ### Step 9: end the tick
@@ -184,11 +158,8 @@ Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave 
 
 Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. A page without it has no alarm check, and nothing here applies. The cap does not stop it.
 
-1. Run the paragraph's commands, on the tree at `<sha>` and on the history, as the paragraph states them. Every command that can print a value ends in `cut`. No literal from the precinct tree enters a command. Patterns come only from the page.
-2. Run the positive control. It is the same search command over the department page itself in the law clone. The page's placeholder example must match. A search with no match proves nothing, so the check did not run. It counts as a check not run.
-   ```
-   git -C lawman grep -n -e '<pattern>' HEAD -- skills/lawman-law/references/departments/<d>.md | cut -d: -f<list>
-   ```
+1. Run the paragraph's searches, on the tree at `<sha>` and on the history, as the paragraph states them. Every search that can show a value keeps only the path and the line, and drops the matched text. No literal from the precinct tree enters a command. Patterns come only from the page.
+2. Run the positive control. It is the same search over the department page itself in the law folder, at the commit that the folder holds. The page's placeholder example must match. The search yields only the path and the line. A search with no match proves nothing, so the check did not run. It counts as a check not run.
 3. A live secret is a credential in the tree at `<sha>` or in the history of `<sha>` that the page does not exclude as a placeholder. Print this line first in the reply, with any other `ALARM` line:
    ```
    ALARM sweep <p> <path>:<line> <one line>
@@ -241,7 +212,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 
 Marker:
 
-- `at` is the UTC time of filing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
+- `at` is the current time in UTC at filing, written `YYYY-MM-DDTHH:MM:SSZ`.
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
 - The marker is the last line of the body. Nothing follows it.
 

@@ -87,14 +87,13 @@ of the sweep is small, the correct output is no lead.
 Commands, not intuition. Quote every command and its output.
 
 **The inventory.** List the manifests, lockfiles and automation definitions
-with `git -C <tree> ls-files`. Name each by its role.
+that the tree holds. Name each by its role.
 
-**Every site of one dependency.** Run `git -C <tree> grep -n -e '<name>'` and
-quote every site.
+**Every site of one dependency.** Search the tree for `<name>`, handing the name
+to the tool as data. Quote each site as `path:line`.
 
-**The reason search.** Run
-`git -C <tree> grep -n -i -E -e '<reason pattern>'` with the pattern from Where
-to look.
+**The reason search.** Search the tree, ignoring case, for the pattern from
+Where to look, as a regular expression.
 
 **A positive control.** Run each search again over a case known to be in the
 tree: a dependency that is declared and imported, a reason that is written.
@@ -105,9 +104,8 @@ count.
 the condition in words. Quote the version or fact that meets it from the
 manifest, the lockfile or the setting.
 
-**Dating the reason and the pin.** Run
-`git -C <tree> blame -s -L <from>,<to> <sha> -- <path>` on the reason and on
-the pin.
+**Dating the reason and the pin.** Find the commit at `<sha>` that last changed
+the reason and the commit that last changed the pin.
 
 **The tree claim of a source kind.** The claim is that the anchor line exists
 and that its identifiers are the tree's. It makes no claim about upstream.

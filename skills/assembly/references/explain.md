@@ -14,7 +14,7 @@
 | Prosecutor | Charges, returns or declines the case | strong | Adversarial judgement. |
 | Defender | Defends, returns or refutes the charge | strong | Argues the other side. |
 | Court | Convicts with a priority or acquits | strong | Rules once. Doubt means acquittal. |
-| Clerk | Does the one job the journal names | light | Bookkeeping with git and GitHub. |
+| Clerk | Does the one job the journal names | light | Bookkeeping on the repository host. |
 | Spec writer | Writes one spec on a pull request for your vote | medium | Reasoned design text that a person reads. |
 | Executor | Writes the code of an approved spec and passes CI | strong | Writes code and waits for CI in its run. |
 
@@ -42,7 +42,7 @@
 1. Run the time zone read command from "Schedule forms and time zone", and show the zone.
 2. Tell the developer:
 
-> Lawman works in waves. A wave starts with the duty desk. It reads every repository that has a weight above zero and finds what each role should do next. It writes at most one order per role. Then each role starts on its own clock. It takes its order, does the work, leaves the result on GitHub and exits. Roles never wait for each other.
+> Lawman works in waves. A wave starts with the duty desk. It reads every repository that has a weight above zero and finds what each role should do next. It writes at most one order per role. Then each role starts on its own clock. It takes its order, does the work, leaves the result on the repository host and exits. Roles never wait for each other.
 >
 > A role sees only orders the duty desk already wrote. So a case moves one stage per duty desk run. Patrol files a lead. The next run orders the investigation. The run after that orders the prosecutor. A case that nobody returns passes eight stages: patrol, investigation, prosecutor, defender, court, clerk, spec writer and executor. That takes eight duty desk runs. Two steps wait for you: the vote on the spec and the review of the pull request.
 
@@ -89,13 +89,13 @@
 
 2. Tell the developer:
 
-> Roles that only take work a person or an earlier stage made gain the most: response unit, prosecutor, defender, court, clerk, spec writer, executor. The duty desk takes no order and never gets a gate.
+> Every role but the duty desk gains from a gate. The duty desk takes no order and never gets a gate.
 
 ## Gate file
 
 1. Tell the developer:
 
-> The gate file is `lawman-<role>.sh` in the harness's scripts directory. The extension makes the harness run it with `bash`. The harness ignores the interpreter line, which stays for readers. The file holds two lines. The first is `#!/bin/bash`. The second is `exec bin/journal wake --role <role>`. It has no pipe, no `grep` and no `|| true`. The journal's exit status is the file's status.
+> The gate file is `lawman-<role>.sh` in the harness's scripts directory. The harness runs it by its extension. It asks the journal whether the role has an order it can take now. It has no filter and no fallback. The journal's exit status is the file's status.
 
 ## The sections of a constitution
 

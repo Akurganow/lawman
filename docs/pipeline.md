@@ -181,14 +181,14 @@ The full report of every tick lives in the journal. `bin/journal tick list` prin
 
 ## What the maintainer does
 
-The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login with the WRITE, MAINTAIN or ADMIN permission in the precinct's repository.
+The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login that may write to the precinct's repository, access inherited from a group included.
 
 - **Close a lead to decline it.** Any closure other than completed counts as declined. Patrol does not file the same finding again.
-- **Vote on a spec.** React with 👍 or 👎 to the newest `Spec` comment. A 👎 wins, even beside a 👍. A reaction from a login without the permission counts for nothing. A 👍 approves exactly the text that was read, because a spec is never edited.
+- **Vote on a spec.** React with 👍 or 👎 to the newest `Spec` comment. A 👎 wins, even beside a 👍. A reaction from a login that is no decider counts for nothing. A 👍 approves exactly the text that was read, because a spec is never edited.
 - **Send finished work back.** React with 👎 to the newest `Executor` comment, or submit a Request changes review after it. Approvals, dismissed reviews and bot remarks return nothing.
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
 - **Close a pull request to decline it.** The clerk then closes its open source issues as not planned.
-- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone without the permission is recorded and changes nothing.
+- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing.
 - **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live

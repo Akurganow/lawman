@@ -8,7 +8,7 @@ and sweeps its subject. One department covers one class of defect. The page
 says only what to look for. Forensics, filing, caps and markers come from the
 law. Investigation works out a defect's cause. The page never does.
 
-A page that violates this contract is not in the rotation.
+A page that violates this contract is skipped by the duty desk for that tick and named in Blockers.
 
 ## Frontmatter
 
@@ -82,9 +82,9 @@ text.
 
 A page whose department can find a live secret names the check in one paragraph
 of Proof. The paragraph starts with the words `Alarm check:`. It holds a
-placeholder example that the search must find, as the positive control. Every
-command of it that can print a value ends in `cut`, so the value never reaches
-the output.
+placeholder example that the search must find, as the positive control. Its
+search yields only a path and a line, never the matched text, so the value never
+reaches the output.
 
 **Anchors.** What the scores mean, in words.
 
@@ -136,9 +136,10 @@ Rules:
 ## Incomplete pages
 
 The duty desk runs `lint-page department` on the resolved page. A page that
-fails is out of the rotation for that tick. The check names the first missing or
-misplaced heading, and the duty desk reports it. A name in the frontmatter that
-differs from the file name fails too.
+fails is skipped for that tick. The check names the first missing or
+misplaced heading, and the duty desk names the page and that heading in
+Blockers. A name in the frontmatter that differs from the file name fails too. A line whose name resolves to no page is
+skipped the same way, and Blockers name the line.
 
 ## Example
 

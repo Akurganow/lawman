@@ -91,7 +91,7 @@ describe("alarms and status", () => {
 			seed((db) => {
 				tick(db, "patrol", later(0), later(0, 60), "filed", "a");
 				tick(db, "patrol", later(1), later(1, 60), "failed", "a");
-				tick(db, "patrol", later(2), later(2, 60), "stopped-gh-auth", "a");
+				tick(db, "patrol", later(2), later(2, 60), "stopped-host-auth", "a");
 				tick(
 					db,
 					"patrol",
@@ -145,7 +145,7 @@ describe("alarms and status", () => {
 			seed((db) => {
 				tick(db, "patrol", later(0), later(0, 60), "stopped-law-drift");
 				tick(db, "patrol", later(1), later(1, 60), "stopped-dirty-law");
-				tick(db, "patrol", later(2), later(2, 60), "stopped-gh-auth");
+				tick(db, "patrol", later(2), later(2, 60), "stopped-host-auth");
 			});
 			alarmsOnce(later(3), /^ALARM tick-failing patrol\/- .+\n$/);
 		});

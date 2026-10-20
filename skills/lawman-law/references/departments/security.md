@@ -101,35 +101,32 @@ Pattern two is a password inside an address,
 The two placeholders for the positive control follow. Neither is a secret.
 `-----BEGIN EXAMPLE PRIVATE KEY-----`
 `https://example-user:example-pass@host.invalid/`
-Run the positive control first.
-`git -C lawman grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' HEAD -- skills/lawman-law/references/departments/security.md | cut -d: -f2,3`
-It must print the two lines that hold the placeholders. When it prints nothing,
-no clean result counts. Then search the tree.
-`git -C <tree> grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' | cut -d: -f1,2`
-Search history once per pattern. Replace `<pattern>` with each in turn.
-`git -C precincts/<p> log <sha> --format='%h %ad %s' --date=short -n 20 -G '<pattern>' --name-only`
-Then search each printed hash.
-`git -C precincts/<p> grep -n -e '-----BEGIN [A-Z ]*PRIVATE KEY-----' -e '://[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*:[A-Za-z0-9._~%-][A-Za-z0-9._~%-]*@' <hash> -- . | cut -d: -f2,3`
-The log prints headers and file names, never a line of content. Every search
-that can print a value ends with `cut`. Never use a flag that prints only the
-match. Never blame a line that holds a credential. Read each
-hit. A placeholder, a documented example or a test credential is no alarm. A
-live credential is an alarm. Print
+Run the positive control first: search this page, as shipped in the law folder,
+for both patterns. The search yields the path and the line of each of the two
+lines that hold the placeholders, and nothing else. When it yields nothing, no
+clean result counts. Then search the tree for both patterns.
+Search history once per pattern. Replace `<pattern>` with each in turn. List the
+last 20 commits at `<sha>` whose change added or removed a line that matches the
+pattern. List each with its short hash, date, subject and changed file names.
+Then search the tree of each listed commit `<hash>` for both patterns.
+Every search yields a path and a line, and never the matched text or a part of
+it. The list of commits holds headers and file names, never a line of content.
+Never trace the author of a line that holds a credential. Read each hit. A
+placeholder, a documented example or a test credential is no alarm. A live
+credential is an alarm. Print
 `ALARM sweep <precinct> <path>:<line> <one line>` first in the reply, or
 `ALARM sweep <precinct> <path>@<hash> <one line>` when only history holds it.
 The line holds no value and no part of one.
 
 **Census of definitions.** List the automation definitions, the shipped scripts
-and the issue templates with `git -C <tree> ls-files`.
+and the issue templates that the tree holds.
 
 **Census of expressions.** Search the definitions for the open mark of a value
-that the automation expands before a shell runs it, with
-`git -C <tree> grep -n -e '${{'`. Read each such value that sits in a shell
-block.
+that the automation expands before a shell runs it. Read each such value that
+sits in a shell block.
 
 **Census of grants and references.** Search the definitions for the keys that
-grant permissions, pass secrets or reference an outside component, with
-`git -C <tree> grep -n -e 'permissions' -e 'secrets' -e 'uses:'`.
+grant permissions, pass secrets or reference an outside component.
 
 **A positive control for each census.** Run the same search over a definition
 known to hold the construct. Quote both outputs. A zero proves nothing until

@@ -20,28 +20,26 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `worktree add`, `worktree remove` and `status --porcelain`.
-- In the tree `runs/<tick id>/tree`, run only `add LAWMAN.md`, `commit`, `commit --allow-empty` and the one `push` of the open or precedent recipe.
-- Never check out, reset, clean, branch, tag, merge, stash or push another ref.
-- Read a precinct file only through `git -C precincts/<p> show <tip>:<path>`.
-- Run only these `gh` forms. Each `-R` takes `<owner/repo>`. Each number comes from the order or from `case`.
-  - `api user --jq .login`.
-  - The three fixed queries of `tick.md`: the issue sync, the pull request sync and the decider check.
-  - `issue view <n> --json comments`, and `issue view <n> --json state --jq .state`.
-  - `api repos/<owner/repo>/issues/comments/<id> --jq <filter>`, for the ruling body and the read-back.
-  - `pr view <m> --json state,mergeCommit,isDraft,body`, with `--jq` on a single field, or with fewer fields.
-  - `pr create --draft`, with the fixed title and the fixed body on stdin.
-  - `pr create` with the fixed precedent title and body, for the precedent job only.
-  - `pr edit <m> --body-file -`, with the fixed body only.
-  - `pr ready <m> --undo`, `pr comment <m> --body-file -`, `pr close <m>` and `pr reopen <m>`.
-  - `issue comment <n> --body-file -`, `issue close <n> --reason <class reason>` and `issue reopen <n>`.
-- Never run these:
-  - `gh api` with `-X`, `--method` or `--input`.
-  - `gh api` with any `-f` or `-F` other than the ones the fixed queries carry.
-  - Any GraphQL text other than the fixed queries, and any mutation.
-  - Any `reactions` endpoint.
-  - `pr review`, `pr merge` and any `label` command.
-  - `--edit-last` and `--delete-last`.
+- In a clone, only bring it up to date, update its record of the host's default branch, read commits and file contents, add the tree of the tick, remove it and read whether the clone holds a change.
+- In the tree `runs/<tick id>/tree`, only record one commit, empty or holding `LAWMAN.md`, and publish the one branch of the open or precedent recipe.
+- Never change what a clone has checked out, discard a change, create or move a branch or tag other than that one branch, merge, set changes aside or publish another ref.
+- Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
+- Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
+  - Ask the host which account the tool in the host notes acts as.
+  - Read the issues, the pull requests, the writers and the last actor as the "Sync the tracker", "Sync the pull requests" and "Check the decider" sections of `tick.md` say.
+  - Read the comments of an issue, and the state of an issue.
+  - Read one comment by its id, for the ruling body and the read-back.
+  - Read the state, the merge commit, the draft state and the body of a pull request, or fewer of these.
+  - Open a draft pull request with the fixed title and the fixed body.
+  - Open a pull request that is not a draft, with the fixed precedent title and body, for the precedent job only.
+  - Replace the body of a pull request with the fixed body only.
+  - Return a pull request to draft, comment on a pull request, close a pull request and reopen one.
+  - Comment on an issue, close an issue with the reason of its class and reopen an issue.
+- Never do these:
+  - Write to the host in any way the list above does not name.
+  - Add, remove or change a reaction.
+  - Review a pull request, merge one, or add or remove a label.
+  - Edit or delete a comment already written, the last one included.
 - A write comes first, then its read-back, then the marker. The marker is the last write of a job.
 
 ### Class checks
@@ -53,11 +51,12 @@ A value that reaches a command or a comment passes its check first. A failed che
 | `<owner/repo>` | The order's value. The journal checked it with `check("repo")` when the precinct was added. |
 | `<login>` | `trusted_login`. The journal runs `check("login")` in `sync` and `decider`. |
 | Issue, pull request and source numbers | Digits as `case` prints them. In a marker they match `^[1-9][0-9]*$`. A marker with any other number counts for nothing. |
-| Pull request URL from `pr create` | `^https://github.com/<owner/repo>/pull/[1-9][0-9]*$`. The pull request number is its last part. |
-| Comment id | The digits after `#issuecomment-`. |
+| Pull request link from the host's reply to an open | `^https://` and ends with the pull request number. |
+| Pull request number from that reply | `^[1-9][0-9]*$`. |
+| Comment id | The id the host's reply gives, matching `^[1-9][0-9]*$`. |
 | Merge commit | `^[0-9a-f]{40}$`. It enters comment text only. |
-| Branch | The `branch` of `case`, which is built from integers. Never read a `headRefName`. |
-| Reaction `content` | The clerk reads none. The journal compares it with two constants. |
+| Branch | The `branch` of `case`, which is built from integers. Never read the branch name from the host's pull request. |
+| Reaction | The clerk reads none. The journal compares reactions with two constants. |
 | Ruling, old pull request body, comments | Stdin or a quoted heredoc only. Never an argument. |
 
 ## Tick
@@ -77,14 +76,8 @@ Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. Item
    bin/journal tick start --role clerk
    ```
 3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-   ```
-   grep -E '^(law_commit|trusted_login):' config.yaml
-   ```
-4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-   ```
-   gh api user --jq .login
-   ```
+4. Check the law folder. Read the commit that it holds and whether it has a local change. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
    ```
    bin/journal alarm
@@ -134,7 +127,7 @@ Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
-1. `job=state`: run the "Check the decider" section with the issue number `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
+1. `job=state`: run the "Check the decider" section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
 2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
 3. `job=adopt`, `settle`, `open` or `precedent`: run the recipe of that name.
 
@@ -175,7 +168,7 @@ Clerk
 <marker>
 ````
 
-The marker is the last line of the comment. Nothing follows it. `at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
+The marker is the last line of the comment. Nothing follows it. `at` is the UTC time of writing, as `YYYY-MM-DDTHH:MM:SSZ`.
 
 The precedent comment is written on the issue. Its sentence and marker:
 
@@ -199,7 +192,7 @@ A realistic entry comment:
 ````
 Clerk
 
-Precedent 3 is proposed in https://github.com/example/widgets/pull/31. It takes effect when the owner merges it.
+Precedent 3 is proposed in https://git.example.com/example/widgets/pull/31. It takes effect when the owner merges it.
 
 <!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
 ````

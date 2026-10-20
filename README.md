@@ -2,7 +2,7 @@
 
 An executive branch for software repositories. Patrol files leads as issues. An investigation builds the case. A prosecutor decides whether to charge. A defender argues against the charge. A court rules. A clerk carries the verdict to a draft pull request. A spec writer writes its spec. An executor builds the approved change.
 
-Lawman runs inside the agent harness a developer already uses, on that harness's own schedule, with the `git` and `gh` already on the machine. It has no server, no dashboard and no GitHub access of its own.
+Lawman runs inside the agent harness a developer already uses, on that harness's own schedule. It has no server, no dashboard and no access to a repository host of its own.
 
 A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its constitution. Everything repository-specific lives there, never in the law.
 
@@ -48,7 +48,7 @@ A precinct's `LAWMAN.md` states what is true of that repository and of no other.
 
 ## Install
 
-Lawman runs inside an agent harness, on that harness's own schedule. You need `git` and the GitHub CLI signed in as the one account every role uses. The assembly skill sets up the rest.
+Lawman runs inside an agent harness, on that harness's own schedule. You need three things. First, a way to reach the repository host, signed in as the one account every role uses. Second, access to github.com for Lawman's release. Third, a way to verify a Sigstore signature, or your choice to run unverified. The assembly skill finds each with you and sets up the rest.
 
 ### Hermes Agent
 
@@ -68,11 +68,11 @@ Hermes Agent runs each role as a scheduled job. It needs its gateway running.
 
 The assembly finds what it can by itself, then sends one message for each part of the setup. You decide with choices, then approve before it writes.
 
-After you approve, the assembly installs the [journal](docs/journal.md), writes [`config.yaml`](docs/configuration.md) and creates one paused job for each role of the [pipeline](docs/pipeline.md). For each chosen repository without a [constitution](docs/constitution.md), it opens a pull request with a draft. A repository whose constitution is already in place joins at weight 1, and the assembly offers to resume the jobs.
+After you approve, the assembly writes the host notes in `host.md` and installs the [journal](docs/journal.md). It writes [`config.yaml`](docs/configuration.md) and creates one paused job for each role of the [pipeline](docs/pipeline.md). For each chosen repository without a [constitution](docs/constitution.md), it opens a pull request with a draft. A repository whose constitution is already in place joins at weight 1, and the assembly offers to resume the jobs.
 
 TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 
-Run the assembly again to change the installation. It offers keep as is, roles or precincts.
+Run the assembly again to change the installation. It offers keep as is, roles, precincts or host.
 
 #### Update
 
@@ -120,7 +120,7 @@ TBD
 
 The installation lives outside the plugin, so a plugin update never touches it. [Configuration](docs/configuration.md) and [Harnesses](docs/harnesses.md#what-lives-outside-the-plugin) name what it holds.
 
-Identity: every role uses one identity, the signed-in `gh` or a token the developer adds at setup. The assembly never asks for a token value.
+Identity: every role uses one account on the repository host, the one that the host notes name. The assembly never asks for a token value.
 
 ## How the repository is laid out
 

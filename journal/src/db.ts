@@ -48,6 +48,20 @@ export function isoSeconds(date: Date): string {
 	return `${date.toISOString().slice(0, 19)}Z`;
 }
 
+const TIME_SHAPE =
+	/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+// UTC seconds with a Z for an ISO 8601 time with a zone, null for anything else
+export function normalizeTime(value: string): string | null {
+	if (!TIME_SHAPE.test(value)) return null;
+	const day = value.slice(0, 10);
+	const rolled = new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10);
+	const date = new Date(value);
+	return rolled !== day || Number.isNaN(date.getTime())
+		? null
+		: isoSeconds(date);
+}
+
 export function now(env: Env = process.env): string {
 	checkEnv(env);
 	const stamp = envValue(env, "LAWMAN_NOW");

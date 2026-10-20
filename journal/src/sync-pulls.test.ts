@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import fixture from "./fixtures/pulls.json";
 import { captured } from "./inproc";
 import { syncPulls } from "./pulls";
-import { BOT, FIXTURE_ROWS, page } from "./pulls-fixture";
+import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
 import { addPrecincts, cli, dbFile, rows, seed, tempDb } from "./test-helpers";
 
 tempDb();
@@ -66,46 +66,39 @@ describe("sync --pulls", () => {
 
 	test("an empty list replaces a filled cache with none", () => {
 		seedOld();
-		const r = feed([page([])]);
+		const r = feed(hostPulls([]));
 		expect(r.out).toBe("pulls=0\n");
 		expect(stored()).toEqual([]);
 	});
 
 	test("every validity failure exits 4 and leaves the cache intact", () => {
-		const errors = [{ ...page([]), errors: [{ message: "boom" }] }];
-		const cases = [
-			"{",
-			"{}",
-			"[]",
-			JSON.stringify(errors),
-			JSON.stringify([{ data: { repository: {} } }]),
-			JSON.stringify([page([], { next: true })]),
-			JSON.stringify([page([], { collabNext: true })]),
-		];
-		expectRejected(cases);
+		expectRejected(["{", "{}", "[]", JSON.stringify({ writers: [] })]);
 	});
 
-	test("a pull request of the author without review nodes, or a comment without an id, exits 4", () => {
-		const noReviews = [page([{ number: 3, noReviews: true }])];
-		const noId = [page([{ number: 3, comments: [{ body: "x", noId: true }] }])];
-		expectRejected([noReviews, noId]);
+	test("a comment without an id, or with a bad time, exits 4", () => {
+		const noId = hostPulls([
+			{ number: 3, comments: [{ body: "x", noId: true }] },
+		]);
+		const badTime = hostPulls([{ number: 3, comments: [{ body: "x" }] }]);
+		Object.assign(badTime.pulls[0]?.comments[0] as object, { createdAt: "x" });
+		expectRejected([noId, badTime]);
 	});
 
-	test("a pull request of another author without either field is no failure", () => {
-		const other = {
+	test("a pull request of another author without a comment id is no failure", () => {
+		const input = hostPulls([{ number: 4 }]);
+		input.pulls.unshift({
 			number: 3,
 			author: "stranger",
-			noReviews: true,
-			comments: [{ body: "x", noId: true }],
-		};
-		const r = feed([page([other, { number: 4 }])]);
+			comments: [{ body: "x" }],
+		} as never);
+		const r = feed(input);
 		expect(r.code).toBe(0);
 		expect(stored().map((p) => p.number)).toEqual([4]);
 	});
 
 	test("a repeated pull request number exits 4 and leaves the cache intact", () => {
 		seedOld();
-		const r = feed([page([{ number: 3 }, { number: 3 }])]);
+		const r = feed(hostPulls([{ number: 3 }, { number: 3 }]));
 		expect(r.code).toBe(4);
 		expect(stored()).toEqual(OLD);
 	});
@@ -146,7 +139,7 @@ describe("syncPulls in process", () => {
 	});
 
 	test("an unknown precinct is a usage error", () => {
-		expect(sync("nowhere", "[]").code).toBe(1);
+		expect(sync("nowhere", "{}").code).toBe(1);
 	});
 
 	test("a repeated number is rejected and a valid replacement wins", () => {
@@ -155,10 +148,10 @@ describe("syncPulls in process", () => {
 				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', 99, '1', 'waiting')",
 			);
 		});
-		const repeated = JSON.stringify([page([{ number: 3 }, { number: 3 }])]);
+		const repeated = JSON.stringify(hostPulls([{ number: 3 }, { number: 3 }]));
 		expect(sync("main", repeated).code).toBe(4);
 		expect(rows("SELECT number FROM pulls")).toEqual([{ number: 99 }]);
-		expect(sync("main", JSON.stringify([page([])])).out).toBe("pulls=0\n");
+		expect(sync("main", JSON.stringify(hostPulls([]))).out).toBe("pulls=0\n");
 		expect(rows("SELECT number FROM pulls")).toEqual([]);
 	});
 });

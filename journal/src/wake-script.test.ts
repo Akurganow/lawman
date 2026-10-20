@@ -18,15 +18,23 @@ import {
 tempDb();
 
 const ROLE = "patrol";
+const HARNESS = join(
+	ROOT,
+	"skills",
+	"lawman-law",
+	"references",
+	"harnesses",
+	"hermes.md",
+);
+const RUN_GATE = /^### Run gate\n([\s\S]*?)(?=^### )/m;
 const PRINTF = /^printf '%s\\n' ((?:'[^']*' ?)+) > .+\/lawman-<role>\.sh$/m;
 
 function gateLines(): string[] {
-	const page = readFileSync(
-		join(ROOT, "skills", "assembly", "references", "roles.md"),
-		"utf8",
-	);
-	const args = PRINTF.exec(page)?.[1];
-	if (args === undefined) throw new Error("roles.md has no gate file command");
+	const section = RUN_GATE.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
+	const args = PRINTF.exec(section)?.[1];
+	if (args === undefined) {
+		throw new Error("hermes.md Run gate section has no gate file command");
+	}
 	return [...args.matchAll(/'([^']*)'/g)].map((m) => (m[1] ?? "").trim());
 }
 

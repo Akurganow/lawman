@@ -2,7 +2,7 @@
 
 Read this file at step 6 of the clerk skill. Run only the recipe that step names.
 
-`<n>`, `<pull>`, `<sources>`, `<branch>` and `<state>` are the values of the `case` line, with `<state>` in lower case. `<s>` is one number of `<sources>`. Every `gh` command takes `-R <owner/repo>`.
+`<n>`, `<pull>`, `<sources>`, `<branch>` and `<state>` are the values of the `case` line, with `<state>` in lower case. `<s>` is one number of `<sources>`. Every host action acts on `<owner/repo>`.
 
 A failed command ends the tick with `failed`. A 403 or 429 reply to a write gives `stopped-rate-limit`. A read-back that differs from what was sent gives `stopped-readback`. After any stop, make no more writes.
 
@@ -12,15 +12,11 @@ A recipe writes in this order: the actions, the read-back of each, then the mark
 
 ### Marker comment
 
-Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the "Write a comment" section of `tick.md` says. Use `gh issue comment <s>`.
+Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the "Write a comment" section of `tick.md` says.
 
 ### Source state
 
-```
-gh issue view <s> -R <owner/repo> --json state --jq .state
-```
-
-The output is `OPEN` or `CLOSED`. A failed command gives `stopped-issue-read`.
+Read the state of the issue `<s>` from the host. The result is `OPEN` or `CLOSED`. A failed read gives `stopped-issue-read`.
 
 ### Close a source
 
@@ -32,53 +28,38 @@ Reopen the issue `<s>` as the end of the "Close the issue" section says. Read th
 
 ### Pull request state
 
-```
-gh pr view <pull> -R <owner/repo> --json state,isDraft,mergeCommit
-```
-
-A failed command gives `stopped-issue-read`.
+Read the state of the pull request `<pull>` from the host, with its draft state and its merge commit. The state is open, merged or closed. A failed read gives `stopped-issue-read`.
 
 ### Make the pull request a draft
 
-Run this only when `isDraft` is `false`. Read the draft flag back. The output must be `true`.
-
-```
-gh pr ready <pull> -R <owner/repo> --undo
-gh pr view <pull> -R <owner/repo> --json isDraft --jq .isDraft
-```
+Run this only when the pull request is not a draft. Return it to draft. Read its draft state back. It must read as a draft.
 
 ### Hand-off comment
 
-The journal builds the whole comment and lints it. Do not retype it. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
+The journal builds the whole comment and lints it. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
 
 ```
-bin/journal handoff --sources <sources> [--merged <pull>] | gh pr comment <m> -R <owner/repo> --body-file -
+bin/journal handoff --sources <sources> [--merged <pull>]
 ```
 
-The output is the comment URL. Read it back as step 3 of the "Write a comment" section says. The author must equal `<login>`. The last line must start with `<!-- lawman: role=clerk stage=handoff at=`.
+The output is the comment. Write it unchanged as a conversation comment on pull request `<m>`. Read it back as step 3 of the "Write a comment" section says. The author must equal `<login>`. The last line must start with `<!-- lawman: role=clerk stage=handoff at=`.
 
 ### Read the ruling
 
-```
-gh issue view <n> -R <owner/repo> --json comments
-```
-
-A failed command gives `stopped-issue-read`. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Its comment id is the digits after `#issuecomment-` in its URL. Its URL is `https://github.com/<owner/repo>/issues/<n>#issuecomment-<comment id>`.
+Read the comments of the issue `<n>` from the host. A failed read gives `stopped-issue-read`. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Keep its id and its URL as the host returned them.
 
 ### Create the tree
 
-```
-git -C precincts/<p> worktree add --detach ../../runs/<tick id>/tree <tip>
-```
-
-The path is relative to the clone, so `../../` leads back to the installation. A failure ends the tick with `failed`.
+Add the tree `runs/<tick id>/tree` to the clone `precincts/<p>`, at `<tip>` and on no branch. A failure ends the tick with `failed`.
 
 ### Add the precedent line
 
-The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. The clerk never retypes the ruling text. Pipe the ruling comment straight into the journal. The `--source` URL is the ruling URL.
+The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. Read the body of the ruling comment from the host by its id. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. The `--source` URL is the ruling URL.
 
 ```
-(set -o pipefail; gh api repos/<owner/repo>/issues/comments/<comment id> --jq .body | bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>)
+bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL> <<'<delimiter>'
+<ruling body>
+<delimiter>
 ```
 
 The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
@@ -95,15 +76,9 @@ Run it when the decider check said `no`, or when `action` is `kept`.
 
 ## close-pull
 
-1. Read the pull request state. When `state` is not `OPEN`, end the tick with `silent` and the report `Order stale: pull request #<pull> is <state>`.
-2. Close the pull request.
-   ```
-   gh pr close <pull> -R <owner/repo>
-   ```
-3. Read the state back. The output must be `CLOSED`.
-   ```
-   gh pr view <pull> -R <owner/repo> --json state --jq .state
-   ```
+1. Read the pull request state. When the state is not open, end the tick with `silent` and the report `Order stale: pull request #<pull> is <state>`.
+2. Close the pull request on the host.
+3. Read the state back. It must read `CLOSED`.
 4. Write the marker `shut` with `pull=<pull>` and `issue=closed` on every `<s>`. Use the sentence for close-pull.
 
 ## settle
@@ -111,7 +86,7 @@ Run it when the decider check said `no`, or when `action` is `kept`.
 1. Read the pull request state.
 2. `OPEN`: the cache is stale. End the tick with `silent` and the report `Order stale: pull request #<pull> is open`.
 3. `MERGED`:
-   1. Take the merge commit, `mergeCommit.oid`. It must match `^[0-9a-f]{40}$`.
+   1. Take the merge commit of the pull request. It must match `^[0-9a-f]{40}$`.
    2. For every `<s>`, read its state. When it is `OPEN`, close it with the class `gone at <merge commit>`, as completed.
    3. Write the marker `settled` with `pull=<pull>` and `issue=closed` on every `<s>`.
    4. The outcome is `settled`.
@@ -124,11 +99,7 @@ Run it when the decider check said `no`, or when `action` is `kept`.
 
 1. Read the pull request state.
 2. `MERGED`: run the **open** recipe with the `branch` of the line. Nothing else here runs.
-3. `CLOSED`: reopen the pull request. Read the state back. The output must be `OPEN`. Then make it a draft, when `isDraft` is `false`.
-   ```
-   gh pr reopen <pull> -R <owner/repo>
-   gh pr view <pull> -R <owner/repo> --json state --jq .state
-   ```
+3. `CLOSED`: reopen the pull request on the host. Read the state back. It must read `OPEN`. Then make it a draft, when it is not one.
 4. `OPEN`: change nothing on the pull request.
 
 A reopen that fails because the head branch is gone ends the tick with `failed`. Blockers names two remedies: restore the branch, or close the issue as not planned.
@@ -158,29 +129,14 @@ Leave out the last line when there is no ruling. The title is `Execute #<n>`.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
    The first skeleton carries the precedent line. It is the skeleton with `<k>` equal to 1, when a conviction exists. For it, run the "Check the constitution" section.
 3. Create the tree.
-4. First skeleton only: add the precedent line. On `entry`, stage and commit the page. Then go to step 6.
-   ```
-   git -C runs/<tick id>/tree add LAWMAN.md
-   git -C runs/<tick id>/tree commit -m "Add precedent <number>"
-   ```
-5. Otherwise commit with no change.
-   ```
-   git -C runs/<tick id>/tree commit --allow-empty -m "Open execution of #<n>"
-   ```
-6. Push the branch. A refusal ends the tick with `failed`. Blockers holds the git error line.
-   ```
-   git -C runs/<tick id>/tree push origin HEAD:refs/heads/<branch>
-   ```
-7. Open the draft pull request with the fixed body on stdin. The output is its URL. Check it against the class check. Keep the pull request number `<m>`. There is no read-back of the pull request.
-   ```
-   gh pr create -R <owner/repo> --draft --head <branch> --title "Execute #<n>" --body-file - <<'<delimiter>'
-   <fixed body>
-   <delimiter>
-   ```
+4. First skeleton only: add the precedent line. On `entry`, record `LAWMAN.md` in the tree as one commit with the message `Add precedent <number>`. Then go to step 6.
+5. Otherwise record one commit with no change and the message `Open execution of #<n>`.
+6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
+7. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 8. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
 9. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
 
-A push that fails because the branch exists means an earlier tick pushed it and stopped before the pull request. Blockers names the remedy: delete the remote branch.
+A publish that fails because the branch exists means an earlier tick published it and stopped before the pull request. Blockers names the remedy: delete the remote branch.
 
 ## adopt
 
@@ -190,27 +146,15 @@ The fixed body is one `Closes #<s>` line for every `<s>`, a blank line, and this
 Taken up by the clerk as a draft that counts as not started.
 ````
 
-1. Read the draft flag.
+1. Read whether the pull request is a draft.
+2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. Write the journal's output unchanged as a top-level comment on `<pull>`.
    ```
-   gh pr view <pull> -R <owner/repo> --json isDraft --jq .isDraft
-   ```
-2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`.
-   ```
-   (set -o pipefail; gh pr view <pull> -R <owner/repo> --json body --jq .body | bin/journal handoff --sources <sources> --adopted | gh pr comment <pull> -R <owner/repo> --body-file -)
-   ```
-
-   When `gh pr view` fails, the pipe still starts `gh pr comment`, so a comment with an empty archive may stand. Blockers says so.
-
-3. Replace the body with the fixed body on stdin.
-   ```
-   gh pr edit <pull> -R <owner/repo> --body-file - <<'<delimiter>'
-   <fixed body>
+   bin/journal handoff --sources <sources> --adopted <<'<delimiter>'
+   <old body>
    <delimiter>
    ```
+3. Replace the body with the fixed body on the host. Send it as Working rules says for multi-line text.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.
-   ```
-   gh pr view <pull> -R <owner/repo> --json body --jq .body
-   ```
 5. Make the pull request a draft.
 6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it.
 
@@ -219,19 +163,9 @@ Taken up by the clerk as a draft that counts as not started.
 1. Run the "Check the constitution" section. No other file of the precinct is read in this tick.
 2. Read the ruling. It must be an acquittal. Otherwise the tick ends with `failed`.
 3. Create the tree. Add the precedent line.
-4. On `entry`, the branch is `lawman/precedent-<n>-<number>`. Stage and commit the page. Otherwise go to step 7.
-   ```
-   git -C runs/<tick id>/tree add LAWMAN.md
-   git -C runs/<tick id>/tree commit -m "Add precedent <number>"
-   ```
-5. Push the branch. A refusal ends the tick with `failed`. Blockers holds the git error line.
-   ```
-   git -C runs/<tick id>/tree push origin HEAD:refs/heads/<branch>
-   ```
-6. Open the pull request. The output is its URL. Keep it. There is no read-back of the pull request.
-   ```
-   gh pr create -R <owner/repo> --head <branch> --title "Add precedent <number>" --body "Appends precedent <number> from the court ruling <ruling URL>. Merge it to make the precedent binding."
-   ```
+4. On `entry`, the branch is `lawman/precedent-<n>-<number>`. Record `LAWMAN.md` in the tree as one commit with the message `Add precedent <number>`. Otherwise go to step 7.
+5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
+6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Add precedent <number>`. The body is `Appends precedent <number> from the court ruling <ruling URL>. Merge it to make the precedent binding.` The host's reply gives its link. Check it against the class check and keep it. There is no read-back of the pull request.
 7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form after `entry` and the no-entry form after `none` or `no-entry`.
 
-When the push or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the push, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
+When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.

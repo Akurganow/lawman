@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { chmodSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	cli,
 	dbFile,
-	dir,
-	JOURNAL,
 	order,
 	precinct,
 	ROOT,
@@ -149,89 +147,11 @@ describe("rotation fed by the page directory and the precinct lines", () => {
 		join(ROOT, "skills", "duty-desk", "SKILL.md"),
 		"utf8",
 	);
-	const COMMAND = (skill.split(/^### Step 6/m)[1] ?? "").split("```")[1] ?? "";
+	const step6 =
+		(skill.split(/^### Step 6/m)[1] ?? "").split(/^### Step 7/m)[0] ?? "";
 
-	function pipe(listed: string[] | null, precinctLines: string[] = []) {
-		if (listed !== null) {
-			const pages = join(
-				dir,
-				"lawman",
-				"skills",
-				"lawman-law",
-				"references",
-				"departments",
-			);
-			mkdirSync(pages, { recursive: true });
-			for (const file of listed) writeFileSync(join(pages, file), "");
-		}
-		const bin = join(dir, "bin");
-		mkdirSync(bin);
-		const shim = join(bin, "journal");
-		writeFileSync(
-			shim,
-			`#!/bin/sh\nexec bun ${join(JOURNAL, "src", "journal.ts")} "$@"\n`,
-		);
-		chmodSync(shim, 0o755);
-		const command = COMMAND.replace("<name>", PRECINCT).replace("<lines>", () =>
-			precinctLines.join("\n"),
-		);
-		const r = Bun.spawnSync(["bash", "-c", command], {
-			cwd: dir,
-			env: { PATH: process.env.PATH ?? "", LAWMAN_DB: dbFile },
-		});
-		return { code: r.exitCode, out: r.stdout.toString() };
-	}
-
-	test("page files come out in rotation order without their suffix", () => {
-		visit("core", "2026-09-01T00:00:00Z");
-		visit("api", "2026-10-05T00:00:00Z");
-		const r = pipe(["api.md", "core.md", "web.md"]);
-		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual([
-			"web\t-\t3",
-			"core\t2026-09-01T00:00:00Z\t3",
-			"api\t2026-10-05T00:00:00Z\t3",
-		]);
-	});
-
-	test("precinct line names join the page names", () => {
-		visit("api", "2026-10-05T00:00:00Z");
-		const r = pipe(["api.md"], ["billing", "audit"]);
-		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual([
-			"audit\t-\t3",
-			"billing\t-\t3",
-			"api\t2026-10-05T00:00:00Z\t3",
-		]);
-	});
-
-	test("a precinct line that repeats a page name prints once", () => {
-		const r = pipe(["api.md", "web.md"], ["web", "billing"]);
-		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual(["api\t-\t3", "billing\t-\t3", "web\t-\t3"]);
-	});
-
-	test("a directory without page files gives only the precinct lines", () => {
-		const none = pipe(["notes.txt"]);
-		expect(none.code).toBe(0);
-		expect(none.out).toBe("");
-	});
-
-	test("an empty directory gives empty output and exit 0", () => {
-		const r = pipe([]);
-		expect(r.code).toBe(0);
-		expect(r.out).toBe("");
-	});
-
-	test("an empty directory still lists the precinct lines", () => {
-		const r = pipe([], ["billing"]);
-		expect(r.code).toBe(0);
-		expect(lines(r)).toEqual(["billing\t-\t3"]);
-	});
-
-	test("a missing page directory fails the pipeline", () => {
-		const r = pipe(null, ["billing"]);
-		expect(r.code).not.toBe(0);
-		expect(r.out).toBe("");
+	test("step 6 hands over the shared pages, with no shell utility", () => {
+		expect(step6).toMatch(/shared department pages/);
+		expect(step6).not.toMatch(/\b(ls|sed|printf)\b/);
 	});
 });

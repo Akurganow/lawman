@@ -47,12 +47,14 @@ CI runs on every push and pull request, in five jobs.
 4. Merge the branch into `main` locally.
 5. Tag the merge commit with `git tag v<version>`.
 6. Push the tag alone with `git push origin v<version>`.
-7. Wait until the release lists the four binaries and `SHA256SUMS`.
+7. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
 8. Push `main` with `git push origin main`.
 
 Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version. If the release workflow fails, `main` stays as it was.
 
-The tag starts the release workflow. It checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets, signs the macOS binaries ad hoc and attests the binaries. It writes and attests `SHA256SUMS` and publishes the release.
+The tag starts the release workflow. It checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
+
+A push to `release-trial` runs the workflow without the version check and publishes no release.
 
 ## Write law and skill text
 

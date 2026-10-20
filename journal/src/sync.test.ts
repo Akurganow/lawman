@@ -16,6 +16,19 @@ import {
 
 tempDb();
 
+const CREATED = "2026-10-14T09:00:00Z";
+
+const withTimes = (over: Record<string, unknown>) =>
+	JSON.stringify([
+		{
+			number: 1,
+			state: "OPEN",
+			createdAt: CREATED,
+			author: { login: TRUSTED },
+			...over,
+		},
+	]);
+
 describe("sync", () => {
 	const PRECINCT = "main";
 	const syncArgs = (extra: string[] = []) => [
@@ -105,6 +118,37 @@ describe("sync", () => {
 		});
 	});
 
+	test("every time is stored as UTC seconds with a Z", () => {
+		const r = sync([
+			{
+				number: 70,
+				state: "CLOSED",
+				title: "x",
+				createdAt: "2026-10-14T11:30:00.500+02:00",
+				closedAt: "2026-10-15T05:00:00-04:00",
+				author: { login: TRUSTED },
+				comments: [
+					{
+						author: { login: TRUSTED },
+						body: lead(),
+						createdAt: "2026-10-14T12:00:00+02:00",
+					},
+				],
+			},
+		]);
+		expect(r.code).toBe(0);
+		expect(
+			rows("SELECT created_at, closed_at FROM issues WHERE issue = 70"),
+		).toEqual([
+			{ created_at: "2026-10-14T09:30:00Z", closed_at: "2026-10-15T09:00:00Z" },
+		]);
+		expect(
+			rows("SELECT ord FROM markers WHERE issue = 70").map((m) =>
+				String(m.ord).slice(0, 20),
+			),
+		).toEqual(["2026-10-14T10:00:00Z"]);
+	});
+
 	test("a second sync replaces the rows", () => {
 		sync(issues);
 		const first = snapshot();
@@ -150,6 +194,16 @@ describe("sync", () => {
 		["a fractional number", JSON.stringify([{ number: 1.5, state: "OPEN" }])],
 		["an element without a state", JSON.stringify([{ number: 1 }])],
 		["a null element", "[null]"],
+		[
+			"an issue without createdAt",
+			JSON.stringify([{ number: 1, state: "OPEN" }]),
+		],
+		[
+			"an issue with a createdAt that is no time",
+			withTimes({ createdAt: "soon" }),
+		],
+		["a closedAt that is no time", withTimes({ closedAt: "later" })],
+		["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
 	])("%s exits 4 and leaves the cache", (_name, input) => {
 		sync(issues);
 		const before = snapshot();
@@ -182,10 +236,12 @@ describe("sync", () => {
 			Array.from({ length: n }, (_, i) => ({
 				number: i + 1,
 				state: "OPEN",
+				createdAt: CREATED,
 				author: { login: TRUSTED },
 			}));
 		const r = sync(minimal(SYNC_LIMIT));
 		expect(r.code).toBe(3);
+		expect(r.err).toContain("the list may be truncated");
 		expect(snapshot()).toEqual(before);
 		expect(sync(minimal(SYNC_LIMIT - 1)).code).toBe(0);
 		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
@@ -200,6 +256,7 @@ describe("sync", () => {
 			number: 5,
 			state: "OPEN",
 			title: "x",
+			createdAt: CREATED,
 			author: { login: TRUSTED },
 		};
 		const r = sync([issues[0], twin, twin]);
@@ -212,6 +269,7 @@ describe("sync", () => {
 			number: 50,
 			state: "OPEN",
 			title: "[Lead] foreign",
+			createdAt: CREATED,
 			author: { login: "bystander-fictional", is_bot: false },
 			body: lead(),
 			comments: [],
@@ -236,7 +294,7 @@ describe("sync", () => {
 	])("an issue by %s is skipped and counted", (_name, author) => {
 		const r = sync([
 			issues[0],
-			{ number: 51, state: "OPEN", title: "x", author },
+			{ number: 51, state: "OPEN", title: "x", createdAt: CREATED, author },
 		]);
 		expect(r.out.trim()).toBe("issues=1 leads=1 markers=2 invalid=0 skipped=1");
 		expect(rows("SELECT issue FROM issues")).toEqual([{ issue: 1 }]);
@@ -272,6 +330,7 @@ describe("sync", () => {
 			number,
 			state,
 			title: "[Lead] no marker",
+			createdAt: CREATED,
 			author: { login: TRUSTED },
 			body: "",
 			comments: [],
