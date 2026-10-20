@@ -1,5 +1,5 @@
-import { subcommand, usage } from "./args";
-import { EXIT, Fail, out } from "./db";
+import { pick, usage } from "./args";
+import { EXIT, Fail, normalizeTime, out } from "./db";
 import { asciiLower } from "./markers";
 
 export type FormKind = "issues" | "pulls" | "decider";
@@ -105,11 +105,24 @@ export const exampleOf = (kind: FormKind) =>
 export const formText = (kind: FormKind) =>
 	`${TEXTS[kind]}\n\nExample:\n${exampleOf(kind)}`;
 
-// A rejection of host data names the cause, then shows the form and its example.
 export const inputRejected = (kind: FormKind, message: string) =>
 	new Fail(EXIT.SYNC_INPUT, `${message}\n\n${formText(kind)}`);
 
-// The logins of a list field, lowercased in ASCII, or a rejection naming the field.
+export const isRecord = (v: unknown): v is Record<string, unknown> =>
+	typeof v === "object" && v !== null && !Array.isArray(v);
+
+export const text = (v: unknown) => (typeof v === "string" ? v : "");
+
+export function timeOf(
+	value: unknown,
+	what: string,
+	reject: (why: string) => Fail,
+): string {
+	const time = normalizeTime(text(value));
+	if (time === null) throw reject(`${what} is not a time`);
+	return time;
+}
+
 export function loginList(
 	value: unknown,
 	what: string,
@@ -123,14 +136,9 @@ export function loginList(
 	});
 }
 
-const KINDS: Record<FormKind, FormKind> = {
-	issues: "issues",
-	pulls: "pulls",
-	decider: "decider",
-};
-
 export function form(args: string[]): void {
-	const { run, rest } = subcommand(KINDS, args, FORM_USAGE);
-	if (rest.length > 0) throw usage(FORM_USAGE);
-	out(formText(run));
+	const [kind] = args;
+	if (args.length !== 1 || pick(TEXTS, kind) === undefined)
+		throw usage(FORM_USAGE);
+	out(formText(kind as FormKind));
 }

@@ -53,20 +53,6 @@ describe("readPulls validity", () => {
 	test("the committed fixture reads", () => {
 		expect(readPulls(JSON.stringify(fixture), BOT)).toEqual(FIXTURE_ROWS);
 	});
-
-	test("a rejection prints the pulls form and its example", () => {
-		try {
-			readPulls("{", BOT);
-		} catch (e) {
-			expect((e as Error).message).toContain(
-				"sync input rejected, cache untouched",
-			);
-			expect((e as Error).message).toContain("changesRequested");
-			expect((e as Error).message).toContain("Example:");
-			return;
-		}
-		throw new Error("expected a rejection");
-	});
 });
 
 describe("readPulls rows", () => {

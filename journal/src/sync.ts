@@ -5,13 +5,12 @@ import {
 	Fail,
 	inTransaction,
 	isConstraint,
-	normalizeTime,
 	now,
 	out,
 	readStdin,
 	withDb,
 } from "./db";
-import { inputRejected } from "./form";
+import { inputRejected, text, timeOf } from "./form";
 import { asciiLower, collectIssueMarkers, type GhIssue } from "./markers";
 import { syncPulls } from "./pulls";
 
@@ -35,18 +34,13 @@ type SyncStats = {
 	skipped: number;
 };
 
-const text = (v: unknown) => (typeof v === "string" ? v : "");
 const textOrNull = (v: unknown) =>
 	typeof v === "string" && v !== "" ? v : null;
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === "object" && v !== null;
 const syncInput = (why: string) =>
 	inputRejected("issues", `sync input rejected, cache untouched: ${why}`);
-const timeOf = (v: unknown, what: string): string => {
-	const time = typeof v === "string" ? normalizeTime(v) : null;
-	if (time === null) throw syncInput(`${what} is not a time`);
-	return time;
-};
+const timeField = (v: unknown, what: string) => timeOf(v, what, syncInput);
 
 function readIssue(raw: unknown): SyncIssue {
 	if (
@@ -67,8 +61,8 @@ function readIssue(raw: unknown): SyncIssue {
 		state: raw.state,
 		stateReason: textOrNull(raw.stateReason),
 		title: text(raw.title),
-		createdAt: timeOf(raw.createdAt, "an issue createdAt"),
-		closedAt: closed === null ? null : timeOf(closed, "an issue closedAt"),
+		createdAt: timeField(raw.createdAt, "an issue createdAt"),
+		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
 		author: login === "" ? null : { login },
 		body: text(raw.body),
 		comments: comments.map((c) => ({
@@ -77,7 +71,7 @@ function readIssue(raw: unknown): SyncIssue {
 					? { login: text(c.author.login) }
 					: null,
 			body: text(c.body),
-			createdAt: timeOf(c.createdAt, "a comment createdAt"),
+			createdAt: timeField(c.createdAt, "a comment createdAt"),
 		})),
 	};
 }

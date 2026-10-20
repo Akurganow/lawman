@@ -1,6 +1,6 @@
 import { check, usage } from "./args";
 import { out, readStdin } from "./db";
-import { inputRejected, loginList } from "./form";
+import { inputRejected, isRecord, loginList } from "./form";
 import { asciiLower } from "./markers";
 
 const NO_ACTOR = "-";
@@ -23,9 +23,8 @@ export function decide(raw: string): string {
 	} catch {
 		throw reject("not JSON");
 	}
-	if (typeof root !== "object" || root === null || Array.isArray(root))
-		throw reject("the input is not an object");
-	const { lastActor, writers } = root as Record<string, unknown>;
+	if (!isRecord(root)) throw reject("the input is not an object");
+	const { lastActor, writers } = root;
 	const allowed = loginList(writers, "writers", reject);
 	if (lastActor === null) return `decider=no actor=${NO_ACTOR}`;
 	if (typeof lastActor !== "string")

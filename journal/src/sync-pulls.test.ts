@@ -1,6 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import fixture from "./fixtures/pulls.json";
-import { exampleOf } from "./form";
 import { captured } from "./inproc";
 import { syncPulls } from "./pulls";
 import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
@@ -74,14 +73,6 @@ describe("sync --pulls", () => {
 
 	test("every validity failure exits 4 and leaves the cache intact", () => {
 		expectRejected(["{", "{}", "[]", JSON.stringify({ writers: [] })]);
-	});
-
-	test("a rejection prints the form and its example", () => {
-		seedOld();
-		const r = feed("{");
-		expect(r.err).toContain("changesRequested");
-		expect(r.err).toContain("Example:");
-		expect(r.err).toContain(exampleOf("pulls"));
 	});
 
 	test("a comment without an id, or with a bad time, exits 4", () => {

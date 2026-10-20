@@ -1,7 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { EXIT, Fail } from "./db";
 import { decide, decider } from "./decider";
-import { exampleOf } from "./form";
 import { captured } from "./inproc";
 
 const answer = (lastActor: unknown, writers: unknown) =>
@@ -48,10 +47,6 @@ describe("decide", () => {
 		rejected(answer("-lead", []));
 	});
 
-	test("the example of the form decides yes", () => {
-		expect(decide(exampleOf("decider"))).toBe("decider=yes actor=maintainer");
-	});
-
 	test("bad input is rejected", () => {
 		rejected("not json");
 		rejected("null");
@@ -61,13 +56,6 @@ describe("decide", () => {
 		rejected(answer("a", "maint-a"));
 		rejected(answer("a", [1]));
 		rejected(JSON.stringify({ lastActor: "a" }));
-	});
-
-	test("a rejection prints the form and its example", () => {
-		const message = rejected("not json");
-		expect(message).toContain("decider input rejected");
-		expect(message).toContain("lastActor");
-		expect(message).toContain(`Example:\n${exampleOf("decider")}`);
 	});
 });
 

@@ -1,14 +1,6 @@
 import type { Database } from "bun:sqlite";
-import {
-	EXIT,
-	Fail,
-	inTransaction,
-	isConstraint,
-	normalizeTime,
-	out,
-	withDb,
-} from "./db";
-import { inputRejected, loginList } from "./form";
+import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
+import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
@@ -46,9 +38,6 @@ const NO_SPEC_ID = "-";
 
 const reject = (why: string) =>
 	inputRejected("pulls", `sync input rejected, cache untouched: ${why}`);
-const isRecord = (v: unknown): v is Obj =>
-	typeof v === "object" && v !== null && !Array.isArray(v);
-const text = (v: unknown) => (typeof v === "string" ? v : "");
 const ascending = (a: number, b: number) => a - b;
 const logins = (v: unknown, what: string) => loginList(v, what, reject);
 
@@ -57,11 +46,7 @@ function list(v: unknown, what: string): unknown[] {
 	return v;
 }
 
-function timeOf(v: unknown, what: string): string {
-	const time = normalizeTime(text(v));
-	if (time === null) throw reject(`${what} is not a time`);
-	return time;
-}
+const timeField = (v: unknown, what: string) => timeOf(v, what, reject);
 
 function readComment(raw: unknown): Comment {
 	if (!isRecord(raw)) throw reject("a comment is not an object");
@@ -69,7 +54,7 @@ function readComment(raw: unknown): Comment {
 	return {
 		id: text(raw.id),
 		author: text(raw.author),
-		createdAt: timeOf(raw.createdAt, "a comment createdAt"),
+		createdAt: timeField(raw.createdAt, "a comment createdAt"),
 		body: text(raw.body),
 		approvedBy: logins(raw.approvedBy, "a comment approvedBy"),
 		rejectedBy: logins(raw.rejectedBy, "a comment rejectedBy"),
@@ -81,7 +66,7 @@ function readReview(raw: unknown): Pull["changesRequested"][number] {
 		throw reject("a changesRequested login is not text");
 	return {
 		login: asciiLower(raw.login),
-		at: timeOf(raw.at, "a changesRequested at"),
+		at: timeField(raw.at, "a changesRequested at"),
 	};
 }
 

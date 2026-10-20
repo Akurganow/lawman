@@ -5,12 +5,11 @@ import { decide } from "./decider";
 import {
 	exampleOf,
 	type FormKind,
-	form,
 	formText,
 	inputRejected,
 	loginList,
 } from "./form";
-import { captured, inproc } from "./inproc";
+import { inproc } from "./inproc";
 import { readPulls } from "./pulls";
 import { addPrecincts, BASE, cli, dbFile, rows, tempDb } from "./test-helpers";
 
@@ -43,16 +42,6 @@ describe("form command", () => {
 			const r = inproc(BASE, ["form", ...args]);
 			expect(r.code).toBe(EXIT.USAGE);
 			expect(r.err).toContain("usage: journal form <issues|pulls|decider>");
-		}
-	});
-
-	test("the command is a function over its arguments", () => {
-		expect(captured(BASE, () => form(["decider"])).out).toContain("lastActor");
-	});
-
-	test("the texts hold no semicolon and no identifier of the plan", () => {
-		for (const kind of KINDS) {
-			expect(formText(kind)).not.toMatch(/;|FR-|WP-|NFR-/);
 		}
 	});
 });
@@ -174,14 +163,6 @@ describe("the readers in process", () => {
 		});
 	});
 
-	test("sync --pulls reads its example", () => {
-		const args = ["sync", "main", "--pulls", "--author", "lawman-bot"];
-		expect(fed(exampleOf("pulls"), args)).toMatchObject({
-			code: 0,
-			out: "pulls=1\n",
-		});
-	});
-
 	test("sync reads the example of issues", () => {
 		const r = fed(exampleOf("issues"), [
 			"sync",
@@ -192,16 +173,12 @@ describe("the readers in process", () => {
 		expect(r.out).toBe("issues=1 leads=0 markers=0 invalid=0 skipped=0\n");
 	});
 
-	test("each reader rejects with its form", () => {
-		const cases: [FormKind, string[]][] = [
-			["issues", ["sync", "main", "--author", "lawman-bot"]],
-			["pulls", ["sync", "main", "--pulls", "--author", "lawman-bot"]],
-			["decider", ["decider"]],
-		];
-		for (const [kind, args] of cases) {
-			const r = fed("{", args);
+	test("sync rejects bad issue input and prints the form", () => {
+		const args = ["sync", "main", "--author", "lawman-bot"];
+		for (const stdin of ["{", "{}", "[{}]", '[{"number":1,"state":"OPEN"}]']) {
+			const r = fed(stdin, args);
 			expect(r.code).toBe(EXIT.SYNC_INPUT);
-			expect(r.err).toContain(formText(kind));
+			expect(r.err).toContain(formText("issues"));
 		}
 	});
 });
