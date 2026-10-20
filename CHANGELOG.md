@@ -2,6 +2,29 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.0] - 2026-10-20
+
+### Changed
+
+- The law, the role skills, the department pages and the assembly state the result each step needs and what must not happen. They name no version-control command, no host command, query or field, and no shell utility. Only the journal's commands and the harness page's forms stay named.
+- The assembly has a new part, Host. It finds the repository host, the tools that reach it and the account the host reports, with the user. It writes `host.md` in the installation: how this machine does each host action, and what is particular to the host. Roles follow these notes. The menu gains the item "Host".
+- The journal's pull request and decider inputs take Lawman's own flat forms. The new command `journal form <issues|pulls|decider>` prints each form with an example, and a rejected input prints its form.
+- The journal normalises every time it accepts to UTC and rejects a value that is no time.
+- A repository path may have more than two segments, as in `group/sub/project`. A login may hold `.` and `_`.
+- `stopped-gh-auth` is now `stopped-host-auth`.
+- Lawman's release carries a signed provenance file beside each journal binary. A tick checks it with the verifier the host notes name, against a trusted root from Sigstore, and needs no account on the release host. The assembly finds the verifier with the user. A user may decline it with a plain warning and turn the check on later.
+- The release workflow can run once from the branch `release-trial`. That run builds and signs the binaries and publishes no release.
+- At the end of the install, the assembly offers one manual run of the duty desk and reads its record with the user. It resumes a paused duty-desk job first when the user accepts.
+- Every role but the duty desk gets a run gate by default.
+- The choice of repositories takes a list in free text. The clone folder is `precincts/<precinct name>`. Round two shows each repository's access as a row and runs no read probes.
+- The assembly offers typical documents a repository lacks: open an issue, draft them now, or skip.
+
+### Fixed
+
+- A judging document is evidence. The assembly never checks its content as a department page, and never drops a department over it. A missing judging path reads as `judged by none`.
+- A path that the constitution names and the ref lacks is skipped and named in Blockers. It no longer stops the role with `skipped-bad-constitution`.
+- The harness page names a job by its id or its full name `[lawman] <role>`, and gives the resume form for a paused job.
+
 ## [0.16.5] - 2026-10-19
 
 ### Changed
@@ -174,6 +197,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - The first release: the law, the journal, the duty desk, patrol, the assembly and the Hermes Agent harness page.
 - CI with a fence for repository-specific words. A release workflow builds four binaries, signs the macOS ones ad hoc and publishes checksums.
 
+[0.17.0]: https://github.com/Akurganow/lawman/compare/v0.16.5...v0.17.0
 [0.16.5]: https://github.com/Akurganow/lawman/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/Akurganow/lawman/compare/v0.16.3...v0.16.4
 [0.16.3]: https://github.com/Akurganow/lawman/compare/v0.16.2...v0.16.3
