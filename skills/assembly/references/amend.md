@@ -7,9 +7,9 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 ## Step 1. Show the change
 
 1. Note `contract_version` (it may be absent), `amended_law_commit`, `law_commit` and `journal_sha256` from `config.yaml`.
-2. Compute the SHA-256 of `bin/journal`, the way the harness page names under "Syncing the law". Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
+2. Compute the SHA-256 of `bin/journal`. Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
 3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`. Read the `Contract version` line in `lawman/skills/lawman-law/references/departments.md`.
-4. Read `constitution.md` of the law at `amended_law_commit` and at `law_commit`, the way the harness page names under "Syncing the law". Compare the two texts. Show the developer the differences. When the law folder no longer holds `amended_law_commit`, the read fails. Stop, and tell the developer that the comparison base is missing.
+4. Read `constitution.md` of the law at `amended_law_commit` and at `law_commit`. Compare the two texts. Show the developer the differences. When the law folder no longer holds `amended_law_commit`, the read fails. Stop, and tell the developer that the comparison base is missing.
 5. Ask in the question tool. Offer "Amend now" (recommended) and "Later".
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
@@ -17,15 +17,15 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 
 ## Step 2. Amend the precincts
 
-1. Run `bin/journal precinct list`, then `git -C precincts/<name> fetch origin` for each precinct, and stop if a fetch fails.
-2. Run `git -C precincts/<name> show origin/HEAD:LAWMAN.md | bin/journal lint-page constitution` for each precinct.
+1. Run `bin/journal precinct list`, then fetch the origin of each precinct, and stop if a fetch fails.
+2. For each precinct, lint its `LAWMAN.md` at the origin's head with `bin/journal lint-page constitution`.
 3. When the file's `contract_version` is lower than `<n>`, draft an amendment. Skip a precinct that already has an open pull request from `lawman/constitution-v<n>`, and name it as waiting for that merge.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
-   1. Run `git -C precincts/<name> switch -c lawman/constitution-v<n> origin/HEAD`, and stop if it fails.
+   1. Create and switch to the branch `lawman/constitution-v<n>` from the origin's head in the precinct, and stop if that fails.
    2. Use the comparison of step 1 item 4 to see what the new contract version requires.
    3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`.
    4. Make one row of the proposal for each section that the new contract added or changed.
-   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` at `amended_law_commit` and at `law_commit`, the way the harness page names under "Syncing the law". The names present only at `law_commit` are the shared departments added since.
+   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` at `amended_law_commit` and at `law_commit`. The names present only at `law_commit` are the shared departments added since.
    6. For those departments only, make one row each, with its pair from the section "Departments" in `references/precinct.md`.
    7. Write the department lines that those pairs describe.
    8. Run the section "Lint the draft" of the add path.

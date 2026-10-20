@@ -80,34 +80,27 @@ The skill listing command is `hermes skills list`. It shows `typesafe-ai` by its
 
 ## Syncing the law
 
-These are the forms that this page names for the section "Sync the law" of `tick.md`. Run each from the installation directory.
-
-- Read the commit that the law folder holds: `git -C lawman rev-parse HEAD`.
-- Read whether the law folder has a local change: `git -C lawman status --porcelain`. No output means no change.
-- Read the release tag of that commit: `git -C lawman describe --tags --exact-match`. It prints the tag and fails when the commit has none.
-- Read a file at a commit: `git -C lawman show <commit>:<path>`. `<path>` is relative to the law folder.
-- List a folder at a commit: `git -C lawman ls-tree --name-only <commit> <folder>/`.
-- Compute the checksum of the journal: `shasum -a 256 bin/journal`. The first field is the sum.
-- Read the platform: `uname -s` and `uname -m`. Write the first in lower case. Map `x86_64` to `x64` and `aarch64` to `arm64`.
-- Create the folder: `mkdir -p runs/sync-<role>-<seven>`. `<seven>` is the first seven characters of the commit.
-- Get the asset and the checksum file: `gh release download <tag> -R <release_repo> -p <asset> -p SHA256SUMS -D runs/sync-<role>-<seven> --clobber`. `<release_repo>` is the key in `config.yaml`.
-- Check the asset against the checksum file: `(cd runs/sync-<role>-<seven> && shasum -a 256 -c SHA256SUMS --ignore-missing)`. The line for the asset reads `OK`.
-- Check where the asset came from: `gh attestation verify runs/sync-<role>-<seven>/<asset> --repo <release_repo> --signer-workflow <release_repo>/.github/workflows/release.yml --source-digest <commit>`. Exit 0 means the check passed. It prints nothing when its output is not a terminal (seen in a terminal).
-- Make the asset executable: `chmod +x runs/sync-<role>-<seven>/<asset>`.
-- Run the verified asset: `runs/sync-<role>-<seven>/<asset> law-sync --tag <tag> --commit <commit> --installation .`. It renames itself over `bin/journal`.
-- Remove what remains: `rm -f runs/sync-<role>-<seven>/<asset> runs/sync-<role>-<seven>/SHA256SUMS`, then `rmdir runs/sync-<role>-<seven>`.
+The sync's steps are in "Sync the law" of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
 
 ## Running a role once
 
-Run the scheduled job once:
+From an agent session, start a role's job in the background with the tool `cronjob_manage`. Call it with `action` set to `run` and `job_id` set to `"[lawman] <role>"`.
+
+- The result's `job` holds `"execution_mode": "background"` and a `delegation_id` when the run was dispatched. Do not wait or poll (read in the harness code: `tools/cronjob_tools.py`, `_action_run`).
+- The outcome arrives later as a new message in that session. It begins "Cron job '[lawman] <role>' (<job id>) finished its manual run." and gives `Result: ok` or `Result: FAILED` (read in the harness code: `tools/cronjob_tools.py`, `_manual_run_completion`, and `tools/async_delegation.py`).
+- Background dispatch needs a session that takes a later message and a free slot in the background pool. Otherwise the call runs the job inline and returns when the run ends. An inline result holds no `execution_mode` (read in the harness code: `tools/cronjob_tools.py`, `_try_dispatch_background_run`).
+
+From a terminal, run the job with:
 
 ```
-hermes cron run <role>
+hermes cron run "[lawman] <role>"
 ```
 
+- The run executes inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
+- A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
+- A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false, and the reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." Resume the job first, with the form under "Paused jobs" (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`).
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
-- The job runs inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run.
-- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree with the first two commands of the "End the tick" section of `tick.md`.
+- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the "End the tick" section of `tick.md` says.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
@@ -161,14 +154,14 @@ Manage jobs with these commands:
 | Action | Command |
 | :-- | :-- |
 | List | `hermes cron list` |
-| Pause | `hermes cron pause <role>` |
-| Resume | `hermes cron resume <role>` |
-| Remove | `hermes cron remove <role>` |
+| Pause | `hermes cron pause "[lawman] <role>"` |
+| Resume | `hermes cron resume "[lawman] <role>"` |
+| Remove | `hermes cron remove "[lawman] <role>"` |
 | Attempts | `hermes cron runs <id>` |
-| Run now | `hermes cron run <role>` |
+| Run now | `hermes cron run "[lawman] <role>"` |
 | Edit | `hermes cron edit <job id>` |
 
-`pause`, `resume`, `run` and `remove` take a job id or a name. The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
+`pause`, `resume`, `run` and `remove` take a job id or a name. The id wins over a name. A name matches without regard to case. A name that two jobs share is refused, and the id is then needed (read in the harness code: `cron/jobs.py`, `resolve_job_ref`). The probe confirmed that `list` shows the developer's other jobs too. Touch only the jobs named after Lawman roles.
 
 `hermes cron list` prints the name of each job and a `Workdir:` line for each job that has a working directory (read in the harness code). It hides disabled and finished jobs without `--all` (stated by `--help`, `hermes cron list --help`). It shows paused jobs (read in the harness code). A role's job name starts with `[lawman] `.
 
@@ -188,11 +181,25 @@ Read the current model with `hermes config get model --json` (stated by the docs
 
 ### Paused jobs
 
-`--paused` on create, `resume` to start. A job created paused has no stored slot, so `resume` sets its next future slot. A job paused after it ran keeps its passed slot. The default catch-up setting then starts it once at once (read in the harness code).
+`--paused` on create. Resume a paused job with:
+
+```
+hermes cron resume "[lawman] <role>"
+```
+
+A job created paused has no stored slot, so `resume` sets its next future slot. A job paused after it ran keeps its passed slot. The default catch-up setting then starts it once at once (read in the harness code).
 
 ### Run gate
 
 `--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+
+The form of a role's gate file. Replace the placeholders:
+
+```
+mkdir -p <scripts directory>
+printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts directory>/lawman-<role>.sh
+(cd "<installation>" && bash <scripts directory>/lawman-<role>.sh)
+```
 
 ### Order and overlap
 
@@ -278,11 +285,11 @@ The model is chosen per job with `--model`. Each role has its own model. The doc
 
 ### The token
 
-Every role uses one identity: the signed-in `gh` CLI, or the one token the developer adds at setup.
+Every role uses one identity: the account that the installation's host tool signs in, or one token the developer adds at setup.
 
-A `GH_TOKEN` in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
+A variable in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
 
-The probe measured that `gh` reads the keychain from a cron session. The login worked and `GH_TOKEN` was not needed. A signed-in `gh` can serve scheduled sessions too, so the variable is often unnecessary. Add it only when the keychain is unavailable.
+The probe measured that the host tool read a login stored in the keychain from a cron session, with no variable set. Add a token variable only when the keychain is unavailable.
 
 ### The TypeSafe key
 

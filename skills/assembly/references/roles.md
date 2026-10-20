@@ -38,9 +38,9 @@ One table holds the defaults of every role, in clock order. The roles form that 
 | Court | strong | harness default | daily | Wednesday | +60 | yes |
 | Defender | strong | harness default | daily | Tuesday | +75 | yes |
 | Prosecutor | strong | harness default | daily | Monday | +90 | yes |
-| Investigation | medium | harness default | daily | Monday and Thursday | +105 | no |
+| Investigation | medium | harness default | daily | Monday and Thursday | +105 | yes |
 | Response unit | medium | harness default | daily | daily | +120 | yes |
-| Patrol | medium | harness default | daily | daily | +135 | no |
+| Patrol | medium | harness default | daily | daily | +135 | yes |
 
 - Start is the number of minutes after `<S>`. The create commands run in the order of this table.
 - Mark each value shown with its source: found, current, default, recommended or yours.
@@ -116,7 +116,7 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 
 - The scripts directory, shown as a path.
 - Each gate file, marked by "Gate file marks".
-- The roles that gain most from a gate: the roles that only take work a person or an earlier stage made.
+- The roles that gain from a gate: every role but the duty desk.
 - In the menu, the gate of each job, by "Gate read and clear".
 
 **Proposes.** Send the Role and Gate columns of the defaults table, with the mark of each gate file. Propose the recommended set. The duty desk never gets a gate.
@@ -124,8 +124,8 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 **Decides.**
 
 1. In install, ask nothing here. Take an edit of the Gate column as a typed edit of the proposal.
-2. In the roles mode, ask in the question tool, and offer the choices "Recommended", "All but the duty desk" and "None".
-3. In the menu, offer the same three choices, and put the choice "Keep as is" first as the recommendation.
+2. In the roles mode, ask in the question tool, and offer the choice "All but the duty desk" as the recommendation, and the choice "None".
+3. In the menu, offer the choices "Keep as is", "All but the duty desk" and "None", with "Keep as is" first as the recommendation.
 4. Refuse the duty desk, and ask again.
 
 Why: an empty run costs a short session.
@@ -166,7 +166,7 @@ Write no file that carries the mark identical.
 
 ## Gate file marks
 
-1. For each gated role in `<scope>`, read `<scripts directory>/lawman-<role>.sh` when it exists. Mark the file new when it is missing, identical when it holds the two lines of the gate file in "Write and prove", and different otherwise.
+1. For each gated role in `<scope>`, read `<scripts directory>/lawman-<role>.sh` when it exists. Mark the file new when it is missing, identical when it holds the gate file form under "Run gate" of the harness page, and different otherwise.
 
 ## Command forms
 
@@ -187,17 +187,10 @@ Write no file that carries the mark identical.
 
 ## Write and prove
 
-Skip this step when no file is new or different.
+Skip this step when no file is new or different. A gate file asks the journal whether the role has an order it can take now, and it ends with the journal's exit status.
 
 1. Run `bin/journal probe --schema 6`. Stop if it exits non-zero, and tell the developer to run one role once, then run the assembly again.
-2. For each new or different file, create the directory, write the file and run it once from the installation. Replace the placeholders.
-
-```
-mkdir -p <scripts directory>
-printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts directory>/lawman-<role>.sh
-(cd "<installation>" && bash <scripts directory>/lawman-<role>.sh)
-```
-
+2. For each new or different file, write and run the gate file by the form that the harness page gives under "Run gate". Replace the placeholders.
 3. Show the output of each run.
 4. Stop at the first non-zero exit, name the file, and show its output.
 
@@ -212,6 +205,6 @@ printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts dir
 
 ## Finish
 
-1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
+1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. A paused duty-desk job may resume at the end of the install, when the user accepts its run. The page's "Paused jobs" gives the resume form.
 2. Name every file written outside the installation, with its path. Say that this assembly never deletes them.
 3. List the jobs that changed and what changed.
