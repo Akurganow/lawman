@@ -216,8 +216,8 @@ Spec
 ## Problem
 `src/config.ts:41` at the tip passes an empty `retries` value on without the default. The case and the ruling both name this line:
 
-- https://git.example.com/example/widgets/issues/7#issuecomment-1048576301
-- https://git.example.com/example/widgets/issues/9#issuecomment-1048576417
+- https://git.example.com/example/widgets/issues/7#comment-1048576301
+- https://git.example.com/example/widgets/issues/9#comment-1048576417
 
 ## Change
 In `src/config.ts`, make `parseConfig` apply the default `retries` value when the input is empty. Leave the flag parser in `src/cli.ts` unchanged.
