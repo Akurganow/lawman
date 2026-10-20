@@ -56,6 +56,7 @@ function readIssue(raw: unknown): SyncIssue {
 	) {
 		throw syncInput("every element needs an integer number and a state");
 	}
+	const closed = textOrNull(raw.closedAt);
 	const login = isRecord(raw.author) ? text(raw.author.login) : "";
 	const comments = Array.isArray(raw.comments)
 		? raw.comments.filter(isRecord)
@@ -67,10 +68,7 @@ function readIssue(raw: unknown): SyncIssue {
 		stateReason: textOrNull(raw.stateReason),
 		title: text(raw.title),
 		createdAt: timeOf(raw.createdAt, "an issue createdAt"),
-		closedAt:
-			textOrNull(raw.closedAt) === null
-				? null
-				: timeOf(raw.closedAt, "an issue closedAt"),
+		closedAt: closed === null ? null : timeOf(closed, "an issue closedAt"),
 		author: login === "" ? null : { login },
 		body: text(raw.body),
 		comments: comments.map((c) => ({

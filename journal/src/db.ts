@@ -49,19 +49,17 @@ export function isoSeconds(date: Date): string {
 }
 
 const TIME_SHAPE =
-	/^(\d{4})-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])T([01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+	/^\d{4}-(?:0[1-9]|1[0-2])-(?:0[1-9]|[12]\d|3[01])T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
 
 // UTC seconds with a Z for an ISO 8601 time with a zone, null for anything else
 export function normalizeTime(value: string): string | null {
-	const m = value.match(TIME_SHAPE);
-	if (!m) return null;
-	const [, year = "", month = "", day = ""] = m;
-	const calendar = new Date(
-		Date.UTC(Number(year), Number(month) - 1, Number(day)),
-	);
-	if (calendar.getUTCDate() !== Number(day)) return null;
+	if (!TIME_SHAPE.test(value)) return null;
+	const day = value.slice(0, 10);
+	const rolled = new Date(`${day}T00:00:00Z`).toISOString().slice(0, 10);
 	const date = new Date(value);
-	return Number.isNaN(date.getTime()) ? null : isoSeconds(date);
+	return rolled !== day || Number.isNaN(date.getTime())
+		? null
+		: isoSeconds(date);
 }
 
 export function now(env: Env = process.env): string {

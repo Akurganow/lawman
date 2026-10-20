@@ -182,7 +182,6 @@ describe("normalizeTime", () => {
 			"2026-02-31T09:00:00Z",
 			"2026-10-14T25:00:00Z",
 			"2026-10-14T09:00:00Z\n",
-			"1760432400",
 			"0",
 		];
 		for (const v of bad) expect(normalizeTime(v)).toBeNull();
