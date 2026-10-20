@@ -88,7 +88,7 @@ Proposes, as rows with their source. The rows are the notes, the recorded action
 | :-- | :-- | :-- |
 | Host | the repository host | found |
 | Tool | the tool in use | found or yours |
-| Account | the login the host reports, which becomes `trusted_login` | found, not editable |
+| Account | the login the host reports, which becomes `trusted_login` at install | found, not editable |
 | Credential | the place it lives, never its value | found |
 | Issues and templates | how the host keeps them | found |
 | Host actions | one row for each action, with how this machine does it | found |
@@ -105,8 +105,7 @@ Decides: ask in the question tool.
 Stops:
 
 - The version-control tool is missing. Tell the developer to install it.
-- No tool reaches the host. Tell the developer to install one and start the assembly again.
-- The host reports no account for the chosen tool. Tell the developer that Lawman needs one account for every role, and ask them to sign in. After they sign in, start the assembly again.
+- No tool reaches the host, or the host reports no account for the chosen tool. Act as "Order" says.
 
 Never:
 
@@ -241,7 +240,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 
 - The items of "Finish" in `references/roles.md`.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
-- What a login stop looks like and where it arrives. A run whose signed-in account differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
+- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
 - When the user declined a verifier, name both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
 - When TypeSafe is on and the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.

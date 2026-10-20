@@ -13,7 +13,7 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - A repository path may have more than two segments, as in `group/sub/project`. A login may hold `.` and `_`.
 - `stopped-gh-auth` is now `stopped-host-auth`.
 - Lawman's release carries a signed provenance file beside each journal binary. A tick checks it with the verifier the host notes name, against a trusted root from Sigstore, and needs no account on the release host. The assembly finds the verifier with the user. A user may decline it with a plain warning and turn the check on later.
-- The release workflow can run once from the branch `release-trial`. That run builds and signs the binaries and publishes no release.
+- A push to the branch `release-trial` runs the release workflow without publishing a release. The run builds and signs the binaries.
 - At the end of the install, the assembly offers one manual run of the duty desk and reads its record with the user. It resumes a paused duty-desk job first when the user accepts.
 - Every role but the duty desk gets a run gate by default.
 - The choice of repositories takes a list in free text. The clone folder is `precincts/<precinct name>`. Round two shows each repository's access as a row and runs no read probes.

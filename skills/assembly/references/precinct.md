@@ -15,7 +15,7 @@ Each repository gets one proposal and one decision call. The call is that reposi
 Ask in the question tool.
 
 1. Find the repository of the directory the assembly started in, when it is one.
-2. Find a short list of the signed-in account's recent repositories.
+2. Find a short list of the recent repositories of the account the host reports.
 3. Show them in one message, one row for each repository, marked found or already a precinct.
 4. Offer several-choice, with that directory's repository first, up to the tool's limit.
 5. Show the candidates beyond the limit as rows, and take them as free text.
