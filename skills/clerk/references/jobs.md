@@ -147,7 +147,7 @@ Taken up by the clerk as a draft that counts as not started.
 ````
 
 1. Read whether the pull request is a draft.
-2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. Write the journal's output unchanged as a conversation comment on `<pull>`.
+2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. Write the journal's output unchanged as a top-level comment on `<pull>`.
    ```
    bin/journal handoff --sources <sources> --adopted <<'<delimiter>'
    <old body>
