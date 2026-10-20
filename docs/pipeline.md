@@ -181,7 +181,7 @@ The full report of every tick lives in the journal. `bin/journal tick list` prin
 
 ## What the maintainer does
 
-The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login with the WRITE, MAINTAIN or ADMIN permission in the precinct's repository.
+The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login that may write to the precinct's repository, access inherited from a group included.
 
 - **Close a lead to decline it.** Any closure other than completed counts as declined. Patrol does not file the same finding again.
 - **Vote on a spec.** React with 👍 or 👎 to the newest `Spec` comment. A 👎 wins, even beside a 👍. A reaction from a login without the permission counts for nothing. A 👍 approves exactly the text that was read, because a spec is never edited.

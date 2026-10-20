@@ -2,13 +2,17 @@
 
 The journal is the memory of an installation. It is one program on Bun with SQLite. It keeps the precincts, the orders, the ticks, the alarms and a cache of each tracker. Every role asks it what to do next and records what it did.
 
-The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool. Roles pipe the output of `gh` into it.
+The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool. Roles hand it host data on standard input, in the input forms that `journal form` prints.
 
 ## Where it comes from
 
-The program is compiled to a binary per platform. A release tag builds four targets, signs the macOS binaries ad hoc, attests the artifacts and publishes checksums. The assets are named `journal-bun-<os>-<arch>`, with `x64` or `arm64` as the architecture. The checksum file is `SHA256SUMS`.
+The program is compiled to a binary per platform. A release tag builds four targets, signs the macOS binaries ad hoc, attests the artifacts and publishes checksums. The assets are named `journal-bun-<os>-<arch>`, with `x64` or `arm64` as the architecture. Beside each binary the release publishes its provenance file, `journal-bun-<os>-<arch>.sigstore.json`. The checksum file is `SHA256SUMS`.
 
-The assembly downloads the binary of the release that matches your plugin. It checks the checksum and the attestation, moves the file to `bin/journal` and records its SHA-256 in `config.yaml`. See [configuration](configuration.md).
+The assembly downloads the binary of the release that matches your plugin. It checks the checksum, moves the file to `bin/journal` and records its SHA-256 in `config.yaml`. See [configuration](configuration.md).
+
+The signature in the provenance file is checked when the host notes name a verifier. The verifier confirms that the release workflow of Lawman's repository signed the file and built it from the commit of the law folder. The assembly finds a Sigstore verifier with you at install.
+
+A declined verifier leaves only the checksum from the same release. That checksum proves no origin. You can turn the check on later. The assembly offers it at each start when it finds a verifier on this machine, and the menu item "Host" runs the part again.
 
 The database file `journal.sqlite` sits in the installation directory, next to `bin/`. The binary applies its schema migrations when it opens the file. A database newer than the binary is refused with exit code 6.
 
@@ -17,8 +21,8 @@ The database file `journal.sqlite` sits in the installation directory, next to `
 You update the plugin with your harness. The law then moves ahead of the binary. The next tick of any role completes the update.
 
 - The role compares the commit of the law folder with `law_commit` in `config.yaml`.
-- It downloads the journal asset and `SHA256SUMS` from the release of the tag that the commit carries.
-- It checks the checksum and where the asset came from.
+- It downloads the journal asset, its provenance file and `SHA256SUMS` from the release of the tag that the commit carries.
+- It checks the checksum. It checks the signature too when the host notes name a verifier.
 - It runs the `law-sync` command of the new file.
 
 `law-sync` renames the new binary over `bin/journal` and rewrites the sync keys of `config.yaml`. Before the swap it only reads, so a failure leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
@@ -36,14 +40,14 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|jev|wake|law-sync> [args]
+journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|wake|law-sync> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
 
 ### Precincts and roles
 
-- `precinct`: adds a precinct with a weight, sets a weight, or lists precincts with repository, weight, credit and last sync.
+- `precinct`: adds a precinct with a weight, sets a weight, or lists precincts with repository, weight, credit and last sync. A repository path may have more than two segments, such as `group/sub/project` or `owner/.github`.
 - `role set`: records how often a role runs, in minutes. The alarms use the interval.
 - `next`: chooses the next precinct for a role by weight and prints its name and repository.
 
@@ -81,7 +85,7 @@ journal status
 
 ### The tracker cache
 
-- `sync`: replaces the cache of a precinct's issues with the `gh issue list` JSON on stdin. With `--pulls` it replaces the pull request cache. It prints the counts. `--reset` lets an empty list replace a filled cache.
+- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. With `--pulls` it replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
@@ -89,7 +93,8 @@ journal status
 - `case`: prints the stage of an issue, with the next role, the round, the returns, the commit, the clerk's job and the pull request.
 - `intake`: names the next human-written issue that waits for the response unit. With `--issue` it prints `need=` and `state=` for one issue.
 - `pull`: prints the stage of a pull request, with the next role, the spec vote, the executor's work state, the sources and the priority.
-- `decider`: reads a GitHub reply on stdin and says whether the actor of the last close or reopen is a decider.
+- `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
+- `form`: prints the input form of one kind, `issues`, `pulls` or `decider`, with one example. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
 
 ```
 journal sync <precinct> --author <login> [--reset | --pulls]
@@ -101,6 +106,7 @@ journal case <precinct> <issue>
 journal intake <precinct> [--issue <n>]
 journal pull <precinct> <pull request>
 journal decider < response.json
+journal form <issues|pulls|decider>
 ```
 
 ### Checks and builders
@@ -147,7 +153,7 @@ See [the pipeline](pipeline.md) for where roles call it.
 | 7 | Body check rejection |
 | 8 | Page check rejection |
 
-Code 5 is not used. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
+Code 5 is not used. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
 
 A role treats exit 2 as silence. Skills cite the other codes by number.
 
@@ -155,6 +161,7 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 
 - [journal.ts](../journal/src/journal.ts): the command table.
 - [db.ts](../journal/src/db.ts): the exit codes and the database path.
+- [form.ts](../journal/src/form.ts): the input forms and their examples.
 - [migrations.ts](../journal/src/migrations.ts): the schema.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
 - [tick.md](../skills/lawman-law/references/tick.md): the command forms that roles run.

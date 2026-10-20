@@ -4,7 +4,7 @@ A department is one subject of judgement, defined by a page. It is a page and no
 
 The page says only what to look for. The law supplies forensics, filing, caps and markers. Investigation works out the cause of a defect. The page never does.
 
-The contract for a page is [departments.md](../skills/lawman-law/references/departments.md). A page that violates it is not in the rotation.
+The contract for a page is [departments.md](../skills/lawman-law/references/departments.md). A page that violates it is skipped by the duty desk for that tick and named in Blockers.
 
 ## What a page holds
 
@@ -59,11 +59,11 @@ A department name resolves in this order. The first hit wins.
 
 Pages are never merged. A page found at an earlier place hides the later ones, even when it is incomplete. A precinct's own page is trusted because a reviewed merge put it on the main branch.
 
-The name is checked against `[a-z][a-z0-9-]*` before any path is built. The duty desk runs `bin/journal lint-page department --name <name>` on the resolved page. A page that fails is out of the rotation for that tick. The check names the first missing or misplaced heading.
+The name is checked against `[a-z][a-z0-9-]*` before any path is built. The duty desk runs `bin/journal lint-page department --name <name>` on the resolved page. A page that fails is skipped for that tick and named in Blockers. The check names the first missing or misplaced heading. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
 
 ## The rotation
 
-A department is in a precinct's rotation when its name meets one of two tests. A page with that name lies in Lawman's `departments/`, or a line of the precinct's Departments section names it. A page in the installation or in the precinct that neither test admits is not in the rotation.
+A department is in a precinct's rotation when its name meets one of two tests. A page with that name lies in Lawman's `departments/`, or a line of the precinct's Departments section names it. The duty desk never lists a page in the installation or in the precinct that neither test admits.
 
 The duty desk picks the department for each patrol order.
 
@@ -108,7 +108,7 @@ The three places differ in what the pull request holds:
 - **A page in the installation's `departments/`.** The assembly copies the page into the installation with no pull request. The precinct gets a Departments line by pull request. Run the job again for each further precinct.
 - **A shared department of Lawman.** The precinct gets only a Departments line with its judging document, by pull request.
 
-The assembly writes the line with `bin/journal department-line`. It checks that the judging document exists. It commits on the branch `lawman/department-<name>` and opens the pull request. It never merges. The department enters the rotation once you merge the pull request.
+The assembly writes the line with `bin/journal department-line`. It commits on the branch `lawman/department-<name>` and opens the pull request. It never merges. The department enters the rotation once you merge the pull request.
 
 The assembly also proposes the judging documents of the shared departments when it adds a precinct. See [constitution](constitution.md).
 
