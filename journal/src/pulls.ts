@@ -1,6 +1,14 @@
 import type { Database } from "bun:sqlite";
-import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
-import { DECIDING } from "./decider";
+import {
+	EXIT,
+	Fail,
+	inTransaction,
+	isConstraint,
+	normalizeTime,
+	out,
+	withDb,
+} from "./db";
+import { inputRejected, loginList } from "./form";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
@@ -14,96 +22,122 @@ export type PullRow = {
 };
 
 type Obj = Record<string, unknown>;
+type Comment = {
+	id: string;
+	author: string;
+	createdAt: string;
+	body: string;
+	approvedBy: string[];
+	rejectedBy: string[];
+};
+type Pull = {
+	number: number;
+	body: string;
+	closes: number[];
+	comments: Comment[];
+	changesRequested: { login: string; at: string }[];
+};
 
 const FINGERPRINT =
 	/^<!-- pipeline-work-fingerprint: [a-z0-9-]+ sources=(#[0-9]+(?:,#[0-9]+)*) -->$/;
 const SPEC = { role: "spec-writer", stage: "spec" };
 const READY = { role: "executor", stage: "ready" };
 const NO_SPEC_ID = "-";
-const CHANGES_REQUESTED = "CHANGES_REQUESTED";
 
 const reject = (why: string) =>
-	new Fail(EXIT.SYNC_INPUT, `sync input rejected, cache untouched: ${why}`);
+	inputRejected("pulls", `sync input rejected, cache untouched: ${why}`);
 const isRecord = (v: unknown): v is Obj =>
 	typeof v === "object" && v !== null && !Array.isArray(v);
 const text = (v: unknown) => (typeof v === "string" ? v : "");
-const dig = (v: unknown, path: string[]): unknown =>
-	path.reduce<unknown>((at, key) => (isRecord(at) ? at[key] : undefined), v);
-const records = (v: unknown): Obj[] =>
-	Array.isArray(v) ? v.filter(isRecord) : [];
-const loginOf = (v: unknown) => asciiLower(text(dig(v, ["login"])));
 const ascending = (a: number, b: number) => a - b;
+const logins = (v: unknown, what: string) => loginList(v, what, reject);
 
-const REVIEWS = "latestOpinionatedReviews";
-const REPOSITORY = ["data", "repository"];
-const PULL_NODES = [...REPOSITORY, "pullRequests", "nodes"];
-const PULL_NEXT = [...REPOSITORY, "pullRequests", "pageInfo", "hasNextPage"];
-const COLLAB_NEXT = [...REPOSITORY, "collaborators", "pageInfo", "hasNextPage"];
-const COLLAB_EDGES = [...REPOSITORY, "collaborators", "edges"];
+function list(v: unknown, what: string): unknown[] {
+	if (!Array.isArray(v)) throw reject(`${what} is not a list`);
+	return v;
+}
 
-function readPages(input: string): unknown[] {
+function timeOf(v: unknown, what: string): string {
+	const time = normalizeTime(text(v));
+	if (time === null) throw reject(`${what} is not a time`);
+	return time;
+}
+
+function readComment(raw: unknown): Comment {
+	if (!isRecord(raw)) throw reject("a comment is not an object");
+	if (text(raw.id) === "") throw reject("a comment has no id");
+	return {
+		id: text(raw.id),
+		author: text(raw.author),
+		createdAt: timeOf(raw.createdAt, "a comment createdAt"),
+		body: text(raw.body),
+		approvedBy: logins(raw.approvedBy, "a comment approvedBy"),
+		rejectedBy: logins(raw.rejectedBy, "a comment rejectedBy"),
+	};
+}
+
+function readReview(raw: unknown): Pull["changesRequested"][number] {
+	if (!isRecord(raw) || typeof raw.login !== "string")
+		throw reject("a changesRequested login is not text");
+	return {
+		login: asciiLower(raw.login),
+		at: timeOf(raw.at, "a changesRequested at"),
+	};
+}
+
+function readPull(raw: Obj): Pull {
+	return {
+		number: raw.number as number,
+		body: text(raw.body),
+		closes: list(raw.closes, "closes").map((n) => {
+			if (!Number.isInteger(n)) throw reject("closes holds a non-integer");
+			return n as number;
+		}),
+		comments: list(raw.comments, "comments").map(readComment),
+		changesRequested: list(raw.changesRequested, "changesRequested").map(
+			readReview,
+		),
+	};
+}
+
+function readForm(input: string): { writers: Set<string>; pulls: unknown[] } {
 	let data: unknown;
 	try {
 		data = JSON.parse(input);
 	} catch {
 		throw reject("stdin is not valid JSON");
 	}
-	if (!Array.isArray(data)) throw reject("stdin is not a JSON array");
-	if (data.length === 0) throw reject("stdin holds no page");
-	for (const page of data) {
-		if (isRecord(page) && "errors" in page)
-			throw reject("a page carries errors");
-		if (!Array.isArray(dig(page, PULL_NODES)))
-			throw reject("a page has no data.repository.pullRequests.nodes list");
-		if (dig(page, COLLAB_NEXT) !== false)
-			throw reject("collaborators.pageInfo.hasNextPage is not false");
-	}
-	if (dig(data.at(-1), PULL_NEXT) !== false)
-		throw reject(
-			"pullRequests.pageInfo.hasNextPage of the last page is not false",
-		);
-	return data;
+	if (!isRecord(data)) throw reject("stdin is not a JSON object");
+	return {
+		writers: new Set(logins(data.writers, "writers")),
+		pulls: list(data.pulls, "pulls"),
+	};
 }
 
-function deciders(pages: unknown[]): Set<string> {
-	const logins = new Set<string>();
-	for (const page of pages)
-		for (const edge of records(dig(page, COLLAB_EDGES)))
-			if (DECIDING.has(text(edge.permission))) logins.add(loginOf(edge.node));
-	return logins;
-}
-
-function sourceNumbers(pull: Obj, repo: string): string {
-	const linked = records(dig(pull, ["closingIssuesReferences", "nodes"]))
-		.filter(
-			(ref) =>
-				asciiLower(text(dig(ref, ["repository", "nameWithOwner"]))) === repo,
-		)
-		.map((ref) => ref.number);
-	const named = text(pull.body)
+function sourceNumbers(pull: Pull): string {
+	const named = pull.body
 		.split("\n")
 		.flatMap((line) => stripCr(line).match(FINGERPRINT)?.[1]?.split(",") ?? [])
 		.map((source) => Number(source.slice(1)));
-	const all = [...linked, ...named].filter(Number.isInteger) as number[];
-	return [...new Set(all)].sort(ascending).join(",");
+	return [...new Set([...pull.closes, ...named])].sort(ascending).join(",");
 }
 
-type Counted = { ord: string; comment: Obj };
+type Counted = { ord: string; comment: Comment };
 
 // the comment that carries the newest counted marker of a role and stage
 function newestMarker(
-	pull: Obj,
+	pull: Pull,
 	login: string,
 	want: { role: string; stage: string },
 ): Counted | null {
 	let newest: Counted | null = null;
-	records(dig(pull, ["comments", "nodes"])).forEach((comment, rank) => {
+	pull.comments.forEach((comment, rank) => {
 		const found = extractMarkers(
 			{
-				text: text(comment.body),
-				createdAt: text(comment.createdAt),
+				text: comment.body,
+				createdAt: comment.createdAt,
 				rank,
-				author: text(dig(comment, ["author", "login"])),
+				author: comment.author,
 			},
 			login,
 		);
@@ -118,63 +152,46 @@ function newestMarker(
 	return newest;
 }
 
-const reacted = (comment: Obj, reaction: string, allowed: Set<string>) =>
-	records(dig(comment, [reaction, "nodes"])).some((r) =>
-		allowed.has(loginOf(r.user)),
-	);
+const anyOf = (named: string[], writers: Set<string>) =>
+	named.some((login) => writers.has(login));
 
-function specVote(spec: Counted | null, allowed: Set<string>): Vote {
+function specVote(spec: Counted | null, writers: Set<string>): Vote {
 	if (spec === null) return "none";
-	if (reacted(spec.comment, "down", allowed)) return "down";
-	return reacted(spec.comment, "up", allowed) ? "up" : "waiting";
+	if (anyOf(spec.comment.rejectedBy, writers)) return "down";
+	return anyOf(spec.comment.approvedBy, writers) ? "up" : "waiting";
 }
 
 function workOf(
-	pull: Obj,
+	pull: Pull,
 	login: string,
-	allowed: Set<string>,
+	writers: Set<string>,
 	spec: Counted | null,
 ): Work {
 	const done = newestMarker(pull, login, READY);
 	if (done === null || spec === null || done.ord <= spec.ord) return "todo";
-	const sentBack = records(dig(pull, [REVIEWS, "nodes"])).some(
-		(review) =>
-			review.state === CHANGES_REQUESTED &&
-			allowed.has(loginOf(review.author)) &&
-			text(review.submittedAt) > text(done.comment.createdAt),
+	const sentBack = pull.changesRequested.some(
+		(review) => writers.has(review.login) && review.at > done.comment.createdAt,
 	);
-	return sentBack || reacted(done.comment, "down", allowed)
+	return sentBack || anyOf(done.comment.rejectedBy, writers)
 		? "returned"
 		: "ready";
 }
 
-function checkTrustedPull(pull: Obj): void {
-	if (!Array.isArray(dig(pull, [REVIEWS, "nodes"])))
-		throw reject("a pull request has no latestOpinionatedReviews.nodes list");
-	for (const comment of records(dig(pull, ["comments", "nodes"])))
-		if (text(comment.id) === "") throw reject("a comment has no id");
-}
-
-export function readPulls(
-	input: string,
-	login: string,
-	repo: string,
-): PullRow[] {
-	const pages = readPages(input);
-	const allowed = deciders(pages);
+export function readPulls(input: string, login: string): PullRow[] {
+	const { writers, pulls } = readForm(input);
 	const rows: PullRow[] = [];
-	for (const pull of pages.flatMap((p) => records(dig(p, PULL_NODES)))) {
-		if (!Number.isInteger(pull.number))
+	for (const raw of pulls) {
+		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		if (loginOf(pull.author) !== asciiLower(login)) continue;
-		checkTrustedPull(pull);
+		if (asciiLower(text(raw.author)) !== asciiLower(login)) continue;
+		const pull = readPull(raw);
 		const spec = newestMarker(pull, login, SPEC);
 		rows.push({
-			number: pull.number as number,
-			issues: sourceNumbers(pull, asciiLower(repo)),
-			spec: specVote(spec, allowed),
-			work: workOf(pull, login, allowed, spec),
-			spec_id: text(spec?.comment.id) || NO_SPEC_ID,
+			number: pull.number,
+			issues: sourceNumbers(pull),
+			spec: specVote(spec, writers),
+			work: workOf(pull, login, writers, spec),
+			spec_id: spec?.comment.id ?? NO_SPEC_ID,
 		});
 	}
 	return rows;
@@ -191,12 +208,9 @@ function replacePulls(db: Database, name: string, rows: PullRow[]): void {
 
 export function syncPulls(name: string, login: string, input: string): void {
 	withDb((db) => {
-		const precinct = db
-			.query("SELECT repo FROM precincts WHERE name = ?")
-			.get(name) as { repo: string } | null;
-		if (precinct === null)
+		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
-		const rows = readPulls(input, login, precinct.repo);
+		const rows = readPulls(input, login);
 		try {
 			inTransaction(db, () => replacePulls(db, name, rows));
 		} catch (e) {

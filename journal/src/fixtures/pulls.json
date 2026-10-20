@@ -1,104 +1,46 @@
-[
-	{
-		"data": {
-			"repository": {
-				"collaborators": {
-					"pageInfo": { "hasNextPage": false },
-					"edges": [
-						{ "permission": "ADMIN", "node": { "login": "maint-a" } },
-						{ "permission": "READ", "node": { "login": "stranger" } }
-					]
+{
+	"writers": ["maint-a"],
+	"pulls": [
+		{
+			"number": 7,
+			"author": "lawman-bot",
+			"body": "Closes #3\n<!-- pipeline-work-fingerprint: abc-1 sources=#4,#5 -->",
+			"closes": [3],
+			"comments": [
+				{
+					"id": "IC_spec_7",
+					"author": "lawman-bot",
+					"createdAt": "2026-10-14T09:00:00Z",
+					"body": "Spec\n\n<!-- lawman: role=spec-writer stage=spec sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:00:00Z -->",
+					"approvedBy": ["maint-a"],
+					"rejectedBy": []
 				},
-				"pullRequests": {
-					"pageInfo": { "hasNextPage": true, "endCursor": "c1" },
-					"nodes": [
-						{
-							"number": 7,
-							"author": { "login": "lawman-bot" },
-							"body": "Closes #3\n<!-- pipeline-work-fingerprint: abc-1 sources=#4,#5 -->",
-							"closingIssuesReferences": {
-								"nodes": [
-									{ "number": 3, "repository": { "nameWithOwner": "o/main" } },
-									{
-										"number": 9,
-										"repository": { "nameWithOwner": "acme/widgets" }
-									}
-								]
-							},
-							"comments": {
-								"nodes": [
-									{
-										"id": "IC_spec_7",
-										"author": { "login": "lawman-bot" },
-										"createdAt": "2026-10-14T09:00:00Z",
-										"body": "Spec\n\n<!-- lawman: role=spec-writer stage=spec sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T09:00:00Z -->",
-										"up": {
-											"nodes": [
-												{
-													"user": { "login": "maint-a" },
-													"createdAt": "2026-10-14T10:00:00Z"
-												}
-											]
-										},
-										"down": { "nodes": [] }
-									},
-									{
-										"id": "IC_ready_7",
-										"author": { "login": "lawman-bot" },
-										"createdAt": "2026-10-14T11:00:00Z",
-										"body": "Executor\n\n<!-- lawman: role=executor stage=ready sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->",
-										"up": { "nodes": [] },
-										"down": { "nodes": [] }
-									}
-								]
-							},
-							"latestOpinionatedReviews": {
-								"nodes": [
-									{
-										"state": "APPROVED",
-										"submittedAt": "2026-10-14T12:00:00Z",
-										"author": { "login": "maint-a" }
-									}
-								]
-							}
-						}
-					]
+				{
+					"id": "IC_ready_7",
+					"author": "lawman-bot",
+					"createdAt": "2026-10-14T11:00:00Z",
+					"body": "Executor\n\n<!-- lawman: role=executor stage=ready sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-14T11:00:00Z -->",
+					"approvedBy": [],
+					"rejectedBy": []
 				}
-			}
+			],
+			"changesRequested": []
+		},
+		{
+			"number": 8,
+			"author": "stranger",
+			"body": "Closes #3",
+			"closes": [3],
+			"comments": [],
+			"changesRequested": []
+		},
+		{
+			"number": 12,
+			"author": "Lawman-Bot",
+			"body": "no link",
+			"closes": [],
+			"comments": [],
+			"changesRequested": []
 		}
-	},
-	{
-		"data": {
-			"repository": {
-				"collaborators": {
-					"pageInfo": { "hasNextPage": false },
-					"edges": [
-						{ "permission": "ADMIN", "node": { "login": "maint-a" } },
-						{ "permission": "READ", "node": { "login": "stranger" } }
-					]
-				},
-				"pullRequests": {
-					"pageInfo": { "hasNextPage": false, "endCursor": null },
-					"nodes": [
-						{
-							"number": 8,
-							"author": { "login": "stranger" },
-							"body": "Closes #3",
-							"closingIssuesReferences": { "nodes": [] },
-							"comments": { "nodes": [] },
-							"latestOpinionatedReviews": { "nodes": [] }
-						},
-						{
-							"number": 12,
-							"author": { "login": "Lawman-Bot" },
-							"body": "no link",
-							"closingIssuesReferences": { "nodes": [] },
-							"comments": { "nodes": [] },
-							"latestOpinionatedReviews": { "nodes": [] }
-						}
-					]
-				}
-			}
-		}
-	}
-]
+	]
+}

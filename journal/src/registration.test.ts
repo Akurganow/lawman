@@ -13,7 +13,7 @@ import {
 tempDb();
 
 describe("registration", () => {
-	test.each(["pull", "handoff", "decider", "jev", "wake", "law-sync"])(
+	test.each(["pull", "handoff", "decider", "form", "jev", "wake", "law-sync"])(
 		"%s is a registered command",
 		(name) => {
 			expect(Object.keys(COMMANDS)).toContain(name);
@@ -26,6 +26,7 @@ describe("registration", () => {
 			"pull",
 			"handoff",
 			"decider",
+			"form",
 			"jev",
 			"wake",
 			"law-sync",

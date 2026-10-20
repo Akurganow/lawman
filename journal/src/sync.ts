@@ -11,6 +11,7 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
+import { inputRejected } from "./form";
 import { asciiLower, collectIssueMarkers, type GhIssue } from "./markers";
 import { syncPulls } from "./pulls";
 
@@ -40,7 +41,7 @@ const textOrNull = (v: unknown) =>
 const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === "object" && v !== null;
 const syncInput = (why: string) =>
-	new Fail(EXIT.SYNC_INPUT, `sync input rejected, cache untouched: ${why}`);
+	inputRejected("issues", `sync input rejected, cache untouched: ${why}`);
 const timeOf = (v: unknown, what: string): string => {
 	const time = typeof v === "string" ? normalizeTime(v) : null;
 	if (time === null) throw syncInput(`${what} is not a time`);
