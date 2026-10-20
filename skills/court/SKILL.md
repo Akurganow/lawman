@@ -19,9 +19,9 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
+- A clone changes only by bringing it up to date, as the "Fetch the precinct" section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the "Reading without a tree" section.
-- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
+- A source command of the department page that passes its check runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The read-only rule above does not limit it.
 
 ## Tick
 
@@ -40,21 +40,12 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    bin/journal tick start --role court
    ```
 3. Read `law_commit`, `trusted_login`, `typesafe` and `typesafe_precincts` from `config.yaml`. Each is one `key: value` line. A missing file, or a missing `law_commit` or `trusted_login`, ends the tick with `failed`. A missing `typesafe` or `typesafe_precincts` does not.
-   ```
-   grep -E '^(law_commit|trusted_login|typesafe|typesafe_precincts):' config.yaml
-   ```
    `typesafe` allows Jev only with the exact value `yes`. Any other value, or a missing key, reads as `no`.
 
-   Once step 1 has printed the order, count the precinct's pair. `<p>` is the precinct name of the order. A pair is a whole space-separated token. The precinct is allowed only when the count is at least 1. A count of 0 means no, and its exit 1 is no failure.
-   ```
-   grep -cE '^typesafe_precincts: (.* )?<p>=yes( .*)?$' config.yaml
-   ```
+   Once step 1 has printed the order, check the precinct's pair. `<p>` is the precinct name of the order. A pair is a whole space-separated token. The precinct is allowed only when `typesafe_precincts` holds the token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure.
    Jev is allowed when `typesafe` is `yes` and the precinct is allowed.
-4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-   ```
-   gh api user --jq .login
-   ```
+4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
    ```
    bin/journal alarm
@@ -102,58 +93,42 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
+3. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the "Check the constitution" section says. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law defines it.
 5. Read the department page. `<d>` is `department` from the `case` line. Skip this item when `department` is `-`. Run the "Resolve the department page" section. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ### Step 6: read the issue
 
-```
-gh issue view <n> -R <owner/repo> --json title,body,author,comments,state
-```
+Read issue `<n>` of `<owner/repo>` from the host, as the host notes record: title, body, author, comments and state. Read every page of the comments.
 
-A failed command gives `stopped-issue-read`.
+A failed read gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The charge is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=prosecutor stage=charge`. The defence is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=defender stage=defence`. A missing case, charge or defence ends the tick with `failed`.
 
 The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Do not read the line under the `## Cost and risk` heading of the lead carrier. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
-When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
-```
-gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
-```
+When `related` is not `-`, read each issue it names the same way. A failed read is a fact for Blockers and stops nothing.
 
 A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read at `<sha>` the exhibits of the case, the charge and the defence that the court finds decisive. The court chooses which. Run `show`. Or search with `grep` on `<sha>`. A missing path makes that exhibit a claim, not an exhibit, and goes to Blockers.
-   ```
-   git -C precincts/<p> show <sha>:<path>
-   ```
+1. Re-read at `<sha>` the exhibits of the case, the charge and the defence that the court finds decisive. The court chooses which. A missing path makes that exhibit a claim, not an exhibit, and goes to Blockers.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
    - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
-2. Read the history of each exhibit path that the court re-reads.
-   ```
-   git -C precincts/<p> log --format='%h %s' <sha> -- <path>
-   ```
-3. Search for the callers and tests of a symbol the court re-reads. Use a pattern from the case, the charge or the defence only through the heredoc form.
-   ```
-   git -C precincts/<p> grep -n -F -f - <sha> -- . <<'<delimiter>'
-   <pattern, one per line>
-   <delimiter>
-   ```
+2. Read the history of each exhibit path that the court re-reads, up to `<sha>`: the short hash and the subject of each commit that touched it.
+3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case, the charge or the defence only through the heredoc form.
 4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
-5. Read the exhibit paths at `origin/HEAD` only when the court considers the class `gone at <tip>`. Run `show origin/HEAD:<path>`. Only this read can show that class.
+5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 8: decide
 
 Decide one of two. The tick outcome equals the decision.
 
 - `conviction`: every ground of the charge stands at `<sha>`, by the court's own re-read or by the record of the prosecutor and the defender. No recorded reason explains the shape. The law's Evidence section lists the sources of a recorded reason. The issue stays open. Outcome `convicted`.
-- `acquittal`: every other case. Name exactly one class from the law's Closure classes subsection. `recorded reason` is shown by one of the law's sources that the court read in step 5 or step 7, or that the defence quotes. `gone at <tip>` is shown by the court's own read at `origin/HEAD`. `not confirmed` is the class otherwise, and for every doubt. When more than one class holds, name the first in the law's list. Outcome `acquitted`.
+- `acquittal`: every other case. Name exactly one class from the law's Closure classes subsection. `recorded reason` is shown by one of the law's sources that the court read in step 5 or step 7, or that the defence quotes. `gone at <tip>` is shown by the court's own read at `<tip>`. `not confirmed` is the class otherwise, and for every doubt. When more than one class holds, name the first in the law's list. Outcome `acquitted`.
 
 Before writing a conviction, attack it once, as the law's Evidence section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
 
@@ -285,7 +260,7 @@ Marker, the last line of the comment. Nothing follows it:
 - `conviction`: `<!-- lawman: role=court stage=conviction sha=<sha> priority=<P> at=<UTC> -->`
 - `acquittal`: `<!-- lawman: role=court stage=acquittal at=<UTC> -->`
 
-`at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`. The date of the Precedent line is the date of `at`.
+`at` is the `<UTC>` of the "Write a comment" section. The date of the Precedent line is the date of `at`.
 
 A realistic ruling:
 
@@ -326,7 +301,7 @@ Rules:
 - A section with nothing to say holds the single word `none`. The exception is `## Jev`: write it only when a `jev model=` line exists, and leave it out otherwise. It is never `none`.
 - The lint checks the brief as it checks every other ruling text. It ignores an `@` inside a fence, and it applies the path, token and image rules inside a fence.
 - Quote only the lines a ground needs.
-- Put every `@` and every quote of third-party text inside a fenced block, git log lines included.
+- Put every `@` and every quote of third-party text inside a fenced block, commit subjects included.
 - Name the department page by its department name, never by a path.
 - Write no home path, no installation path, no token and no login.
 - `<tip>` is the commit that step 2 printed.

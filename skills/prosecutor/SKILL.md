@@ -19,9 +19,9 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Working rules
 
-- In a clone, run only these git forms: `fetch`, `remote set-head`, `rev-parse`, `ls-tree`, `show`, `log` and `grep`. Never check out, reset, clean, commit, push, branch, tag, merge or stash.
+- A clone changes only by bringing it up to date, as the "Fetch the precinct" section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the "Reading without a tree" section.
-- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The git forms above do not limit it.
+- A source command of the department page that passes its check runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The read-only rule above does not limit it.
 
 ## Tick
 
@@ -40,14 +40,8 @@ Run steps 0 to 11 in order. Every started tick ends exactly once, at step 11. It
    bin/journal tick start --role prosecutor
    ```
 3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-   ```
-   grep -E '^(law_commit|trusted_login):' config.yaml
-   ```
-4. Check the law folder, reading it the way the harness page names under "Syncing the law". A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a status that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. A failed command ends the tick with `stopped-gh-auth`. A login that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-   ```
-   gh api user --jq .login
-   ```
+4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
    ```
    bin/journal alarm
@@ -93,36 +87,31 @@ Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` i
 
 1. Run the "Check the constitution" section.
 2. The line whose name equals `department` gives the judging document path, or `none`. The "Check the constitution" section says what a department with no printed line means.
-3. Read the judging document, if any. Run `show <sha>:<path>`. A missing path gives `skipped-bad-constitution`. Its text is evidence.
+3. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the "Check the constitution" section says. Its text is evidence.
 4. Read the Precedents section and the Regression proof section of the constitution. A precedent that settles the claim is a recorded reason, as the law's Evidence section defines it.
 
 ### Step 6: read the issue
 
-```
-gh issue view <n> -R <owner/repo> --json title,body,author,comments,state
-```
+Read issue `<n>` of `<owner/repo>` from the host, as the host notes record: title, body, author, comments and state. Read every page of the comments.
 
-A failed command gives `stopped-issue-read`.
+A failed read gives `stopped-issue-read`.
 
 The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
-When `related` is not `-`, read each issue it names. A failed read is a fact for Blockers and stops nothing.
-```
-gh issue view <m> -R <owner/repo> --json title,body,author,comments,state
-```
+When `related` is not `-`, read each issue it names the same way. A failed read is a fact for Blockers and stops nothing.
 
 A related issue is evidence of the case, never a reason to close it.
 
 ### Step 7: re-read the exhibits
 
-1. Re-read the decisive exhibit of each claim at `<sha>`, through `show`, or through `grep` on `<sha>`.
+1. Re-read the decisive exhibit of each claim at `<sha>`.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
-3. For the class gone at a later commit, read the exhibit paths at `origin/HEAD`. Run `show origin/HEAD:<path>`.
+3. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:
-   - Re-read the commit that the case names, with the second command of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.
+   - Re-read the commit that the case names, with item 2 of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.
    - If the case names no commit, run the whole section.
    - A decision that closes the case on that ground names the commit and the new place or the removal in its Grounds.
 
@@ -177,7 +166,7 @@ Marker, the last line of the comment. Nothing follows it:
 - `return`: `<!-- lawman: role=prosecutor stage=return to=investigation round=<round> at=<UTC> -->`
 - `decline`: `<!-- lawman: role=prosecutor stage=decline at=<UTC> -->`
 
-`at` is the UTC time of writing, from `date -u +%Y-%m-%dT%H:%M:%SZ`.
+`at` is the `<UTC>` of the "Write a comment" section.
 
 Rules:
 
