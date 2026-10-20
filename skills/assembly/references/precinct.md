@@ -163,9 +163,9 @@ Ask in the question tool.
 
 1. Choose the precinct from `bin/journal precinct list`.
 2. Fetch the repository's latest state into `precincts/<precinct name>`, and stop if it fails.
-3. Run `bin/journal lint-page constitution` with `LAWMAN.md` as it is at `origin/HEAD` on stdin, and show the reasons on exit 8.
-4. Run the line check on every department line that the previous step printed, with `origin/HEAD` as the ref.
-5. Run the Issue templates section of the add path, using `origin/HEAD` in place of `HEAD`.
+3. Run `bin/journal lint-page constitution` with `LAWMAN.md` as it is at the tip of the default branch on stdin, and show the reasons on exit 8.
+4. Run the line check on every department line that the previous step printed, with the tip of the default branch as the ref.
+5. Run the Issue templates section of the add path, using the tip of the default branch in place of `HEAD`.
 6. Find the account's access level, as the Measure access section of the add path does, and show it as a row.
 7. Report the result, and change no weight.
 
@@ -244,13 +244,13 @@ Skip this step for place (c). Skip it for place (b) when the installation alread
 
 ### Step 5. Make the copy
 
-Make a working copy of `origin/HEAD` in `runs/add-department-<name>/tree`, linked to `precincts/<p>`, on a new branch `lawman/department-<name>`, and stop if it fails.
+Make a working copy of the tip of the default branch in `runs/add-department-<name>/tree`, linked to `precincts/<p>`, on a new branch `lawman/department-<name>`, and stop if it fails.
 
 ### Step 6. Write the files in the copy
 
 1. For place (a), make sure the folder `runs/add-department-<name>/tree/.lawman/departments` exists.
 2. For place (a), copy the draft to `runs/add-department-<name>/tree/.lawman/departments/<name>.md`.
-3. Run `bin/journal department-line --name <name> --judged-by <path|none>` with `LAWMAN.md` as it is at `origin/HEAD` on stdin, write its output to `runs/add-department-<name>/tree/LAWMAN.md`, and stop if it fails, showing the reasons it printed. Exit 8 means the result fails the constitution lint.
+3. Run `bin/journal department-line --name <name> --judged-by <path|none>` with `LAWMAN.md` as it is at the tip of the default branch on stdin, write its output to `runs/add-department-<name>/tree/LAWMAN.md`, and stop if it fails, showing the reasons it printed. Exit 8 means the result fails the constitution lint.
 
 ### Step 7. Check the judging document
 

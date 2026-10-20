@@ -34,9 +34,9 @@ The result is the commit with its subject, and the new path, the removal, or the
 
 A role reads this section when it runs a source command of a department page. Patrol does so when its search of the page needs one. Every other role does so when a case, a charge, a defence or a lead quotes the output of a command that stands under no Regression proof, or when a claim needs a read outside the clone. A role with neither does not open the page for a source command. The department contract defines a source command. The "Source values" table below also serves the `Source:` lines of a lead, which investigation reads.
 
-Find the source commands first. Only the page in the precinct's own `.lawman/departments/` counts. Read it at `origin/HEAD`, because a reviewed merge made the page on the main branch trusted.
+Find the source commands first. Only the page in the precinct's own `.lawman/departments/` counts. Read it at the tip of the precinct's default branch, because a reviewed merge made the page on the main branch trusted.
 
-1. Patrol uses the page it read in step 6 of its skill. Every other role resolves the page at place 1 of the "Resolve the department page" section of `tick.md`, with `origin/HEAD` as `<ref>`. It does so even when it has read the page at another commit. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
+1. Patrol uses the page it read in step 6 of its skill. Every other role resolves the page at place 1 of the "Resolve the department page" section of `tick.md`, with that tip as `<ref>`. It does so even when it has read the page at another commit. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
 2. A quoted command is a source command when it equals an item of the page with every placeholder replaced by a value of its class. Any other command, and its output, is a claim, not an exhibit.
 
 Then run it.
