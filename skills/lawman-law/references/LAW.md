@@ -130,9 +130,9 @@ The court never returns. Its doubt is an acquittal.
 - Read back every write. For an issue, compare the author and the last line of the body. For a comment, compare the same, reading the comment by the id that the write printed. For a close, a reopen or a pull request body edit, read the state or the body back. For a ready or a return to draft, read the draft flag back, and after a ready the head of the pull request too. A difference ends the tick with `stopped-readback`, with no further writes. The number of the created issue goes into the report.
 - On a 403 or 429 reply to any write, stop with `stopped-rate-limit`. No retry. No further writes in that tick.
 - Writes go only to the precinct's tracker. The other writes are the clerk's branch and pull request and the executor's pushes to its pull request.
-- The clerk writes its branch and its push, a draft pull request create, a pull request body edit with fixed text, `ready --undo`, a pull request comment, a pull request close and reopen, an issue comment, and an issue close and reopen.
+- The clerk writes its branch and its push, a draft pull request create, a pull request body edit with fixed text, a return of a pull request to draft, a pull request comment, a pull request close and reopen, an issue comment, and an issue close and reopen.
 - The spec writer's one write is a comment on a pull request.
-- The executor writes in its copy under the run directory. It pushes to the head branch of its pull request and to no other ref, never forced. It also writes `ready`, `ready --undo` and one comment on the pull request per turn.
+- The executor writes in its copy under the run directory. It pushes to the head branch of its pull request and to no other ref, never forced. It also marks its pull request ready, returns it to draft and writes one comment on it per turn.
 - An issue body or a comment goes only after the journal's body check passes. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit adds the court's ruling line to the constitution, with a link to the ruling comment, or is empty.
 
 ## Dedupe and closures
@@ -159,7 +159,7 @@ A role that closes a case names exactly one class:
 ## Pull requests
 
 - The trusted login is the installation's login, the one identity of every role. Only its comments carry counted markers. Only its pull requests are taken up.
-- A decider is a login with the WRITE, MAINTAIN or ADMIN permission in the precinct's repository, as GitHub reports it. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider. That is safe because no role reacts and the clerk marks its own closes and reopens.
+- A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider. That is safe because no role reacts and the clerk marks its own closes and reopens.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 - Only the clerk opens a pull request. Only the clerk writes the link from an issue to a pull request, a `handed` marker on the issue.
 - For a conviction the clerk opens a draft pull request from a new branch off the tip. The title, the body and the hand-over comment hold fixed text. The commit holds the precedent line when the issue has no earlier pull request and the ruling gives one, and is empty otherwise. The marker on the issue is the last write.
@@ -268,8 +268,8 @@ A slug is `[a-z0-9-]+`. These are the slugs of this release:
 - `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
 - `stopped-law-drift`: the law's commit differs from the one the installation recorded.
 - `stopped-dirty-law`: the law's clone has local changes.
-- `stopped-identity-changed`: the signed-in login differs from the trusted login.
-- `stopped-gh-auth`: the tracker client cannot authenticate.
+- `stopped-identity-changed`: the account the host reports for the tool in the host notes differs from the trusted login.
+- `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-sync`: syncing the issue or pull request cache failed.
 - `stopped-sync-limit`: the issue sync reached its ceiling.
@@ -314,7 +314,7 @@ A precinct's tools write absolute paths into files, and adding files by name rea
 
 ## Hard constraints
 
-- Reading roles never edit a file in the precinct or change its git state.
+- Reading roles never edit a file in the precinct or alter its clone in any other way.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor file no issue.

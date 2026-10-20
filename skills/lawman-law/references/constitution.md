@@ -84,7 +84,7 @@ A court ruling carries a line in the form above, without its number and without 
 
 - A path is relative to the repository root.
 - A path holds no `..` segment and has no leading slash.
-- A role reads a referenced file only through `git show <sha>:<path>` at the analysed commit.
+- A role reads a referenced file only as it stands at the analysed commit.
 
 ## What a constitution must not hold
 
@@ -144,6 +144,6 @@ none
 
 ## Precedents
 
-- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it. (https://github.com/example/widgets/issues/7#issuecomment-1048576301)
+- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it. (https://git.example.com/example/widgets/issues/7#comment-1048576301)
 - 2026-09-20 #2: Duplicate fixtures under test/data are accepted debt. Each test file owns its copy.
 ````

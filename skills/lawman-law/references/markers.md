@@ -1,6 +1,6 @@
 # Marker grammar
 
-Lawman roles record state as HTML-comment markers in GitHub issue bodies, issue comments and pull request comments. Labels carry no state. The journal parses markers deterministically.
+Lawman roles record state as HTML-comment markers in issue bodies, issue comments and pull request comments on the host. Labels carry no state. The journal parses markers deterministically.
 
 This file is the single definition of the grammar. The journal parser checks the fields of `lead` and `return`. For other stages it keeps the values as they are. The test fixture mirrors the examples below.
 
@@ -74,7 +74,7 @@ The trusted author is the installation's trusted login. Compare logins ignoring 
 
 The ordering key of a marker is the triple:
 
-1. The creation time of its carrier, from GitHub.
+1. The creation time of its carrier, from the host.
 2. The carrier rank. The issue body has rank 0. Comment number `i` (0-based, in creation order) has rank `1 + i`.
 3. The line number within the carrier.
 
