@@ -6,7 +6,7 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 
 `config.yaml` sits in the installation directory. The directory also holds `lawman/`, the link to the plugin folder, `bin/journal` and `host.md`. See [the journal](journal.md).
 
-The file stays in the installation. It never enters a precinct, a pull request, an issue or a commit. No other file holds such facts.
+The file stays in the installation. It never enters a precinct, a pull request, an issue or a commit. Only `host.md` holds such facts beside it.
 
 The file holds plain `key: value` lines. There is one line per key and no nesting.
 

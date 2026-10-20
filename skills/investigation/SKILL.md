@@ -120,7 +120,7 @@ Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tic
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
 1. For each path or symbol the lead names, read the file at `<sha>`. A missing path: run the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
-2. Search the tree.
+2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 3. Read the history of each named path from `<sha>`: the short hash and the subject of each commit.
 4. List the open pull requests of the trusted login with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
 5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms. Read each as the host notes record, and take only the fields named here.

@@ -205,7 +205,7 @@ At install, also confirm that the verifier rejects a changed copy of the binary.
 2. Set `<asset>` to `journal-bun-<os>-<arch>`, and set `<provenance>` to `<asset>.sigstore.json`.
 3. Create `bin` and `runs/install-journal`, then fetch `<asset>`, `<provenance>` and `SHA256SUMS` of `<release_tag>` from `<release_repo>` into `runs/install-journal`, replacing files that lie there, and stop if the fetch fails.
 4. Check `<asset>` against the line for it in `SHA256SUMS`, and stop unless they match.
-5. Check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
+5. When the notes name a verifier, check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
 6. When the notes name a verifier, run its first test as the second paragraph above says.
 7. Move `runs/install-journal/<asset>` to `bin/journal` and make it executable.
 8. Remove `SHA256SUMS` and `<provenance>` from `runs/install-journal`, then remove the empty folder.
