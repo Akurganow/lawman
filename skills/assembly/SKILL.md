@@ -12,7 +12,7 @@ You run the assembly for the developer. The developer starts you from any direct
 - `<installation>`: the directory chosen under "Choose the installation". It holds `lawman/`, `bin/` and `config.yaml`.
 - `lawman/`: the link to the folder of the installed plugin. The folder holds the law, the role skills and the harness pages.
 - `bin/journal`: the journal binary.
-- `precincts/<owner>-<repo>/`: the full clone of one precinct.
+- `precincts/<precinct name>/`: the full clone of one precinct.
 - The harness page: `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the harness recorded under "Choose the installation", later written to `config.yaml`. Stop if the page is missing.
 - The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command.
 
@@ -51,7 +51,9 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 ## Choose the mode
 
-Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds, the way the harness page names under "Syncing the law". When that commit differs from `law_commit`, stop. Say that a plugin update moved the law and no tick has synced it. Tell the developer to run one role once, as the page's "Running a role once" says, or to wait for the next tick. Tell them to start the assembly again.
+Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds. When that commit differs from `law_commit`, stop. Say that a plugin update moved the law and no tick has synced it. Tell the developer to run one role once, as the page's "Running a role once" says, or to wait for the next tick. Tell them to start the assembly again.
+
+When the host notes record that the user declined a verifier, look for one on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
 
 Take the first mode that holds.
 
@@ -60,10 +62,11 @@ Take the first mode that holds.
 3. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
 4. Otherwise, run the menu job.
     - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
-    - Ask in the question tool, with one single-choice question and three choices: "Keep as is" (recommended), "Roles" and "Precincts".
+    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
     - For "Keep as is", end the mode with the words "Nothing changed".
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles.
+    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`. It serves a change of tool. It never changes `trusted_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
     - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, run gate, gate file, constitution sections, weight and own department.
 
@@ -73,7 +76,7 @@ Tell the developer the mode and the reason in one sentence. Then say one line th
 
 Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend and each menu job.
 
-- **Find.** Read what the harness, the plugin, the repository and the GitHub account report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
+- **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
 - **Decide.** Ask only the real decisions.
 - **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. After approval, run the writes in a fixed order.
@@ -118,14 +121,15 @@ The developer may answer a proposal with a list or with free text. Treat that an
 
 ## Never, in any mode
 
-- Start a scheduled session, a test job or a test message to check anything.
+- Start a scheduled session, a test job or a test message to check anything. The one exception is the duty-desk run that the user accepts at the end of the install.
 - Ask the developer to confirm that anything arrived.
 
 Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, ask whether the key already lies somewhere the developer knows. Offer the page's place as the other choice. The developer writes the value there.
 
 ## Rules
 
-- Each step names itself in one line when it starts.
+- Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action. A step may also name what to watch for, such as a list that spans pages.
+- Before you run or write anything, on this machine or on the host, tell the user in one line what you are about to do.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.
 - Never edit the harness configuration. Show the lines. The developer applies them and confirms.
 - Never merge a pull request.
@@ -144,7 +148,7 @@ law_commit: <commit of lawman/ at install or at the last sync>
 release_tag: <tag of the release>
 release_repo: <owner>/<repo> of the release
 journal_sha256: <sha256 of bin/journal>
-trusted_login: <login of the GitHub account signed in when the assembly ran>
+trusted_login: <login of the account that the host reports for the chosen tool>
 deliver: <delivery routes, one or several, in the form the create command takes>
 typesafe: <yes|no>
 typesafe_precincts: <name>=<yes|no> ... | none
