@@ -5,6 +5,7 @@ import {
 	Fail,
 	inTransaction,
 	isConstraint,
+	normalizeTime,
 	now,
 	out,
 	readStdin,
@@ -40,6 +41,11 @@ const isRecord = (v: unknown): v is Record<string, unknown> =>
 	typeof v === "object" && v !== null;
 const syncInput = (why: string) =>
 	new Fail(EXIT.SYNC_INPUT, `sync input rejected, cache untouched: ${why}`);
+const timeOf = (v: unknown, what: string): string => {
+	const time = typeof v === "string" ? normalizeTime(v) : null;
+	if (time === null) throw syncInput(`${what} is not a time`);
+	return time;
+};
 
 function readIssue(raw: unknown): SyncIssue {
 	if (
@@ -59,8 +65,11 @@ function readIssue(raw: unknown): SyncIssue {
 		state: raw.state,
 		stateReason: textOrNull(raw.stateReason),
 		title: text(raw.title),
-		createdAt: text(raw.createdAt),
-		closedAt: textOrNull(raw.closedAt),
+		createdAt: timeOf(raw.createdAt, "an issue createdAt"),
+		closedAt:
+			textOrNull(raw.closedAt) === null
+				? null
+				: timeOf(raw.closedAt, "an issue closedAt"),
 		author: login === "" ? null : { login },
 		body: text(raw.body),
 		comments: comments.map((c) => ({
@@ -69,7 +78,7 @@ function readIssue(raw: unknown): SyncIssue {
 					? { login: text(c.author.login) }
 					: null,
 			body: text(c.body),
-			createdAt: text(c.createdAt),
+			createdAt: timeOf(c.createdAt, "a comment createdAt"),
 		})),
 	};
 }
@@ -86,7 +95,7 @@ function readIssues(input: string): SyncIssue[] {
 	if (issues.length === SYNC_LIMIT) {
 		throw new Fail(
 			EXIT.SYNC_LIMIT,
-			`${SYNC_LIMIT} issues reached the gh limit: the list may be truncated, cache untouched`,
+			`${SYNC_LIMIT} issues reached the limit: the list may be truncated, cache untouched`,
 		);
 	}
 	return issues;

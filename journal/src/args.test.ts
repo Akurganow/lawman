@@ -1,13 +1,34 @@
 import { describe, expect, test } from "bun:test";
 import { check, subcommand } from "./args";
-import { EXIT, Fail } from "./db";
+import { EXIT, Fail, normalizeTime } from "./db";
 
 describe("argument validators", () => {
 	const good = {
 		precinct: ["a", "widgets-api", "x1-y2"],
 		role: ["patrol", "duty-desk", "a1"],
-		repo: ["o/r", "Some-Org/repo.name_1", "a.b/c-d"],
-		login: ["a", "octo-cat", "A1", "a".repeat(39)],
+		repo: [
+			"o/r",
+			"Some-Org/repo.name_1",
+			"a.b/c-d",
+			"owner/.github",
+			"group/sub/project",
+			"a/b/c/d",
+			"o/..r",
+			"o/r...",
+		],
+		login: [
+			"a",
+			"octo-cat",
+			"A1",
+			"a".repeat(39),
+			"a".repeat(100),
+			"a_b",
+			"a.b",
+			"_a",
+			"1",
+			"a-",
+			"a--b-",
+		],
 		outcome: [
 			"silent",
 			"ordered",
@@ -15,7 +36,7 @@ describe("argument validators", () => {
 			"capped",
 			"failed",
 			"skipped-no-constitution",
-			"stopped-gh-auth",
+			"stopped-host-auth",
 			"stopped-issue-read",
 			"investigated",
 			"charged",
@@ -41,8 +62,24 @@ describe("argument validators", () => {
 	const bad = {
 		precinct: ["", "A", "1a", "-a", "a_b", "a b", "a\n", "a/b"],
 		role: ["", "Patrol", "9", "a.b", "a\nb"],
-		repo: ["", "o", "o/", "/r", "o/r/x", "o r/x", "o/r\n", "o/r;ls"],
-		login: ["", "-a", "a-", "a--b-", "a_b", "a".repeat(40), "a b", "a\n"],
+		repo: [
+			"",
+			"o",
+			"o/",
+			"/r",
+			"o//r",
+			"o/r/",
+			"o r/x",
+			"o/r\n",
+			"o/r;ls",
+			"./r",
+			"o/.",
+			"o/..",
+			"../r",
+			"o/../x",
+			"o/./x",
+		],
+		login: ["", "-a", "-", ".a", "a b", "a\n", "a/b", "a;b"],
 		outcome: [
 			"",
 			"done",
@@ -118,5 +155,36 @@ describe("subcommand", () => {
 				new Fail(EXIT.USAGE, "usage: journal t <add>"),
 			);
 		}
+	});
+});
+
+describe("normalizeTime", () => {
+	test("turns every accepted form into UTC seconds with a Z", () => {
+		const cases: [string, string][] = [
+			["2026-10-14T09:00:00Z", "2026-10-14T09:00:00Z"],
+			["2026-10-14T09:00:00.987Z", "2026-10-14T09:00:00Z"],
+			["2026-10-14T11:30:00+02:00", "2026-10-14T09:30:00Z"],
+			["2026-10-14T05:00:00-04:30", "2026-10-14T09:30:00Z"],
+			["2026-10-14T09:00:00+00:00", "2026-10-14T09:00:00Z"],
+			["2026-12-31T23:59:59-01:00", "2027-01-01T00:59:59Z"],
+		];
+		for (const [input, want] of cases) expect(normalizeTime(input)).toBe(want);
+	});
+
+	test("rejects a value that is no time", () => {
+		const bad = [
+			"",
+			"yesterday",
+			"2026-10-14",
+			"2026-10-14T09:00:00",
+			"2026-10-14 09:00:00Z",
+			"2026-13-14T09:00:00Z",
+			"2026-02-31T09:00:00Z",
+			"2026-10-14T25:00:00Z",
+			"2026-10-14T09:00:00Z\n",
+			"1760432400",
+			"0",
+		];
+		for (const v of bad) expect(normalizeTime(v)).toBeNull();
 	});
 });

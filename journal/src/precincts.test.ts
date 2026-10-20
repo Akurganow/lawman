@@ -69,6 +69,18 @@ describe("precinct and role commands", () => {
 		);
 	});
 
+	test("add takes a repo of two or more segments and refuses dot segments", () => {
+		const add = (name: string, repo: string) =>
+			run(["precinct", "add", name, "--repo", repo, "--weight", "1"]).code;
+		expect(add("alpha", "owner/.github")).toBe(0);
+		expect(add("beta", "group/sub/project")).toBe(0);
+		expect(add("gamma", "owner/..")).toBe(1);
+		expect(add("delta", "owner/./x")).toBe(1);
+		expect(run(["precinct", "list"]).out).toBe(
+			"alpha\towner/.github\t1\t0\t\nbeta\tgroup/sub/project\t1\t0\t\n",
+		);
+	});
+
 	test("duplicate add exits 1", () => {
 		addPrecincts({ alpha: 1 });
 		expect(

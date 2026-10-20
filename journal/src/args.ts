@@ -4,8 +4,8 @@ const PATTERNS = {
 	precinct: /^[a-z][a-z0-9-]*$/,
 	role: /^[a-z][a-z0-9-]*$/,
 	department: /^[a-z][a-z0-9-]*$/,
-	repo: /^[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/,
-	login: /^[A-Za-z0-9](?:[A-Za-z0-9-]{0,37}[A-Za-z0-9])?$/,
+	repo: /^(?!\.{1,2}(?:\/|$))[A-Za-z0-9._-]+(?:\/(?!\.{1,2}(?:\/|$))[A-Za-z0-9._-]+)+$/,
+	login: /^[A-Za-z0-9_][A-Za-z0-9._-]*$/,
 	outcome:
 		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|defended|refuted|convicted|acquitted|recorded|admitted|asked|handed|shut|settled|kept|specified|out|executed|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
