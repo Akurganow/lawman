@@ -2,6 +2,14 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.17.1] - 2026-10-21
+
+### Fixed
+
+- The assembly verifies the real name of every model the developer names before it writes any job. The model check removed in 0.16.0 returns in this form. The agent picks the means, against the provider the job will use. A single real name that resembles the typed one counts as verified.
+- When a name cannot be verified, the assembly asks: another name, the harness default, or the name as is. Several matches are listed in the question text.
+- The install and roles approvals show each job's model when known.
+
 ## [0.17.0] - 2026-10-20
 
 ### Changed
