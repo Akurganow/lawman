@@ -77,7 +77,7 @@ When "Models" names no way to read the default, say so. Then ask for model names
 13. Offer the choices "Another name", "Use the harness default" and "Write the name as is, at your own risk".
 14. When several real names match, list them in the question text, not in its choices. This overrides Asking rule 2 of `SKILL.md`. The developer types the one to use.
 15. In the menu, add the choice "Keep as is" first. Let a skipped question take it. Elsewhere, let it take "Use the harness default".
-16. Write the name that you verified, in the form that "Models" gives. Verify it in that form.
+16. Write the name that you verified, in the form that "Models" gives. Verify it in that form. After "Write the name as is", write the typed name unchanged.
 17. Record the answer for each role of the tier.
 
 Why: the model sets the quality and the cost of every run.
