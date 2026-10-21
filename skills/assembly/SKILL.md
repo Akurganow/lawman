@@ -14,7 +14,7 @@ You run the assembly for the developer. The developer starts you from any direct
 - `bin/journal`: the journal binary.
 - `precincts/<precinct name>/`: the full clone of one precinct.
 - The harness page: `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the harness recorded under "Choose the installation", later written to `config.yaml`. Stop if the page is missing.
-- The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command.
+- The harness page is the only source for harness commands, budgets and token and key variables. Read the section the page gives. Never guess a harness command. The one exception to the ban on guessing a harness command is the means that verifies a model name in part Models of `references/roles.md`.
 
 ## Choose the installation
 
@@ -121,7 +121,7 @@ The developer may answer a proposal with a list or with free text. Treat that an
 
 ## Never, in any mode
 
-- Start a scheduled session, a test job or a test message to check anything. The one exception is the duty-desk run that the user accepts at the end of the install.
+- Start a scheduled session, a test job or a test message to check anything. There are two exceptions. The first is the duty-desk run that the user accepts at the end of the install. The second is a message to a model, sent in part Models to check the name of that model.
 - Ask the developer to confirm that anything arrived.
 
 Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, ask whether the key already lies somewhere the developer knows. Offer the page's place as the other choice. The developer writes the value there.

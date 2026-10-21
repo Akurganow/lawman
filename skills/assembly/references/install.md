@@ -12,7 +12,7 @@ Round one covers Installation, Host, Delivery, Models, Schedule and Gates, TypeS
 
 1. Find the facts of every part.
 2. For each part, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, the gate files and each job.
+3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, the gate files and each job with its model when known.
 
 Before the approval, write only the installation folder, the plugin link and the repository clones. After it, Apply writes in this order.
 
