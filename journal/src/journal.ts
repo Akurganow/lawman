@@ -2,6 +2,7 @@ import pkg from "../package.json";
 import { alarm, status } from "./alarms";
 import { pick } from "./args";
 import { caseCommand } from "./cases";
+import { cleanCommand } from "./clean-command";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { decider } from "./decider";
 import { departmentLineCommand } from "./department-line";
@@ -54,6 +55,7 @@ export const COMMANDS: Record<string, Handler> = {
 	"precedent-merge": precedentMergeCommand,
 	pull: pullCommand,
 	handoff: handoffCommand,
+	clean: cleanCommand,
 	decider,
 	form,
 	jev,
