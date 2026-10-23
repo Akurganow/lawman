@@ -1,9 +1,11 @@
 import { Database } from "bun:sqlite";
-import { describe, expect, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import pkg from "../package.json";
-import { MIGRATIONS } from "./db";
+import { EXIT, Fail, MIGRATIONS } from "./db";
+import { inproc, inprocAsync } from "./inproc";
+import { COMMANDS } from "./journal";
 import { cli, dbFile, dir, harness, JOURNAL, tempDb } from "./test-helpers";
 
 tempDb();
@@ -62,6 +64,43 @@ describe("cli", () => {
 		expect(r.err).toStartWith("journal: ");
 		expect(r.err).not.toMatch(/\/src\/journal\.ts/);
 	});
+});
+
+describe("a command that finishes later", () => {
+	const CLOCK = "2026-01-01T00:00:00Z";
+	afterEach(() => {
+		delete COMMANDS["test-later"];
+	});
+
+	test("ends with the exit code its promise resolves to", async () => {
+		COMMANDS["test-later"] = async () => EXIT.LINT_BODY;
+		expect(await inprocAsync(CLOCK, ["test-later"])).toMatchObject({
+			code: EXIT.LINT_BODY,
+			err: "",
+		});
+	});
+
+	test("ends with exit 0 when its promise resolves to nothing", async () => {
+		COMMANDS["test-later"] = async () => {};
+		expect((await inprocAsync(CLOCK, ["test-later"])).code).toBe(EXIT.OK);
+	});
+
+	test.each([
+		["a Fail", () => new Fail(EXIT.LINT_BODY, "boom"), EXIT.LINT_BODY],
+		["an Error", () => new Error("boom"), EXIT.USAGE],
+	])(
+		"a rejection with %s maps to the exit code of the same error thrown",
+		async (_, error, code) => {
+			COMMANDS["test-later"] = () => {
+				throw error();
+			};
+			const thrown = inproc(CLOCK, ["test-later"]);
+			COMMANDS["test-later"] = () => Promise.reject(error());
+			const rejected = await inprocAsync(CLOCK, ["test-later"]);
+			expect(rejected).toEqual(thrown);
+			expect(rejected).toMatchObject({ code, err: "journal: boom\n" });
+		},
+	);
 });
 
 describe("source constraints", () => {

@@ -23,7 +23,10 @@ import { wake } from "./wake";
 
 export { open } from "./db";
 
-type Handler = ((args: string[]) => void) | ((args: string[]) => number);
+type Handler =
+	| ((args: string[]) => void)
+	| ((args: string[]) => number)
+	| ((args: string[]) => Promise<number | undefined>);
 
 export const COMMANDS: Record<string, Handler> = {
 	probe,
@@ -57,7 +60,14 @@ export const COMMANDS: Record<string, Handler> = {
 	"law-sync": lawSync,
 };
 
-export function main(argv: string[]): number {
+function failed(e: unknown): number {
+	process.stderr.write(
+		`journal: ${e instanceof Error ? e.message : String(e)}\n`,
+	);
+	return e instanceof Fail ? e.code : EXIT.USAGE;
+}
+
+export function main(argv: string[]): number | Promise<number> {
 	try {
 		checkEnv();
 		const [name, ...args] = argv;
@@ -65,7 +75,10 @@ export function main(argv: string[]): number {
 		if (name === "--version") {
 			out(pkg.version);
 		} else if (command !== undefined) {
-			return command(args) ?? EXIT.OK;
+			const returned = command(args);
+			return returned instanceof Promise
+				? returned.then((code) => code ?? EXIT.OK, failed)
+				: (returned ?? EXIT.OK);
 		} else {
 			throw new Fail(
 				EXIT.USAGE,
@@ -74,11 +87,8 @@ export function main(argv: string[]): number {
 		}
 		return EXIT.OK;
 	} catch (e) {
-		process.stderr.write(
-			`journal: ${e instanceof Error ? e.message : String(e)}\n`,
-		);
-		return e instanceof Fail ? e.code : EXIT.USAGE;
+		return failed(e);
 	}
 }
 
-if (import.meta.main) process.exitCode = main(process.argv.slice(2));
+if (import.meta.main) process.exitCode = await main(process.argv.slice(2));
