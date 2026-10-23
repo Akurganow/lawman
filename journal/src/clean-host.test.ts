@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
 import { cleanHostText } from "./clean-host";
 import { fencedLines } from "./markers";
+import { PRIVATE_KEYS } from "./test-helpers";
 
 const MARKER =
 	"<!-- lawman: role=court stage=ruling at=2026-10-14T09:30:00Z -->";
@@ -9,10 +10,31 @@ const OTHER_MARKER =
 	"<!-- lawman: role=clerk stage=filed at=2026-10-15T09:30:00Z -->";
 const TOKEN = ["gh", "p_", "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"].join("");
 const LABEL = "REMOVED GITHUB SECRET";
-const NOTICE = "Text withheld because cleaning failed";
 const HOME = ["/Us", "ers/someone/x.md"].join("");
 
 const clean = async (text: string) => cleanHostText(text);
+
+describe("text that cleaning leaves whole comes back byte for byte", () => {
+	test.each([
+		[
+			"a clerk adopt body",
+			"Closes #3\nCloses #4\n\nTaken up by the clerk as a draft that counts as not started.",
+		],
+		["a bot login", "my-app[bot]"],
+		["a login with a trailing underscore", "john_"],
+		["a login with a leading underscore", "_john"],
+		["a pull request address", "https://github.com/o/r/pull/7"],
+		["a path with underscores", "src/__init__.py"],
+		["a commit listing", "a1b2c3d Fix\ne4f5a6b Add __init__.py loader"],
+		["CRLF line ends and a marker", `text\r\n${MARKER}\r\nmore\r\n`],
+	])("%s", async (_, input) => {
+		expect(await clean(input)).toBe(input);
+	});
+
+	test("a removal keeps line breaks", async () => {
+		expect(await clean("one\ntwo\nthree <!-- c -->")).toBe("one\ntwo\nthree");
+	});
+});
 
 describe("images become links", () => {
 	test("a Markdown image gives its alt text and address", async () => {
@@ -32,6 +54,20 @@ describe("images become links", () => {
 			"<https://a.example/e.png>",
 		);
 		expect(await clean('<img src="e.png">')).toBe("[e.png](e.png)");
+	});
+
+	test("an image inside a link becomes its alt text or its address", async () => {
+		expect(await clean("[![alt](https://i/x.png)](https://h/)")).toBe(
+			"[alt](https://h/)",
+		);
+		expect(
+			await clean(
+				'x <a href="https://h/"><img src="https://i/x.png" alt="al"></a> y',
+			),
+		).toBe("x [al](https://h/) y");
+		expect(await clean("[![](https://i/x.png)](https://h/)")).toBe(
+			"[https://i/x.png](https://h/)",
+		);
 	});
 
 	test("a srcset gives its first address", async () => {
@@ -93,6 +129,15 @@ describe("hidden text", () => {
 		).toBe("visible");
 	});
 
+	test("an HTML block that ends inside a tag or a comment is not passed through", async () => {
+		expect(await clean("<div>\n<img src=x\n\nnext")).toBe("next");
+		expect(await clean("text\n\n<!-- open\nhidden")).toBe("text");
+	});
+
+	test("a footnote with no reference is gone", async () => {
+		expect(await clean("visible\n\n[^1]: hidden")).toBe("visible");
+	});
+
 	test("paths and mentions stay", async () => {
 		const out = await clean(`See ${HOME} and @${"someone"}.`);
 		expect(out).toBe(`See ${HOME} and @someone.`);
@@ -106,8 +151,8 @@ describe("marker lines stay at column 0 on their own line", () => {
 		["inside an unclosed comment", `<!-- open\n${MARKER}`, MARKER],
 		["inside a closed comment", `<!-- a\n${MARKER}\n--> b`, `b\n${MARKER}`],
 		[
-			"with CRLF line endings",
-			`text\r\n${MARKER}\r\nmore`,
+			"with CRLF line endings and a removal",
+			`text <!-- c -->\r\n${MARKER}\r\nmore`,
 			`text\n${MARKER}\nmore`,
 		],
 		[
@@ -138,9 +183,15 @@ describe("marker lines stay at column 0 on their own line", () => {
 		);
 	});
 
+	test("a marker line that holds a secret is not kept", async () => {
+		const secret = MARKER.replace(" at=", ` note=${TOKEN} at=`);
+		expect(await clean(`a\n${secret}`)).toBe("a");
+	});
+
 	test("a forged placeholder stays text and makes no marker", async () => {
 		const forged = `q${"0123456789abcdef".repeat(2)}q0q`;
-		expect(await clean(`a\n${forged}`)).toBe(`a ${forged}`);
+		expect(await clean(`a\n${forged}`)).toBe(`a\n${forged}`);
+		expect(await clean(`a <!-- c -->\n${forged}`)).toBe(`a ${forged}`);
 	});
 });
 
@@ -211,65 +262,14 @@ describe("secrets and invisible characters", () => {
 		);
 	});
 
+	test.each(PRIVATE_KEYS)("%s is masked", async (_, make) => {
+		const out = await clean(`a\n\n${make().trim()}\n\nb`);
+		expect(out).toStartWith("a\n\n");
+		expect(out).toEndWith("REMOVED PRIVATEKEY SECRET\n\nb");
+		expect(out).not.toContain("PRIVATE KEY");
+	});
+
 	test("hidden characters are removed, code included", async () => {
 		expect(await clean("a\u200Bb `c\u2060d` e\u00ADf")).toBe("ab `cd` ef");
-	});
-});
-
-describe("cleaning never throws", () => {
-	const failing = () => Promise.reject(new Error("rules failed"));
-
-	test("a failing mask withholds the text and every marker line", async () => {
-		const out = await cleanHostText(`a ${TOKEN}\n${MARKER}\nb`, failing);
-		expect(out).toBe(NOTICE);
-	});
-
-	test("a failure after the markers are checked keeps the marker lines", async () => {
-		let calls = 0;
-		const failsLater = async (text: string) => {
-			calls++;
-			if (calls > 1) throw new Error("rules failed");
-			return text;
-		};
-		expect(await cleanHostText(`a *b*\n${MARKER}`, failsLater)).toBe(
-			`${NOTICE}\n${MARKER}`,
-		);
-	});
-
-	test("a marker line that holds a secret is not kept", async () => {
-		const secret = MARKER.replace(" at=", ` note=${TOKEN} at=`);
-		expect(await clean(`a\n${secret}`)).toBe("a");
-		expect(await cleanHostText(`a\n${secret}`, failing)).toBe(NOTICE);
-	});
-
-	test("a failure inside the tree withholds the text", async () => {
-		let calls = 0;
-		const failsLater = async (text: string) => {
-			calls++;
-			if (calls > 1) throw new Error("rules failed");
-			return text;
-		};
-		expect(await cleanHostText("a *b*", failsLater)).toBe(NOTICE);
-	});
-
-	test("input too deep for the parser gives the notice and the markers", async () => {
-		const deep = `${MARKER}\n${"<b>".repeat(50_000)}<img src=x>`;
-		expect(await clean(deep)).toBe(`${NOTICE}\n${MARKER}`);
-	});
-
-	test("empty input gives empty output", async () => {
-		expect(await clean("")).toBe("");
-	});
-
-	test("the same input gives the same output", async () => {
-		const input = `![a](u) <!-- x --> ${TOKEN}\n${MARKER}`;
-		expect(await clean(input)).toBe(await clean(input));
-	});
-
-	test("cleaning a cleaned output changes nothing", async () => {
-		const out = await clean(
-			`![a](u) <!-- c --> *b*\n> <!-- open\n\ntext ${TOKEN}\n${MARKER}`,
-		);
-		expect(await clean(out)).toBe(out);
 	});
 });

@@ -1,5 +1,4 @@
 import { usage } from "./args";
-import { maskSecrets } from "./clean";
 import { cleanHostText } from "./clean-host";
 import { EXIT, Fail, readStdin } from "./db";
 
@@ -11,18 +10,13 @@ const NOT_JSON =
 const CLEAN_FAILED =
 	"clean: a library failed while cleaning the text; run the command again";
 
-// cleanHostText turns a failure into a notice, so the mask records it here
-// and the read fails instead
+// a library error can quote the input, so its message never reaches stderr
 async function cleaned(text: string): Promise<string> {
-	let failed = false;
-	const out = await cleanHostText(text, (part) =>
-		maskSecrets(part).catch((e: unknown) => {
-			failed = true;
-			throw e;
-		}),
-	);
-	if (failed) throw new Fail(EXIT.USAGE, CLEAN_FAILED);
-	return out;
+	try {
+		return await cleanHostText(text);
+	} catch {
+		throw new Fail(EXIT.USAGE, CLEAN_FAILED);
+	}
 }
 
 // values may follow each other with or without white space between them.
@@ -52,6 +46,7 @@ async function cleanedValue(value: unknown): Promise<unknown> {
 	return Object.fromEntries(await Promise.all(entries));
 }
 
+// plain text keeps its bytes, and its final newline is the one every printed line ends with
 export async function cleanCommand(args: string[]): Promise<number> {
 	const json = args[0] === JSON_FLAG;
 	if (args.length > (json ? 1 : 0)) throw usage(CLEAN_USAGE);
@@ -60,7 +55,9 @@ export async function cleanCommand(args: string[]): Promise<number> {
 		? (await Promise.all(parsedValues(input).map(cleanedValue))).map((v) =>
 				JSON.stringify(v),
 			)
-		: [await cleaned(input)].filter((text) => text !== "");
+		: [(await cleaned(input)).replace(/\n$/, "")].filter(
+				(text) => text.trim() !== "",
+			);
 	process.stdout.write(lines.map((line) => `${line}\n`).join(""));
 	return EXIT.OK;
 }

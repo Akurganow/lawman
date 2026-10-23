@@ -74,15 +74,12 @@ function refenced(text: string, block: Block, content: Range, cleaned: string) {
 
 // Cleans the content of every fenced and indented code block and never
 // rejects. A block whose content changed gets a fence no content line can close.
-export async function cleanQuotes(
-	text: string,
-	mask = maskSecrets,
-): Promise<string> {
+export async function cleanQuotes(text: string): Promise<string> {
 	const blocks = codeBlocks(text);
 	const contents = blocks.map((block) => contentOf(text, block));
 	const cleaned = await Promise.all(
 		contents.map(({ start, end }) =>
-			mask(stripInvisible(text.slice(start, end))),
+			maskSecrets(stripInvisible(text.slice(start, end))),
 		),
 	);
 	let out = text;

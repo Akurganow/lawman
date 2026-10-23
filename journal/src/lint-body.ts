@@ -6,11 +6,11 @@ import remarkRehype from "remark-rehype";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { usage } from "./args";
-import { maskSecrets, stripInvisible } from "./clean";
+import { secretRanges, stripInvisible } from "./clean";
 import { ADDRESS_PROPERTIES } from "./clean-pipeline";
 import { cleanQuotes } from "./clean-quote";
 import { EXIT, Fail, readStdin } from "./db";
-import { parseMarker } from "./markers";
+import { fencedLines, parseMarker } from "./markers";
 
 // an SVG image loads its href, which is no address property of an HTML element
 const IMAGE_TAGS = new Set(["img", "image"]);
@@ -69,19 +69,13 @@ const invisibleLines = ({ text, line }: Piece): Finding[] =>
 			stripInvisible(part) === part ? [] : [[line + i, "invisible character"]],
 		);
 
-// a key block spans lines, so it is reported where the masked text first differs
+// a key block spans lines, so it is reported where it starts
 async function secretLines({ text, line }: Piece): Promise<Finding[]> {
 	const view = stripInvisible(text);
-	const masked = await maskSecrets(view);
-	if (masked === view) return [];
-	const parts = view.split(LINE_END);
-	const hits = (
-		await Promise.all(parts.map((part) => maskSecrets(part)))
-	).flatMap((part, i) => (part === parts[i] ? [] : [line + i]));
-	let same = 0;
-	while (view[same] === masked[same]) same += 1;
-	const first = line + view.slice(0, same).split(LINE_END).length - 1;
-	return (hits.length > 0 ? hits : [first]).map((at) => [at, "secret"]);
+	return (await secretRanges(view)).map(({ start }) => [
+		line + view.slice(0, start).split(LINE_END).length - 1,
+		"secret",
+	]);
 }
 
 async function textFindings(pieces: Piece[]): Promise<Finding[]> {
@@ -125,10 +119,11 @@ function elementFindings(
 	return found;
 }
 
-// an empty rule means the line holds the trailing marker
+// an empty rule means the line holds the trailing marker. The journal's own
+// marker reader must also see it outside a fence, or the read-back loses it.
 function markerLine(lines: string[], blocks: Position[]): Finding {
 	const last = lines.findLastIndex((line) => line.trim() !== "") + 1;
-	if (last > 0 && inBlock(blocks, last))
+	if (last > 0 && (inBlock(blocks, last) || fencedLines(lines)[last - 1]))
 		return [last, "last line is inside a fenced block"];
 	if (last > 0 && parseMarker(lines[last - 1] ?? "")) return [last, ""];
 	return [Math.max(last, 1), "last line is not a valid marker"];

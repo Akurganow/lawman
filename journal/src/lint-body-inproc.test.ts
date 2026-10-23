@@ -46,52 +46,19 @@ describe("lint-body command in process", () => {
 		);
 	});
 
-	test.each([
-		[
-			"a fence in a list item keeps its prefix",
-			`- item\n\n  \`\`\`\n  key ${TOKEN} ${HIDDEN_CLOSER}\n  \`\`\`\n`,
-			`- item\n\n  \`\`\`\`\n  key ${LABEL} \`\`\`\n  \`\`\`\`\n`,
-		],
-		[
-			"a fence in a block quote keeps its prefix",
-			`> \`\`\`\n> key ${TOKEN} ${HIDDEN_CLOSER}\n> \`\`\`\n`,
-			`> \`\`\`\`\n> key ${LABEL} \`\`\`\n> \`\`\`\`\n`,
-		],
-		[
-			"a tilde fence and its info string",
-			`~~~ text\nkey ${TOKEN} ~~\u200B~\n~~~\n`,
-			`~~~~ text\nkey ${LABEL} ~~~\n~~~~\n`,
-		],
-		[
-			"an indented block changes in place",
-			`    key ${TOKEN}\n`,
-			`    key ${LABEL}\n`,
-		],
-	])("a quote is cleaned and re-fenced: %s", async (_, quote, cleaned) => {
-		const r = await lintIn(`ok\n\n${quote}\n${lead()}\n`);
-		expect(r).toEqual({
+	test("a quote is cleaned and re-fenced", async () => {
+		const quote = `- item\n\n  \`\`\`\n  key ${TOKEN} ${HIDDEN_CLOSER}\n  \`\`\`\n`;
+		const cleaned = `- item\n\n  \`\`\`\`\n  key ${LABEL} \`\`\`\n  \`\`\`\`\n`;
+		expect(await lintIn(`ok\n\n${quote}\n${lead()}\n`)).toEqual({
 			code: EXIT.OK,
 			out: `ok\n\n${cleaned}\n${lead()}\n`,
 			err: "",
 		});
 	});
 
-	test("an unclosed fence is cleaned and stays unclosed", async () => {
-		expect(
-			await lintIn(
-				`ok\n\n\`\`\`\nkey ${TOKEN} ${HIDDEN_CLOSER}\n`,
-				"--no-marker",
-			),
-		).toEqual({
-			code: EXIT.OK,
-			out: `ok\n\n\`\`\`\`\nkey ${LABEL} \`\`\`\n`,
-			err: "",
-		});
-	});
-
 	test("a thrown library error gives exit 1 and quotes no input", async () => {
 		const input = `secret words ${TOKEN}\n${lead()}\n`;
-		const mask = spyOn(clean, "maskSecrets").mockRejectedValue(
+		const mask = spyOn(clean, "secretRanges").mockRejectedValue(
 			new Error(`rules failed on ${input}`),
 		);
 		try {

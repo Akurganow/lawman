@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
 import { EXIT } from "./db";
 import { lintBody } from "./lint-body";
-import { cli, lead, ret } from "./test-helpers";
+import { cli, lead, PRIVATE_KEYS, ret } from "./test-helpers";
 
 const HOME_MAC = ["/Us", "ers/someone"].join("");
 const TOKEN = ["gh", "p_", "a1B2c3D4e5F6g7H8i9J0k1L2"].join("");
@@ -79,6 +79,10 @@ describe("lint-body own words", () => {
 
 	test("a key block over several lines is rejected where it starts", async () => {
 		expect(await reasonsOf("ok", privateKey())).toEqual(["2: secret"]);
+	});
+
+	test.each(PRIVATE_KEYS)("%s is rejected where it starts", async (_, make) => {
+		expect(await reasonsOf("ok", make().trim())).toEqual(["2: secret"]);
 	});
 
 	test("an invisible character is rejected with its line", async () => {
@@ -230,6 +234,13 @@ describe("lint-body marker contract", () => {
 		]);
 		expect(await lintBody(["text", FENCE, lead()].join("\n"))).toEqual([
 			"3: last line is inside a fenced block",
+		]);
+	});
+
+	test("a marker the journal reads as fenced is inside a fenced block", async () => {
+		expect(await lintBody(`</div>\n   ~~~\n<div>\n\n${lead()}`)).toEqual([
+			"5: HTML comment",
+			"5: last line is inside a fenced block",
 		]);
 	});
 

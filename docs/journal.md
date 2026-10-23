@@ -133,15 +133,17 @@ journal jev <request|answer> --kind <p0|grade>
 
 Cleaning host text has these known limits:
 
-- Specially built Markdown can make cleaning slow. The journal sets no limit.
+- Specially built Markdown can make cleaning slow.
 - A token split by emphasis markup is not masked.
-- Cleaning writes host text back as normalised Markdown. Escapes and formatting can differ from the original.
+- When cleaning removes something, the text comes back as normalised Markdown.
+- Text hidden by styling (a hidden attribute, a style block) reaches the role as text.
 
 Among other things, the body check rejects these in the text a role writes:
 
 - a secret, such as a token or a private key
 - a hidden character
 - an image embed
+- an element that loads an address
 - an HTML comment other than the marker
 - a last line that is not a valid marker, unless `--no-marker` says the text has none
 

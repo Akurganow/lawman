@@ -28,7 +28,7 @@ export { open } from "./db";
 type Handler =
 	| ((args: string[]) => void)
 	| ((args: string[]) => number)
-	| ((args: string[]) => Promise<number | undefined>);
+	| ((args: string[]) => Promise<number>);
 
 export const COMMANDS: Record<string, Handler> = {
 	probe,
@@ -80,7 +80,7 @@ export function main(argv: string[]): number | Promise<number> {
 		} else if (command !== undefined) {
 			const returned = command(args);
 			return returned instanceof Promise
-				? returned.then((code) => code ?? EXIT.OK, failed)
+				? returned.catch(failed)
 				: (returned ?? EXIT.OK);
 		} else {
 			throw new Fail(

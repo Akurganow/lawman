@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
 import { maskSecrets } from "./clean";
+import { PRIVATE_KEYS } from "./test-helpers";
 
 const fill = (n: number, alphabet = "A1b2C3d4E5f6G7h8K9m0") =>
 	alphabet.repeat(Math.ceil(n / alphabet.length)).slice(0, n);
@@ -176,6 +177,14 @@ describe("secrets", () => {
 		const text = "commit 0123456789abcdef0123456789abcdef01234567 \u200D ok\n";
 		expect(await maskSecrets(text)).toBe(text);
 		expect(await maskSecrets("")).toBe("");
+	});
+});
+
+describe("every private key block is masked", () => {
+	test.each(PRIVATE_KEYS)("%s", async (_, make) => {
+		expect(await maskSecrets(`a\n${make().trim()}\nb`)).toBe(
+			`a\n${label("PRIVATEKEY")}\nb`,
+		);
 	});
 });
 

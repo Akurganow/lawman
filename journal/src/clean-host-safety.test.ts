@@ -48,10 +48,7 @@ async function dangers(text: string): Promise<string[]> {
 		if (node.type !== "element") return;
 		if (LOADING.has(node.tagName)) found.push(node.tagName);
 		for (const name of Object.keys(node.properties))
-			if (
-				(ADDRESS_PROPERTIES as readonly string[]).includes(name) ||
-				/^on/i.test(name)
-			)
+			if (ADDRESS_PROPERTIES.includes(name) || /^on/i.test(name))
 				found.push(`${node.tagName} ${name}`);
 	});
 	return found;

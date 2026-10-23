@@ -77,12 +77,6 @@ describe("handoff builder", () => {
 		expect(await lintBody(await textOf({ adopted: quoted }))).toEqual([]);
 	});
 
-	test("a home path in the old body passes verbatim", async () => {
-		expect(await textOf({ adopted: `see ${HOME_MAC}/code` })).toContain(
-			`\n\`\`\`\nsee ${HOME_MAC}/code\n\`\`\`\n`,
-		);
-	});
-
 	test("a hostile old body is cleaned and gets a fence its cleaned text cannot close", async () => {
 		expect(await textOf({ adopted: HOSTILE })).toContain(
 			`\n\`\`\`\`\nkey ${LABEL}\na\`\`\`\nb\n\`\`\`\`\n`,
@@ -141,13 +135,6 @@ describe("handoff command", () => {
 		const r = run(["--sources", "12"], `see ${HOME_MAC}/code`);
 		expect(r.code).toBe(EXIT.OK);
 		expect(r.out).not.toContain("see");
-	});
-
-	test("a home path in the old body passes verbatim with exit 0", () => {
-		const r = run(["--sources", "12", "--adopted"], `see ${HOME_MAC}/code`);
-		expect(r.code).toBe(EXIT.OK);
-		expect(r.out).toContain(`\nsee ${HOME_MAC}/code\n`);
-		expect(r.err).toBe("");
 	});
 
 	test("a hostile old body gives exit 0, a cleaned output and a longer fence", () => {

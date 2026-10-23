@@ -80,11 +80,6 @@ describe("a command that finishes later", () => {
 		});
 	});
 
-	test("ends with exit 0 when its promise resolves to nothing", async () => {
-		COMMANDS["test-later"] = async () => {};
-		expect((await inprocAsync(CLOCK, ["test-later"])).code).toBe(EXIT.OK);
-	});
-
 	test.each([
 		["a Fail", () => new Fail(EXIT.LINT_BODY, "boom"), EXIT.LINT_BODY],
 		["an Error", () => new Error("boom"), EXIT.USAGE],

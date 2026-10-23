@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect } from "bun:test";
+import { generateKeyPairSync } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -201,3 +202,54 @@ export const order = (
 			f.outcome ?? null,
 		],
 	);
+
+const PEM = { format: "pem" } as const;
+const PUBLIC = { publicKeyEncoding: { type: "spki", ...PEM } } as const;
+const P256 = { namedCurve: "P-256", ...PUBLIC } as const;
+
+// key blocks are made at run time, so no tracked file holds a key header
+export const PRIVATE_KEYS: [string, () => string][] = [
+	[
+		"an EC SEC1 key",
+		() =>
+			generateKeyPairSync("ec", {
+				...P256,
+				privateKeyEncoding: { type: "sec1", ...PEM },
+			}).privateKey,
+	],
+	[
+		"an Ed25519 PKCS8 key",
+		() =>
+			generateKeyPairSync("ed25519", {
+				...PUBLIC,
+				privateKeyEncoding: { type: "pkcs8", ...PEM },
+			}).privateKey,
+	],
+	[
+		"an encrypted PKCS8 key",
+		() =>
+			generateKeyPairSync("ec", {
+				...P256,
+				privateKeyEncoding: {
+					type: "pkcs8",
+					...PEM,
+					cipher: "aes-256-cbc",
+					passphrase: "passphrase",
+				},
+			}).privateKey,
+	],
+	[
+		"a PGP key block",
+		() => {
+			const kind = ["PGP", "PRIVATE", "KEY", "BLOCK"].join(" ");
+			const body = Buffer.from("k".repeat(96)).toString("base64");
+			return [
+				`-----BEGIN ${kind}-----`,
+				"",
+				body,
+				"=AbCd",
+				`-----END ${kind}-----`,
+			].join("\n");
+		},
+	],
+];

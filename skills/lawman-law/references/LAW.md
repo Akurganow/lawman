@@ -306,7 +306,7 @@ The issue sync ceiling is 1000 records. A list of exactly that size is rejected,
 
 No installation path, home path, account name or token ever appears in a public text. Public text means a lead title, a lead body, a comment, a file, a commit message, and a pull request title and body.
 
-The journal's body check reads the text as the host renders it. A fenced or indented block is a quote: the check removes hidden characters from it and replaces each secret with a label. In the rest of the text, a code span included, it rejects a secret and a hidden character. Outside code it also rejects an image embed and an HTML comment other than the marker. It rejects a body whose last line is not a valid marker outside a code block. A title and a commit message carry no marker. It exits with code 7 and prints reasons with line numbers, never the matched value. It checks no path.
+The journal's body check reads the text as the host renders it. A fenced or indented block is a quote: the check removes hidden characters from it and replaces each secret with a label. In the rest of the text, a code span included, it rejects a secret and a hidden character. Outside code it also rejects an image embed, an element that loads an address, and an HTML comment other than the marker. It rejects a body whose last line is not a valid marker outside a code block. A title and a commit message carry no marker. It exits with code 7 and prints reasons with line numbers, never the matched value. It checks no path.
 
 Paths inside the precinct's own tree are evidence and may appear.
 

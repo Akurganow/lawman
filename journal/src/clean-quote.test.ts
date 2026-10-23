@@ -1,8 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import remarkGfm from "remark-gfm";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
+import * as clean from "./clean";
 import { cleanQuotes } from "./clean-quote";
 
 const TOKEN = ["gh", "p_", "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"].join("");
@@ -54,10 +55,16 @@ describe("a quote is cleaned and never rejected", () => {
 	});
 
 	test("a cleaner failure reaches the caller", async () => {
-		const fail = () => Promise.reject(new Error("cleaner failed"));
-		expect(cleanQuotes("```\na\n```\n", fail)).rejects.toThrow(
-			"cleaner failed",
+		const mask = spyOn(clean, "maskSecrets").mockRejectedValue(
+			new Error("cleaner failed"),
 		);
+		try {
+			await expect(cleanQuotes("```\na\n```\n")).rejects.toThrow(
+				"cleaner failed",
+			);
+		} finally {
+			mask.mockRestore();
+		}
 	});
 });
 

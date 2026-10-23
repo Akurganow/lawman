@@ -39,31 +39,11 @@ export function stripInvisible(text: string): string {
 
 // gcp detects by file type; basicauth, database-connection-string and
 // filter-comments stay off, so a directive in the text suppresses nothing
-const SECRETLINT_KINDS = [
-	"aws",
-	"privatekey",
-	"npm",
-	"slack",
-	"sendgrid",
-	"shopify",
-	"stripe",
-	"github",
-	"gitlab",
-	"grafana",
-	"openai",
-	"anthropic",
-	"groq",
-	"huggingface",
-	"linear",
-	"notion",
-	"1password",
-	"hashicorp-vault",
-	"vercel",
-	"databricks",
-	"docker",
-	"figma",
-	"cloudflare",
-	"tailscale",
+const OFF = [
+	"gcp",
+	"basicauth",
+	"database-connection-string",
+	"filter-comments",
 ];
 const RULE_PREFIX = "@secretlint/secretlint-rule-";
 // findings led by a keyword fail the fixed-prefix test, so they stay off
@@ -79,7 +59,7 @@ const RULE_SETTINGS: Record<
 };
 const SECRETLINT_RULES = recommended
 	.map((rule) => ({ rule, kind: rule.meta.id.slice(RULE_PREFIX.length) }))
-	.filter(({ kind }) => SECRETLINT_KINDS.includes(kind))
+	.filter(({ kind }) => !OFF.includes(kind))
 	.map(({ rule, kind }) => ({
 		id: rule.meta.id,
 		rule,
@@ -107,6 +87,11 @@ const LOCAL_RULES: [string, RegExp][] = [
 	["github", /gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}/g],
 	["gitlab", new RegExp(GITLAB_SHAPES.map((re) => re.source).join("|"), "g")],
 	["atlassian", /\bATATT3[A-Za-z0-9_\-=]{186}(?=[`'"\s;]|\\[nr]|$)/g],
+	// secretlint's rule keeps only some key formats
+	[
+		"privatekey",
+		/-----BEGIN ([A-Z0-9 ]*PRIVATE KEY(?: BLOCK)?)-----[\s\S]*?-----END \1-----/g,
+	],
 ];
 
 type Found = { start: number; end: number; kind: string };
@@ -168,15 +153,18 @@ function withoutQuotePrefixes(text: string) {
 }
 
 // expects text that stripInvisible cleaned, because a hidden character can split a token
-export async function maskSecrets(text: string): Promise<string> {
+export async function secretRanges(text: string): Promise<Found[]> {
 	const { view, toRaw } = withoutQuotePrefixes(text);
 	// an end maps from its last character, so the next line's prefix stays out of the range
-	const found = merged([
+	return merged([
 		...(await secretlintFindings(view)),
 		...localFindings(view),
 	]).map((f) => ({ ...f, start: toRaw(f.start), end: toRaw(f.end - 1) + 1 }));
+}
+
+export async function maskSecrets(text: string): Promise<string> {
 	let out = text;
-	for (const { start, end, kind } of found.reverse())
+	for (const { start, end, kind } of (await secretRanges(text)).reverse())
 		out = out.slice(0, start) + label(kind) + out.slice(end);
 	return out;
 }
