@@ -47,7 +47,11 @@ function contentOf(text: string, block: Block): Range {
 }
 
 // the rule of mdast-util-to-markdown: longer than the longest run in the content
-function fenceLength(content: string, char: string, before: number): number {
+export function fenceLength(
+	content: string,
+	char: string,
+	before: number,
+): number {
 	const runs = content.match(new RegExp(`\\${char}+`, "g")) ?? [];
 	return runs.reduce((n, run) => Math.max(n, run.length + 1), before);
 }
