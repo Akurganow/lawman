@@ -55,10 +55,17 @@ function readIssue(raw: unknown): SyncIssue {
 	if (raw.state !== "OPEN" && raw.state !== "CLOSED") {
 		throw syncInput("a state is OPEN or CLOSED");
 	}
-	const stateReason = textOrNull(raw.stateReason);
-	if (stateReason !== null && !STATE_REASON.test(stateReason)) {
+	// An open issue's reason may be absent, null or empty.
+	const reason = raw.stateReason;
+	if (
+		reason !== undefined &&
+		reason !== null &&
+		reason !== "" &&
+		(typeof reason !== "string" || !STATE_REASON.test(reason))
+	) {
 		throw syncInput("a stateReason is upper case, such as COMPLETED");
 	}
+	const stateReason = textOrNull(reason);
 	const closed = textOrNull(raw.closedAt);
 	const login = isRecord(raw.author) ? text(raw.author.login) : "";
 	const comments = Array.isArray(raw.comments)

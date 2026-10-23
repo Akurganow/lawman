@@ -210,6 +210,10 @@ describe("sync", () => {
 			"a lowercase stateReason",
 			withTimes({ state: "CLOSED", stateReason: "completed" }),
 		],
+		[
+			"a stateReason that is no string",
+			withTimes({ state: "CLOSED", stateReason: 42 }),
+		],
 	])("%s exits 4 and leaves the cache", (_name, input) => {
 		sync(issues);
 		const before = snapshot();
