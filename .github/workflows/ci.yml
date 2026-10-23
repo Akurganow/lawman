@@ -26,6 +26,24 @@ jobs:
       - name: Clean through the compiled binary
         run: test "$(printf 'a <!-- hidden --> ![x](https://e.example/i.png)' | ./journal-smoke clean)" = "a [x](https://e.example/i.png)"
 
+  # The release workflow's cog bump reads every commit since the last tag
+  # (cog.toml), so each commit of a pull request must be a conventional commit.
+  commits:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: ./.github/actions/setup-cog
+      - name: Check the commit messages
+        env:
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: cog check --ignore-merge-commits "$BASE..$HEAD"
+
   fence:
     runs-on: ubuntu-latest
     env:
