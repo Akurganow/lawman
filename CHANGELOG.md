@@ -4,6 +4,13 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.18.2 - 2026-10-23
+#### Performance Improvements
+- find each role's last tick with a window query (00c82ef)
+
+- - -
+
+
 ## v0.18.1 - 2026-10-23
 #### Bug Fixes
 - give the slow library-failure test 30 seconds on macOS runners (ea98607)
