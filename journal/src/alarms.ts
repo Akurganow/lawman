@@ -239,8 +239,11 @@ function statusOrders(db: Database): string[] {
 function statusTicks(db: Database): string[] {
 	const rows = db
 		.query(
-			`SELECT role, started_at, ended_at, outcome FROM ticks t
-       WHERE id = (SELECT id FROM ticks WHERE role = t.role ORDER BY started_at DESC, id DESC LIMIT 1)
+			`SELECT role, started_at, ended_at, outcome FROM (
+         SELECT role, started_at, ended_at, outcome,
+                ROW_NUMBER() OVER (PARTITION BY role ORDER BY started_at DESC, id DESC) AS n
+         FROM ticks)
+       WHERE n = 1
        ORDER BY role`,
 		)
 		.all() as {
