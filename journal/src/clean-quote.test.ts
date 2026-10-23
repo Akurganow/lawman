@@ -26,6 +26,13 @@ describe("a quote is cleaned and never rejected", () => {
 		);
 	});
 
+	test("a fenced block with CR line endings is cleaned", async () => {
+		const out = await cleanQuotes(
+			`a\r\`\`\`\rkey ${TOKEN} a${ZWSP}b\r\`\`\`\r`,
+		);
+		expect(out).toBe(`a\r\`\`\`\rkey ${LABEL} ab\r\`\`\`\r`);
+	});
+
 	test("image syntax and comment text pass inside and outside a quote", async () => {
 		const text = [
 			"![own](https://a.example/o.png) <!-- own -->",

@@ -28,6 +28,15 @@ const text = (...lines: string[]) => [...lines, lead()].join("\n");
 const reasonsOf = (...lines: string[]) => lintBody(text(...lines));
 
 describe("lint-body own words", () => {
+	test("a stray end tag before text is no failure", async () => {
+		expect(await reasonsOf("a", "</div>text")).toEqual([]);
+	});
+
+	test("a finding on a CR-only text gives its own line", async () => {
+		const input = ["a", "b", `c&#x200B;d`, "e", lead()].join("\r");
+		expect(await lintBody(input)).toEqual(["3: invisible character"]);
+	});
+
 	test("a clean comment passes", async () => {
 		expect(await reasonsOf(...FINE)).toEqual([]);
 	});

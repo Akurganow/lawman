@@ -41,9 +41,14 @@ function codeBlocks(text: string): Block[] {
 function contentOf(text: string, block: Block): Range {
 	const { end, open, close } = block;
 	if (!open) return { start: block.start, end };
-	const eol = text.indexOf("\n", open.end);
-	const start = eol < 0 || eol >= end ? end : eol + 1;
-	return { start, end: close ? text.lastIndexOf("\n", close.start) : end };
+	const eol = text.slice(open.end, end).match(/\r\n?|\n/);
+	const start = eol ? open.end + (eol.index ?? 0) + eol[0].length : end;
+	if (!close) return { start, end };
+	const before = text.slice(0, close.start);
+	return {
+		start,
+		end: Math.max(before.lastIndexOf("\n"), before.lastIndexOf("\r")),
+	};
 }
 
 // the rule of mdast-util-to-markdown: longer than the longest run in the content

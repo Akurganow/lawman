@@ -33,7 +33,8 @@ const markdown = unified()
 	.use(rehypeRaw);
 const html = unified().use(rehypeRaw);
 
-const lineOf = (node: Nodes) => node.position?.start.line ?? 1;
+// a node the HTML parser adds after a stray end tag has no start
+const lineOf = (node: Nodes) => node.position?.start?.line ?? 1;
 const offsets = ({ start, end }: Position) => [
 	start.offset ?? 0,
 	end.offset ?? 0,
@@ -63,7 +64,7 @@ const asHtml = (value: string): Root => ({
 
 const invisibleLines = ({ text, line }: Piece): Finding[] =>
 	text
-		.split("\n")
+		.split(LINE_END)
 		.flatMap((part, i) =>
 			stripInvisible(part) === part ? [] : [[line + i, "invisible character"]],
 		);
@@ -73,13 +74,13 @@ async function secretLines({ text, line }: Piece): Promise<Finding[]> {
 	const view = stripInvisible(text);
 	const masked = await maskSecrets(view);
 	if (masked === view) return [];
-	const parts = view.split("\n");
+	const parts = view.split(LINE_END);
 	const hits = (
 		await Promise.all(parts.map((part) => maskSecrets(part)))
 	).flatMap((part, i) => (part === parts[i] ? [] : [line + i]));
 	let same = 0;
 	while (view[same] === masked[same]) same += 1;
-	const first = line + view.slice(0, same).split("\n").length - 1;
+	const first = line + view.slice(0, same).split(LINE_END).length - 1;
 	return (hits.length > 0 ? hits : [first]).map((at) => [at, "secret"]);
 }
 
@@ -152,12 +153,12 @@ export async function lintBody(text: string, marker = true): Promise<string[]> {
 	const [line, missing] = marker ? markerLine(lines, blocks) : [0, ""];
 	const isMarker = (node: Nodes) =>
 		!missing &&
-		node.position?.start.line === line &&
+		node.position?.start?.line === line &&
 		text.slice(...offsets(node.position)) === lines[line - 1];
 	const quoted = blanked(text, blocks);
 	const findings: Finding[] = [
 		...(await textFindings([
-			{ text: quoted.split(LINE_END).join("\n"), line: 1 },
+			{ text: quoted, line: 1 },
 			...infos,
 			...decoded(tree),
 		])),
