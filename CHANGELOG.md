@@ -4,6 +4,19 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.18.1 - 2026-10-23
+#### Bug Fixes
+- give the slow library-failure test 30 seconds on macOS runners (ea98607)
+#### Documentation
+- say a breaking change raises the minor version before 1.0.0 (f497409)
+- describe the release through cocogitto and conventional commits (21d39b5)
+#### Continuous Integration
+- run the bump in its own workflow (011dba3)
+- release with cocogitto on every merge to main (a6268e8)
+
+- - -
+
+
 ## [0.18.0] - 2026-10-23
 
 ### Added
