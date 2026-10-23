@@ -198,6 +198,11 @@ describe("marker lines stay at column 0 on their own line", () => {
 describe("secrets and invisible characters", () => {
 	test.each([
 		["text", `a ${TOKEN} b`, `a ${LABEL} b`],
+		[
+			"a fence info string, encoded",
+			`\`\`\`js ${TOKEN.replace("A", "&#65;")}\nx\n\`\`\``,
+			"```js\nx\n```",
+		],
 		["alt text", `![${TOKEN}](u)`, `[${LABEL}](u)`],
 		["an HTML alt", `<img src="u" alt="${TOKEN}">`, `[${LABEL}](u)`],
 		["an address", `<img src="x/${TOKEN}" alt="a">`, `[a](<x/${LABEL}>)`],

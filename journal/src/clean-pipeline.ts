@@ -145,6 +145,12 @@ export async function cleanMarkdown(
 	// the HTML parser drops a block that ends inside a tag or a comment, and a
 	// footnote with no reference is not shown, so either one goes through the pipeline
 	visit(mdast, ["definition", "footnoteDefinition", "html"], () => mark(true));
+	// remark-rehype keeps the info string in data the decoded cleaning never sees
+	const infos: string[] = [];
+	visit(mdast, "code", (node) => {
+		infos.push(`${node.lang ?? ""} ${node.meta ?? ""}`);
+	});
+	for (const info of infos) mark((await clean(info)) !== info);
 	const markdown = processor.stringify(await processor.run(mdast));
 	return { markdown, changed };
 }
