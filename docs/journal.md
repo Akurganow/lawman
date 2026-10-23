@@ -40,7 +40,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|wake|law-sync> [args]
+journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|wake|law-sync> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
@@ -111,16 +111,18 @@ journal form <issues|pulls|decider>
 
 ### Checks and builders
 
-- `lint-body`: checks a title, a blank line and a body on stdin. Exit 7 prints the reasons and never the matched value.
+- `clean`: reads host text on stdin and prints it without hidden comments, secrets and hidden characters, and with each image turned into a link. Plain text is the default form. The option `--json` reads one JSON value or several and cleans every string. A JSON input that does not parse gives exit 1 and no output.
+- `lint-body`: reads a text on stdin as the host renders it and prints the cleaned text. Exit 7 prints the reasons on stderr, prints nothing on stdout and never prints the matched value.
 - `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. A good department page with an alarm check prints `alarm-check`.
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
-- `handoff`: builds the hand-over comment of the clerk for a pull request, checks it with the body check and prints it.
+- `handoff`: builds the hand-over comment of the clerk for a pull request and prints it. With `--adopted` it cleans the old body of the pull request first. It never exits with 7.
 - `precedent`: reads a ruling comment on stdin and adds its numbered precedent line to a constitution file. It prints `entry <n>`, `none` or `no-entry <reason>`.
 - `precedent-merge`: resolves a conflict in the Precedents section. It moves the lines that a pull request added after the highest number of the main branch.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
 
 ```
-journal lint-body (stdin: the issue title, a blank line, then the body)
+journal clean [--json] (stdin: host text, or with --json one or more JSON values)
+journal lint-body [--no-marker] (stdin: the text to write)
 journal lint-page <constitution|department> [--name <expected>] (stdin: the page)
 journal department-line --name <department> --judged-by <path|none> (stdin: the constitution)
 journal handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old pull request body, with --adopted)
@@ -129,23 +131,32 @@ journal precedent-merge --base <file> --ours <file> --theirs <file> --out <file>
 journal jev <request|answer> --kind <p0|grade>
 ```
 
-Among other things, the body check rejects these:
+Cleaning host text has these known limits:
 
-- a home or installation path
-- a GitHub token
+- Specially built Markdown can make cleaning slow.
+- A token split by emphasis markup is not masked.
+- When cleaning removes something, the text comes back as normalised Markdown.
+- Text hidden by styling (a hidden attribute, a style block) reaches the role as text.
+
+Among other things, the body check rejects these in the text a role writes:
+
+- a secret, such as a token or a private key
+- a hidden character
 - an image embed
-- an `@` mention
-- a body over 64 KiB
-- a last line that is not a valid marker
+- an element that loads an address
+- an HTML comment other than the marker
+- a last line that is not a valid marker, unless `--no-marker` says the text has none
 
-See [the pipeline](pipeline.md) for where roles call it.
+It cleans a quote and does not reject it. It checks no path, no mention and no size.
+
+See [the law](../skills/lawman-law/references/LAW.md) for when roles call it.
 
 ## Exit codes
 
 | Code | Meaning |
 | :-- | :-- |
 | 0 | Success |
-| 1 | Usage or argument error |
+| 1 | Usage, argument or input error |
 | 2 | Duplicate open order |
 | 3 | Issue sync ceiling reached |
 | 4 | Invalid sync input |
@@ -164,4 +175,6 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [form.ts](../journal/src/form.ts): the input forms and their examples.
 - [migrations.ts](../journal/src/migrations.ts): the schema.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
+- [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
+- [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.
 - [tick.md](../skills/lawman-law/references/tick.md): the command forms that roles run.

@@ -31,7 +31,7 @@ Every change updates the documentation it affects in the same pull request.
 
 CI runs on every push and pull request, in five jobs.
 
-- `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary and runs it with `--version`.
+- `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary, runs it with `--version`, and checks its `clean` output on a small sample.
 - `fence` keeps repository-specific words out of `skills/`, except `skills/assembly` and the harness pages. The patterns sit in `fence-patterns.txt`.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
@@ -44,15 +44,14 @@ CI runs on every push and pull request, in five jobs.
 1. Bump `journal/package.json` and `plugin.json` to the same version.
 2. Put the entry for the version in `CHANGELOG.md`, with the release date in its heading.
 3. Open a pull request and wait until its CI is green.
-4. Merge the branch into `main` locally.
-5. Tag the merge commit with `git tag v<version>`.
-6. Push the tag alone with `git push origin v<version>`.
+4. Merge the pull request on the host.
+5. Tag the merge commit that the pull request put on `main` with `git tag v<version>`.
+6. Push the tag with `git push origin v<version>`.
 7. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
-8. Push `main` with `git push origin main`.
 
-Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version. If the release workflow fails, `main` stays as it was.
+Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host. Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version.
 
-The tag starts the release workflow. It checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
+The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
 
 A push to `release-trial` runs the workflow without the version check and publishes no release.
 

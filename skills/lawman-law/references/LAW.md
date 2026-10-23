@@ -133,7 +133,7 @@ The court never returns. Its doubt is an acquittal.
 - The clerk writes its branch and its push, a draft pull request create, a pull request body edit with fixed text, a return of a pull request to draft, a pull request comment, a pull request close and reopen, an issue comment, and an issue close and reopen.
 - The spec writer's one write is a comment on a pull request.
 - The executor writes in its copy under the run directory. It pushes to the head branch of its pull request and to no other ref, never forced. It also marks its pull request ready, returns it to draft and writes one comment on it per turn.
-- An issue body or a comment goes only after the journal's body check passes. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit adds the court's ruling line to the constitution, with a link to the ruling comment, or is empty.
+- A role writes an issue title, an issue body, a comment or a commit message. The text that goes out is the journal's output, from the body check or from the hand-off, never a copy the role retypes. The host action runs only when the check exits 0. A commit message of fixed text goes out without the check. A quote of third-party text sits in a fenced block whose fence is longer than any run of the fence character in the quote. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit adds the court's ruling line to the constitution, with a link to the ruling comment, or is empty.
 
 ## Dedupe and closures
 
@@ -278,7 +278,7 @@ A slug is `[a-z0-9-]+`. These are the slugs of this release:
 - `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
 - `stopped-rate-limit`: a write met 403 or 429.
 - `stopped-readback`: a write, a body, a comment or a draft flag, did not read back as sent.
-- `stopped-lint`: the body check rejected a body or a comment.
+- `stopped-lint`: the body check rejected a title, a body, a comment or a commit message.
 - `stopped-run-killed`: the run ended before the role could end the tick. The operator ends the tick with this outcome. No role uses it.
 
 A new slug is added to this list before any role uses it.
@@ -290,7 +290,7 @@ Skills cite these codes by number.
 | Code | Meaning |
 | :-- | :-- |
 | 0 | success |
-| 1 | usage or argument error |
+| 1 | usage, argument or input error |
 | 2 | duplicate open order |
 | 3 | issue sync ceiling reached |
 | 4 | invalid sync input |
@@ -306,7 +306,7 @@ The issue sync ceiling is 1000 records. A list of exactly that size is rejected,
 
 No installation path, home path, account name or token ever appears in a public text. Public text means a lead title, a lead body, a comment, a file, a commit message, and a pull request title and body.
 
-The journal's body check enforces the rule before filing. It exits with code 7 and prints reasons with line numbers. It never prints the matched value. The same check rejects image embeds, mentions, an oversize body and a body whose last line is not a valid marker.
+The journal's body check reads the text as the host renders it. A fenced or indented block is a quote: the check removes hidden characters from it and replaces each secret with a label. In the rest of the text, a code span included, it rejects a secret and a hidden character. Outside code it also rejects an image embed, an element that loads an address, and an HTML comment other than the marker. It rejects a body whose last line is not a valid marker outside a code block. A title and a commit message carry no marker. It exits with code 7 and prints reasons with line numbers, never the matched value. It checks no path.
 
 Paths inside the precinct's own tree are evidence and may appear.
 

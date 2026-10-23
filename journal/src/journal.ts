@@ -8,12 +8,11 @@ import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
 import { dueCommand } from "./due";
 import { form } from "./form";
-import { handoffCommand } from "./handoff";
 import { intakeCommand } from "./intake";
 import { jev } from "./jev";
 import { lawSync } from "./law-sync";
 import { cap, last, leads, seen } from "./leads";
-import { lintBodyCommand, lintPageCommand } from "./lint";
+import { lintPageCommand } from "./lint";
 import { precedentCommand, precedentMergeCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
@@ -23,8 +22,13 @@ import { wake } from "./wake";
 
 export { open } from "./db";
 
-type Handler = ((args: string[]) => void) | ((args: string[]) => number);
+type Handler =
+	| ((args: string[]) => void)
+	| ((args: string[]) => number)
+	| ((args: string[]) => Promise<number>);
 
+// the cleaning libraries load only for the commands that use them, so every
+// other call starts as fast as before
 export const COMMANDS: Record<string, Handler> = {
 	probe,
 	precinct,
@@ -43,13 +47,15 @@ export const COMMANDS: Record<string, Handler> = {
 	case: caseCommand,
 	due: dueCommand,
 	intake: intakeCommand,
-	"lint-body": lintBodyCommand,
+	"lint-body": async (args) =>
+		(await import("./lint-body")).lintBodyCommand(args),
 	"lint-page": lintPageCommand,
 	"department-line": departmentLineCommand,
 	precedent: precedentCommand,
 	"precedent-merge": precedentMergeCommand,
 	pull: pullCommand,
-	handoff: handoffCommand,
+	handoff: async (args) => (await import("./handoff")).handoffCommand(args),
+	clean: async (args) => (await import("./clean-command")).cleanCommand(args),
 	decider,
 	form,
 	jev,
@@ -57,7 +63,14 @@ export const COMMANDS: Record<string, Handler> = {
 	"law-sync": lawSync,
 };
 
-export function main(argv: string[]): number {
+function failed(e: unknown): number {
+	process.stderr.write(
+		`journal: ${e instanceof Error ? e.message : String(e)}\n`,
+	);
+	return e instanceof Fail ? e.code : EXIT.USAGE;
+}
+
+export function main(argv: string[]): number | Promise<number> {
 	try {
 		checkEnv();
 		const [name, ...args] = argv;
@@ -65,7 +78,10 @@ export function main(argv: string[]): number {
 		if (name === "--version") {
 			out(pkg.version);
 		} else if (command !== undefined) {
-			return command(args) ?? EXIT.OK;
+			const returned = command(args);
+			return returned instanceof Promise
+				? returned.catch(failed)
+				: (returned ?? EXIT.OK);
 		} else {
 			throw new Fail(
 				EXIT.USAGE,
@@ -74,11 +90,8 @@ export function main(argv: string[]): number {
 		}
 		return EXIT.OK;
 	} catch (e) {
-		process.stderr.write(
-			`journal: ${e instanceof Error ? e.message : String(e)}\n`,
-		);
-		return e instanceof Fail ? e.code : EXIT.USAGE;
+		return failed(e);
 	}
 }
 
-if (import.meta.main) process.exitCode = main(process.argv.slice(2));
+if (import.meta.main) process.exitCode = await main(process.argv.slice(2));

@@ -23,6 +23,8 @@ jobs:
       - run: bun test
       - run: bun build --compile --target=bun-linux-x64 src/journal.ts --outfile journal-smoke
       - run: ./journal-smoke --version
+      - name: Clean through the compiled binary
+        run: test "$(printf 'a <!-- hidden --> ![x](https://e.example/i.png)' | ./journal-smoke clean)" = "a [x](https://e.example/i.png)"
 
   fence:
     runs-on: ubuntu-latest

@@ -57,7 +57,8 @@ A value that reaches a command or a comment passes its check first. A failed che
 | Merge commit | `^[0-9a-f]{40}$`. It enters comment text only. |
 | Branch | The `branch` of `case`, which is built from integers. Never read the branch name from the host's pull request. |
 | Reaction | The clerk reads none. The journal compares reactions with two constants. |
-| Ruling, old pull request body, comments | Stdin or a quoted heredoc only. Never an argument. |
+| Ruling, old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Comments | Stdin or a quoted heredoc only. Never an argument. |
 
 ## Tick
 

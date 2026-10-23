@@ -144,7 +144,7 @@ A page is a file in the precinct's repository. The leak rule of the law names a 
 
 If a department can find a live secret, add an `Alarm check:` paragraph under Proof. Its search yields only a path and a line, never the matched text, so the value never reaches the output.
 
-The checks catch little of this. `lint-page department` reads the frontmatter, the headings and the empty sections. It scans no text for owner facts. `bin/journal lint-body` rejects home paths, installation paths and tokens, but it runs on the bodies of leads and comments and not on pages. This repository's CI also scans every file for home paths and GitHub tokens. The review before the merge is the check that matters.
+The checks catch little of this. `lint-page department` reads the frontmatter, the headings and the empty sections. It scans no text for owner facts. `bin/journal lint-body` rejects secrets, but it runs on leads, comments and commit messages and not on pages. It checks no path. This repository's CI also scans every file for home paths and GitHub tokens. The review before the merge is the check that matters.
 
 ## Source files
 
@@ -154,5 +154,6 @@ The checks catch little of this. `lint-page department` reads the frontmatter, t
 - [tick.md](../skills/lawman-law/references/tick.md): "Resolve the department page".
 - [duty desk](../skills/duty-desk/SKILL.md): steps 6 to 8 choose the department.
 - [precinct.md](../skills/assembly/references/precinct.md): "Add a department".
-- [lint.ts](../journal/src/lint.ts): the page and body checks.
+- [lint.ts](../journal/src/lint.ts): the page check.
+- [lint-body.ts](../journal/src/lint-body.ts): the body check.
 - [internal-affairs](../.lawman/departments/internal-affairs.md): the worked example.

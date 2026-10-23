@@ -202,7 +202,7 @@ Rules:
 - The title line is `Spec`. One blank line follows it.
 - A section with nothing to say holds the single word `none`.
 - Markdown and `<details>` are allowed. The body holds at most 64 KiB. Cite only the comments the Spec relies on.
-- Put every `@` inside a code span or a fenced block. The body check rejects any other `@`.
+- Put every `@` inside a code span or a fenced block.
 - Write no image embed, such as `![` or `<img`. The body check rejects it.
 - Name no login, not even a decider's. Cite a comment by its URL.
 - Write no home path, no installation path, no token and no login.

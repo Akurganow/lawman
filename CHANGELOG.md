@@ -2,6 +2,29 @@
 
 All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.18.0] - 2026-10-23
+
+### Added
+
+- The command `journal clean` prints host text without hidden HTML comments, secrets and hidden characters, and turns each image into a link. Roles read the bodies of issues, pull requests, comments, reviews and inline remarks, and commit messages, only through it.
+- The body check finds the secrets of many providers, private key blocks, hidden characters, images and HTML comments in a role's own words.
+- The journal has runtime dependencies. The lockfile pins them, and CI and the release install them with the frozen lockfile.
+- The repository holds a notices file with the licences of the bundled packages.
+
+### Changed
+
+- `lint-body` reads the text as the host renders it, cleans quotes, prints the cleaned text on stdout and prints reasons on stderr. The host receives that output as the journal printed it.
+- Patrol checks the title and the body each alone. The executor checks its commit messages.
+- Every role fences a quote with a fence longer than any run of the fence character in the quote.
+
+### Removed
+
+- The body check no longer rejects paths, mentions, title characters, an empty title or a long body. The leak rule stays an instruction for roles.
+
+### Fixed
+
+- The clerk's hand-off of an adopted pull request no longer stops on its old body (#14).
+
 ## [0.17.1] - 2026-10-21
 
 ### Fixed
@@ -206,6 +229,8 @@ All notable changes to Lawman are listed here, newest first. The format follows 
 - The first release: the law, the journal, the duty desk, patrol, the assembly and the Hermes Agent harness page.
 - CI with a fence for repository-specific words. A release workflow builds four binaries, signs the macOS ones ad hoc and publishes checksums.
 
+[0.18.0]: https://github.com/Akurganow/lawman/compare/v0.17.1...v0.18.0
+[0.17.1]: https://github.com/Akurganow/lawman/compare/v0.17.0...v0.17.1
 [0.17.0]: https://github.com/Akurganow/lawman/compare/v0.16.5...v0.17.0
 [0.16.5]: https://github.com/Akurganow/lawman/compare/v0.16.4...v0.16.5
 [0.16.4]: https://github.com/Akurganow/lawman/compare/v0.16.3...v0.16.4
