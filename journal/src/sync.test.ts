@@ -204,6 +204,16 @@ describe("sync", () => {
 		],
 		["a closedAt that is no time", withTimes({ closedAt: "later" })],
 		["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
+		["a lowercase state", withTimes({ state: "open" })],
+		["a state outside the form", withTimes({ state: "opened" })],
+		[
+			"a lowercase stateReason",
+			withTimes({ state: "CLOSED", stateReason: "completed" }),
+		],
+		[
+			"a stateReason that is no string",
+			withTimes({ state: "CLOSED", stateReason: 42 }),
+		],
 	])("%s exits 4 and leaves the cache", (_name, input) => {
 		sync(issues);
 		const before = snapshot();
@@ -211,6 +221,20 @@ describe("sync", () => {
 		expect(r.code).toBe(4);
 		expect(r.err).toContain("journal:");
 		expect(snapshot()).toEqual(before);
+	});
+
+	test("an upper-case stateReason outside the form is stored", () => {
+		const r = sync(
+			withTimes({
+				state: "CLOSED",
+				stateReason: "DUPLICATE",
+				closedAt: CREATED,
+			}),
+		);
+		expect(r.code).toBe(0);
+		expect(rows("SELECT state, state_reason FROM issues")).toEqual([
+			{ state: "CLOSED", state_reason: "DUPLICATE" },
+		]);
 	});
 
 	test("an empty array over a filled cache exits 4 and --reset clears it", () => {
