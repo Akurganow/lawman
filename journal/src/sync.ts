@@ -18,6 +18,7 @@ export const SYNC_LIMIT = 1000;
 
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
 const MARKER_PREFIX = "<!-- lawman:";
+const STATE_REASON = /^[A-Z_]+$/;
 
 type SyncIssue = GhIssue & {
 	bot: boolean;
@@ -50,6 +51,14 @@ function readIssue(raw: unknown): SyncIssue {
 	) {
 		throw syncInput("every element needs an integer number and a state");
 	}
+	// Every reader compares the stored values with the form's upper-case words.
+	if (raw.state !== "OPEN" && raw.state !== "CLOSED") {
+		throw syncInput("a state is OPEN or CLOSED");
+	}
+	const stateReason = textOrNull(raw.stateReason);
+	if (stateReason !== null && !STATE_REASON.test(stateReason)) {
+		throw syncInput("a stateReason is upper case, such as COMPLETED");
+	}
 	const closed = textOrNull(raw.closedAt);
 	const login = isRecord(raw.author) ? text(raw.author.login) : "";
 	const comments = Array.isArray(raw.comments)
@@ -59,7 +68,7 @@ function readIssue(raw: unknown): SyncIssue {
 		number: raw.number as number,
 		bot: isRecord(raw.author) && raw.author.is_bot === true,
 		state: raw.state,
-		stateReason: textOrNull(raw.stateReason),
+		stateReason,
 		title: text(raw.title),
 		createdAt: timeField(raw.createdAt, "an issue createdAt"),
 		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
