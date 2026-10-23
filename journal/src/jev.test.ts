@@ -158,9 +158,9 @@ describe("law consistency", () => {
 
 	test("the tick alarm line carries the text in the law", () => {
 		const tick = lines(readFileSync(join(LAW, "tick.md"), "utf8"));
-		expect(tick).toContain(
-			"- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation.",
-		);
+		const alarm =
+			"- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation.";
+		expect(tick.some((line) => line.startsWith(alarm))).toBe(true);
 	});
 });
 

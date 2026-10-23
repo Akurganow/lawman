@@ -137,16 +137,19 @@ Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tic
 File at most `cap` leads from step 4, one issue for each, in order of value. Repeat these substeps for each lead.
 
 1. Compose the title and the body from the Lead format section.
-2. Lint them. Send the title, a blank line and the body on stdin.
+2. Send the title to the body check with `--no-marker`, then the body with no option, each on stdin.
+   ```
+   bin/journal lint-body --no-marker <<'<delimiter>'
+   <title>
+   <delimiter>
+   ```
    ```
    bin/journal lint-body <<'<delimiter>'
-   <title>
-
    <body>
    <delimiter>
    ```
-   Exit 7: do not file this lead. File nothing more in this tick. Finish the report and end with `stopped-lint`.
-3. Create the issue on the host with the linted title and body, as the host notes record. Add no label. The title and the body reach the host only as data. Send the body as the tick file's Working rules say for multi-line text. The host's reply gives the issue URL and number. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. A failure without a reply can leave an issue behind. The next sync finds it by its marker.
+   Exit 7 from either check: do not file this lead. File nothing more in this tick. Finish the report and end with `stopped-lint`.
+3. Create the issue on the host in one write, with the title and the body the two checks printed, as the host notes record. Add no label. The title and the body reach the host only as data. The host's reply gives the issue URL and number. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. Neither retries. A failure without a reply can leave an issue behind. The next sync finds it by its marker.
 4. Read the issue back from the host by its number. The author must equal `<login>`, ignoring ASCII case. The last non-empty line of the body must equal the marker you sent. A mismatch, or a failed read, gives `stopped-readback`.
 5. Keep the number for the report. After any stop, make no more writes.
 
@@ -170,8 +173,6 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 ## Lead format
 
 Title: `[Lead] <department>: <symbol>: <what>`
-
-- The title has no single quote.
 
 Body, in this order:
 
@@ -199,7 +200,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 
 - Put any extra section the page's Lead body names before `## Not checked`.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
-- Put every `@` inside a code span or a fenced block. An `@` elsewhere fails the body check.
+- Put every `@` inside a code span or a fenced block.
 - Write no image, no home path, no installation path and no token.
 - Keep the body under 64 KB. Quote only the lines the claim needs.
 - Not checked names what investigation must verify.

@@ -299,7 +299,6 @@ jev model=jev-1.13.0 kind=grade P1=0.12 P2=0.31 P3=0.57 harm_users=0.08 harm_mai
 Rules:
 
 - A section with nothing to say holds the single word `none`. The exception is `## Jev`: write it only when a `jev model=` line exists, and leave it out otherwise. It is never `none`.
-- The lint checks the brief as it checks every other ruling text. It ignores an `@` inside a fence, and it applies the path, token and image rules inside a fence.
 - Quote only the lines a ground needs.
 - Put every `@` and every quote of third-party text inside a fenced block, commit subjects included.
 - Name the department page by its department name, never by a path.

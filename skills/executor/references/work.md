@@ -19,7 +19,7 @@ Read this file at step 6 of the executor skill. It holds the recipes of steps 6 
 
 Run it when the pull request does not merge cleanly.
 
-1. Merge the default branch into the tree. Take the message from the commit rules of the Read first and Executor loads files. A conflict is no failure. A merge with no conflict commits itself. Its content is the reviewed default branch, so check only its message with the "Leak check" recipe. A match there ends the tick with `failed` and nothing is pushed. Otherwise push it, as the "Commit and push" recipe says, and skip the rest of this recipe.
+1. Take the message from the commit rules of the Read first and Executor loads files. Send it to the body check with `--no-marker` on stdin. Exit 7 ends the tick with `stopped-lint`, and the merge does not run. Merge the default branch into the tree with the message the check printed. A conflict is no failure. A merge with no conflict commits itself. Its content is the reviewed default branch, so check only its message with the "Leak check" recipe. A match there ends the tick with `failed` and nothing is pushed. Otherwise push it, as the "Commit and push" recipe says, and skip the rest of this recipe.
 2. List the conflicted paths of the tree.
 3. Resolve each conflicted path other than `LAWMAN.md` yourself. Stage it by name.
 4. When `LAWMAN.md` is conflicted, let the journal resolve it. Write its three versions to files in the run directory, not in the tree. Base is the common ancestor. Ours is the branch's version. Theirs is the default branch's version.
@@ -30,7 +30,7 @@ Run it when the pull request does not merge cleanly.
    - `unresolved<TAB><reason>`: abort the merge and end the tick with `skipped-merge-conflict`. Blockers names the reason.
    - `merged<TAB>#<old>->#<new>[,...]`: replace `LAWMAN.md` in the tree with `merged.md` and stage it. Keep the pairs for `## Change`. Never count the numbers yourself.
    - A non-zero exit of `precedent-merge`: abort the merge and end the tick with `failed`.
-5. Run the "Leak check" recipe on the resolved paths only, the ones step 2 listed, and on the message. The rest of the staged merge is the reviewed default branch. Finish the merge with a commit and the message. Open no editor. Push it, as the "Commit and push" recipe says.
+5. Run the "Leak check" recipe on the resolved paths only, the ones step 2 listed, and on the message. The rest of the staged merge is the reviewed default branch. Finish the merge with a commit and the message that item 1 printed. Open no editor. Push it, as the "Commit and push" recipe says.
 
 ## Leak check
 
@@ -51,7 +51,9 @@ No finding means a clean diff. Check the commit message and the comment text the
 
 1. Read the changed paths of the tree.
 2. Stage each path of the work by name. Leave out build output and anything the work did not mean to change.
-3. Run the "Leak check" recipe on the staged diff and on the message.
-4. Commit the staged paths. The message follows the commit rules of the loaded files.
-5. Push the finished part to the head branch of this pull request. A refusal, such as non-fast-forward, ends the tick with `failed`. Blockers holds the host's error line. The next tick continues from the new head. Push as often as parts finish.
-6. Read the tree's head and keep it as the pushed head.
+3. Write the message by the commit rules of the loaded files.
+4. Run the "Leak check" recipe on the staged diff and on the message.
+5. Send the message to the body check with `--no-marker` on stdin. Exit 7 ends the tick with `stopped-lint`, and the commit does not run.
+6. Commit the staged paths with the message the check printed.
+7. Push the finished part to the head branch of this pull request. A refusal, such as non-fast-forward, ends the tick with `failed`. Blockers holds the host's error line. The next tick continues from the new head. Push as often as parts finish.
+8. Read the tree's head and keep it as the pushed head.

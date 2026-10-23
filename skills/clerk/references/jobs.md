@@ -36,7 +36,7 @@ Run this only when the pull request is not a draft. Return it to draft. Read its
 
 ### Hand-off comment
 
-The journal builds the whole comment and lints it. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
+The journal builds the whole comment. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
 
 ```
 bin/journal handoff --sources <sources> [--merged <pull>]
@@ -54,12 +54,10 @@ Add the tree `runs/<tick id>/tree` to the clone `precincts/<p>`, at `<tip>` and 
 
 ### Add the precedent line
 
-The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. Read the body of the ruling comment from the host by its id. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. The `--source` URL is the ruling URL.
+The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. Read the body of the ruling comment from the host by its id. Send it to the journal on standard input, unread, exactly as the host returned it. The `--source` URL is the ruling URL.
 
 ```
-bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL> <<'<delimiter>'
-<ruling body>
-<delimiter>
+bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>
 ```
 
 The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
@@ -147,11 +145,9 @@ Taken up by the clerk as a draft that counts as not started.
 ````
 
 1. Read whether the pull request is a draft.
-2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, through the quoted heredoc of Working rules, exactly as the host returned it. Write the journal's output unchanged as a top-level comment on `<pull>`.
+2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, unread, exactly as the host returned it. Write the journal's output unchanged as a top-level comment on `<pull>`.
    ```
-   bin/journal handoff --sources <sources> --adopted <<'<delimiter>'
-   <old body>
-   <delimiter>
+   bin/journal handoff --sources <sources> --adopted
    ```
 3. Replace the body with the fixed body on the host. Send it as Working rules says for multi-line text.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.

@@ -267,7 +267,7 @@ The marker is the last line of the comment. Nothing follows it:
 Rules:
 
 - The title line is `Executor`. One blank line follows it.
-- Put every `@` inside a code span or a fenced block. The body check rejects any other `@`.
+- Put every `@` inside a code span or a fenced block.
 - Write no image embed, such as `![` or `<img`.
 - Name no login, not even a decider's. Cite a comment by its URL.
 - Write no home path, no installation path and no token.
