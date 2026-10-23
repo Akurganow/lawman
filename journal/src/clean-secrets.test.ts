@@ -178,3 +178,40 @@ describe("secrets", () => {
 		expect(await maskSecrets("")).toBe("");
 	});
 });
+
+describe("secrets behind block quote prefixes", () => {
+	const github = () => join("gh", "p_", fill(36));
+	const quoted = (first: string, rest: string, eol = "\n") =>
+		privateKey()
+			.split("\n")
+			.map((line, i) => (i === 0 ? first : rest) + line)
+			.join(eol);
+
+	test.each([
+		["a nested quote", "> > "],
+		["markers with no space", ">>"],
+	])("a private key behind %s is masked", async (_, prefix) => {
+		expect(await maskSecrets(`a\n${quoted(prefix, prefix)}\nb`)).toBe(
+			`a\n${prefix}${label("PRIVATEKEY")}\nb`,
+		);
+	});
+
+	test("a private key with CRLF line endings is masked", async () => {
+		expect(await maskSecrets(`a\r\n${quoted("> ", "> ", "\r\n")}\r\nb`)).toBe(
+			`a\r\n> ${label("PRIVATEKEY")}\r\nb`,
+		);
+	});
+
+	test("a token in a quote and one after it map to their own places", async () => {
+		expect(await maskSecrets(`> t ${github()} t\nplain ${github()} x`)).toBe(
+			`> t ${label("GITHUB")} t\nplain ${label("GITHUB")} x`,
+		);
+	});
+
+	test("two findings on different quoted lines are both masked", async () => {
+		const npm = join("np", "m_", fill(36));
+		expect(await maskSecrets(`> ${github()}\n>> b ${npm}`)).toBe(
+			`> ${label("GITHUB")}\n>> b ${label("NPM")}`,
+		);
+	});
+});

@@ -148,12 +148,33 @@ function merged(found: Found[]): Found[] {
 const label = (kind: string) =>
 	`REMOVED ${kind.replaceAll("-", " ").toUpperCase()} SECRET`;
 
+// a block quote prefix inside a key block hides the key, so detection reads
+// the text without those prefixes and maps each finding back
+const QUOTE_PREFIX = /^(?:[ \t]*>)+/;
+
+function withoutQuotePrefixes(text: string) {
+	const shifts: [number, number][] = [];
+	let view = "";
+	let raw = 0;
+	for (const line of text.split("\n")) {
+		const prefix = line.match(QUOTE_PREFIX)?.[0].length ?? 0;
+		shifts.push([view.length, raw + prefix - view.length]);
+		view += `${line.slice(prefix)}\n`;
+		raw += line.length + 1;
+	}
+	const toRaw = (at: number) =>
+		at + (shifts.findLast(([from]) => from <= at)?.[1] ?? 0);
+	return { view: view.slice(0, -1), toRaw };
+}
+
 // expects text that stripInvisible cleaned, because a hidden character can split a token
 export async function maskSecrets(text: string): Promise<string> {
+	const { view, toRaw } = withoutQuotePrefixes(text);
+	// an end maps from its last character, so the next line's prefix stays out of the range
 	const found = merged([
-		...(await secretlintFindings(text)),
-		...localFindings(text),
-	]);
+		...(await secretlintFindings(view)),
+		...localFindings(view),
+	]).map((f) => ({ ...f, start: toRaw(f.start), end: toRaw(f.end - 1) + 1 }));
 	let out = text;
 	for (const { start, end, kind } of found.reverse())
 		out = out.slice(0, start) + label(kind) + out.slice(end);
