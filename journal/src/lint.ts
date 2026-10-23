@@ -1,8 +1,7 @@
 import { check, parseArgs, usage } from "./args";
 import { EXIT, out, readStdin } from "./db";
-import { fencedLines, NAME, parseMarker, stripCr } from "./markers";
+import { fencedLines, NAME, stripCr } from "./markers";
 
-export const BODY_MAX_BYTES = 64 * 1024;
 export const CONSTITUTION_HEADINGS = [
 	"Read first",
 	"Departments",
@@ -25,8 +24,6 @@ export const DEPARTMENT_HEADINGS = [
 	"Identity",
 ];
 
-const LINT_BODY_USAGE =
-	"lint-body (stdin: the issue title, a blank line, then the body)";
 const LINT_PAGE_USAGE =
 	"lint-page <constitution|department> [--name <expected>] (stdin: the page)";
 type PageKind = "constitution" | "department";
@@ -47,73 +44,12 @@ const FRONTMATTER_KEY = /^([a-z_]+):\s*(.*?)\s*$/;
 export const HEADING = /^ {0,3}## +(\S.*?) *$/;
 const TITLE_LINE = /^# Constitution of [A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 export const DEPARTMENT_LINE = /^- ([a-z][a-z0-9-]*): judged by (none|[^\s]+)$/;
-// a code span closes only on a backtick run of the same length, and an
-// escaped backtick opens none
-const CODE_SPAN = /(?<![`\\])(`+)(?![`]).+?(?<![`])\1(?![`])/g;
-const MENTION = /@[A-Za-z0-9]/;
-const TITLE_SHELL = /['`$\\]/;
-
-const BODY_RULES: [string, RegExp][] = [
-	[
-		"home or installation path",
-		/(?<![A-Za-z0-9_.-])\/(?:Users|home)\/[^\s/]|~\/|\$\{?HOME\b|(?<![A-Za-z0-9_.-])\.lawman(?![A-Za-z0-9_.-])(?!\/departments\/)/,
-	],
-	["GitHub token", /gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,}/],
-];
-// GitHub renders no image inside code, so a quoted `vec![1]` is text
-const IMAGE_EMBED = /!\[|<(?:img|picture)/i;
 
 const PATH_RULES: [string, (path: string) => boolean][] = [
 	["path holds ..", (path) => path.includes("..")],
 	["path starts with a slash", (path) => path.startsWith("/")],
 	["path holds a backslash", (path) => path.includes("\\")],
 ];
-
-function lineReasons(line: string, fenced: boolean): string[] {
-	const reasons = BODY_RULES.filter(([, re]) => re.test(line)).map(
-		([reason]) => reason,
-	);
-	if (fenced) return reasons;
-	const prose = line.replace(CODE_SPAN, "");
-	if (IMAGE_EMBED.test(prose)) reasons.push("image embed");
-	if (MENTION.test(prose)) reasons.push("@ mention");
-	return reasons;
-}
-
-// reasons name the rule only, never the matched text
-export function lintBody(input: string): string[] {
-	const lines = input.split("\n").map(stripCr);
-	const title = lines[0] ?? "";
-	const titled = lines.length > 1 && lines[1] !== "";
-	const reasons = lineReasons(title, false).map((r) => `title: ${r}`);
-	if (title.trim() === "") reasons.push("title: empty title");
-	if (TITLE_SHELL.test(title)) reasons.push("title: shell character");
-	if (titled) reasons.push("title: no blank line after the title");
-	const body = lines.slice(titled ? 1 : 2);
-	if (Buffer.byteLength(body.join("\n")) > BODY_MAX_BYTES)
-		reasons.push(`1: body exceeds ${BODY_MAX_BYTES} bytes`);
-	const fenced = fencedLines(body);
-	body.forEach((line, i) => {
-		const inFence = fenced[i] === true;
-		reasons.push(...lineReasons(line, inFence).map((r) => `${i + 1}: ${r}`));
-	});
-	const lastText = body.findLastIndex((l) => l.trim() !== "");
-	const lastLine = body[lastText];
-	if (lastLine !== undefined && fenced[lastText])
-		reasons.push(`${lastText + 1}: last line is inside a fenced block`);
-	else if (lastLine === undefined || !parseMarker(lastLine))
-		reasons.push(
-			`${Math.max(lastText, 0) + 1}: last line is not a valid marker`,
-		);
-	return reasons;
-}
-
-export function lintBodyCommand(args: string[]): number {
-	if (args.length > 0) throw usage(LINT_BODY_USAGE);
-	const reasons = lintBody(readStdin());
-	for (const reason of reasons) out(reason);
-	return reasons.length > 0 ? EXIT.LINT_BODY : EXIT.OK;
-}
 
 type FrontKeys = Map<string, { value: string; line: number }>;
 type Heading = { name: string; line: number };

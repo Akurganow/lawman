@@ -1,263 +1,297 @@
 import { describe, expect, test } from "bun:test";
+import { generateKeyPairSync } from "node:crypto";
 import { EXIT } from "./db";
-import { BODY_MAX_BYTES, lintBody } from "./lint";
+import { lintBody } from "./lint-body";
 import { cli, lead, ret } from "./test-helpers";
 
 const HOME_MAC = ["/Us", "ers/someone"].join("");
-const HOME_LINUX = ["/ho", "me/someone"].join("");
+const TOKEN = ["gh", "p_", "a1B2c3D4e5F6g7H8i9J0k1L2"].join("");
+const LABEL = "REMOVED GITHUB SECRET";
+const ZWSP = "\u200B";
+const FENCE = "```";
 
-describe("lint-body", () => {
-	const TITLE = "[Lead] core: dead code";
-	const TOKEN = "ghp_" + "a1B2c3D4e5F6g7H8i9J0k1L2";
-	const FINE = [
-		"Analysed commit: 0123456",
-		"",
-		"## What",
-		"A function nobody calls.",
-		"",
-	];
-	const body = (...lines: string[]) => [...lines, lead()].join("\n");
-	const lintText = (text: string, title = TITLE) =>
-		lintBody(`${title}\n\n${text}`);
-	const reasonsOf = (...lines: string[]) => lintText(body(...lines));
+const privateKey = () =>
+	generateKeyPairSync("ec", {
+		namedCurve: "P-256",
+		privateKeyEncoding: { type: "pkcs8", format: "pem" },
+		publicKeyEncoding: { type: "spki", format: "pem" },
+	}).privateKey.trim();
 
-	test("a clean body passes", () => {
-		expect(reasonsOf(...FINE)).toEqual([]);
+const FINE = [
+	"Analysed commit: 0123456",
+	"",
+	"## What",
+	"A function nobody calls.",
+	"",
+];
+const text = (...lines: string[]) => [...lines, lead()].join("\n");
+const reasonsOf = (...lines: string[]) => lintBody(text(...lines));
+
+describe("lint-body own words", () => {
+	test("a clean comment passes", async () => {
+		expect(await reasonsOf(...FINE)).toEqual([]);
 	});
 
-	test("the marker may be followed by blank lines", () => {
-		expect(lintText(`${body(...FINE)}\n\n  \n`)).toEqual([]);
-	});
-
-	test("home directories, $HOME and installation roots are rejected with the body line", () => {
-		const leaks = [
-			`see ${HOME_MAC}/code`,
-			`see ${HOME_LINUX}/code`,
-			"see ~/code",
-			"run $HOME/bin",
-			`run $\{HOME}/bin`,
-			"tool at .lawman/bin/journal",
-			"tool at /opt/.lawman/bin",
-			"tool at .lawman",
+	test("paths, mentions, shell characters and size are not checked", async () => {
+		const lines = [
+			`see ${HOME_MAC}/code and ~/x and $HOME and .lawman/bin`,
+			"thanks @someone, it's `$1` and \\x",
+			"x".repeat(70 * 1024),
 		];
-		for (const leak of leaks)
-			expect(reasonsOf("ok", leak)).toEqual(["2: home or installation path"]);
+		expect(await reasonsOf(...lines)).toEqual([]);
 	});
 
-	test("the precinct-local department directory is allowed, any other .lawman path is not", () => {
-		expect(reasonsOf("page at .lawman/departments/x.md")).toEqual([]);
-		expect(reasonsOf("page at tree/.lawman/departments/x.md")).toEqual([]);
-		expect(reasonsOf("page at .lawman/departments")).toEqual([
-			"1: home or installation path",
-		]);
-		expect(reasonsOf("page at .lawman/other/x.md")).toEqual([
-			"1: home or installation path",
-		]);
-		expect(reasonsOf("a name like not.lawman is no segment")).toEqual([]);
+	test("a secret is rejected with its line", async () => {
+		expect(await reasonsOf("ok", `key ${TOKEN}`)).toEqual(["2: secret"]);
 	});
 
-	test("a segment that only resembles a home directory passes", () => {
+	test("a secret split by an invisible character is rejected", async () => {
+		const split = `${TOKEN.slice(0, 2)}${ZWSP}${TOKEN.slice(2)}`;
+		expect(await reasonsOf(`key ${split}`)).toEqual([
+			"1: secret",
+			"1: invisible character",
+		]);
+	});
+
+	test("a secret written with character references is rejected", async () => {
+		expect(await reasonsOf("ok", `key &#103;${TOKEN.slice(1)}`)).toEqual([
+			"2: secret",
+		]);
+		expect(await reasonsOf(`<a title="&#x67;${TOKEN.slice(1)}">x</a>`)).toEqual(
+			["1: secret"],
+		);
+	});
+
+	test("a secret inside a code span is rejected", async () => {
+		expect(await reasonsOf("ok", "ok", `the \`${TOKEN}\` value`)).toEqual([
+			"3: secret",
+		]);
+	});
+
+	test("a key block over several lines is rejected where it starts", async () => {
+		expect(await reasonsOf("ok", privateKey())).toEqual(["2: secret"]);
+	});
+
+	test("an invisible character is rejected with its line", async () => {
+		expect(await reasonsOf("ok", `a${ZWSP}b`)).toEqual([
+			"2: invisible character",
+		]);
+	});
+
+	test("an invisible character inside a code span or written as a reference is rejected", async () => {
+		expect(await reasonsOf(`the \`a${ZWSP}b\` span`)).toEqual([
+			"1: invisible character",
+		]);
+		expect(await reasonsOf("ok", "a&#x200B;b")).toEqual([
+			"2: invisible character",
+		]);
+	});
+
+	test("a Markdown image is rejected with its line", async () => {
+		expect(await reasonsOf("ok", "![shot](https://example.org/a.png)")).toEqual(
+			["2: image embed"],
+		);
 		expect(
-			reasonsOf("src/Us" + "ers/model.rs", "see https://example.org/x"),
+			await reasonsOf("![shot][a]", "", "[a]: https://example.org/a.png"),
+		).toEqual(["1: image embed"]);
+	});
+
+	test.each([
+		['<img src="https://example.org/a.png">', "image embed"],
+		["<IMG src=x>", "image embed"],
+		["<img src=https://example.org/a.png alt=a/b>", "image embed"],
+		["<picture><img src=a.png></picture>", "image embed"],
+		['<picture><source srcset="a.png"></picture>', "loading element"],
+		['<svg><image href="https://example.org/a.png"/></svg>', "image embed"],
+	])("the HTML image %s is rejected with its line", async (tag, rule) => {
+		expect(await reasonsOf("ok", "", tag)).toEqual([`3: ${rule}`]);
+	});
+
+	test("an element that loads an address is rejected with its line", async () => {
+		expect(
+			await reasonsOf(
+				"ok",
+				'<video poster="https://example.org/p.png"></video>',
+			),
+		).toEqual(["2: loading element"]);
+		expect(
+			await reasonsOf('<object data="https://example.org/x"></object>'),
+		).toEqual(["1: loading element"]);
+	});
+
+	test("an HTML comment other than the trailing marker is rejected with its line", async () => {
+		expect(await reasonsOf("ok", "<!-- note -->")).toEqual(["2: HTML comment"]);
+		expect(
+			await reasonsOf("<details>", "<!-- note -->", "shown", "</details>"),
+		).toEqual(["2: HTML comment"]);
+		expect(await reasonsOf("text <!-- inline --> text")).toEqual([
+			"1: HTML comment",
+		]);
+		expect(await reasonsOf(ret(), "", "ok")).toEqual(["1: HTML comment"]);
+	});
+
+	test("image and comment syntax inside a code span passes", async () => {
+		expect(
+			await reasonsOf(
+				"the `vec![1]` macro, `![a](b)`, `<img src=x>` and `<!-- c -->`",
+			),
 		).toEqual([]);
 	});
 
-	test("GitHub token shapes are rejected", () => {
-		const pat = `github_pat_${"A1b2C3d4E5f6G7h8I9j0_k"}`;
-		for (const secret of [
-			TOKEN,
-			pat,
-			`gho_${"x".repeat(20)}`,
-			`ghs_${"y".repeat(30)}`,
-		]) {
-			expect(reasonsOf(`key ${secret}`)).toEqual(["1: GitHub token"]);
-		}
-		expect(reasonsOf("ghp_short")).toEqual([]);
-	});
-
-	test("image embeds and image tags are rejected", () => {
-		for (const line of [
-			"![shot](https://example.org/a.png)",
-			"<img src=x>",
-			"<IMG src=x>",
-			"<picture>",
-		]) {
-			expect(reasonsOf(line)).toEqual(["1: image embed"]);
-		}
-	});
-
-	test("an image embed inside code passes, one outside it does not", () => {
+	test("image and comment syntax inside a code block passes", async () => {
 		expect(
-			reasonsOf("```", "let v = vec![1, 2];", "<img src=x>", "```"),
+			await reasonsOf(
+				FENCE,
+				"let v = vec![1];",
+				"<img src=x>",
+				"<!-- c -->",
+				FENCE,
+			),
 		).toEqual([]);
-		expect(reasonsOf("the `vec![1]` macro and `<img>` tag")).toEqual([]);
-		expect(reasonsOf("the `vec![1]` macro and ![shot](a.png)")).toEqual([
-			"1: image embed",
-		]);
-		expect(reasonsOf("`![shot](a.png)``")).toEqual(["1: image embed"]);
-		expect(reasonsOf("\\`![shot](a.png)\\`")).toEqual(["1: image embed"]);
-	});
-
-	test("an @ mention is rejected outside code", () => {
-		expect(reasonsOf("thanks @someone")).toEqual(["1: @ mention"]);
-		expect(reasonsOf("mail a@b.example")).toEqual(["1: @ mention"]);
-		expect(reasonsOf("@7days")).toEqual(["1: @ mention"]);
-	});
-
-	test("an @ sign without a letter or digit after it passes", () => {
-		expect(reasonsOf("at @ sign, @-, @")).toEqual([]);
-	});
-
-	test("an @ inside a code span passes, one outside it does not", () => {
-		expect(reasonsOf("the `@Override` tag and ``@x`` too")).toEqual([]);
-		expect(reasonsOf("the `@Override` tag and @someone")).toEqual([
-			"1: @ mention",
-		]);
-		expect(reasonsOf("an unclosed `span @someone")).toEqual(["1: @ mention"]);
-	});
-
-	test("a fenced Source line naming a package version passes", () => {
-		expect(
-			reasonsOf("```", "Source: advisories npm @scope/pkg@1.0.0", "```"),
-		).toEqual([]);
-		expect(reasonsOf("Source: advisories npm left-pad@1.3.0")).toEqual([
-			"1: @ mention",
-		]);
-	});
-
-	test("an @ inside a fenced block passes, other rules still apply there", () => {
-		expect(reasonsOf("```", "@Override", "```")).toEqual([]);
-		expect(reasonsOf("~~~~", "@Override", "~~~", "@someone", "~~~~")).toEqual(
+		expect(await reasonsOf("    <img src=x>", "    <!-- c -->", "")).toEqual(
 			[],
 		);
-		expect(reasonsOf("```", "@Override", "```", "@someone")).toEqual([
-			"4: @ mention",
-		]);
-		expect(reasonsOf("```", `${HOME_LINUX}/x`, "```")).toEqual([
-			"2: home or installation path",
+	});
+
+	test("a secret or an invisible character in a quote is never rejected", async () => {
+		expect(await reasonsOf(FENCE, `key ${TOKEN} a${ZWSP}b`, FENCE)).toEqual([]);
+	});
+
+	test("a secret or an invisible character in a fence's info string is rejected", async () => {
+		expect(
+			await reasonsOf("ok", "", `${FENCE}js ${TOKEN}`, "x", FENCE),
+		).toEqual(["3: secret"]);
+		expect(await reasonsOf(`${FENCE}j${ZWSP}s`, "x", FENCE)).toEqual([
+			"1: invisible character",
 		]);
 	});
 
-	test("one line can fail several rules, each named once and in a fixed order", () => {
-		expect(reasonsOf(`${HOME_LINUX} ${TOKEN} @someone`)).toEqual([
-			"1: home or installation path",
-			"1: GitHub token",
-			"1: @ mention",
+	test("findings come in line order, several on one line each once", async () => {
+		expect(
+			await reasonsOf(`<!-- c --> ${TOKEN} a${ZWSP}b`, "![x](y) <img src=z>"),
+		).toEqual([
+			"1: secret",
+			"1: invisible character",
+			"1: HTML comment",
+			"2: image embed",
 		]);
 	});
 
-	test("the output never holds the matched text", () => {
-		const text = reasonsOf(`${HOME_LINUX} ${TOKEN} @someone ![x](y)`).join(
-			"\n",
-		);
-		for (const secret of ["someone", TOKEN, "![x]"])
-			expect(text).not.toContain(secret);
+	test("no reason holds the matched text", async () => {
+		const reasons = (
+			await reasonsOf(`${TOKEN} <!-- someone --> ![x](https://example.org/y)`)
+		).join("\n");
+		for (const value of [TOKEN, "someone", "example.org"])
+			expect(reasons).not.toContain(value);
+	});
+});
+
+describe("lint-body marker contract", () => {
+	test("the marker may be followed by blank lines", async () => {
+		expect(await lintBody(`${text(...FINE)}\n\n  \n`)).toEqual([]);
 	});
 
-	test("the last non-empty line must be a valid marker", () => {
-		const missing = lintText(FINE.join("\n"));
-		expect(missing).toEqual(["4: last line is not a valid marker"]);
-		const notLast = lintText([lead(), "trailing words"].join("\n"));
-		expect(notLast).toEqual(["2: last line is not a valid marker"]);
-		expect(lintText(lead().replace("role=patrol", "role=Patrol"))).toEqual([
+	test("the last non-blank line must be a valid marker", async () => {
+		expect(await lintBody(FINE.join("\n"))).toEqual([
+			"4: last line is not a valid marker",
+		]);
+		expect(await lintBody([lead(), "trailing words"].join("\n"))).toEqual([
+			"1: HTML comment",
+			"2: last line is not a valid marker",
+		]);
+		expect(
+			await lintBody(lead().replace("role=patrol", "role=Patrol")),
+		).toEqual(["1: HTML comment", "1: last line is not a valid marker"]);
+		expect(await lintBody(` ${lead()}`)).toEqual([
+			"1: HTML comment",
 			"1: last line is not a valid marker",
 		]);
 	});
 
-	test("an empty body has no marker", () => {
-		expect(lintBody(`${TITLE}\n\n`)).toEqual([
-			"1: last line is not a valid marker",
-		]);
-		expect(lintBody(`${TITLE}\n`)).toEqual([
+	test("empty input has no marker", async () => {
+		expect(await lintBody("")).toEqual(["1: last line is not a valid marker"]);
+		expect(await lintBody("\n\n")).toEqual([
 			"1: last line is not a valid marker",
 		]);
 	});
 
-	test("the marker stage is not constrained", () => {
-		expect(lintText(ret())).toEqual([]);
-	});
-
-	test("a marker inside a closed fence at the end is rejected by the fence", () => {
-		expect(lintText(["```", lead(), "```"].join("\n"))).toEqual([
+	test("a marker inside a fenced block is inside code", async () => {
+		expect(await lintBody([FENCE, lead(), FENCE].join("\n"))).toEqual([
+			"3: last line is inside a fenced block",
+		]);
+		expect(await lintBody(["text", FENCE, lead()].join("\n"))).toEqual([
 			"3: last line is inside a fenced block",
 		]);
 	});
 
-	test("CRLF line ends are accepted", () => {
-		expect(lintBody(`${TITLE}\r\n\r\nok\r\n${lead()}\r\n`)).toEqual([]);
+	test("CRLF line ends are accepted and counted once", async () => {
+		expect(await lintBody(`ok\r\n${lead()}\r\n`)).toEqual([]);
+		expect(
+			await lintBody(`ok\r\n<!-- c -->\r\n<img src=x>\r\n${lead()}\r\n`),
+		).toEqual(["2: HTML comment", "3: image embed"]);
 	});
 
-	test("the size limit is 64 KB and counts bytes of the body", () => {
-		expect(BODY_MAX_BYTES).toBe(64 * 1024);
-		const room = BODY_MAX_BYTES - Buffer.byteLength(`\n${lead()}`);
-		expect(lintText(`${"x".repeat(room)}\n${lead()}`)).toEqual([]);
-		expect(lintText(`${"x".repeat(room + 1)}\n${lead()}`)).toEqual([
-			`1: body exceeds ${BODY_MAX_BYTES} bytes`,
-		]);
-		expect(lintText(`${"é".repeat(BODY_MAX_BYTES / 2)}\n${lead()}`)).toEqual([
-			`1: body exceeds ${BODY_MAX_BYTES} bytes`,
-		]);
+	test("without the marker requirement any text passes and every comment is a finding", async () => {
+		expect(await lintBody("[core] fix: it's done", false)).toEqual([]);
+		expect(await lintBody("", false)).toEqual([]);
+		expect(await lintBody(lead(), false)).toEqual(["1: HTML comment"]);
+		expect(await lintBody(`x ${TOKEN}`, false)).toEqual(["1: secret"]);
+	});
+});
+
+describe("lint-body command", () => {
+	const feed = (input: string, ...args: string[]) =>
+		cli(["lint-body", ...args], {}, input);
+
+	test("a clean text is printed on stdout with exit 0", () => {
+		const input = `${text(...FINE)}\n`;
+		expect(feed(input)).toEqual({ code: EXIT.OK, out: input, err: "" });
 	});
 
-	test("the title is checked with the same rules and reported as title", () => {
-		expect(lintText(body(...FINE), "")).toEqual(["title: empty title"]);
-		expect(lintText(body(...FINE), "x @someone")).toEqual(["title: @ mention"]);
-		expect(lintText(body(...FINE), `x ${HOME_LINUX}`)).toEqual([
-			"title: home or installation path",
-		]);
-		expect(lintText(body(...FINE), `x ${TOKEN}`)).toEqual([
-			"title: GitHub token",
-		]);
-	});
-
-	test("a title with a shell character is rejected, the body is not", () => {
-		for (const c of ["'", "`", "$", "\\"])
-			expect(lintText(body(...FINE), `x ${c} y`)).toEqual([
-				"title: shell character",
-			]);
-		expect(lintText(body("call `f()` costs $1 and 'x'", ...FINE))).toEqual([]);
-	});
-
-	test("a second line that is not blank is a title error and the body starts there", () => {
-		expect(lintBody(`${TITLE}\nfirst body line\n${lead()}`)).toEqual([
-			"title: no blank line after the title",
-		]);
-	});
-
-	describe("command", () => {
-		const feed = (input: string) => cli(["lint-body"], {}, input);
-
-		test("a clean body prints nothing and exits 0", () => {
-			const r = feed(`${TITLE}\n\n${body(...FINE)}\n`);
-			expect([r.code, r.out, r.err]).toEqual([0, "", ""]);
-		});
-
-		test("rejected input prints one reason per line on stdout and exits 7", () => {
-			const r = feed(`${TITLE}\n\n${body(HOME_LINUX, "@someone")}\n`);
-			expect(r.code).toBe(EXIT.LINT_BODY);
-			expect(r.out).toBe("1: home or installation path\n2: @ mention\n");
-			expect(r.err).toBe("");
-		});
-
-		test("a marker after an unclosed fence is rejected with exit 7", () => {
-			const r = feed(`${TITLE}\n\ntext\n\`\`\`\n${lead()}\n`);
-			expect(r.code).toBe(EXIT.LINT_BODY);
-			expect(r.out).toBe("3: last line is inside a fenced block\n");
-		});
-
-		test("empty stdin is rejected with exit 7", () => {
-			const r = feed("");
-			expect(r.code).toBe(7);
-			expect(r.out).toBe(
-				"title: empty title\n1: last line is not a valid marker\n",
-			);
-		});
-
-		test("arguments are a usage error that names the input format", () => {
-			const r = cli(["lint-body", "extra"]);
-			expect(r.code).toBe(1);
-			expect(r.err).toContain("title");
-			expect(r.err).toContain("blank line");
+	test("a quote is cleaned on stdout and gets a longer fence", () => {
+		const r = feed(
+			`${text("a", FENCE, `key ${TOKEN} \`\`${ZWSP}\``, FENCE)}\n`,
+		);
+		expect(r).toEqual({
+			code: EXIT.OK,
+			out: `${text("a", "````", `key ${LABEL} \`\`\``, "````")}\n`,
+			err: "",
 		});
 	});
+
+	test("a comment in a fence and a code span passes unchanged", () => {
+		const input = `${text("the `<!-- c -->` span", "", FENCE, "<!-- c -->", FENCE)}\n`;
+		expect(feed(input)).toEqual({ code: EXIT.OK, out: input, err: "" });
+	});
+
+	test("findings go to stderr, stdout stays empty and the exit is 7", () => {
+		expect(feed(`${text("ok", "<img src=x>", TOKEN)}\n`)).toEqual({
+			code: EXIT.LINT_BODY,
+			out: "",
+			err: "2: image embed\n3: secret\n",
+		});
+	});
+
+	test("--no-marker takes a title or a commit message", () => {
+		expect(feed("[core] fix: it's done\n", "--no-marker")).toEqual({
+			code: EXIT.OK,
+			out: "[core] fix: it's done\n",
+			err: "",
+		});
+		expect(feed(`${lead()}\n`, "--no-marker")).toEqual({
+			code: EXIT.LINT_BODY,
+			out: "",
+			err: "1: HTML comment\n",
+		});
+	});
+
+	test.each([[["extra"]], [["--no-marker", "x"]], [["--marker"]]])(
+		"the arguments %j are a usage error",
+		(args) => {
+			const r = cli(["lint-body", ...args]);
+			expect(r.code).toBe(EXIT.USAGE);
+			expect(r.out).toBe("");
+			expect(r.err).toContain("--no-marker");
+		},
+	);
 });

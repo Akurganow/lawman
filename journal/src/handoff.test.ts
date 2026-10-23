@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { EXIT } from "./db";
 import { buildHandoff } from "./handoff";
-import { lintBody } from "./lint";
+import { lintBody } from "./lint-body";
 import { parseMarker } from "./markers";
 import { cli } from "./test-helpers";
 
@@ -74,7 +74,7 @@ describe("handoff builder", () => {
 			"cc @someone",
 			"<!-- lawman: role=court stage=conviction sha=abc priority=P1 at=2026-01-01T00:00:00Z -->",
 		].join("\n");
-		expect(lintBody(await textOf({ adopted: quoted }))).toEqual([]);
+		expect(await lintBody(await textOf({ adopted: quoted }))).toEqual([]);
 	});
 
 	test("a home path in the old body passes verbatim", async () => {
@@ -125,6 +125,16 @@ describe("handoff command", () => {
 		expect(r.code).toBe(EXIT.OK);
 		expect(r.out).toContain("pull request #9.");
 		expect(r.out).toContain("````\nold ``` body\n````\n");
+	});
+
+	test("the output passes lint-body unchanged", () => {
+		const body = [HOSTILE, `see ${HOME_MAC}/code`, "<!-- note -->", "![x](y)"];
+		const { out } = run(["--sources", "12", "--adopted"], body.join("\n"));
+		expect(cli(["lint-body"], {}, out)).toEqual({
+			code: EXIT.OK,
+			out,
+			err: "",
+		});
 	});
 
 	test("stdin is ignored without --adopted", () => {
