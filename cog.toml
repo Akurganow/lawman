@@ -1,0 +1,42 @@
+# cocogitto configuration (https://docs.cocogitto.io/reference/config).
+# The release workflow runs `cog bump --auto` on main.
+
+tag_prefix = "v"
+# Pull requests merge with merge commits; the commits inside them count.
+ignore_merge_commits = true
+# Releases are cut from main only; any other checkout refuses the bump.
+branch_whitelist = ["main"]
+# Runs before the version commit, so both manifests carry the new version.
+# --tab keeps the files byte-identical apart from the version line.
+pre_bump_hooks = [
+	"jq --tab --arg v '{{version}}' '.version = $v' plugin.json > plugin.json.next && mv plugin.json.next plugin.json",
+	"jq --tab --arg v '{{version}}' '.version = $v' journal/package.json > journal/package.json.next && mv journal/package.json.next journal/package.json",
+]
+
+# `cog install-hook commit-msg` installs this hook into a clone. It refuses a
+# commit message that is not a conventional commit.
+[git_hooks.commit-msg]
+script = """#!/bin/sh
+set -e
+cog verify --file "$1"
+"""
+
+# main holds only releases, and an installation stops on a commit without a
+# release tag. So every commit type releases: feat bumps the minor version
+# and every other type the patch. A breaking change bumps the major version
+# from 1.0.0 on and the minor version before it.
+[commit_types]
+chore = { changelog_title = "Miscellaneous Chores", bump_patch = true }
+revert = { changelog_title = "Revert", bump_patch = true }
+perf = { changelog_title = "Performance Improvements", bump_patch = true }
+docs = { changelog_title = "Documentation", bump_patch = true }
+style = { changelog_title = "Style", bump_patch = true }
+refactor = { changelog_title = "Refactoring", bump_patch = true }
+test = { changelog_title = "Tests", bump_patch = true }
+build = { changelog_title = "Build system", bump_patch = true }
+ci = { changelog_title = "Continuous Integration", bump_patch = true }
+
+[changelog]
+path = "CHANGELOG.md"
+# Names no commit author and carries no HTML.
+template = "tools/templates/changelog.tera"

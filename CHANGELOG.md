@@ -1,6 +1,8 @@
 # Changelog
 
-All notable changes to Lawman are listed here, newest first. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+All notable changes to Lawman are listed here, newest first. The release workflow writes each entry from the [conventional commits](https://www.conventionalcommits.org/) since the last tag. The entries up to 0.18.0 follow [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
+
+- - -
 
 ## [0.18.0] - 2026-10-23
 

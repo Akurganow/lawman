@@ -103,6 +103,7 @@ describe("clean command, both forms", () => {
 		},
 	);
 
+	// Two runs over DEEP took over 5 s, the default limit, on a macOS release runner.
 	test("a library failure gives exit 1, empty stdout and a fixed message", () => {
 		expect(run(DEEP)).toEqual({ code: EXIT.USAGE, out: "", err: FAILED });
 		expect(run(JSON.stringify(DEEP), "--json")).toEqual({
@@ -110,7 +111,7 @@ describe("clean command, both forms", () => {
 			out: "",
 			err: FAILED,
 		});
-	});
+	}, 30_000);
 
 	test.each([[[]], [["--json"]]])(
 		"empty input gives empty output %j",
