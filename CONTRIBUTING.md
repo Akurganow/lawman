@@ -49,7 +49,7 @@ CI runs on every push and pull request, in five jobs.
 6. Push the tag with `git push origin v<version>`.
 7. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
 
-Never merge into `main` locally and never push to `main`. Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version.
+Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host. Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version.
 
 The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
 
