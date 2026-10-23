@@ -28,7 +28,7 @@ The installation keeps its settings in `config.yaml`, plain `key: value` lines. 
 
 ### The journal
 
-The journal is one program on Bun with SQLite. It compiles to a binary per platform, which each release publishes and the installation keeps as `bin/journal`. It holds the orders, the ticks, the alarms and a cache of the tracker.
+The journal is one program on Bun with SQLite. It compiles to a binary per platform, which each release publishes and the installation keeps as `bin/journal`. It holds the orders, the ticks, the alarms and a cache of the tracker. It cleans the text that others wrote before a role reads it, and it checks the text a role writes.
 
 [Journal commands](docs/journal.md)
 

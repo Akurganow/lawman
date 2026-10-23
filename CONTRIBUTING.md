@@ -31,7 +31,7 @@ Every change updates the documentation it affects in the same pull request.
 
 CI runs on every push and pull request, in five jobs.
 
-- `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary and runs it with `--version`.
+- `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary, runs it with `--version`, and checks its `clean` output on a small sample.
 - `fence` keeps repository-specific words out of `skills/`, except `skills/assembly` and the harness pages. The patterns sit in `fence-patterns.txt`.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
@@ -52,7 +52,7 @@ CI runs on every push and pull request, in five jobs.
 
 Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version. If the release workflow fails, `main` stays as it was.
 
-The tag starts the release workflow. It checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
+The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
 
 A push to `release-trial` runs the workflow without the version check and publishes no release.
 
