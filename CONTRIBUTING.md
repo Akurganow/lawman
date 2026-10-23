@@ -42,17 +42,17 @@ CI runs on every push and pull request, in six jobs.
 
 `main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag.
 
-Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version, a breaking change the major version, and every other type the patch version. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
+Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version from 1.0.0 on and the minor version before it. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
 
 1. Open a pull request and wait until its CI is green.
 2. Merge the pull request on the host.
 3. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
 
-Never bump a version, write a changelog entry or push a tag by hand. Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host, or by the version commit of the release workflow.
+Never bump a version, write a changelog entry or push a tag by hand. Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host, or by the version commit of the bump workflow.
 
-The merge starts the release workflow on `main`. Its bump job runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
+The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
 
-The tag starts the workflow again. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
+The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
 
 A push to `release-trial` runs the build without the version check and publishes no release.
 

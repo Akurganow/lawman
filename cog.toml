@@ -22,8 +22,9 @@ cog verify --file "$1"
 """
 
 # main holds only releases, and an installation stops on a commit without a
-# release tag. So every commit type releases: feat bumps the minor version,
-# a breaking change the major one, and every other type the patch.
+# release tag. So every commit type releases: feat bumps the minor version
+# and every other type the patch. A breaking change bumps the major version
+# from 1.0.0 on and the minor version before it.
 [commit_types]
 chore = { changelog_title = "Miscellaneous Chores", bump_patch = true }
 revert = { changelog_title = "Revert", bump_patch = true }
