@@ -44,13 +44,12 @@ CI runs on every push and pull request, in five jobs.
 1. Bump `journal/package.json` and `plugin.json` to the same version.
 2. Put the entry for the version in `CHANGELOG.md`, with the release date in its heading.
 3. Open a pull request and wait until its CI is green.
-4. Merge the branch into `main` locally.
-5. Tag the merge commit with `git tag v<version>`.
-6. Push the tag alone with `git push origin v<version>`.
+4. Merge the pull request on the host.
+5. Tag the merge commit that the pull request put on `main` with `git tag v<version>`.
+6. Push the tag with `git push origin v<version>`.
 7. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
-8. Push `main` with `git push origin main`.
 
-Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version. If the release workflow fails, `main` stays as it was.
+Never merge into `main` locally and never push to `main`. Never tag before the CI of the pull request is green. A tag cannot be reused, so a failed release gets a new version.
 
 The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release.
 
