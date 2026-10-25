@@ -32,7 +32,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    8. Run the section "Lint the draft" of the add path.
    9. Send the proposal of the section "The repository proposal" in `references/precinct.md`.
    10. Show only these rows: the changed sections, the new departments, the branch and title, and the lint result.
-   11. Leave out the weight, TypeSafe, consent and own-department rows, and the consent question.
+   11. Leave out the weight, TypeSafe, Catalog, consent, reading-way and own-department rows, and the consent question. Installation facts never go into a precinct's repository.
    12. Ask in the question tool, in one call for the precinct.
    13. Offer "Open the pull request" (recommended), "Change" and "Skip".
    14. On "Change", follow the change items of "The repository proposal".
