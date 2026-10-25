@@ -149,7 +149,7 @@ Bring the clone `precincts/<name>` up to date with the repository on the host. D
   - Empty output: go on.
   - One number `<n>`: run `bin/journal dispatch add --precinct <name> --role response-unit --issue <n>`. Keep the printed id as `<response-unit order>`. Exit 2: an open order already exists. Go on, silently.
   - Any other non-zero exit, from either command, ends with `failed`.
-- Then keep the printed lines. Each line is `<name><TAB><judged-by>`. Keep the names in printed order as the precinct's lines. An empty list is allowed: the precinct then adds no line.
+- Then keep the printed lines that do not start with `#`. Each is `<name><TAB><judged-by>`. Keep the names in printed order as the precinct's lines. A line that starts with `#` is a note about a section that the contract does not list: ignore it. An empty list is allowed: the precinct then adds no line.
 - Any other exit of the lint ends with `failed`.
 
 ### Step 6: List the departments

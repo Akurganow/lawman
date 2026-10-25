@@ -16,10 +16,10 @@ A page starts with YAML frontmatter holding exactly these keys. Both are require
 - `name`: matches the file name without `.md`. Pattern `[a-z][a-z0-9-]*`.
 - `contract_version`: the number `1`.
 
-## Headings, in order
+## Headings
 
-A page has exactly these nine `##` headings, in this order. `lint-page`
-reads this block.
+A page has exactly these nine `##` headings, once each, in any order. `lint-page`
+reads this block. A page with any other `##` heading fails.
 
 - Mission
 - Kinds
@@ -136,8 +136,8 @@ Rules:
 ## Incomplete pages
 
 The duty desk runs `lint-page department` on the resolved page. A page that
-fails is skipped for that tick. The check names the first missing or
-misplaced heading, and the duty desk names the page and that heading in
+fails is skipped for that tick. The check names the first missing, repeated or
+unknown heading, and the duty desk names the page and that heading in
 Blockers. A name in the frontmatter that differs from the file name fails too. A line whose name resolves to no page is
 skipped the same way, and Blockers name the line.
 

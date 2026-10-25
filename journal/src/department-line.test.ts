@@ -61,6 +61,44 @@ describe("department-line", () => {
 		);
 	});
 
+	test("an unknown section after Departments bounds the section", () => {
+		const margin = "## Margin\n\n- docs-drift: judged by elsewhere\n\n";
+		const text = VALID.replace("## Fence", `${margin}## Fence`);
+		expect(insert(text)).toBe(text.replace(LAST_LINE, LAST_LINE + NEW_LINE));
+		expect(withDepartmentLine(text, "docs-drift", "docs/drift.md")).toBe(
+			text.replace(LAST_LINE, "- docs-drift: judged by docs/drift.md\n"),
+		);
+	});
+
+	test("a lone none before an unknown section is replaced", () => {
+		const text = NONE_SECTION.replace(
+			"## Fence",
+			"## Margin\n\nnone\n\n## Fence",
+		);
+		expect(insert(text)).toBe(
+			text.replace("none\n\n## Margin", `${NEW_LINE}\n## Margin`),
+		);
+	});
+
+	test("an edit leaves an unknown section untouched", () => {
+		const margin = "## Margin\n\n- security: judged by nowhere\n\n";
+		const text = VALID.replace("## Read first", `${margin}## Read first`);
+		const result = insert(text);
+		expect(result).toContain(margin);
+		expect(lintPage("constitution", result).reasons).toEqual([]);
+	});
+
+	test("Departments after another listed section is found", () => {
+		const [head, ...sections] = VALID.split(/^(?=## )/m);
+		const text = [head, ...sections.reverse()].join("");
+		expect(text.indexOf("## Departments")).toBeGreaterThan(
+			text.indexOf("## Fence"),
+		);
+		const result = insert(text);
+		expect(result).toBe(text.replace(LAST_LINE, LAST_LINE + NEW_LINE));
+		expect(lintPage("constitution", result).reasons).toEqual([]);
+	});
+
 	test("the result passes the constitution check", () => {
 		expect(lintPage("constitution", insert(VALID)).reasons).toEqual([]);
 	});
@@ -85,11 +123,11 @@ describe("department-line", () => {
 	});
 
 	test("a page that fails the check exits 8 with reasons and no stdout", () => {
-		const broken = VALID.replace("contract_version: 1", "contract_version: 2");
+		const broken = VALID.replace("contract_version: 2", "contract_version: 3");
 		const r = run(broken, "--name", "security", "--judged-by", "none");
 		expect(r.code).toBe(8);
 		expect(r.out).toBe("");
-		expect(r.err).toContain("contract_version must be 1");
+		expect(r.err).toContain("contract_version must be 2");
 	});
 
 	test("a path the check rejects exits 8 with empty stdout", () => {

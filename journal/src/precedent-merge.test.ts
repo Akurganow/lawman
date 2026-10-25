@@ -2,15 +2,18 @@ import { describe, expect, test } from "bun:test";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { EXIT } from "./db";
+import { inproc } from "./inproc";
 import { mergePrecedents, precedent } from "./precedent";
 import { BASE, call, dir, tempDb } from "./test-helpers";
 
-const HEAD = [
+const FRONT = [
 	"---",
-	"contract_version: 1",
+	"contract_version: 2",
 	"---",
 	"# Constitution of o/r",
 	"",
+];
+const BODY = [
 	"## Read first",
 	"",
 	"- README.md",
@@ -39,10 +42,21 @@ const HEAD = [
 	"",
 	"none",
 	"",
-	"## Precedents",
+	"## Labels",
+	"",
+	"none",
 	"",
 ];
-const page = (...section: string[]) => [...HEAD, ...section, ""].join("\n");
+const page = (...section: string[]) =>
+	[...FRONT, ...BODY, "## Precedents", "", ...section, ""].join("\n");
+const pageFirst = (...section: string[]) =>
+	[...FRONT, "## Precedents", "", ...section, "", ...BODY].join("\n");
+const v1 = (text: string) =>
+	text
+		.replace("contract_version: 2", "contract_version: 1")
+		.replace("## Labels\n\nnone\n\n", "");
+const withMargin = (text: string, ...lines: string[]) =>
+	`${text}\n## Margin\n\n${lines.join("\n")}\n`;
 const row = (n: number, text = `ruling ${n}`) => `- 2026-10-01 #${n}: ${text}`;
 const merge = (base: string, ours: string, theirs: string) =>
 	mergePrecedents(base, ours, theirs);
@@ -212,6 +226,47 @@ describe("precedent merge core", () => {
 		expect(reason(base, base, base)).toBe("no-added-lines");
 	});
 
+	test("the section may stand before the other sections", () => {
+		const result = merge(
+			pageFirst(row(1)),
+			pageFirst(row(1), row(2, "ours")),
+			pageFirst(row(1), row(2, "theirs")),
+		);
+		expect(result).toEqual({
+			kind: "merged",
+			moves: ["#2->#3"],
+			page: pageFirst(row(1), row(2, "theirs"), row(3, "ours")),
+		});
+	});
+
+	test("an unknown section after Precedents keeps its place and its numbers", () => {
+		const base = withMargin(page(row(1)), "note");
+		const ours = withMargin(page(row(1), row(2, "ours")), "note");
+		const theirs = withMargin(page(row(1)), row(9, "stray"));
+		expect(merge(base, ours, theirs)).toEqual({
+			kind: "merged",
+			moves: ["#2->#2"],
+			page: withMargin(page(row(1), row(2, "ours")), row(9, "stray")),
+		});
+	});
+
+	test("unresolved other-change: an added line inside a later unknown section", () => {
+		const base = withMargin(page(row(1)), "note");
+		const ours = withMargin(page(row(1)), "note", row(2, "stray"));
+		expect(reason(base, ours, base)).toBe("other-change");
+	});
+
+	test("a version 1 base and branch merge into a version 2 default branch", () => {
+		const base = v1(page(row(1)));
+		const ours = v1(page(row(1), row(2, "ours")));
+		const theirs = page(row(1), row(2, "theirs"));
+		expect(merge(base, ours, theirs)).toEqual({
+			kind: "merged",
+			moves: ["#2->#3"],
+			page: page(row(1), row(2, "theirs"), row(3, "ours")),
+		});
+	});
+
 	test("unresolved bad-page: the result fails the constitution check", () => {
 		const base = page(row(1));
 		const ours = page(row(1), row(2));
@@ -290,5 +345,82 @@ describe("precedent-merge command", () => {
 	test("the command is listed in the journal usage", () => {
 		const r = call(BASE, ["no-such-command"]);
 		expect(r.err).toContain("precedent-merge");
+	});
+});
+
+describe("precedent-merge command in process", () => {
+	tempDb();
+	const file = (name: string, text: string) => {
+		const path = join(dir, name);
+		writeFileSync(path, text);
+		return path;
+	};
+	const run = (base: string, ours: string, theirs: string, out: string) =>
+		inproc(BASE, [
+			"precedent-merge",
+			"--base",
+			file("base.md", base),
+			"--ours",
+			file("ours.md", ours),
+			"--theirs",
+			file("theirs.md", theirs),
+			"--out",
+			out,
+		]);
+
+	test("a version 1 branch merges into a version 2 default branch", () => {
+		const out = join(dir, "out.md");
+		const r = run(
+			v1(page(row(1))),
+			v1(page(row(1), row(2, "ours"))),
+			page(row(1), row(2, "theirs")),
+			out,
+		);
+		expect([r.code, r.out]).toEqual([EXIT.OK, "merged\t#2->#3\n"]);
+		expect(readFileSync(out, "utf8")).toBe(
+			page(row(1), row(2, "theirs"), row(3, "ours")),
+		);
+	});
+
+	test("a line added inside a later unknown section is unresolved", () => {
+		const out = join(dir, "never.md");
+		const base = withMargin(page(row(1)), "note");
+		const r = run(base, withMargin(page(row(1)), "note", row(2)), base, out);
+		expect([r.code, r.out]).toEqual([EXIT.OK, "unresolved\tother-change\n"]);
+		expect(existsSync(out)).toBe(false);
+	});
+
+	test("the section before the other sections takes the renumbered line", () => {
+		const out = join(dir, "out.md");
+		const r = run(
+			pageFirst(row(1)),
+			pageFirst(row(1), row(2, "ours")),
+			pageFirst(row(1), row(2, "theirs")),
+			out,
+		);
+		expect(r.out).toBe("merged\t#2->#3\n");
+		expect(readFileSync(out, "utf8")).toBe(
+			pageFirst(row(1), row(2, "theirs"), row(3, "ours")),
+		);
+	});
+
+	test("a missing base file is unresolved no-base", () => {
+		const ours = file("ours.md", page(row(1)));
+		const r = inproc(BASE, [
+			"precedent-merge",
+			...["--base", join(dir, "absent.md"), "--ours", ours],
+			...["--theirs", ours, "--out", join(dir, "never.md")],
+		]);
+		expect([r.code, r.out]).toEqual([EXIT.OK, "unresolved\tno-base\n"]);
+	});
+
+	test("a missing page is a usage error", () => {
+		const ours = file("ours.md", page(row(1)));
+		const r = inproc(BASE, [
+			"precedent-merge",
+			...["--base", ours, "--ours", join(dir, "absent.md")],
+			...["--theirs", ours, "--out", join(dir, "never.md")],
+		]);
+		expect(r.code).toBe(EXIT.USAGE);
 	});
 });

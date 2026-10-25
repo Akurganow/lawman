@@ -1,7 +1,9 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import * as db from "./db";
 import { EXIT } from "./db";
+import { inproc } from "./inproc";
 import { precedent } from "./precedent";
 import { acquittal, BASE, call, dir, tempDb } from "./test-helpers";
 
@@ -139,6 +141,72 @@ describe("precedent core", () => {
 		);
 	});
 
+	describe("the section ends at the next heading", () => {
+		const ROW = (n: number) => `- 2026-01-01 #${n}: row ${n}`;
+		const next = (page: string) =>
+			entry(decision("## Precedent", "- 2026-10-16: r"), page);
+		const NEW = (n: number) => `- 2026-10-16 #${n}: r (${SOURCE})`;
+
+		test("an unknown section after Precedents is neither counted nor appended to", () => {
+			const page = `## Precedents\n\n${ROW(1)}\n\n## Margin\n\n${ROW(9)}\n`;
+			expect(next(page)).toEqual({
+				kind: "entry",
+				number: 2,
+				page: `## Precedents\n\n${ROW(1)}\n${NEW(2)}\n\n## Margin\n\n${ROW(9)}\n`,
+			});
+		});
+
+		test("Precedents before other listed sections", () => {
+			const page = `# T\n\n## Precedents\n\n${ROW(3)}\n\n## Labels\n\n${ROW(8)}\n`;
+			expect(next(page)).toEqual({
+				kind: "entry",
+				number: 4,
+				page: `# T\n\n## Precedents\n\n${ROW(3)}\n${NEW(4)}\n\n## Labels\n\n${ROW(8)}\n`,
+			});
+		});
+
+		test("a lone none is replaced although another section has lines", () => {
+			const page = "## Precedents\n\nnone\n\n## Labels\n\n- `x`: y\n";
+			expect(next(page)).toEqual({
+				kind: "entry",
+				number: 1,
+				page: `## Precedents\n\n${NEW(1)}\n\n## Labels\n\n- \`x\`: y\n`,
+			});
+		});
+
+		test("an empty section takes the line right under its heading", () => {
+			const page = "## Precedents\n\n## Labels\n\nnone\n";
+			expect(next(page)).toMatchObject({
+				page: `## Precedents\n${NEW(1)}\n\n## Labels\n\nnone\n`,
+			});
+		});
+
+		test("a heading inside a fence does not end the section", () => {
+			const page = `## Precedents\n\n\`\`\`\n## Not a heading\n\`\`\`\n\n${ROW(2)}\n\n## Margin\n`;
+			expect(next(page)).toMatchObject({
+				number: 3,
+				page: `## Precedents\n\n\`\`\`\n## Not a heading\n\`\`\`\n\n${ROW(2)}\n${NEW(3)}\n\n## Margin\n`,
+			});
+		});
+
+		test("a CRLF page ends the section at a CRLF heading", () => {
+			const page = `## Precedents\r\n\r\n${ROW(1)}\r\n\r\n## Margin\r\n\r\n${ROW(9)}\r\n`;
+			expect(next(page)).toMatchObject({
+				number: 2,
+				page: `## Precedents\r\n\r\n${ROW(1)}\r\n${NEW(2)}\r\n\r\n## Margin\r\n\r\n${ROW(9)}\r\n`,
+			});
+		});
+
+		test("a page without the heading is one section to the end", () => {
+			const page = `# T\n\n## Labels\n\n${ROW(4)}\n`;
+			expect(next(page)).toEqual({
+				kind: "entry",
+				number: 5,
+				page: `${page}${NEW(5)}\n`,
+			});
+		});
+	});
+
 	test("a ruling ending in a link is copied before the source link", () => {
 		const ruling = "see (http://example.test/a)";
 		const result = entry(decision("## Precedent", `- 2026-10-16: ${ruling}`));
@@ -236,5 +304,54 @@ describe("precedent command", () => {
 		]) {
 			expect(run(args, decision("## Precedent", "none")).code).toBe(1);
 		}
+	});
+});
+
+describe("precedent command in process", () => {
+	tempDb();
+	const run = (path: string, stdin: string) => {
+		const read = spyOn(db, "readStdin").mockReturnValue(stdin);
+		try {
+			return inproc(BASE, ["precedent", "--page", path, "--source", SOURCE]);
+		} finally {
+			read.mockRestore();
+		}
+	};
+	const pageFile = (text: string) => {
+		const path = join(dir, "constitution.md");
+		writeFileSync(path, text);
+		return path;
+	};
+	const ruling = decision("## Precedent", "- 2026-10-16: a ruling");
+
+	test("the line goes into the Precedents section, not into a section after it", () => {
+		const path = pageFile(
+			"## Precedents\n\n- 2026-01-01 #1: one\n\n## Margin\n\n- 2026-01-01 #9: note\n",
+		);
+		const r = run(path, ruling);
+		expect([r.code, r.out, r.err]).toEqual([EXIT.OK, "entry\t2\n", ""]);
+		expect(readFileSync(path, "utf8")).toBe(
+			`## Precedents\n\n- 2026-01-01 #1: one\n- 2026-10-16 #2: a ruling (${SOURCE})\n\n## Margin\n\n- 2026-01-01 #9: note\n`,
+		);
+	});
+
+	test("a Precedents section before other listed sections takes the line", () => {
+		const path = pageFile("## Precedents\n\nnone\n\n## Labels\n\n- `x`: y\n");
+		expect(run(path, ruling).out).toBe("entry\t1\n");
+		expect(readFileSync(path, "utf8")).toBe(
+			`## Precedents\n\n- 2026-10-16 #1: a ruling (${SOURCE})\n\n## Labels\n\n- \`x\`: y\n`,
+		);
+	});
+
+	test("a page without the heading gets the line at its end", () => {
+		const path = pageFile("# T\n\n- 2026-01-01 #4: x\n");
+		expect(run(path, ruling).out).toBe("entry\t5\n");
+		expect(readFileSync(path, "utf8")).toBe(
+			`# T\n\n- 2026-01-01 #4: x\n- 2026-10-16 #5: a ruling (${SOURCE})\n`,
+		);
+	});
+
+	test("an unreadable page is a usage error", () => {
+		expect(run(join(dir, "missing.md"), ruling).code).toBe(EXIT.USAGE);
 	});
 });

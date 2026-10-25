@@ -107,6 +107,7 @@
 | Not judged | Pathspecs that no department judges | patrol |
 | Execution | Where a role may run the tree's code | investigation, executor |
 | Executor loads | Skills and rules the executor loads before it changes code | executor |
+| Labels | Labels that mean something to a person or to a role | response unit |
 | Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court, spec writer |
 
 ## The weight

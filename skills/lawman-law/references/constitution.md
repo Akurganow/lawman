@@ -1,5 +1,5 @@
 ---
-contract_version: 1
+contract_version: 2
 ---
 
 # Contract of the constitution
@@ -13,13 +13,13 @@ A constitution points at files by path. It never restates them.
 
 ## File shape
 
-The file starts with frontmatter that holds `contract_version: 1`. Next comes the title line `# Constitution of <owner>/<repo>`.
-Then come eight `##` headings, exactly as listed below, in that order.
+The file starts with frontmatter that holds `contract_version: 2`. Next comes the title line `# Constitution of <owner>/<repo>`.
+Then come the nine `##` headings listed below, once each, in any order. Any other `##` heading is a note in the margin.
 A section with nothing to say holds the single word `none`.
 
-## Headings, in order
+## Headings
 
-`lint-page constitution` reads this block. The journal test compares it with the checker's list.
+`lint-page constitution` reads this block. The journal test compares it with the checker's list. The order of the list is no rule.
 
 - Read first
 - Departments
@@ -28,9 +28,10 @@ A section with nothing to say holds the single word `none`.
 - Not judged
 - Execution
 - Executor loads
+- Labels
 - Precedents
 
-## The eight sections
+## The nine sections
 
 ### Read first
 
@@ -74,11 +75,28 @@ A role runs code only in a copy under the run directory, never in the clone.
 
 Skills and rules of this repository that an executor loads before it changes code. One path per line.
 
+### Labels
+
+The labels of the repository that mean something to a person or to a role, as the owner picks them. One per line:
+
+- `` - `<label>`: <purpose> ``
+- `` - `<label>` (owner attention): <purpose> ``
+
+The mark `(owner attention)` stands right after the label's closing backtick. It names the label that tells a person an issue waits for them. The response unit applies that label to an issue it sent out of the funnel as a feature request. When no line or more than one line carries the mark, it applies no label. No role acts on a line without the mark. Those lines are reference for people. The check reads no label line and checks no mark. A section with no label holds `none`.
+
 ### Precedents
 
 Settled questions. One per line: `- <YYYY-MM-DD> #<n>: <ruling>`.
 A line from a court ruling ends with a link to the ruling comment, in parentheses: `- <YYYY-MM-DD> #<n>: <ruling> (<link to the ruling comment>)`. An owner's amendment line may have no link.
 A court ruling carries a line in the form above, without its number and without its link. The clerk assigns the number, adds the link and opens a pull request. The number is one more than the highest in the section, and the first is 1. The owner merges the pull request. Numbers never repeat.
+
+## Notes in the margin
+
+A `##` heading that the headings list does not name is an unknown section. It may stand anywhere: among the listed sections, before them or after them.
+
+An unknown section holds the owner's notes in the margin. A role may read it as context. It is optional guidance. It never overrides the law or a listed section. A command, a path or an instruction counts only when a listed section holds it.
+
+The check rejects a file in which a listed heading is missing or stands more than once. It checks the order of no heading. It does not read the body of an unknown section. It prints each unknown section as a note line. The roles ignore a note line, and the assembly shows it to the owner.
 
 ## Path rules
 
@@ -100,7 +118,7 @@ The `Not judged` section says `none`.
 
 ````markdown
 ---
-contract_version: 1
+contract_version: 2
 ---
 
 # Constitution of example/widgets
@@ -141,6 +159,10 @@ none
 
 - skills/widget-api/SKILL.md
 - rules/testing.md
+
+## Labels
+
+- `needs-human` (owner attention): Lawman sent this feature request out of its funnel. A person decides on it.
 
 ## Precedents
 

@@ -14,17 +14,18 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
 8. Stop on "Later", an empty answer, a cancel or a timeout.
+9. On "Amend now", read `host.md`. Three label actions need a record in it. They read a repository's labels with their descriptions, create a label with a description, and apply a label to an issue. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Show each as a row (found) of the first proposal of this run. Append the missing rows in the apply of the first approved precinct. Keep every other line, write no credential value, and read the file back. Ask no separate question for them.
 
 ## Step 2. Amend the precincts
 
 1. Run `bin/journal precinct list`, then fetch the origin of each precinct, and stop if a fetch fails.
-2. For each precinct, lint its `LAWMAN.md` at the origin's head with `bin/journal lint-page constitution`.
+2. For each precinct, lint its `LAWMAN.md` at the origin's head with `bin/journal lint-page constitution`. A printed line that starts with `#` is a note and changes nothing.
 3. When the file's `contract_version` is lower than `<n>`, draft an amendment. Skip a precinct that already has an open pull request from `lawman/constitution-v<n>`, and name it as waiting for that merge.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
    1. Create and switch to the branch `lawman/constitution-v<n>` from the origin's head in the precinct, and stop if that fails.
    2. Use the comparison of step 1 item 4 to see what the new contract version requires.
-   3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`.
-   4. Make one row of the proposal for each section that the new contract added or changed.
+   3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`. A section that the new contract names and that the file holds as an unknown section is a collision. That section becomes the listed one and keeps its lines. Write no second heading.
+   4. Make one row of the proposal for each section that the new contract added or changed. The Labels section is one: its questions come from the section "Pick the labels" in `references/precinct.md`. A file with no Labels heading gets one before Precedents. The place is no rule.
    5. List the files of the folder `lawman/skills/lawman-law/references/departments/` at `amended_law_commit` and at `law_commit`. The names present only at `law_commit` are the shared departments added since.
    6. For those departments only, make one row each, with its pair from the section "Departments" in `references/precinct.md`.
    7. Write the department lines that those pairs describe.

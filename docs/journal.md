@@ -113,7 +113,7 @@ journal form <issues|pulls|decider>
 
 - `clean`: reads host text on stdin and prints it without hidden comments, secrets and hidden characters, and with each image turned into a link. Plain text is the default form. The option `--json` reads one JSON value or several and cleans every string. A JSON input that does not parse gives exit 1 and no output.
 - `lint-body`: reads a text on stdin as the host renders it and prints the cleaned text. Exit 7 prints the reasons on stderr, prints nothing on stdout and never prints the matched value.
-- `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. A good department page with an alarm check prints `alarm-check`.
+- `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. It then prints one line that starts with `#` for each section the contract does not list. A good department page with an alarm check prints `alarm-check`.
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
 - `handoff`: builds the hand-over comment of the clerk for a pull request and prints it. With `--adopted` it cleans the old body of the pull request first. It never exits with 7.
 - `precedent`: reads a ruling comment on stdin and adds its numbered precedent line to a constitution file. It prints `entry <n>`, `none` or `no-entry <reason>`.

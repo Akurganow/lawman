@@ -38,7 +38,7 @@ deliver: example-platform
 typesafe: no
 typesafe_precincts: none
 typesafe_key: none
-contract_version: 1
+contract_version: 2
 amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 ```
 
