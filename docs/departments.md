@@ -26,7 +26,7 @@ A page whose department can find a live secret names an `Alarm check:` paragraph
 
 ## Shared pages
 
-Lawman ships ten shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has all ten in its rotation with no line in its constitution.
+Lawman ships eleven shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has all eleven in its rotation with no line in its constitution.
 
 | Department | Subject |
 | :-- | :-- |
@@ -40,6 +40,9 @@ Lawman ships ten shared pages in [departments/](../skills/lawman-law/references/
 | `security` | What an outsider can exploit |
 | `tests` | Tests that fail for a reason other than the product, or cost more than they protect |
 | `text-residue` | Text that costs a reader time and tells them nothing true |
+| `vulnerabilities` | A dependency whose pinned version a catalog record names as affected |
+
+The page `vulnerabilities` has one kind, `advisory`. Its patrol sends the precinct's list of pinned packages to the OSV catalog through the journal, and a match with a catalog record is the finding. It runs only for a precinct that gave consent. It has its own count of open leads and its own cap, by the same table as the other pages. The `dependencies` page keeps its other kinds and no longer holds `advisory`. The `security` page hands known vulnerabilities of dependencies to `vulnerabilities`. See [the journal](journal.md#the-catalog-check) and [configuration](configuration.md#what-leaves-the-machine).
 
 A shared page uses no paths and no tool names of a specific repository, because many repositories read it.
 

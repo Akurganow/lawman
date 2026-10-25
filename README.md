@@ -22,7 +22,7 @@ Lawman installs as an Agent Plugins package, with one manifest at the repository
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds twelve keys, among them the harness, the law commit, the release, the trusted login, the delivery routes and the TypeSafe answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds fourteen keys, among them the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe answers and the catalog answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -34,7 +34,7 @@ The journal is one program on Bun with SQLite. It compiles to a binary per platf
 
 ### Departments
 
-A department is a page, not an agent. One generic patrol reads the page and sweeps its subject. Ten shared departments ship with the law: abstractions, agent-config, claims, dependencies, logic, privacy, proportion, security, tests and text-residue. A precinct adds its own pages in `.lawman/departments/`.
+A department is a page, not an agent. One generic patrol reads the page and sweeps its subject. Eleven shared departments ship with the law: abstractions, agent-config, claims, dependencies, logic, privacy, proportion, security, tests, text-residue and vulnerabilities. The last one checks the pinned dependencies of a precinct against the OSV catalog of known vulnerabilities. A precinct adds its own pages in `.lawman/departments/`.
 
 [Departments](docs/departments.md)
 
@@ -72,6 +72,8 @@ After you approve, the assembly writes the host notes in `host.md` and installs 
 
 TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 
+The catalog check is off by default, and the assembly asks for your consent at install and again for each repository. When you say yes, the names and versions of the pinned packages of that repository, a private one too, go to the OSV service at every visit, and the service sees the installation's address. The check works on any harness whose page carries a send form. The Hermes page carries one today. On a harness without one, the patrol sends nothing and reports that the check did not run. See [configuration](docs/configuration.md#what-leaves-the-machine).
+
 Run the assembly again to change the installation. It offers keep as is, roles, precincts or host.
 
 #### Update
@@ -83,6 +85,8 @@ hermes plugins update lawman
 ```
 
 The next tick of any role completes the update. It downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
+
+An installation that predates the catalog check has no answer to its consent question. Run the assembly. It sees which answers are missing and asks only those. Until you answer, the check does not run and no role stops.
 
 #### Uninstall
 

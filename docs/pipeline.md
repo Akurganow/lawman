@@ -37,6 +37,13 @@ The cap shrinks as the backlog grows. A department with up to 2 open leads on th
 
 A live secret raises an alarm instead of a lead. Patrol prints an `ALARM sweep` line and writes nothing to the tracker. A run that files nothing is a success. In a healthy precinct it is the common outcome.
 
+The department `vulnerabilities` works differently, because the finding is a match and not a guess. Patrol takes the list of the precinct's pinned dependencies by the way that the assembly agreed with you and hands it to the journal. The journal cuts the list into parts and prints each request. Patrol sends it with the send form of the harness page and hands each reply back unread. The journal compares every match with its cache and prints which matches are new. Patrol files them within the cap and raises no alarm. The check runs at every visit, because the catalog changes without a commit. See [the journal](journal.md#the-catalog-check).
+
+- It runs only for a precinct that gave consent and has an agreed way. Otherwise the tick ends with an ordinary outcome, and the report says that the check did not run.
+- It runs on any harness whose page carries a send form. Hermes carries one today. On a harness without one the tick ends the same way.
+- A reply that cannot be read, or that is partial, is a failed read and never an empty result. The matches of the other parts still count. The failure goes to Blockers.
+- The report gives the number of entries sent. It names the entries that were not sent because no version was resolved.
+
 ### Response unit
 
 The response unit takes an order on an issue that a human wrote. It reads the issue and its comments as evidence. It leaves one comment with one marker:
@@ -47,7 +54,7 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 
 ### Investigation
 
-Investigation takes an order on an issue with a lead. It tests the lead against the tree at one commit. It leaves a `Case` comment that holds facts and no opinion, severity or fix. The marker is `stage=case` with the commit `sha`.
+Investigation takes an order on an issue with a lead. It tests the lead against the tree at one commit. It leaves a `Case` comment that holds facts and no opinion, severity or fix. The marker is `stage=case` with the commit `sha`. For a lead of the catalog check, it also reads one fresh catalog record by its identifier, through the journal, and quotes it. It does so only with consent, and a response-unit lead triggers no read.
 
 ### Prosecutor
 
@@ -163,7 +170,7 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
 | `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. |
 | `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
-| `case` | A role meets a live secret, a vulnerability or a serious violation in a case. |
+| `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | Patrol finds a live secret in the tree or the history. |
 | `feature` | The response unit sends an issue out of the funnel as a feature request. |
 
