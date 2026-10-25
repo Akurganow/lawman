@@ -59,8 +59,9 @@ Take the first mode that holds.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`.
-3. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
-4. Otherwise, run the menu job.
+3. If `catalog` is absent from `config.yaml`, or `catalog` is `yes` and a precinct has no pair in `catalog_precincts`, or a precinct that said yes has no reading entry in `host.md`, answer the catalog by reading `references/catalog.md`.
+4. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
+5. Otherwise, run the menu job.
     - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
     - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
     - For "Keep as is", end the mode with the words "Nothing changed".
@@ -74,7 +75,7 @@ Tell the developer the mode and the reason in one sentence. Then say one line th
 
 ## The shape of every mode
 
-Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend and each menu job.
+Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend, catalog and each menu job.
 
 - **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
