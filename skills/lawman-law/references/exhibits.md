@@ -48,13 +48,11 @@ Then run it.
 
 ## Source values
 
-A value that comes from third-party text, from a lead or from a record enters a command of a source only when it matches its class. This table is the list of classes for the source commands and for the `Source:` lines.
+A value that comes from third-party text, from a lead or from a record enters a command of a source only when it matches its class. This table is the list of classes for the source commands and for the releases `Source:` line.
 
 | value | class |
 | :-- | :-- |
-| `<ecosystem>` | `^[a-z]+$` |
 | `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
-| `<version>` | `^[A-Za-z0-9._-]+$` (no `+`) |
 | `<owner>` | `^[A-Za-z0-9-]+$` |
 | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
 | `<n>`, `<from>`, `<to>` | `^[0-9]{1,9}$` |

@@ -46,11 +46,13 @@ A kind that rests on an external source names its hook in the tree. The hook is
 the tree text that makes the source worth reading. Such a kind also names the
 `Source:` line its lead carries, in one of these two shapes:
 
-- `Source: advisories <ecosystem> <package>@<version>`
-- `Source: releases <owner>/<repo>`
+- `Source: catalog <record identifier> <package>`: a record of the catalog and
+  the package it names.
+- `Source: releases <owner>/<repo>`: the releases of one repository.
 
-Each value comes from the tree. Investigation checks it against the "Source
-values" table of `exhibits.md` before it reads the source.
+The value of a releases line comes from the tree. Investigation checks it
+against the "Source values" table of `exhibits.md` before it reads the source.
+The classes of the catalog line live in the journal, which checks them.
 
 A kind that rests on a source command names that command in its measurement.
 

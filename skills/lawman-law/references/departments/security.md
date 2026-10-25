@@ -75,8 +75,8 @@ recorded answers):
   insider, and review of the merged text is the defence.
 - A placeholder in the place of a secret: an example, a documented test
   credential, or a value this page names.
-- A known vulnerability in a version of a dependency, a stale pin and version
-  drift. These belong to `dependencies`.
+- A known vulnerability in a version of a dependency. That belongs to
+  `vulnerabilities`. A stale pin and version drift belong to `dependencies`.
 - A sentence in a security document that does not match the protection. The
   wrong sentence is another department's. The missing protection is this
   page's when an outsider can walk through it.
