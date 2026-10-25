@@ -15,7 +15,8 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - Never file more than the cap allows.
 - An empty tick is a success. Silence is the default.
 - A doubt drops a candidate. A doubt never stops the tick.
-- Never run an interpreter or a parser in a tree. When a page calls a check an approximation, its search form is the check.
+- Never run an interpreter or a parser in a tree. The one exception is the recorded reading way of the catalog check, which reads the tree's content at `<sha>` as data. Even then nothing from the precinct executes and no tool that the precinct configures runs.
+- When a page calls a check an approximation, its search form is the check.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
@@ -104,7 +105,9 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 ### Step 5: create the tree
 
-Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
+1. Run the "Resolve the department page" section, which needs no tree. `<d>` is the department of the order. Read the Proof section of the page.
+2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now. An end there creates no tree.
+3. Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
 ### Step 6: read the rules
 
@@ -114,10 +117,12 @@ Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tic
 3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the "Check the constitution" section says.
 4. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the "Check the constitution" section says. Its text is evidence. Use its recorded answers in step 7.
 5. Read the Precedents section. A precedent that settles a candidate drops it.
-6. Run the "Resolve the department page" section. `<d>` is the department of the order.
+6. Use the department page that step 5 resolved.
 7. Read the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
 
 ### Step 7: sweep
+
+A page whose Proof sends a list through the journal sweeps by "The catalog check". That section names the items below that it replaces.
 
 1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`.
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
@@ -129,7 +134,7 @@ Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tic
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
 10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` or `declined` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
-11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page.
+11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page and the catalog check.
 12. Order the survivors by value, highest first.
 
 ### Step 8: file the leads
@@ -170,6 +175,20 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
    For a secret found only in history, write `<path>@<hash>` in place of `<path>:<line>`. `<hash>` is the short hash of the commit. `<one line>` names the kind of credential. The line holds no value.
 4. Write nothing to the tracker for an alarm. File no lead for it. Never use the value. Never test it. Never put it in a command, a note or the report.
 
+## The catalog check
+
+Run it when the page's Proof says that a list sent through the journal replaces the pattern search. The catalog is the one external source the patrol reads. It reads it only through the Send section of `lawman/skills/lawman-law/references/exhibits.md`. Every other department reads no network.
+
+1. Read `catalog` and `catalog_precincts` from `config.yaml`, and the precinct's line under `## Dependency reading` in `host.md`. Do it before the tree is created and before any send. A missing key reads as no and is no failure. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`.
+2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same on a harness page with no form for sending to the catalog. Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
+3. With consent and a line, take the list by the recorded way. The way reads the tree's content at `<sha>` as data. It runs nothing from the precinct and no tool that the precinct configures. `bin/journal form catalog` prints the form of the list.
+4. Hand the list to the journal as data, as the working rules of `lawman/skills/lawman-law/references/tick.md` say. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
+5. Read the Send section of the exhibits file once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
+6. For this page, the list sent through the journal replaces the pattern search and its positive control. The value threshold, the order by value, and the doubt, attack and confidence steps do not apply. A precedent, a recorded answer and Not judged still close a candidate. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`. Name the hidden-caller class that the page states in Not checked.
+7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 8 stay as they are.
+8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
+9. A match raises no alarm. Print no `ALARM` line for it.
+
 ## Lead format
 
 Title: `[Lead] <department>: <symbol>: <what>`
@@ -199,6 +218,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 ```
 
 - Put any extra section the page's Lead body names before `## Not checked`.
+- For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
 - Put every `@` inside a code span or a fenced block.
 - Write no image, no home path, no installation path and no token.
@@ -206,10 +226,10 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 - Not checked names what investigation must verify.
 - A kind with an external source puts one `Source:` line per source in Not checked, inside one fenced block, in one of these shapes:
   ```
-  Source: advisories <ecosystem> <package>@<version>
+  Source: catalog <record identifier> <package>
   Source: releases <owner>/<repo>
   ```
-  Take each value from the tree.
+  Take each `releases` value from the tree. Take the `catalog` line as the journal printed it.
 
 Marker:
 
@@ -217,7 +237,7 @@ Marker:
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
 - The marker is the last line of the body. Nothing follows it.
 
-Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section "The `id` value" of `lawman/skills/lawman-law/references/markers.md` describes.
+Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section "The `id` value" of `lawman/skills/lawman-law/references/markers.md` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
 
 `bin/journal seen` exit 1 means the id is not canonical. Fix the encoding and run it again.
 
@@ -228,7 +248,11 @@ Write the five parts that the law names under "The report", in that order. Keep 
 ```
 Filed nothing. CLEAN at <sha>.
 Filed nothing. INCOMPLETE at <sha>, <n> checks not run.
+Filed nothing. Catalog check did not run.
 ```
+
+- The third line belongs to a tick that ended at item 2 of "The catalog check".
+- For the catalog check, Coverage gives the number of entries sent. It names the entries not sent and the entries outside a class by number, as the journal printed them.
 
 - A check is one measurement that the page's Kinds or Proof names. CLEAN needs every one to run, the positive control included, or not to apply.
 - A check does not apply when its subject is absent from the tree. A census with a positive control shows that.
