@@ -141,6 +141,21 @@ export function defineCases(runner: Runner): void {
 			synced("tick1");
 			expect(configOf(root)).toContain(`typesafe_key: ${value}\n`);
 		});
+
+		test("a config without the catalog keys comes out without them and gets the other defaults", () => {
+			lay(root, { config: `law_commit: ${OLD_COMMIT}\ntypesafe: yes\n` });
+			synced("tick1");
+			expect(configOf(root)).not.toContain("catalog");
+			expect(configOf(root)).toContain(`typesafe_key: ${TYPESAFE_ENV}\n`);
+			expect(configOf(root)).toContain(`amended_law_commit: ${OLD_COMMIT}\n`);
+		});
+
+		test("a config with the catalog keys keeps their values", () => {
+			const keys = "catalog: yes\ncatalog_precincts: alpha=yes beta=no\n";
+			lay(root, { config: `law_commit: ${OLD_COMMIT}\n${keys}` });
+			synced("tick1");
+			expect(configOf(root)).toContain(keys);
+		});
 	});
 
 	describe("schema", () => {

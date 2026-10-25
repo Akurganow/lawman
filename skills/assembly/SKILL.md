@@ -153,6 +153,8 @@ deliver: <delivery routes, one or several, in the form the create command takes>
 typesafe: <yes|no>
 typesafe_precincts: <name>=<yes|no> ... | none
 typesafe_key: <place where the assembly found the key or where the developer will put it, in words, never the value> | none
+catalog: <yes|no>
+catalog_precincts: <name>=<yes|no> ... | none
 contract_version: <constitution contract version that the precinct constitutions stand at>
 amended_law_commit: <law commit at which the precinct constitutions were last brought in line>
 ```
