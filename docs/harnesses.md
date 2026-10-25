@@ -91,7 +91,7 @@ A cell without a mark rests on a fact with its source in the section "What each 
 | Codex | `codex plugin marketplace add Akurganow/lawman`, then `codex plugin add lawman@lawman` | The root `plugin.json` with the exact schema, else `.codex-plugin/`, `.claude-plugin/` or `.cursor-plugin/` | `lawman:<skill>` | The skill `assembly`. The manifest has an onboarding skill field that Lawman does not use | Desktop app scheduled tasks, or `codex exec` under an external cron (not verified) | TBD |
 | GitHub Copilot CLI | `copilot plugin marketplace add Akurganow/lawman`, then `copilot plugin install lawman@lawman` | The root `plugin.json`, which wins over the legacy manifests | `lawman:<skill>` (not verified) | The skill `assembly` (not verified) | `/every` and `/loop` in a session, or `copilot -p` under an external cron (not verified) | TBD |
 
-The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". The check works on any harness whose page carries those forms. A harness whose page has none sends nothing, and the patrol reports that the check did not run. The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
+The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". A harness whose page has none does not send, and the patrol reports that the check did not run. The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
 
 No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). No other harness was found to do both (not verified).
 
@@ -247,7 +247,7 @@ A new harness needs four things:
 
 The page answers the eight sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer.
 
-A page may also carry the send forms for the catalog check. A harness that adds them gains the check with no change to the law or the skills. A page without them stays valid, and the check does not run on that harness.
+A page may also carry the send forms for the catalog check. A harness that adds them gains the check with no change to the law or the skills.
 
 The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 

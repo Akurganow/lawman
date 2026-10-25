@@ -37,19 +37,16 @@ An empty list for a tree that names dependencies proves nothing. Report it in
 Blockers. It is never clean.
 
 CLEAN counts two checks: the list was sent, and the empty-list rule above held.
-
-**Hidden readers.** A dependency that the recorded reading did not name is
-beyond this check. State the class you could not check.
+A dependency that the recorded reading did not name is beyond this check. State
+the class you could not check.
 
 ## Anchors
 none
 
 No value threshold and no order by value apply. The Cost and risk line reads
 from the match alone. Confidence is `confirmed`. Effort and Risk each get one
-value, with a stated reason drawn from the match: how far the pinned place sits
-from a release the record does not name, and what else reads that place. The
-patrol reads no fixed version, so the page claims none. The Consigliere checks
-these two values.
+value, with a stated reason drawn from the match alone. The patrol reads no
+fixed version, so the page claims none.
 
 ## Judged by
 none

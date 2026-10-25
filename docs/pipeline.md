@@ -40,7 +40,6 @@ A live secret raises an alarm instead of a lead. Patrol prints an `ALARM sweep` 
 The department `vulnerabilities` works differently, because the finding is a match and not a guess. Patrol takes the list of the precinct's pinned dependencies by the way that the assembly agreed with you and hands it to the journal. The journal cuts the list into parts and prints each request. Patrol sends it with the send form of the harness page and hands each reply back unread. The journal compares every match with its cache and prints which matches are new. Patrol files them within the cap and raises no alarm. The check runs at every visit, because the catalog changes without a commit. See [the journal](journal.md#the-catalog-check).
 
 - It runs only for a precinct that gave consent and has an agreed way. Otherwise the tick ends with an ordinary outcome, and the report says that the check did not run.
-- It runs on any harness whose page carries a send form. Hermes carries one today. On a harness without one the tick ends the same way.
 - A reply that cannot be read, or that is partial, is a failed read and never an empty result. The matches of the other parts still count. The failure goes to Blockers.
 - The report gives the number of entries sent. It names the entries that were not sent because no version was resolved.
 

@@ -106,7 +106,7 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 ### Step 5: create the tree
 
 1. Run the "Resolve the department page" section, which needs no tree. `<d>` is the department of the order. Read the Proof section of the page.
-2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now. An end there creates no tree.
+2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now.
 3. Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
 ### Step 6: read the rules
@@ -184,10 +184,9 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 3. With consent and a line, take the list by the recorded way. The way reads the tree's content at `<sha>` as data. It runs nothing from the precinct and no tool that the precinct configures. `bin/journal form catalog` prints the form of the list.
 4. Hand the list to the journal as data, as the working rules of `lawman/skills/lawman-law/references/tick.md` say. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
 5. Read the Send section of the exhibits file once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
-6. For this page, the list sent through the journal replaces the pattern search and its positive control. The value threshold, the order by value, and the doubt, attack and confidence steps do not apply. A precedent, a recorded answer and Not judged still close a candidate. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`. Name the hidden-caller class that the page states in Not checked.
+6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
 7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 8 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
-9. A match raises no alarm. Print no `ALARM` line for it.
 
 ## Lead format
 

@@ -52,7 +52,6 @@ A value that comes from third-party text, from a lead or from a record enters a 
 
 | value | class |
 | :-- | :-- |
-| `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
 | `<owner>` | `^[A-Za-z0-9-]+$` |
 | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
 | `<n>`, `<from>`, `<to>` | `^[0-9]{1,9}$` |

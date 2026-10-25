@@ -146,11 +146,10 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>"
 
 - Both addresses are read from the catalog's documentation. The documentation's sample posts a batch body to the first address with `-d @-`. The record page gives the second as the address pattern and says that the identifier is case-sensitive.
 - `--data-binary @-` reads the body from standard input and posts it unchanged (stated by `man curl`).
-- `-w '\n%{http_code}'` prints the HTTP status on its own last line after the reply (stated by `man curl`). When no reply came, it prints `000` and `curl` exits 7 (seen in a terminal). The journal reads `000` as no reply (read in the journal code).
+- `-w '\n%{http_code}'` prints the HTTP status on its own last line after the reply (stated by `man curl`). When no reply came, it prints `000` and `curl` exits 7 (seen in a terminal).
 - `-s` hides the progress meter and the error text. There is no `--fail`, so a refused request still prints its status.
 - The forms set no timeout and no retry. A role runs each form once per printed request.
-- The journal prints an identifier only of letters, digits, `.`, `_` and `-`, at most 64, starting with a letter or a digit (read in the journal code). It carries no quote, space or `$`. `catalog answer --kind record` checks the same class on `--id`.
-- No value from the tree, a lead or a reply reaches a command line. Form 1 has no variable value. Form 2 has the identifier.
+- No value from the tree, a lead or a reply reaches a command line. Form 1 has no variable value. Form 2 has only the identifier that the journal printed.
 
 The whole pipeline for a batch runs in one command: the journal prints the body, the form sends it, the journal reads the reply. The first part takes the list on standard input through the quoted heredoc of the working rules in `tick.md`, with its delimiter.
 
@@ -160,8 +159,7 @@ bin/journal catalog request --kind batch --tick <tick id> --precinct <precinct> 
 <delimiter>
 ```
 
-- A later part leaves out `--precinct` and the heredoc. The journal keeps the list of the tick and prints the next body. The answer says `catalog next` while a part is left.
-- When the request fails, it prints no body. The answer then fails with its own message, and the journal prints no result.
+- A later part leaves out `--precinct` and the heredoc.
 
 A record read takes two commands. The first prints the identifier. The second sends form 2 and hands the reply to the journal.
 

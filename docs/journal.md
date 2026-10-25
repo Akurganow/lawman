@@ -164,15 +164,7 @@ The patrol of the department `vulnerabilities` and the investigation of its lead
 
 `journal form catalog` prints the list form. The role writes one entry per line, with four fields separated by a tab: the place, the ecosystem, the package and the version. The place is a canonical path relative to the repository, with no leading `/` or `./` and no `.` or `..` segment. The ecosystem and the package are named as the catalog names them. A version that the reading way did not resolve is `-`.
 
-The journal checks each field against a class. A field holds ASCII only, and never whitespace, a control character, a quote or a backtick.
-
-| Field | Starts with | Then | Longest |
-| :-- | :-- | :-- | :-- |
-| Place | A path segment | Segments of letters, digits, `.`, `_`, `@`, `+` and `-`, joined by `/` | 512 |
-| Ecosystem | A letter | Letters, digits, `.`, `_`, `:` and `-` | 32 |
-| Package | A letter, a digit or `@` | Letters, digits, `.`, `_`, `@`, `:`, `/`, `+` and `-` | 214 |
-| Version | A letter or a digit | Letters, digits, `.`, `_`, `+`, `~`, `:`, `!` and `-` | 64 |
-| Record identifier | A letter or a digit | Letters, digits, `.`, `_` and `-` | 64 |
+The journal checks each field against a class. A field holds ASCII only, and never whitespace, a control character, a quote or a backtick. Each field also has a length limit. The classes and limits live in [catalog-entries.ts](../journal/src/catalog-entries.ts), the one place that holds them. The record identifier of a `Source:` line has its own class there.
 
 An entry outside its class is refused. An entry with the version `-` is not sent. The journal names both by their number, counted from 1 over the non-empty lines, and never prints their text.
 
@@ -180,7 +172,7 @@ An entry outside its class is refused. An entry with the version `-` is not sent
 
 The journal cuts the entries it accepts into parts of at most 1000. That is the batch limit of the catalog. The body of a part holds only entries of the list, as a JSON request.
 
-The first request carries the tick id, the precinct and the list on standard input. It prints the body of part 1. Each later request carries the tick id only and prints the body of the next part. A request after the last part, or a request with no list for the tick, exits 1. A list that leaves no entry to send exits 1 with `catalog none entries=<n> refused=<numbers> not-sent=<numbers>`.
+The first request carries the tick id, the precinct and the list on standard input. It prints the body of part 1. Each later request carries the tick id only and prints the body of the first part not yet answered. A request before the answer prints the same part again. A request after the last part is answered, or a request with no list for the tick, exits 1. A list that leaves no entry to send exits 1 with `catalog none entries=<n> refused=<numbers> not-sent=<numbers>`.
 
 The journal keeps the list of the tick in `catalog.json` in `runs/<tick id>/` of the installation, found from the folder of its database file. The role never reads or writes it. The folder belongs to the tick, and the tick's cleanup removes it. The database gets no new table.
 
@@ -249,6 +241,7 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
 - [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
 - [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.
-- [catalog.ts](../journal/src/catalog.ts): the list form, the value classes, the parts and the printed result.
+- [catalog-entries.ts](../journal/src/catalog-entries.ts): the list form, the value classes and the `Source:` line.
+- [catalog.ts](../journal/src/catalog.ts): the parts, the state and the printed result.
 - [catalog-record.ts](../journal/src/catalog-record.ts): the read of one record.
 - [tick.md](../skills/lawman-law/references/tick.md): the command forms that roles run.
