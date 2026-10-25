@@ -128,6 +128,56 @@ Accepted, checked with the harness's check function: a pipe into `jq` with a quo
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
+## Sending to the catalog
+
+A role sends what `bin/journal catalog request` printed with one of two fixed forms. The Send section of the exhibits file holds the rules. This section holds the forms.
+
+Form 1 posts one part of the list. It takes the body that `catalog request --kind batch` printed on standard input.
+
+```
+curl -s -w '\n%{http_code}' -H 'Content-Type: application/json' --data-binary @- "https://api.osv.dev/v1/querybatch"
+```
+
+Form 2 reads one record. `<identifier>` is the identifier that `catalog request --kind record` printed, and no other value.
+
+```
+curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>"
+```
+
+- Both addresses are read from the catalog's documentation. The documentation's sample posts a batch body to the first address with `-d @-`. The record page gives the second as the address pattern and says that the identifier is case-sensitive.
+- `--data-binary @-` reads the body from standard input and posts it unchanged (stated by `man curl`).
+- `-w '\n%{http_code}'` prints the HTTP status on its own last line after the reply (stated by `man curl`). When no reply came, it prints `000` and `curl` exits 7 (seen in a terminal). The journal reads `000` as no reply (read in the journal code).
+- `-s` hides the progress meter and the error text. There is no `--fail`, so a refused request still prints its status.
+- The forms set no timeout and no retry. A role runs each form once per printed request.
+- The journal prints an identifier only of letters, digits, `.`, `_` and `-`, at most 64, starting with a letter or a digit (read in the journal code). It carries no quote, space or `$`. `catalog answer --kind record` checks the same class on `--id`.
+- No value from the tree, a lead or a reply reaches a command line. Form 1 has no variable value. Form 2 has the identifier.
+
+The whole pipeline for a batch runs in one command: the journal prints the body, the form sends it, the journal reads the reply. The first part takes the list on standard input through the quoted heredoc of the working rules in `tick.md`, with its delimiter.
+
+```
+bin/journal catalog request --kind batch --tick <tick id> --precinct <precinct> <<'<delimiter>' | curl -s -w '\n%{http_code}' -H 'Content-Type: application/json' --data-binary @- "https://api.osv.dev/v1/querybatch" | bin/journal catalog answer --kind batch --tick <tick id>
+<the list>
+<delimiter>
+```
+
+- A later part leaves out `--precinct` and the heredoc. The journal keeps the list of the tick and prints the next body. The answer says `catalog next` while a part is left.
+- When the request fails, it prints no body. The answer then fails with its own message, and the journal prints no result.
+
+A record read takes two commands. The first prints the identifier. The second sends form 2 and hands the reply to the journal.
+
+```
+bin/journal catalog request --kind record <<'<delimiter>'
+<the Source line of the lead>
+<delimiter>
+```
+
+```
+curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/journal catalog answer --kind record --id <identifier>
+```
+
+- The forms use only what "Commands in scheduled runs" lists as accepted: a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
+- No form has been run through the harness's check function or in a scheduled run.
+
 ## Scheduling
 
 Create one job per role:
