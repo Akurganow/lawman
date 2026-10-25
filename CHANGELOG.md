@@ -4,6 +4,16 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.19.0 - 2026-10-25
+#### Features
+- BREAKING: margin notes and a Labels section in the constitution (f27735c)
+- alarm on a pull request that waits for a decider (efb5fa8)
+#### Bug Fixes
+- a changed alarm detail raises a new alarm (80b0877)
+
+- - -
+
+
 ## v0.18.3 - 2026-10-23
 #### Bug Fixes
 - reject a stateReason that is no string (a88a4dd)
