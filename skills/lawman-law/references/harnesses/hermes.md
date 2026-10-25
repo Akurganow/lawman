@@ -160,6 +160,7 @@ bin/journal catalog request --kind batch --tick <tick id> --precinct <precinct> 
 ```
 
 - A later part leaves out `--precinct` and the heredoc.
+- When the request fails, it prints no body and the answer fails with its own message. The request's message is the one to report.
 
 A record read takes two commands. The first prints the identifier. The second sends form 2 and hands the reply to the journal.
 
