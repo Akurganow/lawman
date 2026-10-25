@@ -40,7 +40,7 @@ After the approval, write in this order.
 1. Set `catalog` to the answer, when it was absent. When `catalog_precincts` is absent, set it to `none`.
 2. Set `<precinct name>=<answer>` in `catalog_precincts` for each consent asked. Replace `none`, replace an existing pair of that name, and never append a second one.
 3. Write `config.yaml`, and read it back.
-4. Write each agreed reading entry under `## Dependency reading` in `host.md`, by the section "Add the precinct" in `references/precinct.md`.
+4. Write each agreed reading entry under `## Dependency reading` in `host.md`, by items 79 and 80 of the section "Add the precinct" in `references/precinct.md`. Run no other item of that section.
 5. Read `host.md` back. Never write an entry into a repository.
 
 A "No" writes the pair and no entry.
