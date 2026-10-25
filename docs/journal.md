@@ -40,7 +40,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|wake|law-sync> [args]
+journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|catalog|wake|law-sync> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
@@ -94,7 +94,7 @@ journal status
 - `intake`: names the next human-written issue that waits for the response unit. With `--issue` it prints `need=` and `state=` for one issue.
 - `pull`: prints the stage of a pull request, with the next role, the spec vote, the executor's work state, the sources and the priority.
 - `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
-- `form`: prints the input form of one kind, `issues`, `pulls` or `decider`, with one example. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
+- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
 
 ```
 journal sync <precinct> --author <login> [--reset | --pulls]
@@ -106,7 +106,7 @@ journal case <precinct> <issue>
 journal intake <precinct> [--issue <n>]
 journal pull <precinct> <pull request>
 journal decider < response.json
-journal form <issues|pulls|decider>
+journal form <issues|pulls|decider|catalog>
 ```
 
 ### Checks and builders
@@ -119,6 +119,7 @@ journal form <issues|pulls|decider>
 - `precedent`: reads a ruling comment on stdin and adds its numbered precedent line to a constitution file. It prints `entry <n>`, `none` or `no-entry <reason>`.
 - `precedent-merge`: resolves a conflict in the Precedents section. It moves the lines that a pull request added after the highest number of the main branch.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
+- `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
 
 ```
 journal clean [--json] (stdin: host text, or with --json one or more JSON values)
@@ -129,6 +130,10 @@ journal handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old p
 journal precedent --page <path> --source <ruling comment URL> (stdin: the ruling comment)
 journal precedent-merge --base <file> --ours <file> --theirs <file> --out <file>
 journal jev <request|answer> --kind <p0|grade>
+journal catalog request --kind batch --tick <tick id> [--precinct <p>] (stdin with --precinct: the list)
+journal catalog answer --kind batch --tick <tick id> (stdin: the reply, then the status line)
+journal catalog request --kind record (stdin: a Source line)
+journal catalog answer --kind record --id <identifier> (stdin: the reply, then the status line)
 ```
 
 Cleaning host text has these known limits:
@@ -150,6 +155,65 @@ Among other things, the body check rejects these in the text a role writes:
 It cleans a quote and does not reject it. It checks no path, no mention and no size.
 
 See [the law](../skills/lawman-law/references/LAW.md) for when roles call it.
+
+## The catalog check
+
+The patrol of the department `vulnerabilities` and the investigation of its leads use `catalog`. The journal builds every request and reads every reply. It opens no socket and starts no process. The role sends what the journal printed, with a send form of the harness page, and hands the reply back unread. The check works on any harness whose page carries those forms. The Hermes page carries them today, in its section "Sending to the catalog". A harness page without them cannot send, so the patrol ends its tick and reports that the check did not run. See [harnesses](harnesses.md).
+
+### The list
+
+`journal form catalog` prints the list form. The role writes one entry per line, with four fields separated by a tab: the place, the ecosystem, the package and the version. The place is a canonical path relative to the repository, with no leading `/` or `./` and no `.` or `..` segment. The ecosystem and the package are named as the catalog names them. A version that the reading way did not resolve is `-`.
+
+The journal checks each field against a class. A field holds ASCII only, and never whitespace, a control character, a quote or a backtick. Each field also has a length limit. The classes and limits live in [catalog-entries.ts](../journal/src/catalog-entries.ts), the one place that holds them. The record identifier of a `Source:` line has its own class there.
+
+An entry outside its class is refused. An entry with the version `-` is not sent. The journal names both by their number, counted from 1 over the non-empty lines, and never prints their text.
+
+### Parts and state
+
+The journal cuts the entries it accepts into parts of at most 1000. That is the batch limit of the catalog. The body of a part holds only entries of the list, as a JSON request.
+
+The first request carries the tick id, the precinct and the list on standard input. It prints the body of part 1. Each later request carries the tick id only and prints the body of the first part not yet answered. A request before the answer prints the same part again. A request after the last part is answered, or a request with no list for the tick, exits 1. A list that leaves no entry to send exits 1 with `catalog none entries=<n> refused=<numbers> not-sent=<numbers>`.
+
+The journal keeps the list of the tick in `catalog.json` in `runs/<tick id>/` of the installation, found from the folder of its database file. The role never reads or writes it. The folder belongs to the tick, and the tick's cleanup removes it. The database gets no new table.
+
+### The answer
+
+A reply goes on standard input, with the status line of the send as the last line. The journal accepts a reply only for a part it printed and has not yet answered, and exits 1 otherwise. The reply carries no copy of the entry, so the journal maps result number `i` to entry `i` of that part.
+
+A part fails when the status line is missing or is `000` (no reply came), when the status is not 200, or when the reply cannot be read. A reply is unreadable when it is not JSON, when its result count differs from the part's entry count, when it carries a next-page token, or when a record identifier lies outside its class. The reason is `no-reply` for the first two, `status-<code>` for another status and `bad-answer` for an unreadable reply. A failed part is never an empty result. The journal follows no next-page token and retries nothing.
+
+While a part is left, the answer prints a `catalog part <n> failed reason=<reason>` line for a failed part, then `catalog next`. After the last part it prints the result.
+
+- One tab-separated row for each new match: `new`, the lead identity and the `Source:` line. A match whose lead was closed as completed prints `fixed #<n>` in place of `new`. Open and declined matches come as counts only.
+- `catalog entries=<n> parts=<n> failed=<n> open=<n> declined=<n> new=<n> fixed=<n>`
+- `catalog refused=<numbers> not-sent=<numbers>`
+- One `catalog part <n> failed reason=<reason>` line for each failed part.
+
+The rows follow byte order of the place, the package and the record identifier. The journal compares each match with the cache of the precinct's leads, so the role files in the journal's order and never searches the tracker. The matches of the parts that did not fail print even when another part failed.
+
+### The Source line and the identity
+
+A lead of the department carries the line `Source: catalog <record identifier> <package>`. The package token is `<ecosystem>/<name>`. An ecosystem holds no `/`, so the first `/` ends the ecosystem, and two ecosystems never collide on one name. A line outside the classes is refused and its text is never printed.
+
+The identity of the lead is `<place>::<record identifier>/<package>::advisory`. Each part is encoded as the marker grammar requires. The version is not part of it, so a lead keeps its identity when the pin changes.
+
+### One record
+
+The investigation reads one fresh record for a lead. `catalog request --kind record` takes the `Source:` line on standard input, checks it against the classes and prints the record identifier. `catalog answer --kind record --id <identifier>` takes the reply and the status line and prints one line:
+
+```
+catalog record id=<identifier> severity=<value> modified=<UTC time> read=<UTC time> [dropped=<fields>] summary=<text>
+```
+
+The journal takes four fields of the record and drops the rest. A field the record lacks prints as `unknown`. A field outside its class prints as `unknown` too, and its name goes into `dropped=`. A summary of more than 1000 characters counts as outside its class. The summary passes the same cleaning as host text, with no new cleaning code, and the journal cuts it to 240 characters. The cleaning libraries load only when a record is read. An instruction inside the summary is a fact about the text.
+
+When no record can be shown, the journal prints `catalog none reason=<reason>`:
+
+| Reason | Reply |
+| :-- | :-- |
+| `missing` | The status is 404, 410 or 422. |
+| `failed` | Any other status, or a body that is not JSON. |
+| `unconfirmed` | The body is empty, or it names another identifier. |
 
 ## Exit codes
 
@@ -177,4 +241,7 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
 - [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
 - [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.
+- [catalog-entries.ts](../journal/src/catalog-entries.ts): the list form, the value classes and the `Source:` line.
+- [catalog.ts](../journal/src/catalog.ts): the parts, the state and the printed result.
+- [catalog-record.ts](../journal/src/catalog-record.ts): the read of one record.
 - [tick.md](../skills/lawman-law/references/tick.md): the command forms that roles run.

@@ -37,7 +37,7 @@ The check rejects a file in which a listed heading is missing or stands twice. T
 - A tool name in prose where a path would do.
 - Anything about the owner's machine, keys or accounts.
 
-Two per-precinct settings live outside the constitution for this reason: the weight, which [departments](departments.md#the-rotation) explains, and the Jev pair, which [configuration](configuration.md) explains.
+Three per-precinct settings live outside the constitution for this reason: the weight, which [departments](departments.md#the-rotation) explains, the Jev pair and the catalog pair, which [configuration](configuration.md) explains. The catalog pair comes with the reading way of the precinct's dependencies, which lives in the host notes.
 
 ## How the assembly writes it
 

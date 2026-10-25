@@ -59,7 +59,7 @@ export function leads(args: string[]): void {
 
 export const symbolOf = (id: string) => id.slice(0, id.lastIndexOf("::"));
 
-function seenLine(origins: Origin[], id: string): string {
+export function seenLine(origins: Origin[], id: string): string {
 	const same = origins.filter(
 		(o) => symbolOf(o.lead_id ?? "") === symbolOf(id),
 	);

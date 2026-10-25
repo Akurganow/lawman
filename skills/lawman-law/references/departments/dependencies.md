@@ -8,9 +8,8 @@ that way. A dependency is a library, a tool, a component of the automation or a
 runtime that the tree names. Two groups count. The tree alone proves the first:
 a recorded reason whose condition the tree already meets, and one dependency
 named by versions that disagree. Only an outside source can say the second: a
-workaround that upstream may have fixed, a known vulnerability in a pinned
-version, a release that breaks or unlocks a line, a defect that a release
-fixes. The patrol proves the tree side and hands the rest to investigation.
+workaround that upstream may have fixed, a release that breaks or unlocks a
+line, a defect that a release fixes. The patrol proves the tree side and hands the rest to investigation.
 Test: does this fact about a dependency land on a named line, step or sentence
 of the tree that it makes wrong or needless?
 
@@ -20,7 +19,6 @@ of the tree that it makes wrong or needless?
 | `stale-reason` | A recorded reason for a pin, a flag or hand written code names a condition, and the tree itself already meets it: a version floor reached, a target dropped, a feature removed | The reason quoted as `path:line`, the condition in words, and the version or fact that meets it as `path:line` |
 | `drift` | One dependency is named by versions that disagree: a manifest and a lockfile, a pin and its trailing version comment, two lockfiles | Both places quoted as `path:line`, and what reads each |
 | `workaround` | The tree carries code or a step written around a defect or a missing feature of a dependency, and the recorded reason waits on a release | The workaround quoted as `path:line` with its reason, then in Not checked `Source: releases <owner>/<repo>` |
-| `advisory` | A pinned version may carry a published vulnerability notice | The pin as `path:line` with the name and version as the tree states them, then in Not checked `Source: advisories <ecosystem> <package>@<version>` |
 | `breaks` | A newer release may break a promise the tree makes: a flag or pin called load bearing, or a documented floor | The line that holds the promise as `path:line`, then in Not checked `Source: releases <owner>/<repo>` |
 | `unlocks` | A newer release may let a line, step or hand written detour go | The line that could go as `path:line`, then in Not checked `Source: releases <owner>/<repo>` |
 | `fixes` | A newer release may fix a defect that the tree blames on a dependency: a skipped test, an expected failure, a comment | The line that blames it as `path:line`, then in Not checked `Source: releases <owner>/<repo>` |
@@ -35,8 +33,7 @@ line. The patrol never reads the network. Investigation reads the source.
 Build the inventory from the tree, not from memory.
 
 **Declared and resolved versions.** The manifests that declare dependencies and
-the lockfiles that resolve them. Direct dependencies first. A transitive one
-enters only through `advisory`, and only when a lockfile line names it.
+the lockfiles that resolve them. Direct dependencies first.
 
 **Pins in the automation.** Components pinned by an immutable reference, with a
 version in a trailing comment. Runtime and tool versions that the tree sets.
@@ -166,7 +163,6 @@ these sections, in this order:
   not searched and the remedy not designed. For a source kind, add the
   `Source:` lines here, one for each source, in the exact forms of the Kinds
   table:
-  - `Source: advisories <ecosystem> <package>@<version>`
   - `Source: releases <owner>/<repo>`
 
 The marker is the last line.

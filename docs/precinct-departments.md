@@ -84,9 +84,6 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 
 | Value | Class |
 | :-- | :-- |
-| `<ecosystem>` | `^[a-z]+$` |
-| `<package>` | `^[A-Za-z0-9@._/-]+$`, no `..` segment |
-| `<version>` | `^[A-Za-z0-9._-]+$` (no `+`) |
 | `<owner>` | `^[A-Za-z0-9-]+$` |
 | `<repo>` | `^[A-Za-z0-9._-]+$`, not `.` and not `..` |
 | `<n>`, `<from>`, `<to>` | `^[0-9]{1,9}$` |

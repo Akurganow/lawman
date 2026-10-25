@@ -1,0 +1,55 @@
+{
+	"recorded": { "date": "2026-10-25", "base": "https://api.osv.dev" },
+	"request": {
+		"queries": [
+			{
+				"package": {
+					"name": "golang.org/x/text",
+					"ecosystem": "Go"
+				},
+				"version": "0.3.0"
+			}
+		]
+	},
+	"status": 200,
+	"reply": {
+		"results": [
+			{
+				"vulns": [
+					{
+						"id": "GHSA-5rcv-m4m3-hfh7",
+						"modified": "2026-09-10T03:49:04.603920Z"
+					},
+					{
+						"id": "GHSA-69ch-w2m2-3vjp",
+						"modified": "2026-09-10T03:49:46.240531Z"
+					},
+					{
+						"id": "GHSA-ppp9-7jff-5vj2",
+						"modified": "2026-09-10T03:49:50.331764Z"
+					},
+					{
+						"id": "GO-2020-0015",
+						"modified": "2026-02-04T03:02:32.031255Z"
+					},
+					{
+						"id": "GO-2021-0113",
+						"modified": "2026-02-04T02:31:07.297346Z"
+					},
+					{
+						"id": "GO-2022-1059",
+						"modified": "2026-02-04T03:39:03.311488Z"
+					},
+					{
+						"id": "GO-2026-5970",
+						"modified": "2026-09-23T10:41:39.386264Z"
+					},
+					{
+						"id": "GO-2026-6629",
+						"modified": "2026-10-20T10:42:24.514593Z"
+					}
+				]
+			}
+		]
+	}
+}

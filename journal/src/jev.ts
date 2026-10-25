@@ -1,11 +1,11 @@
 import { parseArgs, pick, subcommand, usage } from "./args";
 import { EXIT, Fail, out, readStdin } from "./db";
+import { isNoReply, splitReply } from "./reply-status";
 
 const USAGE = "jev <request|answer> --kind <p0|grade>";
 const MODEL = "jev-latest";
 const BRIEF_LINE = /^([a-z_]+): (.+)$/;
 const ANSWER_MODEL = /^[A-Za-z0-9._-]{1,40}$/;
-const STATUS = /^[0-9]{3}$/;
 
 type Kind = {
 	fields: string[];
@@ -165,15 +165,11 @@ function evidence(name: string, kind: Kind, body: string): string {
 export function answerLine(args: string[], input: string): string {
 	const { name, kind } = kindOf(args);
 	const none = (reason: string) => `jev none reason=${reason}`;
-	// the request may end the status line with a newline of its own
-	const text = input.replace(/\s+$/, "");
-	const cut = text.lastIndexOf("\n");
-	const tail = text.slice(cut + 1);
-	// curl prints 000 as the status when no reply came
-	if (!STATUS.test(tail) || tail === "000") return none("no-reply");
-	if (tail !== "200") return none(`status-${tail}`);
+	const { body, status } = splitReply(input);
+	if (isNoReply(status)) return none("no-reply");
+	if (status !== "200") return none(`status-${status}`);
 	try {
-		return evidence(name, kind, text.slice(0, Math.max(cut, 0)));
+		return evidence(name, kind, body);
 	} catch {
 		return none("bad-answer");
 	}

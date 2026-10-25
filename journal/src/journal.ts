@@ -59,6 +59,7 @@ export const COMMANDS: Record<string, Handler> = {
 	decider,
 	form,
 	jev,
+	catalog: async (args) => (await import("./catalog")).catalog(args),
 	wake,
 	"law-sync": lawSync,
 };

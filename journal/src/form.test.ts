@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
+import { parseList, UNRESOLVED_VERSION } from "./catalog-entries";
 import { EXIT, Fail } from "./db";
 import { decide } from "./decider";
 import {
@@ -15,7 +16,7 @@ import { addPrecincts, BASE, cli, dbFile, rows, tempDb } from "./test-helpers";
 
 tempDb();
 
-const KINDS: FormKind[] = ["issues", "pulls", "decider"];
+const KINDS: Exclude<FormKind, "catalog">[] = ["issues", "pulls", "decider"];
 const FIELDS = {
 	issues: ["number", "state", "stateReason", "createdAt", "closedAt", "is_bot"],
 	pulls: ["writers", "closes", "changesRequested", "approvedBy", "rejectedBy"],
@@ -37,11 +38,25 @@ describe("form command", () => {
 		expect(r).toEqual({ code: 0, out: `${formText(kind)}\n`, err: "" });
 	});
 
+	test("catalog prints its list form, the unresolved marker and an example", () => {
+		const expected = `${formText("catalog")}\n`;
+		expect(cli(["form", "catalog"])).toMatchObject({ code: 0, out: expected });
+		expect(inproc(BASE, ["form", "catalog"])).toEqual({
+			code: 0,
+			out: expected,
+			err: "",
+		});
+		expect(expected).toContain(`or ${UNRESOLVED_VERSION} when`);
+		expect(expected).toContain(`Example:\n${exampleOf("catalog")}`);
+	});
+
 	test("a missing, unknown or extra argument is a usage error", () => {
 		for (const args of [[], ["other"], ["issues", "pulls"], ["toString"]]) {
 			const r = inproc(BASE, ["form", ...args]);
 			expect(r.code).toBe(EXIT.USAGE);
-			expect(r.err).toContain("usage: journal form <issues|pulls|decider>");
+			expect(r.err).toContain(
+				"usage: journal form <issues|pulls|decider|catalog>",
+			);
 		}
 	});
 });
@@ -75,6 +90,13 @@ describe("each example passes its reader", () => {
 			code: 0,
 			out: "decider=yes actor=maintainer\n",
 		});
+	});
+
+	test("catalog", () => {
+		const parsed = parseList(exampleOf("catalog"));
+		expect(parsed.refused).toEqual([]);
+		expect(parsed.entries).toHaveLength(2);
+		expect(parsed.unresolved).toEqual([3]);
 	});
 
 	test("issues", () => {

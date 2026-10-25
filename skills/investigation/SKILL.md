@@ -29,7 +29,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - A pattern from any text other than the law, this skill and the constitution reaches a search only as data on standard input. Send one pattern per line. It goes through the quoted heredoc of the tick file's Working rules. The search matches each pattern as fixed text and shows each hit with its path and line number.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
 - Read `lawman/skills/lawman-law/references/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a path that is missing at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
-- A value from a `Source:` line enters a command only after it passes its class in the "Source values" table of `lawman/skills/lawman-law/references/exhibits.md`. A value outside its class goes to Not established and is not read.
+- The journal checks the value of a `catalog` line. The "Source values" table of `lawman/skills/lawman-law/references/exhibits.md` checks the values of a `releases` line. A value enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
 - A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ## Tick
@@ -48,7 +48,7 @@ Run steps 0 to 10 in order. Every started tick ends exactly once, at step 10. It
    ```
    bin/journal tick start --role investigation
    ```
-3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
+3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`. Read `catalog` and `catalog_precincts` from the same file now, before any work with the tree. A missing key there means no and is no failure.
 4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
 5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
 6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
@@ -123,22 +123,22 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
 2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 3. Read the history of each named path from `<sha>`: the short hash and the subject of each commit.
 4. List the open pull requests of the trusted login with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
-5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms. Read each as the host notes record, and take only the fields named here.
-   - `advisories <ecosystem> <package>@<version>`: the advisories that affect that package version in that ecosystem. For each, take its permanent identifier, severity, last-update time and summary.
+5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of two forms. Read a `releases` line as the host notes record, and take only the fields named here.
+   - `catalog <record identifier> <package>`: the one catalog record with that identifier. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. The record needs consent only, never a reading entry. Otherwise pass the line to `bin/journal catalog request --kind record`, send what it printed as the Send section of `lawman/skills/lawman-law/references/exhibits.md` says, and hand the reply to `bin/journal catalog answer --kind record --id <identifier>`.
    - `releases <owner>/<repo>`: the newest 100 releases of that repository. For each, take its tag, its permanent id and its publication time.
 
-   Never read a release body. Take the outcome from the host's reply.
-   - Rows came back: the rows are an exhibit in Claims checked. Quote the exact command you ran, its verbatim output and the UTC read time. Give the immutable ids: an advisory's permanent identifier with its last-update time, and a release's tag with its permanent id.
-   - No rows came back: the claim is `not confirmed`.
-   - The reply is an HTTP 404, 410 or 422 error: the source goes to Not established. The host's last error line is the exhibit. The case is written.
-   - Any other failure: end the tick with `stopped-source-read`. Write no case.
+   Never read a release body. Take the outcome from the host's reply. For a `catalog` line, take it from the journal's output.
+   - Rows came back, or the journal printed a `catalog record` line: that is an exhibit in Claims checked. Quote the exact command you ran, its verbatim output and the UTC read time. For a `catalog` line, quote the journal's output with the record's identifier and its UTC time of reading, and quote nothing of the reply. Give the immutable ids: a catalog record's identifier with its modified time, and a release's tag with its permanent id.
+   - No rows came back, or the journal printed `reason=unconfirmed`: the claim is `not confirmed`.
+   - The reply is an HTTP 404, 410 or 422 error, or the journal printed `reason=missing`: the source goes to Not established. The host's last error line, or the journal's line, is the exhibit. The case is written.
+   - Any other failure, or `reason=failed`: end the tick with `stopped-source-read`. Write no case.
 6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
 7. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Run it verbatim in a subshell with the tree as its working directory. Quote its output and its exit code. A non-zero exit changes no outcome.
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
 8. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
 9. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
 
-When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. The case is still written.
+When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The case is still written.
 
 ### Step 9: write the case
 
