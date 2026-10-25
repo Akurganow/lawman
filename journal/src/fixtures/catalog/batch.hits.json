@@ -1,4 +1,5 @@
 {
+	"recorded": { "date": "2026-10-25", "base": "https://api.osv.dev" },
 	"request": {
 		"queries": [
 			{

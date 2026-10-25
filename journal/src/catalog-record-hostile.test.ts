@@ -6,17 +6,14 @@ import { recordAnswer } from "./catalog-record";
 import {
 	ANSWER,
 	expectCleanComment,
-	FIXTURES,
 	FOUND,
-	fixture,
 	ID,
-	inProcess,
 	RUNNERS,
-	reply,
 	TOKEN,
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
+import { FIXTURES, fixture, inProcessAsync, reply } from "./catalog-test-run";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
 import { JOURNAL, lead, tempDb } from "./test-helpers";
@@ -128,7 +125,7 @@ describe("a cleaning library that fails", () => {
 			new Error(`rules failed ${TOKEN}`),
 		);
 		try {
-			const result = await inProcess(recordAnswer)(
+			const result = await inProcessAsync(recordAnswer)(
 				ANSWER,
 				withSummary("fine words"),
 			);

@@ -12,6 +12,7 @@ import {
 import { recordAnswer, recordRequest } from "./catalog-record";
 import { dbPath, EXIT, Fail, out, readStdin, withDb } from "./db";
 import { leadOrigins, seenLine } from "./leads";
+import { isNoReply, splitReply } from "./reply-status";
 
 const USAGE = "catalog <request|answer> --kind <batch|record>";
 
@@ -83,12 +84,15 @@ function startState(precinct: string, input: string): State {
 }
 
 function printNext(file: string, state: State): string {
-	const part = state.parts.find((p) => p.phase === "unprinted");
+	// a part printed and not answered goes out again, so a reply lands on the part it was sent for
+	const at = state.parts.findIndex((p) => p.phase !== "answered");
+	const part = state.parts[at];
 	if (part === undefined)
 		throw new Fail(EXIT.USAGE, "catalog has no part left to print");
-	part.phase = "printed";
-	writeState(file, state);
-	const at = state.parts.indexOf(part);
+	if (part.phase === "unprinted") {
+		part.phase = "printed";
+		writeState(file, state);
+	}
 	return batchBody(cutParts(state.entries)[at] ?? []);
 }
 
@@ -102,8 +106,6 @@ function requestBatch(args: string[], input: string): string {
 	return printNext(file, state);
 }
 
-const STATUS = /^[0-9]{3}$/;
-const NO_REPLY_STATUS = "000";
 const BAD_ANSWER = "bad-answer";
 
 function idsOf(result: unknown): string[] {
@@ -139,15 +141,11 @@ function positionalIds(body: string, size: number): string[][] {
 
 function readReply(input: string, size: number): Pick<Part, "failed" | "hits"> {
 	const failed = (reason: string) => ({ failed: reason, hits: [] });
-	// the request may end the status line with a newline of its own
-	const text = input.replace(/\s+$/, "");
-	const cut = text.lastIndexOf("\n");
-	const status = text.slice(cut + 1);
-	if (!STATUS.test(status) || status === NO_REPLY_STATUS)
-		return failed("no-reply");
+	const { body, status } = splitReply(input);
+	if (isNoReply(status)) return failed("no-reply");
 	if (status !== "200") return failed(`status-${status}`);
 	try {
-		const ids = positionalIds(text.slice(0, Math.max(cut, 0)), size);
+		const ids = positionalIds(body, size);
 		return {
 			failed: null,
 			hits: ids.flatMap((list, at) => list.map((id) => ({ at, id }))),
@@ -234,9 +232,11 @@ function answerBatch(args: string[], input: string): string {
 		);
 	const size = cutParts(state.entries)[at]?.length ?? 0;
 	Object.assign(part, readReply(input, size), { phase: "answered" });
+	// the result is built before the last state write, so a failed lookup leaves the part waiting
+	const last = state.parts.every((p) => p.phase === "answered");
+	const result = last ? printedResult(state) : "";
 	writeState(file, state);
-	if (state.parts.every((p) => p.phase === "answered"))
-		return printedResult(state);
+	if (last) return result;
 	return [
 		...(part.failed === null ? [] : [failedLine(at + 1, part.failed)]),
 		"catalog next",

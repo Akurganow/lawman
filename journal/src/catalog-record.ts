@@ -1,6 +1,7 @@
 import { parseArgs } from "./args";
 import { isRecordId, parseSourceLine } from "./catalog-entries";
 import { EXIT, Fail, now } from "./db";
+import { splitReply } from "./reply-status";
 
 const REQUEST_USAGE = "catalog request --kind record (stdin: a Source line)";
 const ANSWER_USAGE =
@@ -44,7 +45,10 @@ async function summaryField(raw: unknown): Promise<Field> {
 	try {
 		const { cleanHostText } = await import("./clean-host");
 		const cleaned = await cleanHostText(`summary=${oneLine(raw)}`);
-		return kept("summary", oneLine(cleaned).slice(0, MAX_SUMMARY));
+		return kept(
+			"summary",
+			Array.from(oneLine(cleaned)).slice(0, MAX_SUMMARY).join(""),
+		);
 	} catch {
 		return outside("summary");
 	}
@@ -61,10 +65,7 @@ export function recordRequest(args: string[], input: string): string {
 type Verdict = { record: Record<string, unknown> } | { reason: string };
 
 function judge(id: string, input: string): Verdict {
-	const text = input.replace(/\s+$/, "");
-	const cut = text.lastIndexOf("\n");
-	const status = text.slice(cut + 1);
-	const body = text.slice(0, Math.max(cut, 0));
+	const { body, status } = splitReply(input);
 	if (MISSING.has(status)) return { reason: "missing" };
 	if (status !== OK) return { reason: "failed" };
 	if (body.trim() === "") return { reason: "unconfirmed" };

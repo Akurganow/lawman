@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { sourceLine } from "./catalog-entries";
 import {
 	ANSWER,
-	CLOCK,
 	expectCleanComment,
 	FOUND,
 	ID,
@@ -10,7 +9,6 @@ import {
 	none,
 	REQUEST,
 	RUNNERS,
-	reply,
 	SUMMARY,
 	TOKEN,
 	UNKNOWN,
@@ -18,6 +16,7 @@ import {
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
+import { CLOCK, reply } from "./catalog-test-run";
 import { tempDb } from "./test-helpers";
 
 tempDb();
@@ -187,6 +186,13 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 		const result = await answer(ANSWER, withSummary("word ".repeat(150)));
 		expect(result.out.trimEnd().length).toBeLessThan(400);
 		expect(result.out).toContain("summary=word word");
+	});
+
+	test("a long summary is cut by code points, never inside a surrogate pair", async () => {
+		const result = await answer(ANSWER, withSummary(`x${"😀".repeat(300)}`));
+		const printed = result.out.trimEnd().split(" summary=")[1] ?? "";
+		expect(printed.isWellFormed()).toBe(true);
+		expect(Array.from(printed)).toHaveLength(240 - "summary=".length);
 	});
 
 	test.each([

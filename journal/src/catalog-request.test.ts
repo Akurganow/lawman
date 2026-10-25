@@ -10,6 +10,7 @@ import {
 	prepare,
 	RUNNERS,
 	type Run,
+	resultsReply,
 	throughCli,
 } from "./catalog-test-run";
 import { dbFile, tempDb } from "./test-helpers";
@@ -29,15 +30,20 @@ const queries = (
 	body: string,
 ): { package: { name: string }; version: string }[] => JSON.parse(body).queries;
 
+// the next part is printed only after the one before it was answered
 function allBodies(run: Run, tick: string, input: string): string[] {
-	const bodies = [
-		run([...first(tick, ["--precinct", "alpha"])], input).out.trim(),
-	];
-	for (;;) {
-		const next = run(first(tick));
-		if (next.code !== 0) return bodies;
-		bodies.push(next.out.trim());
+	const bodies: string[] = [];
+	let next = run([...first(tick, ["--precinct", "alpha"])], input);
+	while (next.code === 0) {
+		const body = next.out.trim();
+		bodies.push(body);
+		run(
+			["answer", "--kind", "batch", "--tick", tick],
+			resultsReply(queries(body).map(() => [])),
+		);
+		next = run(first(tick));
 	}
+	return bodies;
 }
 
 describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
