@@ -13,12 +13,19 @@ describe("lint-page", () => {
 		kind: "constitution" | "department" = "constitution",
 	) => lintPage(kind, page(name)).reasons;
 	const VALID = page("constitution-valid.md");
-	const FENCE_BLOCK = must(
-		VALID.match(/## Fence\n[\s\S]*?(?=## Regression proof)/),
-	)[0];
+	const DEPARTMENT = page("department-valid.md");
+	const lastLine = (text: string) => text.replace(/\n$/, "").split("\n").length;
+	const lineOf = (text: string, heading: string) =>
+		text.split("\n").lastIndexOf(heading) + 1;
+	const without = (text: string, heading: string) =>
+		text.replace(new RegExp(`${heading}\\n[\\s\\S]*?(?=## |$)`), "");
+	const shuffled = (text: string) => {
+		const [head, ...sections] = text.split(/^(?=## )/m);
+		return [head, ...sections.reverse()].join("");
+	};
 	const BROKEN = {
 		badDepartmentLine: VALID.replace("- docs-drift:", "- Docs_Drift:"),
-		badVersion: VALID.replace("contract_version: 1", "contract_version: 2"),
+		badVersion: VALID.replace("contract_version: 2", "contract_version: 1"),
 		dotdot: VALID.replace(
 			"- README.md\n",
 			"- README.md\n- ../outside/secrets.md\n",
@@ -27,19 +34,11 @@ describe("lint-page", () => {
 			"- make lint\n- make typecheck\n- make test\n\n",
 			"",
 		),
-		extraHeading: VALID.replace(
-			"## Precedents",
-			"## Notes\n\n- anything\n\n## Precedents",
-		),
 		fencedHeading: VALID.replace(
 			/## Precedents\n[\s\S]*/,
 			"```markdown\n## Precedents\n\n- 2026-09-02 #1: hidden in a fence\n```\n",
 		),
-		missingHeading: VALID.replace(FENCE_BLOCK, ""),
-		wrongOrder: VALID.replace(FENCE_BLOCK, "").replace(
-			"## Not judged",
-			`${FENCE_BLOCK}## Not judged`,
-		),
+		missingHeading: without(VALID, "## Fence"),
 	};
 	const constitutionReasons = (text: string) =>
 		lintPage("constitution", text).reasons;
@@ -47,7 +46,7 @@ describe("lint-page", () => {
 	const headingsOf = (file: string) => {
 		const text = readFileSync(join(LAW, file), "utf8");
 		const block = must(
-			must(text.split("\n## Headings, in order\n")[1]).split("\n## ")[0],
+			must(text.split("\n## Headings\n")[1]).split("\n## ")[0],
 		);
 		return block
 			.split("\n")
@@ -58,7 +57,7 @@ describe("lint-page", () => {
 	test("the constant heading lists equal the contract blocks", () => {
 		expect(CONSTITUTION_HEADINGS).toEqual(headingsOf("constitution.md"));
 		expect(DEPARTMENT_HEADINGS).toEqual(headingsOf("departments.md"));
-		expect(CONSTITUTION_HEADINGS).toHaveLength(8);
+		expect(CONSTITUTION_HEADINGS).toHaveLength(9);
 		expect(DEPARTMENT_HEADINGS).toHaveLength(9);
 	});
 
@@ -97,38 +96,115 @@ describe("lint-page", () => {
 	test("this repository's constitution and its own department pages pass", () => {
 		const constitution = readFileSync(join(ROOT, "LAWMAN.md"), "utf8");
 		expect(lintPage("constitution", constitution).reasons).toEqual([]);
+		expect(constitution).toMatch(/^- `[^`]+` \(owner attention\): /m);
 		expectPagesPass(join(ROOT, ".lawman", "departments"));
 	});
 
-	test("a missing heading is named", () => {
+	test("a missing heading is named at the last line", () => {
 		expect(constitutionReasons(BROKEN.missingHeading)).toEqual([
-			'19: missing heading "Fence"',
+			`${lastLine(BROKEN.missingHeading)}: missing heading "Fence"`,
 		]);
 	});
 
-	test("an extra heading is named", () => {
-		expect(constitutionReasons(BROKEN.extraHeading)).toEqual([
-			'44: extra heading "Notes"',
+	test("missing headings print in contract order", () => {
+		const text = without(without(VALID, "## Precedents"), "## Fence");
+		const last = lastLine(text);
+		expect(constitutionReasons(text)).toEqual([
+			`${last}: missing heading "Fence"`,
+			`${last}: missing heading "Precedents"`,
 		]);
 	});
 
-	test("headings out of order are named at the first misplaced one", () => {
-		expect(constitutionReasons(BROKEN.wrongOrder)).toEqual([
-			'19: heading "Regression proof" is out of order, expected "Fence"',
-		]);
-	});
-
-	test("a repeated heading is extra", () => {
+	test("a repeated heading is named at its own line", () => {
 		const text = `${VALID}\n## Precedents\n\nnone\n`;
-		expect(lintPage("constitution", text).reasons).toEqual([
-			'49: extra heading "Precedents"',
+		expect(constitutionReasons(text)).toEqual([
+			`${lineOf(text, "## Precedents")}: repeated heading "Precedents"`,
 		]);
 	});
 
-	test("a wrong contract version is named at its line", () => {
-		expect(constitutionReasons(BROKEN.badVersion)).toEqual([
-			"2: contract_version must be 1",
-		]);
+	test("known headings in any order pass on both page kinds", () => {
+		expect(shuffled(VALID)).not.toBe(VALID);
+		expect(constitutionReasons(shuffled(VALID))).toEqual([]);
+		expect(shuffled(DEPARTMENT)).not.toBe(DEPARTMENT);
+		expect(lintPage("department", shuffled(DEPARTMENT)).reasons).toEqual([]);
+	});
+
+	describe("unknown sections", () => {
+		const MARGIN = "## Margin\n\n- ../not/a/path\n- /nor/this\n\n";
+		const spread = VALID.replace("## Read first", `${MARGIN}## Read first`)
+			.replace("## Fence", "## Between\n\nowner words\n\n## Fence")
+			.concat("\n## After\n\nlast\n");
+
+		test("a constitution accepts them anywhere and notes them in file order", () => {
+			const result = lintPage("constitution", spread);
+			expect(result.reasons).toEqual([]);
+			expect(result.departments).toHaveLength(3);
+			expect(result.notes).toEqual([
+				`# ${lineOf(spread, "## Margin")}: unknown section "Margin"`,
+				`# ${lineOf(spread, "## Between")}: unknown section "Between"`,
+				`# ${lineOf(spread, "## After")}: unknown section "After"`,
+			]);
+		});
+
+		test("an unknown section bounds the listed section before it", () => {
+			const text = VALID.replace(
+				"## Labels",
+				"## Margin\n\n- /not/read\n\n## Labels",
+			);
+			expect(constitutionReasons(text)).toEqual([]);
+		});
+
+		test("an empty one passes", () => {
+			const text = VALID.replace("## Fence", "## Margin\n\n## Fence");
+			const result = lintPage("constitution", text);
+			expect(result.reasons).toEqual([]);
+			expect(result.notes).toHaveLength(1);
+		});
+
+		test("a misspelled listed heading is missing and is no note", () => {
+			const text = VALID.replace("## Fence", "## Fense");
+			expect(lintPage("constitution", text)).toEqual({
+				reasons: [`${lastLine(text)}: missing heading "Fence"`],
+				departments: [],
+			});
+		});
+
+		test("a failing page prints no note", () => {
+			const text = BROKEN.badVersion.concat("\n## contract_version notes\n");
+			const result = lintPage("constitution", text);
+			expect(result.reasons).toEqual(["2: contract_version must be 2"]);
+			expect(result.notes).toBeUndefined();
+		});
+
+		test("a fenced heading and a deeper heading make no note", () => {
+			const text = VALID.replace(
+				"## Fence\n",
+				"## Fence\n\n```\n## Bogus\n```\n\n### Detail\n",
+			);
+			expect(lintPage("constitution", text).notes).toBeUndefined();
+		});
+
+		test("a passing page without unknown sections has no notes", () => {
+			expect(lintPage("constitution", VALID).notes).toBeUndefined();
+		});
+
+		test("a department page names each one as extra", () => {
+			const text = DEPARTMENT.replace(
+				"## Identity",
+				"## Notes\nx\n## Identity",
+			).concat("## Tail\ny\n");
+			expect(lintPage("department", text).reasons).toEqual([
+				`${lineOf(text, "## Notes")}: extra heading "Notes"`,
+				`${lineOf(text, "## Tail")}: extra heading "Tail"`,
+			]);
+		});
+
+		test("a department page keeps the empty-section rule", () => {
+			const text = DEPARTMENT.replace(/## Identity\n[\s\S]*/, "## Identity\n");
+			expect(lintPage("department", text).reasons).toEqual([
+				`${lineOf(text, "## Identity")}: section "Identity" is empty, write none`,
+			]);
+		});
 	});
 
 	test("missing frontmatter, an unclosed one and a missing version are named", () => {
@@ -137,7 +213,7 @@ describe("lint-page", () => {
 			"1: frontmatter missing or not closed",
 		]);
 		expect(
-			lintPage("constitution", `---\ncontract_version: 1\n${body}`).reasons,
+			lintPage("constitution", `---\ncontract_version: 2\n${body}`).reasons,
 		).toEqual(["1: frontmatter missing or not closed"]);
 		expect(
 			lintPage("constitution", `---\nother: 1\n---\n${body}`).reasons,
@@ -148,11 +224,10 @@ describe("lint-page", () => {
 		expect(constitutionReasons(BROKEN.emptySection)).toEqual([
 			'24: section "Regression proof" is empty, write none',
 		]);
-		const text = VALID;
 		expect(
 			lintPage(
 				"constitution",
-				text.replace(
+				VALID.replace(
 					/## Regression proof\n[\s\S]*?\n(?=## Not)/,
 					"## Regression proof\n\nnone\n\n",
 				),
@@ -162,7 +237,7 @@ describe("lint-page", () => {
 
 	test("a heading inside a fence counts for neither the list nor a section", () => {
 		expect(constitutionReasons(BROKEN.fencedHeading)).toEqual([
-			'48: missing heading "Precedents"',
+			`${lastLine(BROKEN.fencedHeading)}: missing heading "Precedents"`,
 		]);
 		const text = VALID.replace(
 			"## Fence\n",
@@ -288,9 +363,9 @@ describe("lint-page", () => {
 
 	test("a department page uses its own heading list", () => {
 		expect(lintPage("department", VALID).reasons[0]).toContain("name missing");
-		expect(
-			lintPage("constitution", page("department-valid.md")).reasons,
-		).toContain('5: extra heading "Mission"');
+		expect(lintPage("constitution", DEPARTMENT).reasons).toContain(
+			`${lastLine(DEPARTMENT)}: missing heading "Read first"`,
+		);
 	});
 
 	describe("command", () => {
@@ -304,6 +379,16 @@ describe("lint-page", () => {
 				out: "abstraction\tdocs/review/abstractions.md\ndead-code\tdocs/review/dead-code.md\ndocs-drift\tnone\n",
 				err: "",
 			});
+		});
+
+		test("notes follow the department pairs", () => {
+			const r = feed(["constitution"], `${VALID}\n## After\n\nnote\n`);
+			expect(r.code).toBe(0);
+			expect(r.out.split("\n").slice(-3)).toEqual([
+				"docs-drift\tnone",
+				`# ${lineOf(`${VALID}\n## After\n`, "## After")}: unknown section "After"`,
+				"",
+			]);
 		});
 
 		test("a valid department page prints nothing and exits 0", () => {
@@ -330,7 +415,7 @@ describe("lint-page", () => {
 			const r = feed(["constitution"], BROKEN.badVersion);
 			expect(r).toEqual({
 				code: EXIT.LINT_PAGE,
-				out: "2: contract_version must be 1\n",
+				out: "2: contract_version must be 2\n",
 				err: "",
 			});
 		});

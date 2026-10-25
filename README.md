@@ -42,7 +42,7 @@ A department is a page, not an agent. One generic patrol reads the page and swee
 
 ### The constitution
 
-A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings.
+A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings. The file also names the labels that mean something, among them the one that marks an issue for a person.
 
 [Writing a constitution](docs/constitution.md)
 

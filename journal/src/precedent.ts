@@ -1,7 +1,7 @@
 import { readFileSync, writeFileSync } from "node:fs";
 import { parseArgs } from "./args";
 import { EXIT, Fail, out, readStdin } from "./db";
-import { lintPage } from "./lint";
+import { HEADING, lintPage } from "./lint";
 import { fencedLines, parseMarker, stripCr } from "./markers";
 
 const PRECEDENT_USAGE =
@@ -70,14 +70,24 @@ function nextNumber(sectionLines: string[], hidden: boolean[]): number {
 	return Math.max(0, ...numbers.filter(Number.isFinite)) + 1;
 }
 
-const precedentsHeading = (lines: string[], hidden: boolean[]) =>
-	lines.findIndex((l, i) => !hidden[i] && PAGE_HEADING.test(stripCr(l)));
+type Section = { heading: number; end: number };
 
-// the index of the lone `none` line under the heading, or -1
-function placeholderAt(lines: string[], heading: number): number {
+// ends at the next `##` heading; a page without the heading is one section to its end
+function precedentsSection(lines: string[], hidden: boolean[]): Section {
+	const heading = lines.findIndex(
+		(l, i) => !hidden[i] && PAGE_HEADING.test(stripCr(l)),
+	);
+	const next = lines.findIndex(
+		(l, i) => i > heading && !hidden[i] && HEADING.test(stripCr(l)),
+	);
+	return { heading, end: heading < 0 || next < 0 ? lines.length : next };
+}
+
+// the index of the lone `none` line in the section, or -1
+function placeholderAt(lines: string[], { heading, end }: Section): number {
 	if (heading < 0) return -1;
 	const filled = lines.flatMap((l, i) =>
-		i > heading && !isBlank(l) ? [i] : [],
+		i > heading && i < end && !isBlank(l) ? [i] : [],
 	);
 	const only = filled[0];
 	return filled.length === 1 &&
@@ -93,13 +103,17 @@ function addLine(
 ): { page: string; number: number } {
 	const lines = page.split("\n");
 	const hidden = fencedLines(lines);
-	const heading = precedentsHeading(lines, hidden);
+	const section = precedentsSection(lines, hidden);
+	const from = section.heading + 1;
 	const number = nextNumber(
-		lines.slice(heading + 1),
-		hidden.slice(heading + 1),
+		lines.slice(from, section.end),
+		hidden.slice(from, section.end),
 	);
-	const noneAt = placeholderAt(lines, heading);
-	const at = noneAt >= 0 ? noneAt : lines.findLastIndex((l) => !isBlank(l)) + 1;
+	const noneAt = placeholderAt(lines, section);
+	const top = Math.max(section.heading, 0);
+	const last =
+		top + lines.slice(top, section.end).findLastIndex((l) => !isBlank(l));
+	const at = noneAt >= 0 ? noneAt : last + 1;
 	const cr = lines[noneAt >= 0 ? noneAt : at - 1]?.endsWith("\r") ? "\r" : "";
 	lines.splice(at, noneAt >= 0 ? 1 : 0, build(number) + cr);
 	return { page: lines.join("\n"), number };
@@ -140,7 +154,7 @@ function insertedLines(base: string[], ours: string[]): number[] | null {
 }
 
 function withoutPlaceholder(lines: string[]): string[] {
-	const at = placeholderAt(lines, precedentsHeading(lines, fencedLines(lines)));
+	const at = placeholderAt(lines, precedentsSection(lines, fencedLines(lines)));
 	return lines.filter((_, i) => i !== at);
 }
 
@@ -153,7 +167,7 @@ export function mergePrecedents(
 	const baseLines = base.split("\n").map(stripCr);
 	const oursLines = ours.split("\n").map(stripCr);
 	const hidden = fencedLines(oursLines);
-	const heading = precedentsHeading(oursLines, hidden);
+	const section = precedentsSection(oursLines, hidden);
 	const added =
 		insertedLines(baseLines, oursLines) ??
 		insertedLines(withoutPlaceholder(baseLines), oursLines);
@@ -162,7 +176,11 @@ export function mergePrecedents(
 	if (
 		added.some(
 			(i, k) =>
-				hidden[i] || heading < 0 || i <= heading || isBlank(lines[k] ?? ""),
+				hidden[i] ||
+				section.heading < 0 ||
+				i <= section.heading ||
+				i >= section.end ||
+				isBlank(lines[k] ?? ""),
 		)
 	)
 		return unresolved("other-change");

@@ -164,6 +164,23 @@ export const precinct = (db: Database, name: string) =>
 		name,
 		`o/${name}`,
 	]);
+export const WAITS_SPEC = "pull request waits for a vote on its newest spec";
+export const WAITS_WORK =
+	"pull request waits for a review of its finished work";
+export const cachePull = (
+	p: string,
+	number: number,
+	issues: number[],
+	spec: string,
+	work = "todo",
+	specId = "-",
+) =>
+	seed((db) =>
+		db.run(
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES (?, ?, ?, ?, ?, ?)",
+			[p, number, issues.join(","), spec, work, specId],
+		),
+	);
 export const tick = (
 	db: Database,
 	role: string,

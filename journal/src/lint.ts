@@ -10,6 +10,7 @@ export const CONSTITUTION_HEADINGS = [
 	"Not judged",
 	"Execution",
 	"Executor loads",
+	"Labels",
 	"Precedents",
 ];
 export const DEPARTMENT_HEADINGS = [
@@ -30,6 +31,10 @@ type PageKind = "constitution" | "department";
 const PAGE_HEADINGS: Record<PageKind, string[]> = {
 	constitution: CONSTITUTION_HEADINGS,
 	department: DEPARTMENT_HEADINGS,
+};
+const PAGE_VERSION: Record<PageKind, string> = {
+	constitution: "2",
+	department: "1",
 };
 const isPageKind = (kind: string): kind is PageKind =>
 	Object.hasOwn(PAGE_HEADINGS, kind);
@@ -57,6 +62,7 @@ export type PageLint = {
 	reasons: string[];
 	departments: [string, string][];
 	alarmCheck?: true;
+	notes?: string[];
 };
 
 export function readFrontmatter(
@@ -75,15 +81,17 @@ export function readFrontmatter(
 
 function frontmatterReasons(
 	keys: FrontKeys | null,
-	kind: string,
+	kind: PageKind,
 	expectedName?: string,
 ): string[] {
 	if (keys === null) return ["1: frontmatter missing or not closed"];
 	const reasons: string[] = [];
 	const version = keys.get("contract_version");
 	if (!version) reasons.push("1: contract_version missing");
-	else if (version.value !== "1")
-		reasons.push(`${version.line}: contract_version must be 1`);
+	else if (version.value !== PAGE_VERSION[kind])
+		reasons.push(
+			`${version.line}: contract_version must be ${PAGE_VERSION[kind]}`,
+		);
 	if (kind !== "department") return reasons;
 	const name = keys.get("name");
 	if (!name) reasons.push("1: name missing");
@@ -94,34 +102,28 @@ function frontmatterReasons(
 	return reasons;
 }
 
-function firstMismatch(found: Heading[], expected: string[]): number {
-	for (let i = 0; i < Math.max(found.length, expected.length); i++)
-		if (found[i]?.name !== expected[i]) return i;
-	return -1;
-}
+const isListed = (kind: PageKind, h: Heading) =>
+	PAGE_HEADINGS[kind].includes(h.name);
 
 function headingReasons(
+	kind: PageKind,
 	found: Heading[],
-	expected: string[],
 	total: number,
 ): string[] {
-	const i = firstMismatch(found, expected);
-	if (i < 0) return [];
-	const got = found[i];
-	const want = expected[i];
-	if (!got) return [`${total}: missing heading "${want}"`];
 	const names = found.map((h) => h.name);
-	if (
-		want === undefined ||
-		!expected.includes(got.name) ||
-		names.indexOf(got.name) < i
-	) {
-		return [`${got.line}: extra heading "${got.name}"`];
-	}
-	if (!names.includes(want)) return [`${got.line}: missing heading "${want}"`];
-	return [
-		`${got.line}: heading "${got.name}" is out of order, expected "${want}"`,
-	];
+	const extra =
+		kind === "department"
+			? found
+					.filter((h) => !isListed(kind, h))
+					.map((h) => `${h.line}: extra heading "${h.name}"`)
+			: [];
+	const repeated = found
+		.filter((h, i) => isListed(kind, h) && names.indexOf(h.name) < i)
+		.map((h) => `${h.line}: repeated heading "${h.name}"`);
+	const missing = PAGE_HEADINGS[kind]
+		.filter((name) => !names.includes(name))
+		.map((name) => `${total}: missing heading "${name}"`);
+	return [...extra, ...repeated, ...missing];
 }
 
 const sectionEnd = (found: Heading[], k: number, total: number) =>
@@ -148,8 +150,13 @@ export function hasAlarmCheck(
 		);
 }
 
-function emptySections(lines: string[], found: Heading[]): string[] {
+function emptySections(
+	kind: PageKind,
+	lines: string[],
+	found: Heading[],
+): string[] {
 	return found.flatMap((h, k) => {
+		if (kind === "constitution" && !isListed(kind, h)) return [];
 		const end = sectionEnd(found, k, lines.length);
 		return lines.slice(h.line, end).every((l) => l.trim() === "")
 			? [`${h.line}: section "${h.name}" is empty, write none`]
@@ -224,8 +231,8 @@ export function lintPage(
 		departments: [],
 	};
 	page.reasons.push(
-		...headingReasons(found, PAGE_HEADINGS[kind], lines.length),
-		...emptySections(lines, found),
+		...headingReasons(kind, found, lines.length),
+		...emptySections(kind, lines, found),
 	);
 	if (kind === "constitution") {
 		const start = parsed?.end ?? 0;
@@ -242,13 +249,13 @@ export function lintPage(
 		constitutionLists(lines, found, hidden, page);
 	}
 	page.reasons.sort((a, b) => parseInt(a, 10) - parseInt(b, 10));
-	if (page.reasons.length > 0) page.departments = [];
-	if (
-		kind === "department" &&
-		page.reasons.length === 0 &&
-		hasAlarmCheck(lines, hidden, found)
-	)
+	if (page.reasons.length > 0)
+		return { reasons: page.reasons, departments: [] };
+	if (kind === "department" && hasAlarmCheck(lines, hidden, found))
 		page.alarmCheck = true;
+	const unknown = found.filter((h) => !isListed(kind, h));
+	if (unknown.length > 0)
+		page.notes = unknown.map((h) => `# ${h.line}: unknown section "${h.name}"`);
 	return page;
 }
 
@@ -263,5 +270,6 @@ export function lintPageCommand(args: string[]): number {
 	for (const reason of page.reasons) out(reason);
 	for (const [name, judgedBy] of page.departments) out(name, judgedBy);
 	if (page.alarmCheck) out("alarm-check");
+	for (const note of page.notes ?? []) out(note);
 	return page.reasons.length > 0 ? EXIT.LINT_PAGE : EXIT.OK;
 }

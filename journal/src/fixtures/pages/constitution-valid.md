@@ -1,5 +1,5 @@
 ---
-contract_version: 1
+contract_version: 2
 ---
 
 # Constitution of example/widgets
@@ -40,6 +40,10 @@ none
 
 - skills/widget-api/SKILL.md
 - rules/testing.md
+
+## Labels
+
+- `needs-human` (owner attention): Lawman sent this feature request out of its funnel. A person decides on it.
 
 ## Precedents
 

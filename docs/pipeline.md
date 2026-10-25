@@ -12,7 +12,7 @@ This page summarises the law and links the files that bind each part. Where this
 | :-- | :-- | :-- |
 | Duty desk | The journal and the synced trackers of every precinct with a weight above zero | At most one order per role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
-| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out |
+| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. For a feature request sent out, at most one label |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
@@ -43,7 +43,7 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 
 - A `Lead` comment turns the issue into a lead. The marker is `stage=lead` with `department=-`.
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
-- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `feature`, `injection` or `other`.
+- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `feature`, `injection` or `other`. For `feature`, the response unit also prints one `ALARM feature` line and applies the constitution's owner-attention label to the issue, when the constitution names one.
 
 ### Investigation
 
@@ -122,7 +122,7 @@ The response unit gets an order when a human-written issue still waits for a lea
 
 Each role then starts on its own clock. It takes the oldest open order of its role with `bin/journal dispatch take`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
 
-A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Two steps wait for a person: the vote on the spec and the review of the pull request.
+A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Two steps wait for a person: the vote on the spec and the review of the pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
@@ -152,7 +152,7 @@ Silence is the default. A tick that succeeds, skips or stops answers only the si
 
 ### Alarms
 
-The journal computes the first five alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
+The journal computes the first six alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
 
 | Alarm | Raised when |
 | :-- | :-- |
@@ -161,13 +161,15 @@ The journal computes the first five alarms below. The `case` and `sweep` alarms 
 | `role-silent` | A role that ended a tick before shows no tick start and no gate check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
+| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. |
 | `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
 | `case` | A role meets a live secret, a vulnerability or a serious violation in a case. |
 | `sweep` | Patrol finds a live secret in the tree or the history. |
+| `feature` | The response unit sends an issue out of the funnel as a feature request. |
 
-The tick that finds an alarm prints it first in its reply. The `case` and `sweep` lines read `ALARM case <precinct>#<issue> <one line>` and `ALARM sweep <precinct> <path>:<line> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `feature` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM feature <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 
-The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` alarm. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `feature` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
 
 ### Failures and stops
 

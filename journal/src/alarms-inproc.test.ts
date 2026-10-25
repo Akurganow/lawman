@@ -1,13 +1,19 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { handed, human, put } from "./cases-fixture";
 import { inproc } from "./inproc";
 import {
+	addPrecincts,
 	BASE,
+	cachePull,
+	call,
 	later,
 	order,
 	precinct,
 	seed,
 	tempDb,
 	tick,
+	WAITS_SPEC,
+	WAITS_WORK,
 } from "./test-helpers";
 
 tempDb();
@@ -98,5 +104,52 @@ describe("role-silent in process", () => {
 			tick(db, "patrol", BASE, null, null);
 		});
 		expect(alarm(later(1000))).not.toContain("role-silent");
+	});
+});
+
+describe("decision-waiting in process", () => {
+	beforeEach(() => addPrecincts({ main: 1 }));
+
+	const line = (detail: string) => `ALARM decision-waiting main#7 ${detail}\n`;
+
+	test("a handed pull request alarms once for a vote on its spec", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting");
+		expect(alarm(BASE)).toBe(line(WAITS_SPEC));
+		expect(alarm(later(1))).toBe("");
+	});
+
+	test("the review text wins and the repeat belongs to --repeat", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting", "ready");
+		expect(alarm(BASE)).toBe(line(WAITS_WORK));
+		expect(alarm(later(24, 1))).toBe("");
+		expect(alarm(later(24, 1), "--repeat")).toBe(line(WAITS_WORK));
+	});
+
+	test.each([
+		["not handed", () => put({ 3: human("OPEN") })],
+		[
+			"a precinct of weight 0",
+			() => {
+				put({ 3: handed(7) });
+				call(BASE, ["precinct", "set", "main", "--weight", "0"]);
+			},
+		],
+	])("%s does not alarm", (_, arrange) => {
+		arrange();
+		cachePull("main", 7, [3], "waiting", "ready");
+		expect(alarm(BASE)).toBe("");
+	});
+
+	test("a vote clears the alarm", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting");
+		alarm(BASE);
+		seed((db) => db.run("UPDATE pulls SET spec = 'up'"));
+		expect(alarm(later(1))).toBe("");
+		expect(inproc(later(2), ["status"]).out.includes("decision-waiting")).toBe(
+			false,
+		);
 	});
 });

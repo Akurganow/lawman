@@ -1,5 +1,5 @@
 ---
-contract_version: 1
+contract_version: 2
 ---
 
 # Constitution of Akurganow/lawman
@@ -41,6 +41,10 @@ contract_version: 1
 ## Executor loads
 
 - fence-patterns.txt
+
+## Labels
+
+- `needs-human` (owner attention): Lawman sent this feature request out of its funnel. A person decides on it.
 
 ## Precedents
 

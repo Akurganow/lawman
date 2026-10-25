@@ -1,7 +1,11 @@
-import { describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
+import { handed, human, put } from "./cases-fixture";
+import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
+	addPrecincts,
 	alarm,
 	BASE,
+	cachePull,
 	call,
 	later,
 	order,
@@ -10,6 +14,8 @@ import {
 	seed,
 	tempDb,
 	tick,
+	WAITS_SPEC,
+	WAITS_WORK,
 } from "./test-helpers";
 
 tempDb();
@@ -318,5 +324,174 @@ describe("alarms and status", () => {
 			expect(r.out).toContain("leads 0");
 			expect(call(BASE, ["status", "x"]).code).toBe(1);
 		});
+	});
+});
+
+describe("decision-waiting", () => {
+	beforeEach(() => addPrecincts({ main: 1, other: 1 }));
+
+	const line = (ref: string, detail: string) =>
+		`ALARM decision-waiting ${ref} ${detail}\n`;
+	const waitingSpec = () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting");
+	};
+	const open = () =>
+		rows("SELECT ref, cleared_at FROM alarms ORDER BY id") as {
+			ref: string;
+			cleared_at: string | null;
+		}[];
+	const setPull = (sql: string) => seed((db) => db.run(sql));
+
+	test("a handed pull request that waits for a vote on its spec alarms", () => {
+		waitingSpec();
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
+	});
+
+	test("a handed pull request with finished work alarms", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "up", "ready");
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+	});
+
+	test("the review text wins when both conditions hold", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting", "ready");
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+	});
+
+	test.each([
+		["none", "todo"],
+		["up", "todo"],
+		["down", "todo"],
+		["up", "returned"],
+		["down", "returned"],
+	])("spec %s with work %s does not alarm", (spec, work) => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], spec, work);
+		expect(alarm(BASE).out).toBe("");
+	});
+
+	test("a pull request that is not handed does not alarm", () => {
+		put({ 3: human("OPEN"), 4: handed(8) });
+		cachePull("main", 7, [3, 4], "waiting", "ready");
+		cachePull("main", 9, [], "waiting");
+		expect(alarm(BASE).out).toBe("");
+	});
+
+	test("a precinct of weight 0 does not alarm and its open alarm clears", () => {
+		waitingSpec();
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
+		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
+		expect(alarm(later(1)).out).toBe("");
+		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
+	});
+
+	test("a vote on the spec clears the alarm and a return brings it back", () => {
+		waitingSpec();
+		alarm(BASE);
+		setPull("UPDATE pulls SET spec = 'up'");
+		expect(alarm(later(1)).out).toBe("");
+		setPull("UPDATE pulls SET spec = 'waiting'");
+		expect(alarm(later(2)).out).toBe(line("main#7", WAITS_SPEC));
+		expect(open()).toEqual([
+			{ ref: "main#7", cleared_at: later(1) },
+			{ ref: "main#7", cleared_at: null },
+		]);
+	});
+
+	test("a newer spec on finished work raises the vote alarm in place of the review alarm", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "up", "ready");
+		alarm(BASE);
+		setPull("UPDATE pulls SET spec = 'waiting', work = 'todo'");
+		expect(alarm(later(1)).out).toBe(line("main#7", WAITS_SPEC));
+		expect(open()).toEqual([
+			{ ref: "main#7", cleared_at: later(1) },
+			{ ref: "main#7", cleared_at: null },
+		]);
+		expect(alarm(later(26), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
+	});
+
+	test("finished work after an unseen vote raises the review alarm in place of the vote alarm", () => {
+		waitingSpec();
+		alarm(BASE);
+		setPull("UPDATE pulls SET spec = 'up', work = 'ready'");
+		expect(alarm(later(1)).out).toBe(line("main#7", WAITS_WORK));
+		expect(open()[0]?.cleared_at).toBe(later(1));
+	});
+
+	test("a removed row clears the alarm", () => {
+		waitingSpec();
+		alarm(BASE);
+		setPull("DELETE FROM pulls");
+		expect(alarm(later(1)).out).toBe("");
+		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
+	});
+
+	test("a return of the finished work clears the alarm", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "up", "ready");
+		alarm(BASE);
+		setPull("UPDATE pulls SET work = 'returned'");
+		expect(alarm(later(1)).out).toBe("");
+		expect(open()[0]?.cleared_at).toBe(later(1));
+	});
+
+	describe("finished work in a synced cache", () => {
+		const comments = (readyUp: string[]) => [
+			{ body: `Spec\n\n${SPEC}`, id: "SPEC_1", up: ["maint-a"] },
+			{
+				body: `Executor\n\n${READY}`,
+				id: "READY_1",
+				at: "2026-10-14T11:00:00Z",
+				up: readyUp,
+			},
+		];
+		const syncPulls = (readyUp: string[]) =>
+			expect(
+				call(
+					BASE,
+					["sync", "main", "--pulls", "--author", BOT],
+					JSON.stringify(
+						hostPulls([
+							{ number: 7, closes: [3], comments: comments(readyUp) },
+						]),
+					),
+				).code,
+			).toBe(0);
+
+		test("a thumbs up on the finished work does not clear the alarm", () => {
+			put({ 3: handed(7) });
+			syncPulls([]);
+			expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+			syncPulls(["maint-a"]);
+			expect(rows("SELECT work FROM pulls")).toEqual([{ work: "ready" }]);
+			expect(alarm(later(1)).out).toBe("");
+			expect(open()).toEqual([{ ref: "main#7", cleared_at: null }]);
+		});
+	});
+
+	test("the daily repeat prints only with --repeat", () => {
+		waitingSpec();
+		alarm(BASE);
+		expect(alarm(later(24, 1)).out).toBe("");
+		expect(alarm(later(24, 1), "--repeat").out).toBe(
+			line("main#7", WAITS_SPEC),
+		);
+		expect(alarm(later(25), "--repeat").out).toBe("");
+	});
+
+	test("candidates come in the order of precinct, then pull request number", () => {
+		put({ 3: handed(1) }, "other");
+		put({ 3: handed(9), 4: handed(10) });
+		cachePull("other", 1, [3], "waiting");
+		cachePull("main", 10, [4], "waiting");
+		cachePull("main", 9, [3], "waiting");
+		expect(alarm(BASE).out).toBe(
+			line("main#9", WAITS_SPEC) +
+				line("main#10", WAITS_SPEC) +
+				line("other#1", WAITS_SPEC),
+		);
 	});
 });

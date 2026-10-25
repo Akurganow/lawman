@@ -1,13 +1,13 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { handed, human, put } from "./cases-fixture";
+import { handed, human, pairMark, put } from "./cases-fixture";
 import { inproc } from "./inproc";
 import {
 	addPrecincts,
 	BASE,
+	cachePull,
 	call,
 	mark,
 	SHA,
-	seed,
 	tempDb,
 } from "./test-helpers";
 
@@ -21,13 +21,7 @@ const cached = (
 	spec: string,
 	work = "todo",
 	specId = "-",
-) =>
-	seed((db) =>
-		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES ('main', ?, ?, ?, ?, ?)",
-			[number, issues.join(","), spec, work, specId],
-		),
-	);
+) => cachePull("main", number, issues, spec, work, specId);
 const priority = (value: string) =>
 	mark("court", "conviction", ` sha=${SHA} priority=${value}`);
 
@@ -56,6 +50,30 @@ describe("pull", () => {
 		expect(pull("main", "7").out).toBe(
 			`need=${need} spec=up spec_id=S_kwDO1 work=${work} sources=3 priority=P2\n`,
 		);
+	});
+
+	test("a source whose newest pair is not handed needs nobody", () => {
+		put({
+			3: human(
+				"OPEN",
+				pairMark("handed", 7, "open"),
+				pairMark("shut", 7, "closed"),
+			),
+		});
+		cached(7, [3], "none");
+		expect(pull("main", "7").out).toStartWith("need=none spec=none");
+	});
+
+	test("a kept marker leaves the handed base", () => {
+		put({
+			3: human(
+				"OPEN",
+				pairMark("handed", 7, "open"),
+				pairMark("kept", 7, "open"),
+			),
+		});
+		cached(7, [3], "none");
+		expect(pull("main", "7").out).toStartWith("need=spec-writer spec=none");
 	});
 
 	test("an executor is not needed without a handed source", () => {
