@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { check, count, usage } from "./args";
-import { markersOf } from "./cases";
+import { type CaseMarker, markersOf } from "./cases";
 import { DEFAULT_PRIORITY, pairOf, priorityOf } from "./clerk-jobs";
 import { out, withDb } from "./db";
 
@@ -44,6 +44,24 @@ function needOf(row: Cached, handed: boolean): PullStage["need"] {
 	return "none";
 }
 
+export function sourceMarkers(
+	db: Database,
+	precinct: string,
+	issues: string,
+): CaseMarker[][] {
+	return issues
+		.split(",")
+		.filter(Boolean)
+		.map((issue) => markersOf(db, precinct, Number(issue)));
+}
+
+export function isHanded(marked: CaseMarker[][], number: number): boolean {
+	return marked.some((markers) => {
+		const pair = pairOf(markers);
+		return pair.base === "handed" && pair.pull === String(number);
+	});
+}
+
 // The next role's need for one cached pull request, without the open-order check.
 export function stageOf(
 	db: Database,
@@ -58,16 +76,9 @@ export function stageOf(
 		)
 		.get(precinct, number) as Cached | null;
 	if (row === null) return MISSING;
-	const marked = row.issues
-		.split(",")
-		.filter(Boolean)
-		.map((issue) => markersOf(db, precinct, Number(issue)));
-	const handed = marked.some((markers) => {
-		const pair = pairOf(markers);
-		return pair.base === "handed" && pair.pull === String(number);
-	});
+	const marked = sourceMarkers(db, precinct, row.issues);
 	return {
-		need: needOf(row, handed),
+		need: needOf(row, isHanded(marked, number)),
 		spec: row.spec,
 		specId: row.spec_id,
 		work: row.work,

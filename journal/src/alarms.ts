@@ -12,6 +12,7 @@ import {
 	out,
 	withDb,
 } from "./db";
+import { isHanded, sourceMarkers } from "./pull-stage";
 
 const ORDER_UNTAKEN_MS = 48 * HOUR_MS;
 const ORDER_INTERVAL_GRACE_MS = 24 * HOUR_MS;
@@ -147,12 +148,40 @@ function brokenLead(db: Database): Candidate[] {
 	}));
 }
 
+const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
+const WAITS_FOR_VOTE = "pull request waits for a vote on its newest spec";
+
+function decisionWaiting(db: Database): Candidate[] {
+	// a precinct of weight 0 is never synced, so its cached rows go stale
+	const waiting = db
+		.query(
+			`SELECT p.precinct, p.number, p.issues, p.work FROM pulls p
+       WHERE (p.spec = 'waiting' OR p.work = 'ready')
+         AND EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)
+       ORDER BY p.precinct, p.number`,
+		)
+		.all() as {
+		precinct: string;
+		number: number;
+		issues: string;
+		work: string;
+	}[];
+	return waiting
+		.filter((p) => isHanded(sourceMarkers(db, p.precinct, p.issues), p.number))
+		.map((p) => ({
+			kind: "decision-waiting",
+			ref: `${p.precinct}#${p.number}`,
+			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
+		}));
+}
+
 const DETECTORS = [
 	orderUntaken,
 	tickHung,
 	roleSilent,
 	tickFailing,
 	brokenLead,
+	decisionWaiting,
 ] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
