@@ -176,7 +176,7 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/jo
 ```
 
 - The forms use only what "Commands in scheduled runs" lists as accepted: a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
-- No form has been run through the harness's check function or in a scheduled run.
+- The harness's check function accepts form 1, form 2, the batch pipeline for the first and a later part, the record request and the record read, each in the exact form a role sends (checked with the harness's check function). The floor check of the same function passes them too. None of these was seen in a scheduled run.
 
 ## Scheduling
 
