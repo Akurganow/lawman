@@ -1,31 +1,20 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync, writeFileSync } from "node:fs";
+import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
+import { BATCH_LIMIT, cutParts, UNRESOLVED_VERSION } from "./catalog";
 import {
-	BATCH_LIMIT,
-	catalogOutput,
-	cutParts,
-	UNRESOLVED_VERSION,
-} from "./catalog";
-import { captured } from "./inproc";
-import { cli, dbFile, tempDb } from "./test-helpers";
+	entry,
+	inProcess,
+	list,
+	prepare,
+	RUNNERS,
+	type Run,
+	throughCli,
+} from "./catalog-test-run";
+import { dbFile, tempDb } from "./test-helpers";
 
 tempDb();
 
-type Output = { code: number | null; out: string; err: string };
-type Run = (args: string[], stdin?: string) => Output;
-
-const CLOCK = "2026-10-25T10:00:00Z";
-const inProcess: Run = (args, stdin = "") =>
-	captured(CLOCK, () => {
-		process.stdout.write(`${catalogOutput(args, stdin)}\n`);
-	});
-const throughCli: Run = (args, stdin) =>
-	cli(["catalog", ...args], { LAWMAN_DB: dbFile }, stdin);
-const RUNNERS: [string, Run][] = [
-	["cli", throughCli],
-	["in process", inProcess],
-];
 const first = (tick: string, extra: string[] = []) => [
 	"request",
 	"--kind",
@@ -35,14 +24,9 @@ const first = (tick: string, extra: string[] = []) => [
 	...extra,
 ];
 
-const entry = (i: number, version = "1.0.0") =>
-	["dir/package-lock.json", "npm", `pkg-${i}`, version].join("\t");
-const list = (n: number) =>
-	Array.from({ length: n }, (_, i) => entry(i)).join("\n");
 const queries = (
 	body: string,
 ): { package: { name: string }; version: string }[] => JSON.parse(body).queries;
-const prepare = () => writeFileSync(dbFile, "");
 
 function allBodies(run: Run, tick: string, input: string): string[] {
 	const bodies = [
@@ -142,16 +126,6 @@ describe("state of the tick", () => {
 });
 
 describe("parts", () => {
-	test("the unknown subcommands that are not built yet say so", () => {
-		prepare();
-		for (const args of [
-			["answer", "--kind", "batch", "--tick", "7"],
-			["request", "--kind", "record"],
-			["answer", "--kind", "record", "--id", "X-1"],
-		])
-			expect(throughCli(args, "").code).toBe(1);
-	});
-
 	const sizes = [
 		0,
 		1,
