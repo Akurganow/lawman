@@ -1,0 +1,11 @@
+{
+	"request": {
+		"method": "GET",
+		"path": "/v1/vulns/GHSA-0000-0000-0000"
+	},
+	"status": 404,
+	"reply": {
+		"code": 5,
+		"message": "Vulnerability not found"
+	}
+}

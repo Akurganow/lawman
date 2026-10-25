@@ -1,10 +1,11 @@
 import { pick, usage } from "./args";
+import { LIST_EXAMPLE, LIST_FORM } from "./catalog";
 import { EXIT, Fail, normalizeTime, out } from "./db";
 import { asciiLower } from "./markers";
 
-export type FormKind = "issues" | "pulls" | "decider";
+export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 
-const FORM_USAGE = "form <issues|pulls|decider>";
+const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
@@ -52,6 +53,7 @@ ${COMMON}
 Fields:
   lastActor: the login of whoever made the last close or reopen of the number in question, null when none
   writers: as in pulls`,
+	catalog: LIST_FORM,
 };
 
 const EXAMPLES: Record<FormKind, unknown> = {
@@ -97,10 +99,15 @@ const EXAMPLES: Record<FormKind, unknown> = {
 		],
 	},
 	decider: { lastActor: "maintainer", writers: ["maintainer", "co-writer"] },
+	catalog: LIST_EXAMPLE,
 };
 
-export const exampleOf = (kind: FormKind) =>
-	JSON.stringify(EXAMPLES[kind], null, 2);
+export const exampleOf = (kind: FormKind) => {
+	const example = EXAMPLES[kind];
+	return typeof example === "string"
+		? example
+		: JSON.stringify(example, null, 2);
+};
 
 export const formText = (kind: FormKind) =>
 	`${TEXTS[kind]}\n\nExample:\n${exampleOf(kind)}`;
