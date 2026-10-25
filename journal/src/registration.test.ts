@@ -13,12 +13,18 @@ import {
 tempDb();
 
 describe("registration", () => {
-	test.each(["pull", "handoff", "decider", "form", "jev", "wake", "law-sync"])(
-		"%s is a registered command",
-		(name) => {
-			expect(Object.keys(COMMANDS)).toContain(name);
-		},
-	);
+	test.each([
+		"pull",
+		"handoff",
+		"decider",
+		"form",
+		"jev",
+		"catalog",
+		"wake",
+		"law-sync",
+	])("%s is a registered command", (name) => {
+		expect(Object.keys(COMMANDS)).toContain(name);
+	});
 
 	test("an unknown command lists the new commands in its usage", () => {
 		const err = call(BASE, ["frobnicate"]).err;
@@ -28,6 +34,7 @@ describe("registration", () => {
 			"decider",
 			"form",
 			"jev",
+			"catalog",
 			"wake",
 			"law-sync",
 		])

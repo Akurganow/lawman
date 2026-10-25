@@ -1,3 +1,8 @@
+import { mkdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
+import { dirname, join } from "node:path";
+import { check, count, parseArgs, subcommand, usage } from "./args";
+import { recordAnswer, recordRequest } from "./catalog-record";
+import { dbPath, EXIT, Fail, out, readStdin } from "./db";
 import { encodeIdPart } from "./markers";
 
 export const UNRESOLVED_VERSION = "-";
@@ -115,3 +120,119 @@ export const LIST_EXAMPLE = [
 ]
 	.map((fields) => fields.join("\t"))
 	.join("\n");
+
+const USAGE = "catalog <request|answer> --kind <batch|record>";
+
+// The catalog's batch endpoint takes at most 1000 queries in one request (its documented limit).
+export const BATCH_LIMIT = 1000;
+
+type Part = "unprinted" | "printed";
+type State = {
+	precinct: string;
+	entries: Entry[];
+	refused: number[];
+	unresolved: number[];
+	parts: Part[];
+};
+
+export function cutParts(entries: Entry[]): Entry[][] {
+	const parts: Entry[][] = [];
+	for (let at = 0; at < entries.length; at += BATCH_LIMIT)
+		parts.push(entries.slice(at, at + BATCH_LIMIT));
+	return parts;
+}
+
+const batchBody = (part: Entry[]) =>
+	JSON.stringify({
+		queries: part.map((e) => ({
+			package: { name: e.name, ecosystem: e.ecosystem },
+			version: e.version,
+		})),
+	});
+
+const numbers = (list: number[]) => (list.length > 0 ? list.join(",") : "none");
+
+function stateFile(tick: number): string {
+	const db = dbPath();
+	if (!statSync(db, { throwIfNoEntry: false })?.isFile())
+		throw new Fail(EXIT.USAGE, "the database is not a file");
+	return join(dirname(db), "runs", String(tick), "catalog.json");
+}
+
+function readState(file: string): State {
+	try {
+		return JSON.parse(readFileSync(file, "utf8")) as State;
+	} catch {
+		throw new Fail(EXIT.USAGE, "catalog has no list for this tick");
+	}
+}
+
+function writeState(file: string, state: State): void {
+	mkdirSync(dirname(file), { recursive: true });
+	writeFileSync(file, JSON.stringify(state));
+}
+
+function startState(precinct: string, input: string): State {
+	const { entries, refused, unresolved } = parseList(input);
+	if (entries.length === 0)
+		throw new Fail(
+			EXIT.USAGE,
+			`catalog none entries=${entries.length + refused.length + unresolved.length} refused=${numbers(refused)} not-sent=${numbers(unresolved)}`,
+		);
+	const parts = cutParts(entries).map((): Part => "unprinted");
+	return { precinct, entries, refused, unresolved, parts };
+}
+
+function printNext(file: string, state: State): string {
+	const at = state.parts.indexOf("unprinted");
+	if (at < 0) throw new Fail(EXIT.USAGE, "catalog has no part left to print");
+	state.parts[at] = "printed";
+	writeState(file, state);
+	return batchBody(cutParts(state.entries)[at] ?? []);
+}
+
+function requestBatch(args: string[], input: string): string {
+	const { opt } = parseArgs(args, 0, ["kind", "tick"], USAGE, ["precinct"]);
+	const file = stateFile(count(opt.tick, "tick", 1));
+	const state =
+		opt.precinct === undefined
+			? readState(file)
+			: startState(check("precinct", opt.precinct), input);
+	return printNext(file, state);
+}
+
+function kindOf(args: string[]): string {
+	const { opt } = parseArgs(args, 0, ["kind"], USAGE, [
+		"tick",
+		"precinct",
+		"id",
+	]);
+	if (opt.kind !== "batch" && opt.kind !== "record") throw usage(USAGE);
+	return opt.kind;
+}
+
+const unavailable = (): never => {
+	throw new Fail(EXIT.USAGE, "catalog answer for a batch is not available yet");
+};
+
+export function catalogOutput(args: string[], input: string): string {
+	const { run, rest } = subcommand(
+		{
+			request: (more: string[]) =>
+				kindOf(more) === "batch"
+					? requestBatch(more, input)
+					: recordRequest(more, input),
+			answer: (more: string[]) =>
+				kindOf(more) === "batch" ? unavailable() : recordAnswer(more, input),
+		},
+		args,
+		USAGE,
+	);
+	return run(rest);
+}
+
+export function catalog(args: string[]): void {
+	// a later request carries no list, so stdin stays untouched
+	const reads = args.includes("--precinct") || args[0] === "answer";
+	out(catalogOutput(args, reads ? readStdin() : ""));
+}
