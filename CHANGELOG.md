@@ -4,6 +4,35 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.20.0 - 2026-10-25
+#### Features
+- check each precinct's dependencies against the OSV catalog, run the assembly to answer the consent question (a3c0168)
+- investigation reads one catalog record per lead (1802763)
+- Hermes forms for sending to the catalog (9bf811b)
+- assembly mode for missing catalog answers (cbdd4ab)
+- catalog send rules in the exhibits (2d91013)
+- journal reads catalog answers and one record per lead (7980b37)
+- assembly agrees the dependency reading way per precinct (e5f0d1a)
+- known vulnerabilities leave the dependencies department (41c3085)
+- journal builds catalog requests in parts (be16256)
+- assembly asks for catalog consent at install (a619bdc)
+- a catalog match alone raises no alarm (fb74f41)
+- vulnerabilities department page (7629e11)
+- catalog list form and value classes in the journal (6a8e0fe)
+#### Bug Fixes
+- catalog mode agrees the reading way for a precinct that already said yes (b876d74)
+- a catalog reply always lands on the part it was sent for (10bdd11)
+#### Documentation
+- Hermes page names the failed-request case (1ae658d)
+- review fixes for the catalog check (c0ef3a6)
+- Hermes catalog forms pass the harness command check (9eca7a4)
+- catalog check, consent keys and the vulnerabilities department (956251b)
+#### Refactoring
+- catalog entries in their own module (3f7037c)
+
+- - -
+
+
 ## v0.19.0 - 2026-10-25
 #### Features
 - BREAKING: margin notes and a Labels section in the constitution (f27735c)
