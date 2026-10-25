@@ -100,7 +100,7 @@ A tick that succeeds or skips answers only the silence form that the harness pag
 
 An alarm is a condition the owner must see. Examples are an order that nobody takes, a tick that never ended, a role that stopped ticking, a role whose last three ticks on a precinct stopped, skipped or failed, a lead with a broken marker, and a pull request whose newest spec or finished work waits for a decider. The journal computes these alarms.
 
-- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>` first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below.
+- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>` first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes nothing to the tracker. The line holds no value.
 - A secret found only in history is named `<path>@<hash>`, with the short commit hash in place of the line.
 - A live secret is a credential in the tree or in the history of the analysed commit. The department page may exclude placeholders.

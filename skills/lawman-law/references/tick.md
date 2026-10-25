@@ -230,6 +230,6 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 
 Issue roles and patrol. Print an alarm first in the answer of the same tick. The line names a path and a line, never a value. Alarms have no cap.
 
-- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret.
+- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.
 - The response unit prints a feature request that it sent out as `ALARM feature <p>#<n> <one line>`.
