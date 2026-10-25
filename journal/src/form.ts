@@ -1,5 +1,5 @@
 import { pick, usage } from "./args";
-import { LIST_EXAMPLE, LIST_FORM } from "./catalog";
+import { LIST_EXAMPLE, LIST_FORM } from "./catalog-entries";
 import { EXIT, Fail, normalizeTime, out } from "./db";
 import { asciiLower } from "./markers";
 

@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { sourceLine } from "./catalog";
+import { sourceLine } from "./catalog-entries";
 import {
 	ANSWER,
 	CLOCK,
+	expectCleanComment,
 	FOUND,
 	ID,
 	line,
@@ -17,8 +18,7 @@ import {
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
-import { extractMarkers } from "./markers";
-import { cli, lead, tempDb } from "./test-helpers";
+import { tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -60,14 +60,7 @@ describe.each(RUNNERS)("catalog record request (%s)", (_name, request) => {
 
 	test("the printed identifier passes the body check and holds no marker", async () => {
 		const { out } = await request(REQUEST, sourceLine(ID, "npm", "lodash"));
-		const comment = `${out}${lead()}`;
-		expect(cli(["lint-body"], {}, comment)).toEqual({
-			code: 0,
-			out: comment,
-			err: "",
-		});
-		const carrier = { text: out, createdAt: CLOCK, rank: 0, author: "t" };
-		expect(extractMarkers(carrier, "t")).toEqual([]);
+		expectCleanComment(out);
 	});
 
 	test("a wrong option is a usage error", async () => {

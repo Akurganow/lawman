@@ -1,5 +1,5 @@
 import { parseArgs } from "./args";
-import { isRecordId, parseSourceLine } from "./catalog";
+import { isRecordId, parseSourceLine } from "./catalog-entries";
 import { EXIT, Fail, now } from "./db";
 
 const REQUEST_USAGE = "catalog request --kind record (stdin: a Source line)";

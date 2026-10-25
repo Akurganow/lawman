@@ -1,11 +1,11 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { isRecordId } from "./catalog";
+import { isRecordId } from "./catalog-entries";
 import { recordAnswer } from "./catalog-record";
 import {
 	ANSWER,
-	CLOCK,
+	expectCleanComment,
 	FIXTURES,
 	FOUND,
 	fixture,
@@ -19,7 +19,7 @@ import {
 } from "./catalog-record-fixture";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
-import { cli, JOURNAL, lead, tempDb } from "./test-helpers";
+import { JOURNAL, lead, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -54,14 +54,7 @@ describe.each(RUNNERS)(
 				expect(out.slice(0, -1)).not.toContain("\n");
 				expect(out).not.toContain(TOKEN);
 				expect(out).not.toContain(ZWSP);
-				const comment = `${out}${lead()}`;
-				expect(cli(["lint-body"], {}, comment)).toEqual({
-					code: 0,
-					out: comment,
-					err: "",
-				});
-				const carrier = { text: out, createdAt: CLOCK, rank: 0, author: "t" };
-				expect(extractMarkers(carrier, "t")).toEqual([]);
+				const { comment, carrier } = expectCleanComment(out);
 				expect(extractMarkers({ ...carrier, text: comment }, "t")).toHaveLength(
 					1,
 				);

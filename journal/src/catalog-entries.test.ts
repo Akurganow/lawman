@@ -11,7 +11,7 @@ import {
 	sourceLine,
 	splitPackageToken,
 	UNRESOLVED_VERSION,
-} from "./catalog";
+} from "./catalog-entries";
 import { canonicalId } from "./markers";
 
 const HIDDEN = ["a​b", "a‮b", "a\u0000b", "a b", "é"];

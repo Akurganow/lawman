@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { leadIdentity, sourceLine } from "./catalog";
+import { leadIdentity, sourceLine } from "./catalog-entries";
 import { entry, list, prepare, RUNNERS, type Run } from "./catalog-test-run";
 import { dbFile, precinct, seed, tempDb } from "./test-helpers";
 

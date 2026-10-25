@@ -1,8 +1,10 @@
+import { expect } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { recordAnswer, recordRequest } from "./catalog-record";
 import { capturedAsync } from "./inproc";
-import { cli, dbFile, JOURNAL } from "./test-helpers";
+import { extractMarkers } from "./markers";
+import { cli, dbFile, JOURNAL, lead } from "./test-helpers";
 
 export const FIXTURES = join(JOURNAL, "src", "fixtures", "catalog");
 export const fixture = (name: string) =>
@@ -52,3 +54,16 @@ export const line = (tail: string, dropped = "") =>
 	`catalog record id=${ID} severity=MODERATE modified=${FOUND.reply.modified} read=${CLOCK}${dropped} ${tail}\n`;
 export const none = (reason: string) => `catalog none reason=${reason}\n`;
 export const SUMMARY = `summary=${FOUND.reply.summary}`;
+
+// a printed line must pass the body check and plant no marker, alone or beside a lead comment
+export function expectCleanComment(out: string) {
+	const comment = `${out}${lead()}`;
+	expect(cli(["lint-body"], {}, comment)).toEqual({
+		code: 0,
+		out: comment,
+		err: "",
+	});
+	const carrier = { text: out, createdAt: CLOCK, rank: 0, author: "t" };
+	expect(extractMarkers(carrier, "t")).toEqual([]);
+	return { comment, carrier };
+}

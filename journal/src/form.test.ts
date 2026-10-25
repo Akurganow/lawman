@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
-import { parseList, UNRESOLVED_VERSION } from "./catalog";
+import { parseList, UNRESOLVED_VERSION } from "./catalog-entries";
 import { EXIT, Fail } from "./db";
 import { decide } from "./decider";
 import {

@@ -1,7 +1,8 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync } from "node:fs";
 import { dirname, join } from "node:path";
-import { BATCH_LIMIT, cutParts, UNRESOLVED_VERSION } from "./catalog";
+import { BATCH_LIMIT, cutParts } from "./catalog";
+import { UNRESOLVED_VERSION } from "./catalog-entries";
 import {
 	entry,
 	inProcess,
