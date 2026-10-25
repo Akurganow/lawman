@@ -68,7 +68,7 @@ Run this section only when `LAWMAN.md` is absent. Every shared department is in 
 
 Run this section for a file that the job drafted.
 
-35. Run `bin/journal lint-page constitution` with `precincts/<precinct name>/LAWMAN.md` on stdin, and fix the reasons it prints when it exits 8.
+35. Run `bin/journal lint-page constitution` with `precincts/<precinct name>/LAWMAN.md` on stdin, and fix the reasons it prints when it exits 8. A line that starts with `#` is a note and needs no fix.
 
 ### Issue templates
 
@@ -98,7 +98,6 @@ The rows for an absent constitution:
 - Constitution: the draft as a table, one row for each of its nine sections. Show each line with the file it came from (recommended).
 - Departments: each shared department with its first sentence, and the judging document matched to it, or none, with the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
-- Labels: each picked line with the source of its purpose (found, recommended or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).
 - Weight: 0. A new precinct has no patrol slots until its constitution merges (default).
 - TypeSafe: on or off, as `typesafe` says in `config.yaml` (current).

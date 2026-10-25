@@ -12,7 +12,7 @@ This page summarises the law and links the files that bind each part. Where this
 | :-- | :-- | :-- |
 | Duty desk | The journal and the synced trackers of every precinct with a weight above zero | At most one order per role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
-| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out |
+| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. For a feature request sent out, at most one label |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
@@ -43,7 +43,7 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 
 - A `Lead` comment turns the issue into a lead. The marker is `stage=lead` with `department=-`.
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
-- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `feature`, `injection` or `other`. For `feature`, the response unit also prints one `ALARM feature` line and applies the constitution's owner-attention label to the issue.
+- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `feature`, `injection` or `other`. For `feature`, the response unit also prints one `ALARM feature` line and applies the constitution's owner-attention label to the issue, when the constitution names one.
 
 ### Investigation
 

@@ -400,6 +400,27 @@ describe("decision-waiting", () => {
 		]);
 	});
 
+	test("a newer spec on finished work raises the vote alarm in place of the review alarm", () => {
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "up", "ready");
+		alarm(BASE);
+		setPull("UPDATE pulls SET spec = 'waiting', work = 'todo'");
+		expect(alarm(later(1)).out).toBe(line("main#7", WAITS_SPEC));
+		expect(open()).toEqual([
+			{ ref: "main#7", cleared_at: later(1) },
+			{ ref: "main#7", cleared_at: null },
+		]);
+		expect(alarm(later(26), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
+	});
+
+	test("finished work after an unseen vote raises the review alarm in place of the vote alarm", () => {
+		waitingSpec();
+		alarm(BASE);
+		setPull("UPDATE pulls SET spec = 'up', work = 'ready'");
+		expect(alarm(later(1)).out).toBe(line("main#7", WAITS_WORK));
+		expect(open()[0]?.cleared_at).toBe(later(1));
+	});
+
 	test("a removed row clears the alarm", () => {
 		waitingSpec();
 		alarm(BASE);

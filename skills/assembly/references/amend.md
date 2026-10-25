@@ -14,7 +14,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
 8. Stop on "Later", an empty answer, a cancel or a timeout.
-9. On "Amend now", read `host.md`. Three label actions need a record in it. They read a repository's labels with their descriptions, create a label with a description, and apply a label to an issue. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Show each as a row (found) of the first proposal of this run. Append the missing rows in the apply of the first approved precinct. Keep every other line, write no credential value, and read the file back. Ask no separate question for them.
+9. On "Amend now", read `host.md`. Three label actions need a record in it. They read a repository's labels with their descriptions, create a label with a description, and apply a label to an issue. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them.
 
 ## Step 2. Amend the precincts
 
@@ -41,7 +41,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    17. Use "Amend the Lawman constitution to version <n>" as the commit message and the pull request title.
    18. On "Skip", write nothing for the precinct.
 5. Tell the developer that the precinct's ticks end with `skipped-contract-version` until the amendment merges.
-6. When lint fails for another reason, show the reasons. The precinct's ticks then end with `skipped-bad-constitution`.
+6. When lint fails for another reason, show the reasons. The precinct's ticks then end with `skipped-bad-constitution`. The version reason and a missing heading that the new contract added are no other reason, because the amendment answers them.
 
 ## Step 3. Record
 
@@ -50,3 +50,4 @@ When the developer skipped a precinct, skip item 1 and name the skipped precinct
 1. Set `contract_version` to `<n>` and `amended_law_commit` to `law_commit`. Keep the other keys. Write `config.yaml`, and read it back.
 2. Tell the developer the new contract version and the pull requests that the amendment opened.
 3. If a folder under `lawman/skills/` other than `assembly` and `lawman-law` has no scheduler job `[lawman] <role>`, tell the developer to run the assembly again. That enters the roles mode.
+4. Append to `host.md` the label rows that Step 1 item 9 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.

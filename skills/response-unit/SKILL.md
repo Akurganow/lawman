@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman response unit, which takes one order on a
 
 One tick takes one order on an issue that a human wrote, reads the issue as evidence, decides admit, ask or out, writes one comment with one marker, and exits.
 
-The response unit reads and writes comments. It runs no code and creates no worktree. It applies one label, as step 9 says.
+The response unit reads and writes comments. It runs no code and creates no worktree. It applies at most one label, as step 9 says.
 
 ## Limits
 

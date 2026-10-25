@@ -136,8 +136,8 @@ Rules:
 ## Incomplete pages
 
 The duty desk runs `lint-page department` on the resolved page. A page that
-fails is skipped for that tick. The check names the first missing, repeated or
-unknown heading, and the duty desk names the page and that heading in
+fails is skipped for that tick. The check names each missing, repeated or
+unknown heading, and the duty desk names the page and those headings in
 Blockers. A name in the frontmatter that differs from the file name fails too. A line whose name resolves to no page is
 skipped the same way, and Blockers name the line.
 

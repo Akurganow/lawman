@@ -192,7 +192,8 @@ type OpenAlarm = {
 	notified_at: string;
 };
 
-const alarmKey = (a: { kind: string; ref: string }) => `${a.kind} ${a.ref}`;
+// a changed detail is a new condition: the old alarm clears and the new one prints
+const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 const alarmLine = (a: Candidate) => `ALARM ${a.kind} ${a.ref} ${a.detail}`;
 
 function reconcileAlarms(
