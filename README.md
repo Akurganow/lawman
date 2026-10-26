@@ -10,7 +10,7 @@ A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its c
 
 ### The pipeline
 
-Each role is an Agent Skill. The scheduler starts a role. The role takes one order, does one job and exits. A duty desk writes the orders. Patrol, and a response unit for issues a human filed, produce leads. Each later stage costs more per case and sees fewer cases.
+Each role is an Agent Skill. The scheduler starts a role. The role takes one order, does one job and exits. A duty desk writes the orders. Patrol, and a response unit for issues a human filed, produce leads. Any ticket that a human writes enters as a defect or a requirement. Each later stage costs more per case and sees fewer cases.
 
 [Roles and stages](docs/pipeline.md)
 
@@ -42,7 +42,7 @@ A department is a page, not an agent. One generic patrol reads the page and swee
 
 ### The constitution
 
-A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings. The file also names the labels that mean something, among them the one that marks an issue for a person.
+A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings. The file also names the labels that mean something, among them the one that marks an issue for a person. The court applies that label when it refers a requirement to a decider, and removes it when it rules.
 
 [Writing a constitution](docs/constitution.md)
 
@@ -85,6 +85,8 @@ hermes plugins update lawman
 ```
 
 The next tick of any role completes the update. It downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
+
+After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md.
 
 An installation that predates the catalog check has no answer to its consent question. Run the assembly. It sees which answers are missing and asks only those. Until you answer, the check does not run and no role stops.
 

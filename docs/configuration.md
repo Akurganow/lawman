@@ -41,7 +41,7 @@ typesafe_precincts: none
 typesafe_key: none
 catalog: no
 catalog_precincts: none
-contract_version: 2
+contract_version: 3
 amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 ```
 
