@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { answerOf, hasMarkerLine, MARKER_PREFIX } from "./answer";
 import { check, parseArgs, usage } from "./args";
 import {
 	EXIT,
@@ -10,23 +11,14 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
-import { inputRejected, text, timeOf } from "./form";
-import { asciiLower, collectIssueMarkers, type GhIssue } from "./markers";
+import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
+import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
-export const SYNC_LIMIT = 1000;
+export { SYNC_LIMIT } from "./sync-issues";
 
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
-const MARKER_PREFIX = "<!-- lawman:";
-const STATE_REASON = /^[A-Z_]+$/;
 
-type SyncIssue = GhIssue & {
-	bot: boolean;
-	state: string;
-	stateReason: string | null;
-	title: string;
-	closedAt: string | null;
-};
 type SyncStats = {
 	issues: number;
 	leads: number;
@@ -34,81 +26,6 @@ type SyncStats = {
 	invalid: number;
 	skipped: number;
 };
-
-const textOrNull = (v: unknown) =>
-	typeof v === "string" && v !== "" ? v : null;
-const isRecord = (v: unknown): v is Record<string, unknown> =>
-	typeof v === "object" && v !== null;
-const syncInput = (why: string) =>
-	inputRejected("issues", `sync input rejected, cache untouched: ${why}`);
-const timeField = (v: unknown, what: string) => timeOf(v, what, syncInput);
-
-function readIssue(raw: unknown): SyncIssue {
-	if (
-		!isRecord(raw) ||
-		!Number.isInteger(raw.number) ||
-		typeof raw.state !== "string"
-	) {
-		throw syncInput("every element needs an integer number and a state");
-	}
-	// Every reader compares the stored values with the form's upper-case words.
-	if (raw.state !== "OPEN" && raw.state !== "CLOSED") {
-		throw syncInput("a state is OPEN or CLOSED");
-	}
-	// An open issue's reason may be absent, null or empty.
-	const reason = raw.stateReason;
-	if (
-		reason !== undefined &&
-		reason !== null &&
-		reason !== "" &&
-		(typeof reason !== "string" || !STATE_REASON.test(reason))
-	) {
-		throw syncInput("a stateReason is upper case, such as COMPLETED");
-	}
-	const stateReason = textOrNull(reason);
-	const closed = textOrNull(raw.closedAt);
-	const login = isRecord(raw.author) ? text(raw.author.login) : "";
-	const comments = Array.isArray(raw.comments)
-		? raw.comments.filter(isRecord)
-		: [];
-	return {
-		number: raw.number as number,
-		bot: isRecord(raw.author) && raw.author.is_bot === true,
-		state: raw.state,
-		stateReason,
-		title: text(raw.title),
-		createdAt: timeField(raw.createdAt, "an issue createdAt"),
-		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
-		author: login === "" ? null : { login },
-		body: text(raw.body),
-		comments: comments.map((c) => ({
-			author:
-				isRecord(c.author) && text(c.author.login) !== ""
-					? { login: text(c.author.login) }
-					: null,
-			body: text(c.body),
-			createdAt: timeField(c.createdAt, "a comment createdAt"),
-		})),
-	};
-}
-
-function readIssues(input: string): SyncIssue[] {
-	let data: unknown;
-	try {
-		data = JSON.parse(input);
-	} catch {
-		throw syncInput("stdin is not valid JSON");
-	}
-	if (!Array.isArray(data)) throw syncInput("stdin is not a JSON array");
-	const issues = data.map(readIssue);
-	if (issues.length === SYNC_LIMIT) {
-		throw new Fail(
-			EXIT.SYNC_LIMIT,
-			`${SYNC_LIMIT} issues reached the limit: the list may be truncated, cache untouched`,
-		);
-	}
-	return issues;
-}
 
 const markerShaped = (issue: SyncIssue) =>
 	[issue.body, ...issue.comments.map((c) => c.body)]
@@ -128,33 +45,21 @@ function repliedAt(issue: SyncIssue): string | null {
 	const times = issue.comments
 		.filter(
 			(c) =>
-				asciiLower(c.author?.login ?? "") === author &&
-				!c.body.split("\n").some((l) => l.startsWith(MARKER_PREFIX)),
+				asciiLower(c.author?.login ?? "") === author && !hasMarkerLine(c.body),
 		)
 		.map((c) => c.createdAt);
 	return times.length === 0 ? null : times.reduce((a, b) => (a > b ? a : b));
 }
 
-function storeIssue(
+type Trust = { login: string; writers: Set<string> };
+
+function storeMarkers(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
 	login: string,
 	stats: SyncStats,
 ): void {
-	db.run(
-		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
-		[
-			name,
-			issue.number,
-			issue.state,
-			issue.stateReason,
-			issue.title,
-			issue.createdAt,
-			issue.closedAt,
-			repliedAt(issue),
-		],
-	);
 	const { markers, leadOrigin } = collectIssueMarkers(issue, login);
 	for (const { ord, marker } of markers) {
 		const isLead = marker.stage === "lead";
@@ -173,7 +78,6 @@ function storeIssue(
 			],
 		);
 	}
-	stats.issues++;
 	stats.leads += leadOrigin ? 1 : 0;
 	stats.markers += markers.length;
 	stats.invalid +=
@@ -181,10 +85,37 @@ function storeIssue(
 		markers.filter((m) => m.marker.fields.legacy === undefined).length;
 }
 
+function storeIssue(
+	db: Database,
+	name: string,
+	issue: SyncIssue,
+	trust: Trust,
+	stats: SyncStats,
+): void {
+	const answer = answerOf(issue, trust.login, trust.writers);
+	db.run(
+		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		[
+			name,
+			issue.number,
+			issue.state,
+			issue.stateReason,
+			issue.title,
+			issue.createdAt,
+			issue.closedAt,
+			repliedAt(issue),
+			answer?.answer ?? null,
+			answer?.id ?? null,
+		],
+	);
+	storeMarkers(db, name, issue, trust.login, stats);
+	stats.issues++;
+}
+
 function replaceCache(
 	db: Database,
 	name: string,
-	login: string,
+	trust: Trust,
 	issues: SyncIssue[],
 	reset: boolean,
 ): SyncStats {
@@ -206,7 +137,7 @@ function replaceCache(
 	db.run("DELETE FROM issues WHERE precinct = ?", [name]);
 	for (const issue of issues) {
 		if (!isHuman(issue)) stats.skipped++;
-		else storeIssue(db, name, issue, login, stats);
+		else storeIssue(db, name, issue, trust, stats);
 	}
 	db.run("UPDATE precincts SET synced_at = ? WHERE name = ?", [now(), name]);
 	return stats;
@@ -230,12 +161,12 @@ export function sync(args: string[]): void {
 		syncPulls(name, login, readStdin());
 		return;
 	}
-	const issues = readIssues(readStdin());
+	const { writers, issues } = readIssues(readStdin());
 	withDb((db) => {
 		let stats: SyncStats;
 		try {
 			stats = inTransaction(db, () =>
-				replaceCache(db, name, login, issues, reset),
+				replaceCache(db, name, { login, writers }, issues, reset),
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;

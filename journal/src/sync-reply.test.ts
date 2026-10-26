@@ -3,6 +3,7 @@ import {
 	addPrecincts,
 	cli,
 	dbFile,
+	issuesForm,
 	lead,
 	must,
 	rows,
@@ -17,7 +18,7 @@ const sync = (data: unknown) =>
 	cli(
 		["sync", PRECINCT, "--author", TRUSTED],
 		{ LAWMAN_DB: dbFile },
-		JSON.stringify(data),
+		JSON.stringify(issuesForm(data as unknown[])),
 	);
 
 beforeEach(() => addPrecincts({ [PRECINCT]: 1 }));

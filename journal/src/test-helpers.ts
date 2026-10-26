@@ -16,6 +16,22 @@ export function must<T>(value: T | null | undefined): T {
 	return value;
 }
 
+const isObject = (v: unknown): v is Record<string, unknown> =>
+	typeof v === "object" && v !== null && !Array.isArray(v);
+
+// Wraps a list of issues into the object form that sync reads. A comment that lacks an id or the reaction lists gets them.
+export function issuesForm(list: unknown[], writers: string[] = []) {
+	const comment = (c: unknown, n: unknown, at: number) =>
+		isObject(c)
+			? { id: `IC_${n}_${at}`, approvedBy: [], rejectedBy: [], ...c }
+			: c;
+	const issue = (i: unknown) =>
+		isObject(i) && Array.isArray(i.comments)
+			? { ...i, comments: i.comments.map((c, at) => comment(c, i.number, at)) }
+			: i;
+	return { writers, issues: list.map(issue) };
+}
+
 export const issueOf = (n: number) => must(issues.find((i) => i.number === n));
 
 export const ROOT = join(import.meta.dir, "..", "..");
