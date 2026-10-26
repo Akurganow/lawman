@@ -13,7 +13,7 @@
 | Investigation | Tests one lead against the code, facts only | medium | Long reading with a structured result that the prosecutor attacks. |
 | Prosecutor | Charges, returns or declines the case | strong | Adversarial judgement. |
 | Defender | Defends, returns or refutes the charge | strong | Argues the other side. |
-| Court | Convicts with a priority or acquits | strong | Rules once. Doubt means acquittal. |
+| Court | Convicts with a priority, acquits, or refers a requirement to a person | strong | Rules once, and again after a person answers a referral. Doubt on a defect means acquittal. |
 | Clerk | Does the one job the journal names | light | Bookkeeping on the repository host. |
 | Spec writer | Writes one spec on a pull request for your vote | medium | Reasoned design text that a person reads. |
 | Executor | Writes the code of an approved spec and passes CI | strong | Writes code and waits for CI in its run. |
@@ -107,7 +107,7 @@
 | Not judged | Pathspecs that no department judges | patrol |
 | Execution | Where a role may run the tree's code | investigation, executor |
 | Executor loads | Skills and rules the executor loads before it changes code | executor |
-| Labels | Labels that mean something to a person or to a role | response unit |
+| Labels | Labels that mean something to a person or to a role | court |
 | Precedents | Settled questions | patrol, response unit, investigation, prosecutor, defender, court, spec writer |
 
 ## The weight

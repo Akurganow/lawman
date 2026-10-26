@@ -18,10 +18,62 @@ tempDb();
 
 const KINDS: Exclude<FormKind, "catalog">[] = ["issues", "pulls", "decider"];
 const FIELDS = {
-	issues: ["number", "state", "stateReason", "createdAt", "closedAt", "is_bot"],
+	issues: [
+		"writers",
+		"number",
+		"state",
+		"stateReason",
+		"createdAt",
+		"closedAt",
+		"is_bot",
+		"approvedBy",
+		"rejectedBy",
+	],
 	pulls: ["writers", "closes", "changesRequested", "approvedBy", "rejectedBy"],
 	decider: ["lastActor", "writers"],
 };
+
+const ISSUES_FORM = `Fields:
+  writers: the logins that may write to the repository, access inherited from a group included
+  issues: one entry per issue of the repository, open and closed
+
+Each entry of issues:
+  number: the issue number, an integer
+  state: OPEN or CLOSED
+  stateReason: COMPLETED when closed as done, NOT_PLANNED when closed otherwise, null when open or unknown
+  title: the title
+  createdAt, closedAt: times. closedAt is null while the issue is open
+  author: login, and is_bot, true for an automated account
+  body: the body text
+  comments: comments by people and accounts, oldest first.
+    The host's own event notes are not comments
+
+Each comment:
+  id: the host's id of the comment, as text, the one that reads it back later
+  author.login: the login of its author
+  body: the body text
+  createdAt: a time
+  approvedBy: the logins that reacted with the thumbs up reaction, every page read
+  rejectedBy: the logins that reacted with the thumbs down reaction, every page read
+  Both lists matter only on comments written by the trusted login on open issues. Leave them empty elsewhere.`;
+
+describe("the issues form", () => {
+	test("is one object, with the common lines and then the field text", () => {
+		const text = formText("issues");
+		expect(text).toStartWith("issues, for sync. One object.\nA login compares");
+		expect(text).toContain(`\n\n${ISSUES_FORM}\n\nExample:\n`);
+	});
+
+	test("its example is an object that holds a comment with an id and both lists", () => {
+		const example = JSON.parse(exampleOf("issues"));
+		expect(Object.keys(example)).toEqual(["writers", "issues"]);
+		expect(example.issues[0].comments[0]).toMatchObject({
+			id: expect.any(String),
+			approvedBy: expect.any(Array),
+			rejectedBy: expect.any(Array),
+		});
+	});
+});
 
 describe("form command", () => {
 	test.each(KINDS)("%s prints its form and one example", (kind) => {
@@ -128,6 +180,11 @@ describe("a rejection of host data prints the form and its example", () => {
 	test.each([
 		["issues", ["sync", "main", "--author", "lawman-bot"], "{"],
 		["issues", ["sync", "main", "--author", "lawman-bot"], "[{}]"],
+		[
+			"issues",
+			["sync", "main", "--author", "lawman-bot"],
+			'{"writers":[],"issues":[{}]}',
+		],
 		["pulls", ["sync", "main", "--pulls", "--author", "lawman-bot"], "{"],
 		["decider", ["decider"], "{"],
 	] as const)("%s from %j", (kind, args, stdin) => {

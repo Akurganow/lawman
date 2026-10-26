@@ -3,7 +3,15 @@ import fixture from "./fixtures/pulls.json";
 import { captured } from "./inproc";
 import { syncPulls } from "./pulls";
 import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
-import { addPrecincts, cli, dbFile, rows, seed, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	cli,
+	dbFile,
+	issuesForm,
+	rows,
+	seed,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 
@@ -119,7 +127,7 @@ describe("sync --pulls", () => {
 	});
 
 	test("without --pulls the issue sync is unchanged", () => {
-		expect(feed([], ["--author", BOT]).code).toBe(0);
+		expect(feed(issuesForm([]), ["--author", BOT]).code).toBe(0);
 	});
 });
 

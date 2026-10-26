@@ -8,7 +8,7 @@ The contract is [constitution.md](../skills/lawman-law/references/constitution.m
 
 ## What it must contain
 
-The file starts with frontmatter that holds `contract_version: 2`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come nine `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
+The file starts with frontmatter that holds `contract_version: 3`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come nine `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
 
 | Section | Holds | Read by |
 | :-- | :-- | :-- |
@@ -19,7 +19,7 @@ The file starts with frontmatter that holds `contract_version: 2`. Next comes th
 | Not judged | Pathspecs that no department judges, such as generated copies, data and fixtures. | Patrol |
 | Execution | Where a role may run the tree's code, and which toolchain the tree expects. | Investigation, executor |
 | Executor loads | Skills and rules of the repository that the executor loads before it changes code. | Executor |
-| Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Response unit |
+| Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Court |
 | Precedents | Settled questions, one per line: `- <YYYY-MM-DD> #<n>: <ruling>`. | Patrol, response unit, investigation, prosecutor, defender, court, spec writer |
 
 A path is relative to the repository root. It holds no `..` segment and has no leading slash. A role reads a referenced file only at the analysed commit.
@@ -46,7 +46,7 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
 - It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the nine headings.
 - It fills each section except Departments and Labels with paths and short facts.
-- It asks which label tells a person that an issue waits for them, and which other labels matter. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the label makes an issue that Lawman sent out of its funnel visible in the tracker.
+- It asks which label tells a person that an issue waits for them, and which other labels matter. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
 - It writes `none` where nothing applies.
 - It drops each line whose path is missing.
 - It proposes the sections and the judging documents of the shared departments in one proposal. You keep, change or add lines. The proposal notes that "Add a department" follows the merge.
@@ -65,7 +65,9 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 ## How it changes
 
 - **You amend it.** Later amendments come from you as the owner.
-- **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. The sections that the contract added or changed appear as rows of the proposal. A section of yours that the new contract lists, such as `Labels`, becomes the listed section and keeps its lines. Merge the pull request to bring the precinct back. While it stays unmerged, the precinct stays stopped. A hand edit of the file also brings it back.
+- **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. The sections that the contract added or changed appear as rows of the proposal. A section of yours that the new contract lists, such as `Labels`, becomes the listed section and keeps its lines. Merge the pull request to bring the precinct back. While it stays unmerged, the precinct stays stopped. A hand edit of the file also brings it back. The order for an existing installation is in the README section [Update](../README.md#update).
+
+  Version 3 also touches the owner-attention label. When its line carries exactly the old purpose, the amendment replaces it with the new one. The proposal then shows a row that sets the new description of the label on the host. The write follows the pull request, after your approval. Any other purpose text stays your words.
 - **The court adds precedents.** A ruling may carry one line in its Precedent section. The clerk assigns the number, adds the link to the ruling comment and opens a pull request. The number is one more than the highest in the section, and the first is 1. Numbers never repeat. A precedent binds the roles only after you merge its pull request.
 
 A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.

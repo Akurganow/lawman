@@ -78,13 +78,13 @@ Run `bin/journal alarm --repeat`. Keep every line that starts with `ALARM`, for 
 
 2.1. Run `bin/journal precinct list`. Each line is `<name><TAB><repo><TAB><weight><TAB><credit><TAB><synced>`. For each line whose weight is above zero, sync the tracker, with `<login>` from step 0.3.
 
-Read every issue of `<repo>` from the host, open and closed, with the comments of each. Send the list to the journal on standard input, in the journal's issues form. The host notes record how this machine does it. `bin/journal form issues` prints the form.
+Read every issue of `<repo>` from the host, open and closed, with the comments of each. Read also the logins that may write to the repository, access inherited from a group included. For each comment of the trusted login on an open issue, read the logins that reacted with a thumbs up and with a thumbs down. Read every page. A page that fails to read ends with `stopped-sync`. Send the host replies to the journal on standard input, unread, in the journal's issues form. A command builds the object from those replies and the logins. Your own text never carries an issue body, a comment body, a login or a reaction into it. The host notes record how this machine does it. `bin/journal form issues` prints the form.
 
 ```
 bin/journal sync <name> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`. An order written on a stale cache can name an issue that is already closed. For the clerk a closed issue is still work.
+The output is `issues= leads= markers= invalid= skipped=`. Exit 3 ends with `stopped-sync-limit`. Any other failure ends with `stopped-sync`, and the reason is the first line of the journal's message. An order written on a stale cache can name an issue that is already closed. For the clerk a closed issue is still work.
 
 Then sync the pull requests of the same precinct, with `<login>` from step 0.3. Read every open pull request of `<repo>` from the host. Read also the logins that may write to the repository, access inherited from a group included. Send the pull request reply to the journal on standard input, unread, in the journal's pulls form. A command builds the object from that reply and the logins. Your own text never carries a pull request body into it. The host notes record how this machine does it. `bin/journal form pulls` prints the form.
 

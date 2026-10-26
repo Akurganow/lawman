@@ -82,4 +82,8 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE pulls ADD COLUMN spec_id TEXT NOT NULL DEFAULT '-';
   `,
 	"ALTER TABLE roles ADD COLUMN checked_at TEXT",
+	`
+  ALTER TABLE issues ADD COLUMN answer TEXT;
+  ALTER TABLE issues ADD COLUMN answer_id TEXT;
+  `,
 ];

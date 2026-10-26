@@ -8,6 +8,7 @@ import {
 	dbFile,
 	issueOf,
 	issues,
+	issuesForm,
 	LEAD_ID,
 	lead,
 	must,
@@ -318,7 +319,7 @@ describe("legacy fingerprints", () => {
 			cli(
 				["sync", PRECINCT, "--author", TRUSTED],
 				{ LAWMAN_DB: dbFile },
-				JSON.stringify(issues),
+				JSON.stringify(issuesForm(issues)),
 			);
 		const rows = (args: string[]) =>
 			run(args)

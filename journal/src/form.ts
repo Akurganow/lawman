@@ -12,10 +12,14 @@ The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
 const TEXTS: Record<FormKind, string> = {
-	issues: `issues, for sync. A list with one entry per issue of the repository, open and closed.
+	issues: `issues, for sync. One object.
 ${COMMON}
 
-Each issue:
+Fields:
+  writers: the logins that may write to the repository, access inherited from a group included
+  issues: one entry per issue of the repository, open and closed
+
+Each entry of issues:
   number: the issue number, an integer
   state: OPEN or CLOSED
   stateReason: COMPLETED when closed as done, NOT_PLANNED when closed otherwise, null when open or unknown
@@ -23,8 +27,17 @@ Each issue:
   createdAt, closedAt: times. closedAt is null while the issue is open
   author: login, and is_bot, true for an automated account
   body: the body text
-  comments: comments by people and accounts, oldest first, each with author.login, body and createdAt.
-    The host's own event notes are not comments`,
+  comments: comments by people and accounts, oldest first.
+    The host's own event notes are not comments
+
+Each comment:
+  id: the host's id of the comment, as text, the one that reads it back later
+  author.login: the login of its author
+  body: the body text
+  createdAt: a time
+  approvedBy: the logins that reacted with the thumbs up reaction, every page read
+  rejectedBy: the logins that reacted with the thumbs down reaction, every page read
+  Both lists matter only on comments written by the trusted login on open issues. Leave them empty elsewhere.`,
 	pulls: `pulls, for sync --pulls. One object.
 ${COMMON}
 
@@ -57,25 +70,31 @@ Fields:
 };
 
 const EXAMPLES: Record<FormKind, unknown> = {
-	issues: [
-		{
-			number: 3,
-			state: "CLOSED",
-			stateReason: "COMPLETED",
-			title: "Example issue",
-			createdAt: "2026-10-14T09:00:00Z",
-			closedAt: "2026-10-15T09:00:00Z",
-			author: { login: "reporter", is_bot: false },
-			body: "Example body",
-			comments: [
-				{
-					author: { login: "maintainer" },
-					body: "Example comment",
-					createdAt: "2026-10-14T10:00:00Z",
-				},
-			],
-		},
-	],
+	issues: {
+		writers: ["maintainer"],
+		issues: [
+			{
+				number: 3,
+				state: "CLOSED",
+				stateReason: "COMPLETED",
+				title: "Example issue",
+				createdAt: "2026-10-14T09:00:00Z",
+				closedAt: "2026-10-15T09:00:00Z",
+				author: { login: "reporter", is_bot: false },
+				body: "Example body",
+				comments: [
+					{
+						id: "IC_example_1",
+						author: { login: "maintainer" },
+						body: "Example comment",
+						createdAt: "2026-10-14T10:00:00Z",
+						approvedBy: [],
+						rejectedBy: [],
+					},
+				],
+			},
+		],
+	},
 	pulls: {
 		writers: ["maintainer"],
 		pulls: [

@@ -1,5 +1,5 @@
 ---
-contract_version: 2
+contract_version: 3
 ---
 
 # Contract of the constitution
@@ -13,7 +13,7 @@ A constitution points at files by path. It never restates them.
 
 ## File shape
 
-The file starts with frontmatter that holds `contract_version: 2`. Next comes the title line `# Constitution of <owner>/<repo>`.
+The file starts with frontmatter that holds `contract_version: 3`. Next comes the title line `# Constitution of <owner>/<repo>`.
 Then come the nine `##` headings listed below, once each, in any order. Any other `##` heading is a note in the margin.
 A section with nothing to say holds the single word `none`.
 
@@ -82,7 +82,7 @@ The labels of the repository that mean something to a person or to a role, as th
 - `` - `<label>`: <purpose> ``
 - `` - `<label>` (owner attention): <purpose> ``
 
-The mark `(owner attention)` stands right after the label's closing backtick. It names the label that tells a person an issue waits for them. The response unit applies that label to an issue it sent out of the funnel as a feature request. When no line or more than one line carries the mark, it applies no label. No role acts on a line without the mark. Those lines are reference for people. The check reads no label line and checks no mark. A section with no label holds `none`.
+The mark `(owner attention)` stands right after the label's closing backtick. It names the label that tells a person an issue waits for them. The court applies that label to a requirement it refers to a decider. It removes the label before it convicts or acquits a requirement. When no line or more than one line carries the mark, it applies and removes no label. No role acts on a line without the mark. Those lines are reference for people. The check reads no label line and checks no mark. A section with no label holds `none`.
 
 ### Precedents
 
@@ -118,7 +118,7 @@ The `Not judged` section says `none`.
 
 ````markdown
 ---
-contract_version: 2
+contract_version: 3
 ---
 
 # Constitution of example/widgets
@@ -162,7 +162,7 @@ none
 
 ## Labels
 
-- `needs-human` (owner attention): Lawman sent this feature request out of its funnel. A person decides on it.
+- `needs-human` (owner attention): Lawman cannot decide this issue alone. A person decides on it.
 
 ## Precedents
 

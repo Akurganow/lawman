@@ -25,7 +25,7 @@ describe("lint-page", () => {
 	};
 	const BROKEN = {
 		badDepartmentLine: VALID.replace("- docs-drift:", "- Docs_Drift:"),
-		badVersion: VALID.replace("contract_version: 2", "contract_version: 1"),
+		badVersion: VALID.replace("contract_version: 3", "contract_version: 1"),
 		dotdot: VALID.replace(
 			"- README.md\n",
 			"- README.md\n- ../outside/secrets.md\n",
@@ -172,7 +172,7 @@ describe("lint-page", () => {
 		test("a failing page prints no note", () => {
 			const text = BROKEN.badVersion.concat("\n## contract_version notes\n");
 			const result = lintPage("constitution", text);
-			expect(result.reasons).toEqual(["2: contract_version must be 2"]);
+			expect(result.reasons).toEqual(["2: contract_version must be 3"]);
 			expect(result.notes).toBeUndefined();
 		});
 
@@ -213,7 +213,7 @@ describe("lint-page", () => {
 			"1: frontmatter missing or not closed",
 		]);
 		expect(
-			lintPage("constitution", `---\ncontract_version: 2\n${body}`).reasons,
+			lintPage("constitution", `---\ncontract_version: 3\n${body}`).reasons,
 		).toEqual(["1: frontmatter missing or not closed"]);
 		expect(
 			lintPage("constitution", `---\nother: 1\n---\n${body}`).reasons,
@@ -415,7 +415,7 @@ describe("lint-page", () => {
 			const r = feed(["constitution"], BROKEN.badVersion);
 			expect(r).toEqual({
 				code: EXIT.LINT_PAGE,
-				out: "2: contract_version must be 2\n",
+				out: "2: contract_version must be 3\n",
 				err: "",
 			});
 		});

@@ -1,9 +1,15 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	answer,
+	type Comment,
 	expectNeed,
 	expectRoundKept,
 	fields,
+	needOnly,
 	put,
+	referral,
+	type Spec,
+	T,
 	withLead,
 } from "./cases-fixture";
 import {
@@ -15,10 +21,12 @@ import {
 	charge,
 	conviction,
 	defence,
+	lead,
 	mark,
 	refute,
 	returnTo,
 	SHA,
+	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -112,6 +120,70 @@ describe("case: court stage", () => {
 			3: { ...defended(), state: "CLOSED" },
 		});
 		expect(due()).toBe("");
+	});
+});
+
+describe("case: referral", () => {
+	const referred = (...rest: string[]) =>
+		withLead(caseMark(), charge(), defence(), referral(), ...rest);
+
+	test("an unanswered referral needs nobody", () => {
+		expectNeed(referred(), "none");
+	});
+
+	test.each([
+		["up", "-"],
+		["down", "-"],
+		["comment", "IC_1_4"],
+	])("a referral answered %s needs the court", (value, id) => {
+		put({ 1: referred() });
+		answer(1, value, id);
+		const line = fields(1);
+		expect(line.need).toBe("court");
+		expect(line.answer).toBe(value);
+		expect(line.job).toBe("-");
+	});
+
+	test("a conviction after an answered referral needs the clerk", () => {
+		put({ 1: referred(conviction()) });
+		answer(1, "up");
+		expect(needOnly(1)).toBe("need=clerk");
+	});
+
+	test("an acquittal after an answered referral needs the clerk", () => {
+		put({ 1: referred(acquittal()) });
+		answer(1, "down");
+		expect(needOnly(1)).toBe("need=clerk");
+	});
+
+	test("a case reopened after an answered referral needs the prosecutor", () => {
+		put({ 1: referred(caseMark()) });
+		answer(1, "up");
+		expect(needOnly(1)).toBe("need=prosecutor");
+	});
+
+	const stepped = (...tail: Comment[]): Spec => ({
+		body: [lead()],
+		comments: [
+			[T(10), caseMark()],
+			[T(11), charge()],
+			[T(12), defence()],
+			...tail,
+		],
+	});
+
+	test("a thumb on an older referral answers the new one", () => {
+		put({
+			1: stepped([T(13), referral(), [TRUSTED]], [T(14), referral()]),
+		});
+		expect(fields(1).answer).toBe("up");
+		expect(needOnly(1)).toBe("need=court");
+	});
+
+	test("a thumbs up on the referral gives the court the case", () => {
+		put({ 1: stepped([T(13), referral(), [TRUSTED]]) });
+		expect(needOnly(1)).toBe("need=court");
+		expect(fields(1).answer).toBe("up");
 	});
 });
 

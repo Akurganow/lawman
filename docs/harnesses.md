@@ -91,7 +91,7 @@ A cell without a mark rests on a fact with its source in the section "What each 
 | Codex | `codex plugin marketplace add Akurganow/lawman`, then `codex plugin add lawman@lawman` | The root `plugin.json` with the exact schema, else `.codex-plugin/`, `.claude-plugin/` or `.cursor-plugin/` | `lawman:<skill>` | The skill `assembly`. The manifest has an onboarding skill field that Lawman does not use | Desktop app scheduled tasks, or `codex exec` under an external cron (not verified) | TBD |
 | GitHub Copilot CLI | `copilot plugin marketplace add Akurganow/lawman`, then `copilot plugin install lawman@lawman` | The root `plugin.json`, which wins over the legacy manifests | `lawman:<skill>` (not verified) | The skill `assembly` (not verified) | `/every` and `/loop` in a session, or `copilot -p` under an external cron (not verified) | TBD |
 
-The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". A harness whose page has none does not send, and the patrol reports that the check did not run. The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
+The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". A harness whose page has none does not send, and the patrol reports that the check did not run. The page also carries the command that starts an expert, in its section "Calling an expert". A harness whose page has none lets the role go on without the expert. See [the pipeline](pipeline.md#experts). The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
 
 No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). No other harness was found to do both (not verified).
 
@@ -125,7 +125,7 @@ A harness without a question tool uses the plain numbered message. The plain mes
 - Hermes requires the folder name and the skill `name` to match (read in the harness code, hermes_cli/agent_plugins.py).
 - The chat command `/agent-plugin-lawman-492e59eb:assembly` works in the CLI, the TUI and the desktop app. It does not work in messengers (read in the harness code, agent/skill_commands.py).
 
-The page for Hermes holds the rest, among it the send forms for the catalog check: `skills/lawman-law/references/harnesses/hermes.md`.
+The page for Hermes holds the rest, among it the send forms for the catalog check and the call of an expert: `skills/lawman-law/references/harnesses/hermes.md`.
 
 ### Kiro
 
@@ -247,7 +247,7 @@ A new harness needs four things:
 
 The page answers the eight sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer.
 
-A page may also carry the send forms for the catalog check. A harness that adds them gains the check with no change to the law or the skills.
+A page may also carry the send forms for the catalog check, and the form that calls an expert. Both sections are optional and not among the eight. A harness that adds them gains the check or the experts with no change to the law or the skills.
 
 The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 

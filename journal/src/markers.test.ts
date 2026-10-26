@@ -457,4 +457,13 @@ describe("law examples", () => {
 		expect(must(found[0]).fields.department).toBe("-");
 		expect(must(found[2]).fields.reason).toBe("feature");
 	});
+
+	test("E19 is a valid response-unit lead for a requirement", () => {
+		const lines = must(blocks[8]).split("\n");
+		expect(lines).toHaveLength(1);
+		const found = must(parseMarker(must(lines[0])));
+		expect(found).toMatchObject({ role: "response-unit", stage: "lead" });
+		expect(found.fields.department).toBe("-");
+		expect(found.fields.id).toBe("SECURITY.md::-::required");
+	});
 });

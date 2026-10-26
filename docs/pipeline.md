@@ -12,11 +12,11 @@ This page summarises the law and links the files that bind each part. Where this
 | :-- | :-- | :-- |
 | Duty desk | The journal and the synced trackers of every precinct with a weight above zero | At most one order per role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
-| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. For a feature request sent out, at most one label |
+| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. No label and no alarm |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
-| Court | An order on a defended case | A `Ruling` comment: a conviction with a priority, or an acquittal that closes the issue |
+| Court | An order on a defended case | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
 | Clerk | An order for one job on an issue | A draft pull request, a hand-over comment, a close or a reopen, and a marker comment |
 | Spec writer | An order on a pull request that needs a spec | One `Spec` comment |
 | Executor | An order on a pull request with an approved spec | Pushed commits, a pull request ready for review and one `Executor` comment |
@@ -49,28 +49,50 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 
 - A `Lead` comment turns the issue into a lead. The marker is `stage=lead` with `department=-`.
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
-- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `feature`, `injection` or `other`. For `feature`, the response unit also prints one `ALARM feature` line and applies the constitution's owner-attention label to the issue, when the constitution names one.
+- A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `injection` or `other`.
+
+Every ticket that holds a statable claim becomes a lead. The lead has one of two kinds:
+
+- A defect is code that breaks what the tree itself promises: its README, its docs, its tests, or an obvious error such as a crash. The lead id ends in `reported`. Its path and symbol must exist at the tip.
+- A requirement is everything else the issue asks for. The lead id ends in `required`. It needs no place, so the path or the symbol is `-` when the unit cannot name it.
+
+A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject, or reports something broken and the unit finds no place for it.
+
+The unit sends an issue out only for an injection or for pure chatter that holds nothing to reframe as a claim. A report of something broken is never sent out. An `out` raises no alarm and applies no label. Older markers with the reason `feature` stay valid.
 
 ### Investigation
 
-Investigation takes an order on an issue with a lead. It tests the lead against the tree at one commit. It leaves a `Case` comment that holds facts and no opinion, severity or fix. The marker is `stage=case` with the commit `sha`. For a lead of the catalog check, it also reads one fresh catalog record by its identifier, through the journal, and quotes it. It does so only with consent, and a response-unit lead triggers no read.
+Investigation takes an order on an issue with a lead. It tests the lead against the tree at one commit. It leaves a `Case` comment that holds facts and no opinion, severity or fix. For a requirement, the facts are the claim of absence with its control search, or the lines of the shape. The marker is `stage=case` with the commit `sha`. For a lead of the catalog check, it also reads one fresh catalog record by its identifier, through the journal, and quotes it. It does so only with consent, and a response-unit lead triggers no read.
 
 ### Prosecutor
 
 The prosecutor takes an order on an issue with a case and decides. A charge carries `stage=charge` and leaves the issue open. A return puts one question to investigation and carries `stage=return`. A decline carries `stage=decline` and closes the issue with a closure class. The comment is headed `Decision`.
 
+For a defect, doubt that remains when no return is allowed is a decline. A requirement is charged unless an exhibit the prosecutor re-read refutes one of its three parts. The charge states every doubt in the sections `Need` and `Risk`. The parts are in [the court](#court).
+
 ### Defender
 
 The defender takes an order on a charged case and argues against the charge. A defence carries `stage=defence`. A return carries `stage=return`. A refute carries `stage=refute` and closes the issue with a closure class. The comment is headed `Defence`.
 
+For a requirement, the defender also answers the need in a `Need` section. It searches each place that the charge names as a risk, and says what the change exposes.
+
 ### Court
 
-The court takes an order on a defended case and rules once, in a `Ruling` comment.
+The court takes an order on a defended case and rules in a `Ruling` comment. It rules once, and once more after each answer to a referral.
 
 - A conviction carries `stage=conviction`, the commit `sha` and a priority. The issue stays open.
 - An acquittal carries `stage=acquittal` and closes the issue with a closure class.
+- A referral carries `stage=referral` and the commit `sha`. The issue stays open. Only a requirement is referred.
 
-The court never returns a case. Its doubt is an acquittal. The court names one priority. P0 is a live secret, a vulnerability or a serious violation. P1 is harm to users or maintainers now. P2 is the default. P3 is cosmetic or of small value. At P0 the court prints an `ALARM case` line in the same tick. It may ask an outside model for evidence about the priority when the installation and the precinct allow it. See [configuration](configuration.md).
+The court never returns a case. For a defect, its doubt is an acquittal.
+
+For a requirement, the court judges three parts. The fact is that the tree shows the absence or the shape that the request names. The need is that the change is needed. The safety is that the change breaks nothing and opens no vulnerability or defect. Each part is established, refuted or undecided. A part that nobody examined is undecided.
+
+- All three parts established: conviction.
+- A part refuted, or a closure class holds: acquittal.
+- No part refuted and at least one undecided: referral.
+
+The court names one priority. P0 is a live secret, a vulnerability or a serious violation. P1 is harm to users or maintainers now. P2 is the default. P3 is cosmetic or of small value. At P0 the court prints an `ALARM case` line in the same tick. It may ask an outside model for evidence about the priority when the installation and the precinct allow it. See [configuration](configuration.md).
 
 ### Clerk
 
@@ -92,6 +114,30 @@ The spec writer takes an order on a pull request. It reads the pull request and 
 
 The executor takes an order on a pull request whose newest spec a decider approved and whose work is not done. In one tick it plans and writes the code and the documentation in a copy of the branch. It pushes each finished part to the head branch of the pull request. When the gate runs of its last push are green, it sets the pull request ready for review. It leaves one `Executor` comment with the marker `stage=ready` and the pushed head. A tick that breaks off continues from the pushed commits. The executor never merges, never force-pushes, never reviews and never reacts.
 
+## Referrals
+
+The court refers a requirement that it cannot decide to a decider. A decider is a login that may write to the precinct's repository. The court does three things, in this order.
+
+1. It applies the owner-attention label that the constitution names, if the issue lacks it.
+2. It writes the `Ruling` comment with the marker `stage=referral`. The comment names the undecided parts and tells the decider the ways back.
+3. It prints one `ALARM referral` line.
+
+The issue stays open and no role works it until a decider answers. A decider answers in one of three ways. Each alone is enough.
+
+- **👍 on a comment of the court.** The court convicts, and the clerk then acts as for any conviction. The court acquits instead when a closure class holds. The requirement may already be met, a recorded reason may explain the code, or an exhibit may refute a part. The ruling says why.
+- **👎 on a comment of the court.** The court acquits with the class `declined by the owner` and closes the issue as not planned.
+- **A comment of a decider.** The court rules again with the comment as evidence. It may convict, acquit or refer again.
+
+Closing the issue ends the case, whoever closes it. A 👎 outranks a 👍, and a reaction outranks a comment. The journal derives the answer when it syncs the tracker. See [the journal](journal.md#the-tracker-cache).
+
+The court removes the owner-attention label before it convicts or acquits a requirement. A person may remove the label by hand at any time. The journal reads no label, so a removal by hand changes no state. No role applies the label again to restore it. A new referral applies it.
+
+## Experts
+
+An expert is a clean agent with one research task. It is part of the calling role and no role of its own. It has no skill, schedule, order or marker. The prosecutor, the defender and the court may call one in any case.
+
+The role states one narrow task in its own words and reads the answer only after the journal cleaned it. The expert chooses its sources and checks them against public databases of trusted sources. The role quotes the task and the answer under `Expert` in its comment. A failed call stops nothing. The finding is evidence of what an outside source said, never of the tree. The court weighs it. The rules are in [exhibits.md](../skills/lawman-law/references/exhibits.md). The harness page holds the command that starts the expert. See [harnesses](harnesses.md).
+
 ## Returns and rounds
 
 A stage that doubts a case returns it with one precise question for investigation. Only the prosecutor and the defender return, and each returns at most once per issue.
@@ -107,6 +153,8 @@ State lives in markers. A marker is one HTML-comment line at the end of an issue
 The newest marker of a role on an issue wins. Nobody edits an old marker. A role writes a new one.
 
 A case runs in this order: lead, case, charge, defence, ruling, then the clerk's pull request. The journal reads the markers and names the next role. `bin/journal case <precinct> <issue>` prints `need=` with `investigation`, `prosecutor`, `defender`, `court`, `clerk` or `none`. An issue whose newest clerk marker names a pull request has left the funnel.
+
+An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The line also prints `kind=` with `defect` or `requirement`, and the answer as `answer=` and `answer_id=`.
 
 A pull request has its own stage. `bin/journal pull <precinct> <pull request>` prints `need=` with `spec-writer`, `executor` or `none`. A pull request needs a spec when it has none or when the newest spec drew a 👎. It needs the executor when the newest spec has a 👍 and its `work` is `todo` or `returned`. Only a pull request that the clerk handed, in a precinct with a weight above zero, gets an order.
 
@@ -171,11 +219,11 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 | `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
 | `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | Patrol finds a live secret in the tree or the history. |
-| `feature` | The response unit sends an issue out of the funnel as a feature request. |
+| `referral` | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `feature` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM feature <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 
-The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `feature` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
 
 ### Failures and stops
 
@@ -192,6 +240,7 @@ The full report of every tick lives in the journal. `bin/journal tick list` prin
 The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login that may write to the precinct's repository, access inherited from a group included.
 
 - **Close a lead to decline it.** Any closure other than completed counts as declined. Patrol does not file the same finding again.
+- **Answer a referral.** React with 👍 or 👎 to a comment of the court, or write a comment. Close the issue to end the case. See [Referrals](#referrals).
 - **Vote on a spec.** React with 👍 or 👎 to the newest `Spec` comment. A 👎 wins, even beside a 👍. A reaction from a login that is no decider counts for nothing. A 👍 approves exactly the text that was read, because a spec is never edited.
 - **Send finished work back.** React with 👎 to the newest `Executor` comment, or submit a Request changes review after it. Approvals, dismissed reviews and bot remarks return nothing.
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.

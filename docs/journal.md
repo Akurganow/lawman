@@ -85,16 +85,16 @@ journal status
 
 ### The tracker cache
 
-- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. With `--pulls` it replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache.
+- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
 - `last`: prints the last visit of a role to each department of a precinct.
-- `case`: prints the stage of an issue, with the next role, the round, the returns, the commit, the clerk's job and the pull request.
+- `case`: prints the stage of an issue, with the next role, the round, the returns, the commit, the clerk's job and the pull request. It ends with three fields. `kind=` is `requirement`, `defect` or `-`. `answer=` is `up`, `down`, `comment` or `-`. `answer_id=` is the id of the decider's comment for a `comment` answer. A requirement is a lead of the response unit whose id ends in `required`. The answer counts only while the newest court marker is a referral.
 - `intake`: names the next human-written issue that waits for the response unit. With `--issue` it prints `need=` and `state=` for one issue.
 - `pull`: prints the stage of a pull request, with the next role, the spec vote, the executor's work state, the sources and the priority.
 - `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
-- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
+- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. Each comment carries `id`, and `approvedBy` and `rejectedBy` for the comments of the trusted login on open issues. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
 
 ```
 journal sync <precinct> --author <login> [--reset | --pulls]
@@ -129,7 +129,7 @@ journal department-line --name <department> --judged-by <path|none> (stdin: the 
 journal handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old pull request body, with --adopted)
 journal precedent --page <path> --source <ruling comment URL> (stdin: the ruling comment)
 journal precedent-merge --base <file> --ours <file> --theirs <file> --out <file>
-journal jev <request|answer> --kind <p0|grade>
+journal jev <request|answer> --kind <p0|grade|requirement>
 journal catalog request --kind batch --tick <tick id> [--precinct <p>] (stdin with --precinct: the list)
 journal catalog answer --kind batch --tick <tick id> (stdin: the reply, then the status line)
 journal catalog request --kind record (stdin: a Source line)

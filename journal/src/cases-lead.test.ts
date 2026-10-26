@@ -59,7 +59,7 @@ describe("case: lead origin", () => {
 		addIssue(1);
 		addMarker(1, unitLead("src/a.rs::f::dead-code"));
 		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=- sha=- state=OPEN lead=comment related=- priority=P2 job=- action=- pull=- sources=- branch=-",
+			"need=investigation round=1 returned=- department=- sha=- state=OPEN lead=comment related=- priority=P2 job=- action=- pull=- sources=- branch=- kind=defect answer=- answer_id=-",
 		);
 	});
 
@@ -82,6 +82,37 @@ describe("case: lead origin", () => {
 			expect(need(1)).toStartWith(`need=${next} `);
 		});
 		expect(need(1)).toContain(" department=- ");
+	});
+});
+
+const kindOf = (n: number) =>
+	need(n)
+		.split(" ")
+		.find((f) => f.startsWith("kind="));
+
+describe("case: kind", () => {
+	test.each([
+		[
+			"a response unit requirement",
+			"src/a.rs::f::required",
+			"kind=requirement",
+		],
+		["a response unit defect", "src/a.rs::f::reported", "kind=defect"],
+		["a requirement with no place", "-::-::required", "kind=requirement"],
+	])("%s", (_name, id, expected) => {
+		addIssue(1);
+		addMarker(1, unitLead(id));
+		expect(kindOf(1)).toBe(expected);
+	});
+
+	test("a patrol lead that names the kind required is still a defect", () => {
+		put({ 1: { body: [lead("", "src/a.rs::f::required")] } });
+		expect(kindOf(1)).toBe("kind=defect");
+	});
+
+	test("an issue with no lead has no kind", () => {
+		put({ 1: { body: ["no marker"] } });
+		expect(kindOf(1)).toBe("kind=-");
 	});
 });
 
@@ -124,5 +155,59 @@ describe("case: related issues", () => {
 			2: { body: [lead("", ID)] },
 		});
 		expect(related(2)).toBe("related=1");
+	});
+
+	test("a lead with both parts empty relates to nothing and is never listed", () => {
+		put({ 3: { body: [lead("", ID)] } });
+		for (const n of [1, 2]) {
+			addIssue(n);
+			addMarker(n, unitLead("-::-::required"));
+		}
+		expect(related(1)).toBe("related=-");
+		expect(related(2)).toBe("related=-");
+		expect(related(3)).toBe("related=-");
+	});
+
+	test("a lead with one empty part still relates on the equal part", () => {
+		for (const [n, id] of [
+			[1, "src/a.rs::-::required"],
+			[2, "src/a.rs::-::reported"],
+			[3, "-::f::required"],
+			[4, "-::f::reported"],
+			[5, "src/b.rs::-::required"],
+		] as const) {
+			addIssue(n);
+			addMarker(n, unitLead(id));
+		}
+		expect(related(1)).toBe("related=2");
+		expect(related(3)).toBe("related=4");
+		expect(related(5)).toBe("related=-");
+	});
+});
+
+describe("case: answer", () => {
+	const answerFields = (n: number) =>
+		need(n)
+			.split(" ")
+			.filter((f) => f.startsWith("answer"));
+
+	test("an issue row with no answer prints dashes", () => {
+		put({ 1: { body: [lead()] } });
+		expect(answerFields(1)).toEqual(["answer=-", "answer_id=-"]);
+	});
+
+	test.each([
+		["up", "-"],
+		["down", "-"],
+		["comment", "IC_77"],
+	])("an issue row with the answer %s prints it", (answer, id) => {
+		put({ 1: { body: [lead()] } });
+		seed((db) =>
+			db.run(
+				"UPDATE issues SET answer = ?, answer_id = ? WHERE precinct = 'main' AND issue = 1",
+				[answer, id],
+			),
+		);
+		expect(answerFields(1)).toEqual([`answer=${answer}`, `answer_id=${id}`]);
 	});
 });

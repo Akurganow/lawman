@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	answer,
 	cache,
 	convicted,
 	dueOut,
@@ -8,6 +9,7 @@ import {
 	order,
 	pairMark,
 	put,
+	referral,
 	T,
 	withLead,
 } from "./cases-fixture";
@@ -122,6 +124,26 @@ const expectP0First = (role: string, spec: string) => {
 	pulls([7, [1], spec], [8, [2, 3], spec]);
 	expect(due(role)).toBe("main\t8\n");
 };
+
+describe("due --role court: referrals", () => {
+	const referred = () => withLead(caseMark(), charge(), defence(), referral());
+
+	test("an answered referral is a candidate and an unanswered one is not", () => {
+		put({ 1: referred(), 2: referred() });
+		expect(due("court")).toBe("");
+		answer(2, "comment", "IC_2_4");
+		expect(due("court")).toBe("main\t2\n");
+	});
+
+	test.each(["up", "down"])(
+		"a referral answered %s is a candidate",
+		(value) => {
+			put({ 1: referred() });
+			answer(1, value);
+			expect(due("court")).toBe("main\t1\n");
+		},
+	);
+});
 
 describe("due --role spec-writer", () => {
 	test.each([

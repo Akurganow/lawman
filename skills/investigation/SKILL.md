@@ -89,7 +89,7 @@ Run the "Sync the tracker" section.
 Run the "Read the stage" section.
 
 - A `need` other than `investigation`, or `state=CLOSED`, ends the tick with `silent`. Its report is `Order stale: <the case line>`.
-- Keep `round`, `lead`, `related` and `department`.
+- Keep `round`, `lead`, `related`, `department` and `kind`.
 
 ### Step 5: read the constitution
 
@@ -137,6 +137,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
 8. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
 9. Mark a claim `confirmed` only with an exhibit. A claim with none is `not confirmed`. A claim whose facts differ from the lead's wording is `changed`.
+10. For a requirement, also record these tree facts under Claims checked, and no opinion. Record the claim of absence with its control search, or the lines of the shape. Record the places that already name the subject. A request too vague to test goes to Not established.
 
 When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The case is still written.
 

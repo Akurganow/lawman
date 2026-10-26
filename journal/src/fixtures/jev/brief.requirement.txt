@@ -1,0 +1,6 @@
+request: Add an option to the command-line converter that writes its result to a named file instead of printing it to the screen.
+need: Today a person redirects the output with their shell, which works on every supported platform, so nobody is blocked. A few users have asked for the option.
+value: People who run the converter from scripts or from a desktop launcher can name the output file directly, with fewer steps.
+risk: Nobody is harmed, since redirecting the output works today. A mistake in the new option could overwrite an existing file without a warning.
+established: The court re-read the argument parser at the analysed commit and found no output-file option. Redirecting the output works today.
+not_established: How many users want the option. Nothing was run.

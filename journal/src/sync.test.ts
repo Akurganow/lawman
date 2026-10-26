@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { formText } from "./form";
 import { collectIssueMarkers } from "./markers";
 import { SYNC_LIMIT } from "./sync";
 import {
@@ -6,6 +7,7 @@ import {
 	cli,
 	dbFile,
 	issues,
+	issuesForm,
 	lead,
 	must,
 	rows,
@@ -18,16 +20,19 @@ tempDb();
 
 const CREATED = "2026-10-14T09:00:00Z";
 
-const withTimes = (over: Record<string, unknown>) =>
-	JSON.stringify([
-		{
-			number: 1,
-			state: "OPEN",
-			createdAt: CREATED,
-			author: { login: TRUSTED },
-			...over,
-		},
-	]);
+const withTimes = (over: Record<string, unknown>) => [
+	{
+		number: 1,
+		state: "OPEN",
+		createdAt: CREATED,
+		author: { login: TRUSTED },
+		...over,
+	},
+];
+
+const EMPTY_FORM = JSON.stringify(issuesForm([]));
+const OLD_FORM_REASON =
+	"the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
 
 describe("sync", () => {
 	const PRECINCT = "main";
@@ -40,9 +45,12 @@ describe("sync", () => {
 	];
 	const feed = (input: string, args = syncArgs()) =>
 		cli(args, { LAWMAN_DB: dbFile }, input);
+	// text goes in as it is, a list of issues goes in as the object form
 	const sync = (data: unknown, extra: string[] = []) =>
 		feed(
-			typeof data === "string" ? data : JSON.stringify(data),
+			typeof data === "string"
+				? data
+				: JSON.stringify(Array.isArray(data) ? issuesForm(data) : data),
 			syncArgs(extra),
 		);
 	const snapshot = () => ({
@@ -93,6 +101,8 @@ describe("sync", () => {
 			created_at: "2026-10-14T09:00:00Z",
 			closed_at: "2026-10-15T08:00:00Z",
 			replied_at: null,
+			answer: null,
+			answer_id: null,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
@@ -167,7 +177,7 @@ describe("sync", () => {
 	test("another precinct keeps its rows", () => {
 		addPrecincts({ other: 1 });
 		expect(
-			feed(JSON.stringify(issues.slice(0, 2)), [
+			feed(JSON.stringify(issuesForm(issues.slice(0, 2))), [
 				"sync",
 				"other",
 				"--author",
@@ -188,16 +198,13 @@ describe("sync", () => {
 		["empty stdin", ""],
 		["not json", "not json"],
 		["truncated json", JSON.stringify(issues).slice(0, 200)],
-		["a json object", "{}"],
+		["an empty json object", "{}"],
 		["a json string", '"x"'],
-		["an element without a number", JSON.stringify([{ state: "OPEN" }])],
-		["a fractional number", JSON.stringify([{ number: 1.5, state: "OPEN" }])],
-		["an element without a state", JSON.stringify([{ number: 1 }])],
-		["a null element", "[null]"],
-		[
-			"an issue without createdAt",
-			JSON.stringify([{ number: 1, state: "OPEN" }]),
-		],
+		["an element without a number", [{ state: "OPEN" }]],
+		["a fractional number", [{ number: 1.5, state: "OPEN" }]],
+		["an element without a state", [{ number: 1 }]],
+		["a null element", [null]],
+		["an issue without createdAt", [{ number: 1, state: "OPEN" }]],
 		[
 			"an issue with a createdAt that is no time",
 			withTimes({ createdAt: "soon" }),
@@ -237,7 +244,29 @@ describe("sync", () => {
 		]);
 	});
 
-	test("an empty array over a filled cache exits 4 and --reset clears it", () => {
+	test("a bare list exits 4 with the old-form reason and the form, and leaves the cache", () => {
+		sync(issues);
+		const before = snapshot();
+		for (const bare of [issues, [], [issues[0]]]) {
+			const r = feed(JSON.stringify(bare));
+			expect(r.code).toBe(4);
+			expect(r.err).toContain(
+				`journal: sync input rejected, cache untouched: ${OLD_FORM_REASON}\n\n${formText("issues")}`,
+			);
+			expect(snapshot()).toEqual(before);
+		}
+	});
+
+	test("the object form is read with its writers", () => {
+		const r = sync({
+			writers: ["Maintainer-Fictional"],
+			issues: issuesForm(issues).issues,
+		});
+		expect(r.code).toBe(0);
+		expect(r.out).toContain("issues=");
+	});
+
+	test("an empty list of issues over a filled cache exits 4 and --reset clears it", () => {
 		sync(issues);
 		const before = snapshot();
 		expect(sync([]).code).toBe(4);
@@ -249,7 +278,7 @@ describe("sync", () => {
 		expect(rows("SELECT count(*) AS n FROM markers")).toEqual([{ n: 0 }]);
 	});
 
-	test("an empty array over an empty cache succeeds", () => {
+	test("an empty list of issues over an empty cache succeeds", () => {
 		expect(sync([]).code).toBe(0);
 	});
 
@@ -325,12 +354,22 @@ describe("sync", () => {
 	});
 
 	test("an unknown precinct exits 1 and a bad login exits 1", () => {
-		expect(feed("[]", ["sync", "nowhere", "--author", TRUSTED]).code).toBe(1);
-		expect(feed("[]", ["sync", PRECINCT, "--author", "-bad-"]).code).toBe(1);
-		expect(feed("[]", ["sync", PRECINCT]).code).toBe(1);
 		expect(
-			feed("[]", ["sync", PRECINCT, "--author", TRUSTED, "--reset", "--reset"])
-				.code,
+			feed(EMPTY_FORM, ["sync", "nowhere", "--author", TRUSTED]).code,
+		).toBe(1);
+		expect(feed(EMPTY_FORM, ["sync", PRECINCT, "--author", "-bad-"]).code).toBe(
+			1,
+		);
+		expect(feed(EMPTY_FORM, ["sync", PRECINCT]).code).toBe(1);
+		expect(
+			feed(EMPTY_FORM, [
+				"sync",
+				PRECINCT,
+				"--author",
+				TRUSTED,
+				"--reset",
+				"--reset",
+			]).code,
 		).toBe(1);
 	});
 

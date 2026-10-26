@@ -50,12 +50,12 @@ describe("lint-page command in process", () => {
 
 	test("a wrong version is a reason on the first lines", () => {
 		const text = CONSTITUTION.replace(
-			"contract_version: 2",
+			"contract_version: 3",
 			"contract_version: 1",
 		);
 		expect(lint(text, "constitution")).toEqual({
 			code: EXIT.LINT_PAGE,
-			out: "2: contract_version must be 2\n",
+			out: "2: contract_version must be 3\n",
 			err: "",
 		});
 	});

@@ -37,13 +37,13 @@ const jobOf = (n: number) => {
 	const f = fields(n);
 	return JOBS.map((k) => f[k]).join(" ");
 };
-const tail = (n: number) => need(n).split(" ").slice(-6).join(" ");
+const tail = (n: number) => need(n).split(" ").slice(-9).join(" ");
 
 describe("case: the line of a clerk job", () => {
 	test("an open conviction prints the open job and its branch", () => {
 		put({ 1: ruled(conviction) });
 		expect(tail(1)).toBe(
-			"priority=P2 job=open action=- pull=- sources=- branch=lawman/execute-1-1",
+			"priority=P2 job=open action=- pull=- sources=- branch=lawman/execute-1-1 kind=defect answer=- answer_id=-",
 		);
 	});
 
@@ -135,7 +135,7 @@ describe("case: leaving the funnel", () => {
 		put({ 1: human("OPEN", pairMark("handed", 7, "open")) });
 		cache([7, [1]]);
 		expect(need(1)).toBe(
-			"need=none round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=- action=- pull=7 sources=1 branch=-",
+			"need=none round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=- action=- pull=7 sources=1 branch=- kind=- answer=- answer_id=-",
 		);
 	});
 
@@ -143,7 +143,7 @@ describe("case: leaving the funnel", () => {
 		put({ 1: human("OPEN") });
 		cache([7, [1]]);
 		expect(need(1)).toBe(
-			"need=clerk round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=adopt action=- pull=7 sources=1 branch=-",
+			"need=clerk round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=adopt action=- pull=7 sources=1 branch=- kind=- answer=- answer_id=-",
 		);
 	});
 
