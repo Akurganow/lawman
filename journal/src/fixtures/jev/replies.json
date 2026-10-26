@@ -622,5 +622,48 @@
 				"serious_violation": { "type": "noul", "noul": 0.03 }
 			}
 		}
+	},
+	{
+		"kind": "requirement",
+		"reply": {
+			"model": "jev-1.14.0",
+			"answers": {
+				"level": {
+					"type": "score",
+					"score": 0.79,
+					"confidence": 0.69,
+					"legend": {
+						"0": "Small value: the change only tidies wording, comments, documents, names or code structure, or adds an optional extra. Nobody is blocked or misled without it, and nothing anyone does changes.",
+						"1": "The default: a wanted addition or change with a clear gain for users or maintainers, who can work without it today.",
+						"2": "Harm to users or maintainers now: without the change they are blocked, misled, lose data or work, or must redo work today."
+					},
+					"probabilities": {
+						"0": 0.21,
+						"1": 0.79,
+						"2": 0.0
+					}
+				},
+				"harm_now": {
+					"type": "noul",
+					"noul": 0.09
+				},
+				"tidy_only": {
+					"type": "noul",
+					"noul": 0.01
+				},
+				"clear_gain": {
+					"type": "noul",
+					"noul": 0.94
+				},
+				"harm_if_undone": {
+					"type": "noul",
+					"noul": 0.03
+				}
+			},
+			"usage": {
+				"input_tokens": 1011,
+				"output_tokens": 89
+			}
+		}
 	}
 ]

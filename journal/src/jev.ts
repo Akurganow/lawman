@@ -2,7 +2,7 @@ import { parseArgs, pick, subcommand, usage } from "./args";
 import { EXIT, Fail, out, readStdin } from "./db";
 import { isNoReply, splitReply } from "./reply-status";
 
-const USAGE = "jev <request|answer> --kind <p0|grade>";
+const USAGE = "jev <request|answer> --kind <p0|grade|requirement>";
 const MODEL = "jev-latest";
 const BRIEF_LINE = /^([a-z_]+): (.+)$/;
 const ANSWER_MODEL = /^[A-Za-z0-9._-]{1,40}$/;
@@ -83,7 +83,54 @@ const GRADE: Kind = {
 	],
 };
 
-const KINDS: Record<string, Kind> = { p0: P0, grade: GRADE };
+const REQUIREMENT: Kind = {
+	fields: [
+		"request",
+		"need",
+		"value",
+		"risk",
+		"established",
+		"not_established",
+	],
+	questions: {
+		level: {
+			type: "score",
+			instructions: "Which situation describes `brief` best?",
+			criteria: [
+				"Small value: the change only tidies wording, comments, documents, names or code structure, or adds an optional extra. Nobody is blocked or misled without it, and nothing anyone does changes.",
+				"The default: a wanted addition or change with a clear gain for users or maintainers, who can work without it today.",
+				"Harm to users or maintainers now: without the change they are blocked, misled, lose data or work, or must redo work today.",
+			],
+		},
+		harm_now: noul(
+			"Does `brief.need` describe a cost that users or maintainers pay today because the change is missing: something they rely on fails or gives a wrong result, or they lose data or work, or they redo work? Not having a feature they never had is no cost.",
+			"Something people rely on fails, gives a wrong result, or costs them data or work today.",
+			"Nobody pays a cost today. The change adds something new or tidies, and people can work without it.",
+		),
+		tidy_only: noul(
+			"Does `brief.value` describe only a tidier project, in wording, comments, documents, names or code structure, with what users and maintainers do left the same?",
+			"Only wording, comments, documents, names or code structure get tidier, and what people do stays the same.",
+			"People can do something new, or something bad stops happening to them.",
+		),
+		clear_gain: noul(
+			"Does `brief.value` describe a gain that users or maintainers feel in what they do with the project, beyond a tidier project?",
+			"Users or maintainers can do something new, or a bad outcome stops, in their own use of the project.",
+			"The gain is a tidier project only, or there is no gain for users or maintainers.",
+		),
+		harm_if_undone: noul(
+			"Does the first sentence of `brief.risk` describe a harm to users or maintainers if the change is never made? A harm is something that fails, gives a wrong result, loses data or work, or goes wrong without anyone noticing.",
+			"Leaving the change undone lets a failure, a wrong result, a loss or an unnoticed fault happen to people.",
+			"Leaving the change undone harms nobody. The project stays as useful as it is today.",
+		),
+	},
+	levels: GRADE.levels,
+};
+
+const KINDS: Record<string, Kind> = {
+	p0: P0,
+	grade: GRADE,
+	requirement: REQUIREMENT,
+};
 
 const reject = (why: string) => new Fail(EXIT.USAGE, why);
 

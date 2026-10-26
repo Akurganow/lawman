@@ -5,7 +5,7 @@ import * as db from "./db";
 import { Fail } from "./db";
 import { captured } from "./inproc";
 import { answerLine, jev, requestLine } from "./jev";
-import { cli, JOURNAL, LAW } from "./test-helpers";
+import { cli, JOURNAL, LAW, ROOT } from "./test-helpers";
 
 const FIXTURES = join(JOURNAL, "src", "fixtures", "jev");
 const RECORDED = join(FIXTURES, "replies.json");
@@ -39,6 +39,7 @@ const request = throughCli("request");
 const bodyOf = (kind: string) =>
 	JSON.parse(request(kind, fixture(`brief.${kind}.txt`)).out);
 
+const KINDS = ["p0", "grade", "requirement"];
 const lines = (text: string) => text.trimEnd().split("\n");
 const fail = (message: string) => ({
 	code: 1,
@@ -47,7 +48,7 @@ const fail = (message: string) => ({
 });
 
 describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
-	test.each(["p0", "grade"])("the %s brief gives the exact body", (kind) => {
+	test.each(KINDS)("the %s brief gives the exact body", (kind) => {
 		expect(request(kind, fixture(`brief.${kind}.txt`))).toEqual({
 			code: 0,
 			out: compact(`request.${kind}.json`),
@@ -56,7 +57,7 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 	});
 
 	test("the field order is canonical whatever the input order", () => {
-		for (const kind of ["p0", "grade"]) {
+		for (const kind of KINDS) {
 			const reversed = lines(fixture(`brief.${kind}.txt`))
 				.reverse()
 				.join("\n");
@@ -72,7 +73,7 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 	});
 
 	test("no body holds a P0 to P3 token", () => {
-		for (const kind of ["p0", "grade"])
+		for (const kind of KINDS)
 			expect(request(kind, fixture(`brief.${kind}.txt`)).out).not.toMatch(
 				/P[0-3]/,
 			);
@@ -110,7 +111,7 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 
 		test("a bad or missing kind is a usage error that never echoes it", () => {
 			const usage =
-				"journal: usage: journal jev <request|answer> --kind <p0|grade>\n";
+				"journal: usage: journal jev <request|answer> --kind <p0|grade|requirement>\n";
 			const bad = request("P0-secret-kind", "");
 			expect(bad).toEqual({ code: 1, out: "", err: usage });
 			expect(bad.err).not.toContain("secret-kind");
@@ -148,6 +149,26 @@ describe("law consistency", () => {
 		expect(criteria[1]).toContain("default");
 	});
 
+	test("requirement Score levels follow the law's P3, P2 and P1 texts", () => {
+		const { criteria } = bodyOf("requirement").questions.level;
+		expect(criteria[0]).toStartWith("Small value:");
+		expect(lawText("P3")).toEndWith("of small value.");
+		expect(criteria[1]).toContain("default");
+		expect(criteria[2]).toStartWith(capital(lawText("P1")).replace(/\.$/, ":"));
+	});
+
+	test("the court's requirement brief example gives a body", () => {
+		const skill = readFileSync(
+			join(ROOT, "skills", "court", "SKILL.md"),
+			"utf8",
+		);
+		const brief = skill.split(/^## Brief$/m)[1]?.split(/^## /m)[0] ?? "";
+		const example =
+			brief.split("A `requirement` brief:")[1]?.split("```")[1] ?? "";
+		const body = JSON.parse(request("requirement", example).out);
+		expect(Object.keys(body.state.brief)).toHaveLength(6);
+	});
+
 	test("the grade Nouls hold the words of the law", () => {
 		const { questions } = bodyOf("grade");
 		const text = (id: string) => JSON.stringify(questions[id]);
@@ -167,6 +188,8 @@ describe("law consistency", () => {
 describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 	const P0_LINE =
 		"jev model=jev-1.13.0 kind=p0 live_secret=0.95 vulnerability=0.12 serious_violation=0.80";
+	const REQUIREMENT_LINE =
+		"jev model=jev-1.14.0 kind=requirement P1=0.00 P2=0.79 P3=0.21 harm_now=0.09 tidy_only=0.01 clear_gain=0.94 harm_if_undone=0.03";
 	const GRADE_LINE =
 		"jev model=jev-1.13.0 kind=grade P1=0.15 P2=0.75 P3=0.10 harm_users=0.04 harm_maintainers=0.07 cosmetic_only=0.90";
 	const NONE = "jev none reason=";
@@ -196,6 +219,9 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 		expect(answer("grade", with200(reply("reply.grade.json")))).toEqual(
 			line(GRADE_LINE),
 		);
+		expect(
+			answer("requirement", with200(reply("reply.requirement.json"))),
+		).toEqual(line(REQUIREMENT_LINE));
 	});
 
 	test("a CR after the status and a blank line after the body are fine", () => {
@@ -298,7 +324,7 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 
 describe("jev through the journal", () => {
 	const USAGE_ERR =
-		"journal: usage: journal jev <request|answer> --kind <p0|grade>\n";
+		"journal: usage: journal jev <request|answer> --kind <p0|grade|requirement>\n";
 	const NO_DB = { LAWMAN_DB: "/nonexistent/dir/journal.sqlite" };
 
 	test("a missing kind or subcommand is a usage error", () => {
