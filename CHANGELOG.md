@@ -4,6 +4,20 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.21.0 - 2026-10-26
+#### Features
+- Hermes page shows how a role calls an expert (b9f3a13)
+- Lawman takes any human ticket as a charge, and the court refers a requirement it cannot decide (549cb59)
+- Jev grades requirements through a requirement brief (e071481)
+- case line gains kind, answer and answer_id, and the referral stage (b535180)
+- BREAKING: constitution contract version 3 (d6a6cb5)
+- BREAKING: issue sync reads one object with writers, comment ids and reactions. After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md. (f585c3a)
+#### Documentation
+- any ticket, referrals, experts and the upgrade path (8db47ca)
+
+- - -
+
+
 ## v0.20.0 - 2026-10-25
 #### Features
 - check each precinct's dependencies against the OSV catalog, run the assembly to answer the consent question (a3c0168)
