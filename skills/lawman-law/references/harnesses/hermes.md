@@ -177,6 +177,32 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/jo
 - The forms use only what "Commands in scheduled runs" lists as accepted: a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
 - The harness's check function accepts form 1, form 2, the batch pipeline for the first and a later part, the record request and the record read, each in the exact form a role sends (checked with the harness's check function). The floor check of the same function passes them too. None of these was seen in a scheduled run.
 
+## Calling an expert
+
+A role calls an expert only in this form. The expert runs as the profile configures it. Local files are the user's responsibility.
+
+1. Start a separate session with `hermes chat`. (read in the harness code, seen in a run)
+2. Pass `-Q`, so the session prints only the final answer to standard output. (read in the harness code, stated by `--help`, seen in a run)
+3. Pass `--query-file -`, and send the task on standard input through the quoted heredoc of the working rules. The task never becomes an argument. (read in the harness code, stated by `--help`, seen in a run)
+4. Pass `--ignore-rules`, so the session loads no context file, memory or persona from the working directory. (read in the harness code, stated by `--help`)
+5. Pass no `-t`, so the session keeps the tools that the profile configures. (read in the harness code, stated by `--help`, seen in a run)
+6. Pipe standard output straight into `bin/journal clean`, and read only what it prints.
+7. Send standard error of the `hermes` command to the null device. The role never reads it. (seen in a run: a forced error left no text in the output)
+8. Run the pipeline in a subshell under `pipefail`. A non-zero status of any part is a failed read. (seen in a run: a forced error gave status 2)
+9. Ask the terminal call for the longest time limit the harness allows, with its argument `timeout` set to 600. On Hermes the default is 180 seconds and the cap is 600 seconds. (read in the harness code, seen in a run)
+10. A run that ends inside the limit, with status 0 in every part, passes. A run that the limit cuts is a failed read. (seen in a run: a call cut at its limit returned status 124)
+
+The whole call runs in one command. The heredoc carries the expert's preamble from the exhibits file, then the task, with the delimiter of the working rules.
+
+```
+(set -o pipefail; hermes chat -Q --query-file - --ignore-rules 2>/dev/null <<'<delimiter>' | bin/journal clean
+<the preamble, then the task>
+<delimiter>
+)
+```
+
+- The block uses only forms that "Commands in scheduled runs" lists as accepted. They are a subshell, `set -o pipefail`, a redirect, a plain pipe and a quoted heredoc fed to an ordinary command. (checked with the harness's check function, seen in scheduled runs)
+
 ## Scheduling
 
 Create one job per role:
