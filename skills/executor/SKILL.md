@@ -192,7 +192,7 @@ The merge path ends the tick with `skipped-merge-conflict` when it cannot resolv
 ### Step 8: do the work
 
 1. Read what the branch already holds. A tick that broke earlier left pushed commits. Continue from them. Redo nothing that is done.
-2. Check each claim of the order against the tree. When the defect is gone at `<ref>` or its file is gone, the order no longer fits. Write no code. Go to step 9. `## Not done` names the finding with its path and line.
+2. Check each claim of the order against the tree. When the defect is gone at `<ref>`, its file is gone, or the requirement is already met at `<ref>`, the order no longer fits. A path that a requirement adds is absent by design. Write no code. Go to step 9. `## Not done` names the finding with its path and line.
 3. Write the code. Write the documentation in the same commits, by the rules of the Read first and Executor loads files. This skill names no documentation file.
 4. Run the commands the work needs, in the tree only. Obey the constitution's Execution section.
    - `Execution: none` allows no local run. The gate is then the proof.

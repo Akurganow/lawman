@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman defender, which takes one order on a char
 
 One tick takes one order on a charged case, re-reads the exhibits, decides defence, return or refute, writes the defence as a comment, and exits.
 
-The defender reads and writes comments. It runs no code and creates no worktree.
+The defender reads and writes comments. It runs no code of the precinct and creates no worktree. It may ask an expert, as the "Ask an expert" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ## Limits
 
@@ -82,7 +82,7 @@ Run the "Read the stage" section.
 
 The order is stale unless `need` is `defender` and `state` is `OPEN`. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
+Keep `round`, `returned`, `department`, `sha`, `lead`, `related` and `kind`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 
 ### Step 5: read the rules
 
@@ -112,7 +112,7 @@ A related issue is evidence of the case, never a reason to close it.
    - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path up to `<sha>`: the short hash and the subject of each commit that touched it.
-3. Search the tree at `<sha>` for the callers and tests of each symbol the charge names. Use a pattern from the charge only through the heredoc form.
+3. Search the tree at `<sha>` for the callers and tests of each symbol the charge names. Search also each place that the charge's `## Risk` names. Use a pattern from the charge only through the heredoc form.
 4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
 5. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 6. A path that the case reports missing in its Not established section:
@@ -158,8 +158,14 @@ Tip at defence: <tip>
 ## Holes in the charge
 <what the grounds do not establish on the exhibits; alternative explanations; each with an exhibit path:line at <sha>>
 
+## Need
+<for a requirement only: counter-grounds to the need, each with its evidence>
+
+## Expert
+<only when an expert was called: the task and the cleaned answer, as the "Ask an expert" section says>
+
 ## The code as it is
-<why the code has this shape: commit history lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>; the cost against the harm, quoting the line under the lead's Cost and risk heading when there is one>
+<why the code has this shape: commit history lines, the constitution, Precedents, Not findings; what executing the charge breaks: callers and tests found at <sha>, and for a requirement what it exposes, with an exhibit or a search. The cost against the harm, quoting the line under the lead's Cost and risk heading when there is one>
 
 ## Question
 <only for return: exactly one question>
@@ -206,7 +212,7 @@ The grounds miss the guard at `src/queue.ts:88`, which returns before the call.
 Rules:
 
 - Leave out `## Question` unless the decision is return.
-- A section with nothing to say holds the single word `none`.
+- A section with nothing to say holds the single word `none`. Leave out `## Need` unless the lead is a requirement, and `## Expert` unless an expert was called.
 - Quote only the lines a ground needs.
 - Put every `@` and every quote of third-party text inside a fenced block, commit subjects included.
 - Name the department page by its department name, never by a path.

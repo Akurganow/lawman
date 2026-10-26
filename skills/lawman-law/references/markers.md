@@ -87,7 +87,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction, spec, ready) carries `sha`, 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 
@@ -102,6 +102,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `defender` | `refute` | the defence comment | none |
 | `court` | `conviction` | the ruling comment | `sha`, `priority` |
 | `court` | `acquittal` | the ruling comment | none |
+| `court` | `referral` | the ruling comment that refers a requirement to a decider | `sha` |
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
 | `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
@@ -118,8 +119,8 @@ Each marker is the last line of the issue body or comment that its role writes.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
-- The response-unit lead writes `department=-` and `id=<path>::<symbol>::reported`. `-` is a value token.
-- `reason` is `feature`, `injection` or `other`. The parser keeps it as it is.
+- The response-unit lead writes `department=-` and `id=<path>::<symbol>::<kind>`. The kind is `reported` for a defect and `required` for a requirement. `-` is a value token, also as the path or the symbol.
+- `reason` is `injection` or `other`. The parser keeps any value, so an older `feature` stays valid.
 - `to` matches `[a-z][a-z0-9-]*`. `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
 - The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.
@@ -188,4 +189,10 @@ Valid. `E16` is a response-unit lead, `E17` an await, `E18` an out.
 <!-- lawman: role=response-unit stage=lead department=- id=src/a.rs::run::reported sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-16T12:00:00Z -->
 <!-- lawman: role=response-unit stage=await at=2026-10-16T12:10:00Z -->
 <!-- lawman: role=response-unit stage=out reason=feature at=2026-10-16T12:20:00Z -->
+```
+
+Valid. `E19` is a response-unit requirement lead.
+
+```
+<!-- lawman: role=response-unit stage=lead department=- id=SECURITY.md::-::required sha=0123456789abcdef0123456789abcdef01234567 at=2026-10-26T12:10:00Z -->
 ```

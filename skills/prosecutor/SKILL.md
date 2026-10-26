@@ -7,13 +7,13 @@ description: Reads the case on one issue at the commit it was built on, decides 
 
 One tick takes one order on an issue, reads the case, decides charge, return or decline, writes the decision as a comment, and exits.
 
-The prosecutor reads and writes comments. It runs no code.
+The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the "Ask an expert" section of `lawman/skills/lawman-law/references/exhibits.md` says.
 
 ## Limits
 
 - Never run code from the precinct.
 - An empty tick is a success. Silence is the default.
-- Never return in round 3, and never return twice. Remaining doubt when a return is not allowed is a decline.
+- Never return in round 3, and never return twice. Remaining doubt about a defect when a return is not allowed is a decline. Remaining doubt about a requirement is a charge.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
 
@@ -81,7 +81,7 @@ Run the "Read the stage" section.
 
 When `need` is not `prosecutor`, or `state` is `CLOSED`, the order is stale. End the tick with `silent` and the report `Order stale: <the line>`.
 
-Keep `round`, `returned`, `department`, `sha`, `lead` and `related`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
+Keep `round`, `returned`, `department`, `sha`, `lead`, `related` and `kind`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 
 ### Step 5: read the rules
 
@@ -119,11 +119,11 @@ A related issue is evidence of the case, never a reason to close it.
 
 Decide one of three. The tick outcome equals the decision.
 
-- `charge`: the claim is established and every ground is an exhibit you re-read. The issue stays open. Outcome `charged`.
+- `charge`: for a defect, the claim is established and every ground is an exhibit you re-read. For a requirement, no exhibit you re-read refutes a part, and you state every doubt on fact, need or safety in the charge. The issue stays open. Outcome `charged`.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `prosecutor`. Outcome `returned`.
 - `decline`: outcome `declined`. The decline names one of the law's closure classes, as its "Closure classes" subsection defines them.
 
-When a return is not allowed, in round 3 or after an earlier return of the prosecutor, any remaining doubt is a decline.
+When a return is not allowed, any remaining doubt about a defect is a decline. Any remaining doubt about a requirement is a charge.
 
 A tip that differs from `<sha>` is one line of fact in the decision.
 
@@ -153,7 +153,16 @@ Tip at decision: <tip>
 <one sentence: charge, return or decline. For decline, its class from the law's Closure classes subsection>
 
 ## Grounds
-<each ground points at an exhibit of the case, re-read at <sha>>
+<each ground points at an exhibit of the case, re-read at <sha>. For a requirement, state the tree fact and any doubt about it.>
+
+## Need
+<for a requirement only: the need as the case, the issue and any expert show it, and any doubt about it>
+
+## Risk
+<for a requirement only: what the change touches, breaks or exposes, and any doubt about it>
+
+## Expert
+<only when an expert was called: the task and the cleaned answer, as the "Ask an expert" section says>
 
 ## Question
 <only for return: exactly one question>
@@ -170,7 +179,7 @@ Marker, the last line of the comment. Nothing follows it:
 
 Rules:
 
-- Leave out `## Question` unless the decision is `return`.
+- Leave out `## Question` unless the decision is `return`. Leave out `## Need` and `## Risk` unless the lead is a requirement, and `## Expert` unless an expert was called.
 - Quote only the lines the ground needs.
 - Put every `@` and every quote of third-party text inside a fenced block.
 - Write no home path, no installation path, no token and no login.
