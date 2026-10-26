@@ -17,6 +17,7 @@ import {
 	decline,
 	defence,
 	issues,
+	issuesForm,
 	lead,
 	refute,
 	returnTo,
@@ -63,7 +64,7 @@ describe("case: stage", () => {
 	test("a closed issue needs nobody", () => {
 		put({ 1: { state: "CLOSED", body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=none round=1 returned=- department=core sha=- state=CLOSED lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-",
+			"need=none round=1 returned=- department=core sha=- state=CLOSED lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=- kind=defect answer=- answer_id=-",
 		);
 	});
 
@@ -107,14 +108,14 @@ describe("case: round, department, sha", () => {
 	test("the line carries the department of the lead origin and the sha of the newest case", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), caseMark()]] } });
 		expect(need(1)).toBe(
-			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-`,
+			`need=prosecutor round=1 returned=- department=core sha=${SHA} state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=- kind=defect answer=- answer_id=-`,
 		);
 	});
 
 	test("without a case the sha is a dash", () => {
 		put({ 1: { body: [lead()] } });
 		expect(need(1)).toBe(
-			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=-",
+			"need=investigation round=1 returned=- department=core sha=- state=OPEN lead=body related=- priority=P2 job=- action=- pull=- sources=- branch=- kind=defect answer=- answer_id=-",
 		);
 	});
 });
@@ -125,7 +126,7 @@ describe("case: failures", () => {
 		const r = call(BASE, ["case", "main", "1"]);
 		expect(r.code).toBe(0);
 		expect(r.out).toBe(
-			"need=none round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=- action=- pull=- sources=- branch=-\n",
+			"need=none round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=- action=- pull=- sources=- branch=- kind=- answer=- answer_id=-\n",
 		);
 	});
 
@@ -261,7 +262,7 @@ describe("due", () => {
 		const r = call(
 			BASE,
 			["sync", "main", "--author", TRUSTED],
-			JSON.stringify(fixture),
+			JSON.stringify(issuesForm(fixture)),
 		);
 		expect(r.code).toBe(0);
 		expect(due("investigation")).toBe("main\t19\n");

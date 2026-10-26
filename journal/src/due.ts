@@ -14,7 +14,13 @@ const PULL_ROLES = [SPEC_WRITER, EXECUTOR];
 const ALL_ISSUES = "FROM issues i WHERE true";
 
 type Entry = { precinct: string; number: number; priority: string };
-type IssueRow = { precinct: string; issue: number; state: string; led: number };
+type IssueRow = {
+	precinct: string;
+	issue: number;
+	state: string;
+	answer: string | null;
+	led: number;
+};
 type PullRow = { precinct: string; number: number };
 
 const lastOrder = (precinct: string, issue: string) =>
@@ -24,7 +30,7 @@ const lastOrder = (precinct: string, issue: string) =>
 function issueEntries(db: Database, role: string, excluded: string[]) {
 	const rows = db
 		.query(
-			`SELECT i.precinct, i.issue, i.state,
+			`SELECT i.precinct, i.issue, i.state, i.answer,
            EXISTS (SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead') AS led,
            ${lastOrder("i.precinct", "i.issue")} AS last
          ${role === CLERK ? ALL_ISSUES : `${LEAD_ORIGIN_FROM} AND i.state = 'OPEN'`}
@@ -41,6 +47,7 @@ function issueEntries(db: Database, role: string, excluded: string[]) {
 				r.issue,
 				r.state,
 				markersOf(db, r.precinct, r.issue),
+				r.answer,
 				r.led === 1,
 			);
 			if (view.need !== role) return [];

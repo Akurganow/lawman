@@ -5,6 +5,7 @@ import {
 	caseMark,
 	charge,
 	defence,
+	issuesForm,
 	lead,
 	mark,
 	SHA,
@@ -12,7 +13,12 @@ import {
 	TRUSTED,
 } from "./test-helpers";
 
-export type Comment = [createdAt: string, body: string];
+export type Comment = [
+	createdAt: string,
+	body: string,
+	approvedBy?: string[],
+	rejectedBy?: string[],
+];
 export type Spec = {
 	body?: string[];
 	comments?: Comment[];
@@ -33,16 +39,20 @@ export function put(specs: Record<number, Spec>, precinct = "main") {
 		closedAt: null,
 		author: { login: TRUSTED },
 		body: (s.body ?? []).join("\n"),
-		comments: (s.comments ?? []).map(([createdAt, body]) => ({
-			author: { login: TRUSTED },
-			body,
-			createdAt,
-		})),
+		comments: (s.comments ?? []).map(
+			([createdAt, body, approvedBy = [], rejectedBy = []]) => ({
+				author: { login: TRUSTED },
+				body,
+				createdAt,
+				approvedBy,
+				rejectedBy,
+			}),
+		),
 	}));
 	const r = call(
 		BASE,
 		["sync", precinct, "--author", TRUSTED],
-		JSON.stringify(data),
+		JSON.stringify(issuesForm(data, [TRUSTED])),
 	);
 	expect(r.code).toBe(0);
 }
@@ -99,6 +109,16 @@ export function cache(...pulls: [number, number[], string?][]) {
 
 export const ruled = (ruling: () => string, ...rest: string[]) =>
 	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
+
+export const referral = () => mark("court", "referral", ` sha=${SHA}`);
+
+export const answer = (n: number, value: string, id = "-", name = "main") =>
+	seed((db) =>
+		db.run(
+			"UPDATE issues SET answer = ?, answer_id = ? WHERE precinct = ? AND issue = ?",
+			[value, id, name, n],
+		),
+	);
 
 export const closed = (spec: Spec): Spec => ({ ...spec, state: "CLOSED" });
 

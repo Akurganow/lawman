@@ -216,6 +216,18 @@ describe("table rows", () => {
 		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe("-");
 	});
 
+	test("a referral gives no job", () => {
+		const referral = marker("court", "referral", 0);
+		expect(run({ markers: [referral] }).job).toBe("-");
+	});
+
+	test("4: a conviction after a referral opens a draft", () => {
+		const referral = marker("court", "referral", 0);
+		expect(run({ markers: [referral], ruling: conviction(1) }).job).toBe(
+			"open",
+		);
+	});
+
 	test("4: an entry does not answer a conviction", () => {
 		const entry = marker("clerk", "entry", 1);
 		expect(run({ markers: [entry], ruling: conviction() }).job).toBe("open");

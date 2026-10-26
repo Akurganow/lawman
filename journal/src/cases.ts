@@ -51,7 +51,7 @@ const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
 
 type Funnel = { need: Exclude<Need, "clerk">; ruling?: CaseMarker };
 
-function funnelOf(markers: CaseMarker[]): Funnel {
+function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 	const c = newestOf(markers, "investigation", "case");
 	if (c === undefined) return { need: "investigation" };
 	const p = newestOf(markers, "prosecutor");
@@ -65,6 +65,7 @@ function funnelOf(markers: CaseMarker[]): Funnel {
 	if (d.stage !== "defence") return { need: "none" };
 	const r = newestOf(markers, "court");
 	if (r === undefined || r.ord < d.ord) return { need: "court" };
+	if (r.stage === "referral") return { need: answered ? "court" : "none" };
 	const ruled = r.stage === "conviction" || r.stage === "acquittal";
 	return { need: "none", ...(ruled ? { ruling: r } : {}) };
 }
@@ -78,9 +79,12 @@ export function caseOf(
 	issue: number,
 	state: string,
 	markers: CaseMarker[],
+	answer: string | null,
 	led = true,
 ): CaseView {
-	const funnel = led ? funnelOf(markers) : { need: "none" as const };
+	const funnel = led
+		? funnelOf(markers, answer !== null)
+		: { need: "none" as const };
 	const clerk = clerkCase({
 		issue,
 		state,
@@ -113,8 +117,12 @@ export function markersOf(db: Database, precinct: string, issue: number) {
 const leadPlace = (ord: string) =>
 	Number(ord.split("|")[ORD_RANK_PART]) === BODY_RANK ? "body" : "comment";
 
+const NO_PLACE = "-::-";
+const REQUIRED = "required";
+const RESPONSE_UNIT = "response-unit";
+
 function relatedOf(db: Database, precinct: string, issue: number, id: string) {
-	if (id === "") return "-";
+	if (id === "" || symbolOf(id) === NO_PLACE) return "-";
 	const numbers = leadOrigins(db, precinct)
 		.filter(
 			(o) =>
@@ -127,6 +135,7 @@ function relatedOf(db: Database, precinct: string, issue: number, id: string) {
 }
 
 type Origin = {
+	role: string;
 	department: string | null;
 	lead_id: string | null;
 	ord: string;
@@ -140,7 +149,7 @@ function leadFields(
 ) {
 	const origin = db
 		.query(
-			`SELECT m.department, m.lead_id, m.ord ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
+			`SELECT m.role, m.department, m.lead_id, m.ord ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
 		)
 		.get(name, issue) as Origin | null;
 	if (origin === null) return null;
@@ -156,6 +165,11 @@ function leadFields(
 		sha: sha ?? "-",
 		lead: leadPlace(origin.ord),
 		related: relatedOf(db, name, issue, origin.lead_id ?? ""),
+		kind:
+			origin.role === RESPONSE_UNIT &&
+			(origin.lead_id ?? "").endsWith(`::${REQUIRED}`)
+				? "requirement"
+				: "defect",
 	};
 }
 
@@ -166,6 +180,7 @@ const NO_LEAD = {
 	sha: "-",
 	lead: "-",
 	related: "-",
+	kind: "-",
 };
 
 export function caseCommand(args: string[]): void {
@@ -173,8 +188,14 @@ export function caseCommand(args: string[]): void {
 	const [name, issue] = args as [string, string];
 	withDb((db) => {
 		const row = db
-			.query("SELECT state FROM issues WHERE precinct = ? AND issue = ?")
-			.get(name, issue) as { state: string } | null;
+			.query(
+				"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
+			)
+			.get(name, issue) as {
+			state: string;
+			answer: string | null;
+			answer_id: string | null;
+		} | null;
 		if (row === null)
 			throw new Fail(EXIT.USAGE, `unknown issue ${name} #${issue}`);
 		const markers = markersOf(db, name, Number(issue));
@@ -185,11 +206,12 @@ export function caseCommand(args: string[]): void {
 			Number(issue),
 			row.state,
 			markers,
+			row.answer,
 			lead !== null,
 		);
 		const l = lead ?? NO_LEAD;
 		out(
-			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch}`,
+			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch} kind=${l.kind} answer=${row.answer ?? "-"} answer_id=${row.answer_id ?? "-"}`,
 		);
 	});
 }
