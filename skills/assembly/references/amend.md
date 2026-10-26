@@ -14,7 +14,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
 8. Stop on "Later", an empty answer, a cancel or a timeout.
-9. On "Amend now", read `host.md`. Three label actions need a record in it. They read a repository's labels with their descriptions, create a label with a description, and apply a label to an issue. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them.
+9. On "Amend now", read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them.
 
 ## Step 2. Amend the precincts
 
@@ -36,7 +36,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    12. Ask in the question tool, in one call for the precinct.
    13. Offer "Open the pull request" (recommended), "Change" and "Skip".
    14. On "Change", follow the change items of "The repository proposal".
-   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path.
+   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path. After the pull request opens, set the description of the label on the host when the proposal holds that row. Use the way that the host notes record, or that item 9 of Step 1 found. Read the labels back and find the new description. If the write or the read-back fails, tell the developer and go on.
    16. Use the branch lawman/constitution-v<n> in place of lawman/constitution.
    17. Use "Amend the Lawman constitution to version <n>" as the commit message and the pull request title.
    18. On "Skip", write nothing for the precinct.

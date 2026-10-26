@@ -123,11 +123,11 @@ describe("department-line", () => {
 	});
 
 	test("a page that fails the check exits 8 with reasons and no stdout", () => {
-		const broken = VALID.replace("contract_version: 2", "contract_version: 3");
+		const broken = VALID.replace("contract_version: 3", "contract_version: 2");
 		const r = run(broken, "--name", "security", "--judged-by", "none");
 		expect(r.code).toBe(8);
 		expect(r.out).toBe("");
-		expect(r.err).toContain("contract_version must be 2");
+		expect(r.err).toContain("contract_version must be 3");
 	});
 
 	test("a path the check rejects exits 8 with empty stdout", () => {

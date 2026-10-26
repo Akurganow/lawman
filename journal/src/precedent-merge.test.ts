@@ -8,7 +8,7 @@ import { BASE, call, dir, tempDb } from "./test-helpers";
 
 const FRONT = [
 	"---",
-	"contract_version: 2",
+	"contract_version: 3",
 	"---",
 	"# Constitution of o/r",
 	"",
@@ -53,7 +53,7 @@ const pageFirst = (...section: string[]) =>
 	[...FRONT, "## Precedents", "", ...section, "", ...BODY].join("\n");
 const v1 = (text: string) =>
 	text
-		.replace("contract_version: 2", "contract_version: 1")
+		.replace("contract_version: 3", "contract_version: 1")
 		.replace("## Labels\n\nnone\n\n", "");
 const withMargin = (text: string, ...lines: string[]) =>
 	`${text}\n## Margin\n\n${lines.join("\n")}\n`;
@@ -256,7 +256,7 @@ describe("precedent merge core", () => {
 		expect(reason(base, ours, base)).toBe("other-change");
 	});
 
-	test("a version 1 base and branch merge into a version 2 default branch", () => {
+	test("a version 1 base and branch merge into a version 3 default branch", () => {
 		const base = v1(page(row(1)));
 		const ours = v1(page(row(1), row(2, "ours")));
 		const theirs = page(row(1), row(2, "theirs"));
@@ -368,7 +368,7 @@ describe("precedent-merge command in process", () => {
 			out,
 		]);
 
-	test("a version 1 branch merges into a version 2 default branch", () => {
+	test("a version 1 branch merges into a version 3 default branch", () => {
 		const out = join(dir, "out.md");
 		const r = run(
 			v1(page(row(1))),

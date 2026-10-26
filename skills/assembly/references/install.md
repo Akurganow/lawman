@@ -80,7 +80,7 @@ Finds:
 - Where the chosen tool keeps its credential. Learn the place and never the value.
 - How the host keeps issues and their templates, and anything particular to this host.
 - For each host action the role skills name, how this machine does it with the chosen tool. That covers handing host data to the journal in its forms.
-- For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description.
+- For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
 - The verifier of Lawman's release, by the paragraph above.
 
 Proposes, as rows with their source. The rows are the notes, the recorded actions included.

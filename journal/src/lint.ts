@@ -33,7 +33,7 @@ const PAGE_HEADINGS: Record<PageKind, string[]> = {
 	department: DEPARTMENT_HEADINGS,
 };
 const PAGE_VERSION: Record<PageKind, string> = {
-	constitution: "2",
+	constitution: "3",
 	department: "1",
 };
 const isPageKind = (kind: string): kind is PageKind =>
