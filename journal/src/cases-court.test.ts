@@ -12,6 +12,7 @@ import {
 	T,
 	withLead,
 } from "./cases-fixture";
+import { inproc } from "./inproc";
 import {
 	acquittal,
 	addPrecincts,
@@ -123,12 +124,23 @@ describe("case: court stage", () => {
 	});
 });
 
-describe("case: referral", () => {
-	const referred = (...rest: string[]) =>
-		withLead(caseMark(), charge(), defence(), referral(), ...rest);
+const referred = (...rest: string[]) =>
+	withLead(caseMark(), charge(), defence(), referral(), ...rest);
+
+describe.each([
+	["cli", call],
+	["in process", inproc],
+])("case: referral answers (%s)", (_name, run) => {
+	const line = (issue: number) => {
+		const r = run(BASE, ["case", "main", String(issue)]);
+		expect(r.code).toBe(0);
+		return r.out.trim();
+	};
+	const need = (issue: number) => line(issue).split(" ")[0];
 
 	test("an unanswered referral needs nobody", () => {
-		expectNeed(referred(), "none");
+		put({ 1: referred() });
+		expect(need(1)).toBe("need=none");
 	});
 
 	test.each([
@@ -138,24 +150,21 @@ describe("case: referral", () => {
 	])("a referral answered %s needs the court", (value, id) => {
 		put({ 1: referred() });
 		answer(1, value, id);
-		const line = fields(1);
-		expect(line.need).toBe("court");
-		expect(line.answer).toBe(value);
-		expect(line.job).toBe("-");
+		expect(need(1)).toBe("need=court");
+		expect(line(1)).toContain(" job=- ");
+		expect(line(1)).toEndWith(` answer=${value} answer_id=${id}`);
 	});
 
-	test("a conviction after an answered referral needs the clerk", () => {
-		put({ 1: referred(conviction()) });
-		answer(1, "up");
-		expect(needOnly(1)).toBe("need=clerk");
+	test("a ruling after an answered referral needs the clerk", () => {
+		for (const ruling of [conviction(), acquittal()]) {
+			put({ 1: referred(ruling) });
+			answer(1, "up");
+			expect(need(1)).toBe("need=clerk");
+		}
 	});
+});
 
-	test("an acquittal after an answered referral needs the clerk", () => {
-		put({ 1: referred(acquittal()) });
-		answer(1, "down");
-		expect(needOnly(1)).toBe("need=clerk");
-	});
-
+describe("case: referral", () => {
 	test("a case reopened after an answered referral needs the prosecutor", () => {
 		put({ 1: referred(caseMark()) });
 		answer(1, "up");

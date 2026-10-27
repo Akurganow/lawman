@@ -11,6 +11,7 @@ import {
 	issues,
 	issuesForm,
 	mark,
+	minimalIssues,
 	rows,
 	SHA,
 	TRUSTED,
@@ -34,13 +35,7 @@ const fed = (stdin: unknown, args = ARGS) => {
 	}
 };
 
-const minimal = (n: number) =>
-	Array.from({ length: n }, (_, i) => ({
-		number: i + 1,
-		state: "OPEN",
-		createdAt: CREATED,
-		author: { login: TRUSTED },
-	}));
+const minimal = (n: number) => minimalIssues(n, CREATED);
 
 beforeEach(() => addPrecincts({ main: 1 }));
 

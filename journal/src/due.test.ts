@@ -3,6 +3,7 @@ import {
 	answer,
 	cache,
 	convicted,
+	dueIn,
 	dueOut,
 	handed,
 	human,
@@ -125,14 +126,17 @@ const expectP0First = (role: string, spec: string) => {
 	expect(due(role)).toBe("main\t8\n");
 };
 
-describe("due --role court: referrals", () => {
+describe.each([
+	["cli", due],
+	["in process", dueIn],
+])("due --role court: referrals (%s)", (_name, run) => {
 	const referred = () => withLead(caseMark(), charge(), defence(), referral());
 
 	test("an answered referral is a candidate and an unanswered one is not", () => {
 		put({ 1: referred(), 2: referred() });
-		expect(due("court")).toBe("");
+		expect(run("court")).toBe("");
 		answer(2, "comment", "IC_2_4");
-		expect(due("court")).toBe("main\t2\n");
+		expect(run("court")).toBe("main\t2\n");
 	});
 
 	test.each(["up", "down"])(
@@ -140,7 +144,7 @@ describe("due --role court: referrals", () => {
 		(value) => {
 			put({ 1: referred() });
 			answer(1, value);
-			expect(due("court")).toBe("main\t1\n");
+			expect(run("court")).toBe("main\t1\n");
 		},
 	);
 });

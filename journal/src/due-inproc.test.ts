@@ -1,35 +1,20 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
-	answer,
 	cache,
 	convicted,
-	dueOut,
+	dueIn,
 	handed,
 	human,
 	order,
 	put,
-	referral,
 	T,
-	withLead,
 } from "./cases-fixture";
 import { dueCommand } from "./due";
 import { captured, inproc } from "./inproc";
-import {
-	addPrecincts,
-	BASE,
-	caseMark,
-	charge,
-	defence,
-	lead,
-	seed,
-	tempDb,
-} from "./test-helpers";
+import { addPrecincts, BASE, lead, seed, tempDb } from "./test-helpers";
 
 tempDb();
 beforeEach(() => addPrecincts({ main: 1, side: 1 }));
-
-const dueIn = (role: string, ...exclude: string[]) =>
-	dueOut((args) => inproc(BASE, args), role, exclude);
 
 describe("due in process: issues", () => {
 	test("an issue without a lead is a clerk candidate", () => {
@@ -66,26 +51,6 @@ describe("due in process: issues", () => {
 			captured(BASE, () => dueCommand(["--role", "clerk", "--exclude"])).code,
 		).toBe(1);
 	});
-});
-
-describe("due in process: court referrals", () => {
-	const referred = () => withLead(caseMark(), charge(), defence(), referral());
-
-	test("an answered referral is a candidate and an unanswered one is not", () => {
-		put({ 1: referred(), 2: referred() });
-		expect(dueIn("court")).toBe("");
-		answer(2, "comment", "IC_2_4");
-		expect(dueIn("court")).toBe("main\t2\n");
-	});
-
-	test.each(["up", "down"])(
-		"a referral answered %s is a candidate",
-		(value) => {
-			put({ 1: referred() });
-			answer(1, value);
-			expect(dueIn("court")).toBe("main\t1\n");
-		},
-	);
 });
 
 describe("due in process: spec-writer", () => {

@@ -1,4 +1,5 @@
 import { expect } from "bun:test";
+import { inproc } from "./inproc";
 import {
 	BASE,
 	call,
@@ -150,6 +151,9 @@ export function dueOut(
 	expect(r.code).toBe(0);
 	return r.out;
 }
+
+export const dueIn = (role: string, ...exclude: string[]) =>
+	dueOut((args) => inproc(BASE, args), role, exclude);
 
 export const order = (role: string, issue: number, at: string, open = false) =>
 	seed((db) =>
