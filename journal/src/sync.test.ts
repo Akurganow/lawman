@@ -9,6 +9,7 @@ import {
 	issues,
 	issuesForm,
 	lead,
+	minimalIssues,
 	must,
 	rows,
 	run,
@@ -285,13 +286,7 @@ describe("sync", () => {
 	test("exactly the sync limit exits 3 and one fewer succeeds", () => {
 		sync(issues);
 		const before = snapshot();
-		const minimal = (n: number) =>
-			Array.from({ length: n }, (_, i) => ({
-				number: i + 1,
-				state: "OPEN",
-				createdAt: CREATED,
-				author: { login: TRUSTED },
-			}));
+		const minimal = (n: number) => minimalIssues(n, CREATED);
 		const r = sync(minimal(SYNC_LIMIT));
 		expect(r.code).toBe(3);
 		expect(r.err).toContain("the list may be truncated");

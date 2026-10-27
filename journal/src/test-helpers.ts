@@ -120,6 +120,15 @@ export function addPrecincts(weights: Record<string, number>): void {
 }
 
 export const TRUSTED = "octocat-lawman";
+
+// The smallest issues that sync accepts, numbered from 1.
+export const minimalIssues = (n: number, createdAt: string) =>
+	Array.from({ length: n }, (_, i) => ({
+		number: i + 1,
+		state: "OPEN",
+		createdAt,
+		author: { login: TRUSTED },
+	}));
 export const SHA = "0123456789abcdef0123456789abcdef01234567";
 export const AT = "at=2026-10-14T09:30:00Z";
 export const LEAD_ID = "src/a.rs::f::dead-code";
