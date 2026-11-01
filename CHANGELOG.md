@@ -4,6 +4,13 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.21.2 - 2026-11-01
+#### Miscellaneous Chores
+- remove INTENT.md (dd91055)
+
+- - -
+
+
 ## v0.21.1 - 2026-10-27
 #### Tests
 - run the referral cases through both runners and share the minimal issues (754ced8)
