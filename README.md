@@ -134,7 +134,7 @@ Identity: every role uses one account on the repository host, the one that the h
 - `skills/lawman-law/references/`: what every role shares. It holds the law, the contracts for constitutions and departments, and the marker grammar. It also holds the tick steps, the exhibit rules, the shared department pages and one page per harness.
 - `journal/`: the journal program, with its `package.json`, `bun.lock`, `tsconfig.json`, `biome.json`, `entitlements.plist` and `src/`.
 - `plugin.json` and `.claude-plugin/marketplace.json`: the manifests that make this repository an Agent Plugins package and a marketplace.
-- `docs/`: one page per concept of "How it works".
+- `docs/`: one page per concept of "How it works", and [the design page](docs/design.md) with the goals, the principles and the rejected alternatives.
 - `LAWMAN.md` and `.lawman/`: the constitution of Lawman itself and its own department page. Lawman is a precinct of itself.
 
 ## Development
