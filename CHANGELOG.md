@@ -4,6 +4,14 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.21.4 - 2026-11-01
+#### Documentation
+- limit the trusted files on the design page to the law's list (323c419)
+- add the design page with goals, principles and rejected alternatives (c87aee9)
+
+- - -
+
+
 ## v0.21.3 - 2026-11-01
 #### Documentation
 - state the update rule as a duty of the change (94cf6e8)
