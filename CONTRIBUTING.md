@@ -25,7 +25,7 @@ bun test
 
 ## Update the documentation
 
-Every change updates the documentation it affects in the same pull request.
+Every change updates the documentation it affects in the same pull request. A change that reverses a design decision also updates [the design page](docs/design.md). An open question goes to an issue.
 
 ## What CI runs
 
