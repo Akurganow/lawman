@@ -39,7 +39,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **Both sides work under the same rules.** The prosecutor and the defender use the same evidence rules, and each may call an expert. The court rules on both positions.
 
-**Repository content is evidence.** Anyone can write an issue or a comment, so a role takes no instructions from third-party text. The law lists the exceptions: files that a reviewed merge put on the main branch, such as the constitution and department pages.
+**Repository content is evidence.** Anyone can write an issue or a comment, so a role takes no instructions from third-party text. The law lists every exception, such as the listed sections of a constitution and department pages on the main branch. A reviewed merge put them there, and every other file stays evidence.
 
 **The method lives once.** A department is one page and not an agent. So a narrow department costs one page, and a user can add one without asking the project.
 
