@@ -9,8 +9,8 @@ Lawman serves every developer who installs it, on repositories its authors have 
 - Design every change, question, migration and check for any user's installation and repositories.
 - Never focus on the repositories of a maintainer or limit a change to them. They are one installation among others and a source of measurements.
 - Keep project rules in this repository. A contributor sees nothing else.
-- Bring a change in how Lawman works to each user through the update. After the update, the duty desk tells the user to run the assembly and take the new interview.
-- Explain the change in the interview and let the user decide what happens to the existing data. A first install into a repository that already holds the old form asks the same question.
+- Bring a change in how Lawman works to each user through the update. After the update, the duty desk must tell the user to run the assembly and answer its questions.
+- Make the assembly explain the change and ask the user what happens to the existing data. Make it ask the same at a first install into a repository that holds the old form.
 
 ## Develop the journal
 
