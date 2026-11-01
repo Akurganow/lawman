@@ -4,6 +4,14 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.21.3 - 2026-11-01
+#### Documentation
+- state the update rule as a duty of the change (94cf6e8)
+- require design for every user's installation (8a9e3de)
+
+- - -
+
+
 ## v0.21.2 - 2026-11-01
 #### Miscellaneous Chores
 - remove INTENT.md (dd91055)
