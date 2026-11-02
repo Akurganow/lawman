@@ -26,7 +26,7 @@ A page whose department can find a live secret names an `Alarm check:` paragraph
 
 ## Shared pages
 
-Lawman ships eleven shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has all eleven in its rotation with no line in its constitution.
+Lawman ships twelve shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has the others in its rotation with no line in its constitution. The page `licenses` is the exception.
 
 | Department | Subject |
 | :-- | :-- |
@@ -34,6 +34,7 @@ Lawman ships eleven shared pages in [departments/](../skills/lawman-law/referenc
 | `agent-config` | Files that configure agents and no longer describe one machine |
 | `claims` | Claims in published text that the tree does not bear out |
 | `dependencies` | A dependency whose state in the tree disagrees with the reason it is held that way |
+| `licenses` | Material whose license terms the project's license and its reach cannot honour, or that has no stated terms |
 | `logic` | Code that passes its checks and still computes the wrong result, crashes or corrupts state |
 | `privacy` | Code that takes user data further than the privacy promise allows, and promises the code no longer keeps |
 | `proportion` | Code and decisions out of proportion to their job |
@@ -43,6 +44,8 @@ Lawman ships eleven shared pages in [departments/](../skills/lawman-law/referenc
 | `vulnerabilities` | A dependency whose pinned version a catalog record names as affected |
 
 The page `vulnerabilities` has one kind, `advisory`. Its patrol sends the precinct's list of pinned packages to the OSV catalog through the journal, and a match with a catalog record is the finding. It runs only for a precinct that gave consent. It has its own count of open leads and its own cap, by the same table as the other pages. The `dependencies` page keeps its other kinds and no longer holds `advisory`. The `security` page hands known vulnerabilities of dependencies to `vulnerabilities`. See [the journal](journal.md#the-catalog-check) and [configuration](configuration.md#what-leaves-the-machine).
+
+The page `licenses` has three kinds: `conflict`, `unlicensed` and `unmet`. It is off by default. It is in a precinct's rotation only when `license_precincts` in `config.yaml` holds the whole token `<precinct>=yes`. A missing key or pair reads as no. Its finding is not critical and sends no signal to chat. In the paths of the Not judged section, the page looks only for signs of foreign material and statements of license. It judges nothing else there. The folder `licenses/` beside the page `licenses.md` holds its reading files, `reading.md`, `field.md` and `text.md`. The folder is not a page. The other pages stay where they are.
 
 A shared page uses no paths and no tool names of a specific repository, because many repositories read it.
 
@@ -66,7 +69,7 @@ The name is checked against `[a-z][a-z0-9-]*` before any path is built. The duty
 
 ## The rotation
 
-A department is in a precinct's rotation when its name meets one of two tests. A page with that name lies in Lawman's `departments/`, or a line of the precinct's Departments section names it. The duty desk never lists a page in the installation or in the precinct that neither test admits.
+A department is in a precinct's rotation when its name meets one of two tests. A page with that name lies in Lawman's `departments/`, or a line of the precinct's Departments section names it. The name `licenses` also needs the whole token `<precinct>=yes` in `license_precincts` when it resolves to the Lawman page. The duty desk never lists a page in the installation or in the precinct that neither test admits.
 
 The duty desk picks the department for each patrol order.
 

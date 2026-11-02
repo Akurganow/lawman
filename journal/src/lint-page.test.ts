@@ -82,7 +82,7 @@ describe("lint-page", () => {
 	});
 
 	const expectPagesPass = (dir: string) => {
-		for (const file of readdirSync(dir)) {
+		for (const file of readdirSync(dir).filter((f) => f.endsWith(".md"))) {
 			const text = readFileSync(join(dir, file), "utf8");
 			const name = file.slice(0, -".md".length);
 			expect(lintPage("department", text, name).reasons).toEqual([]);

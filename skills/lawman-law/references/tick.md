@@ -41,6 +41,10 @@ Never do these:
 - Run any file other than the asset that step 4 verified.
 - Continue the tick after a stop.
 
+**The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
+
+The list has one entry, `licenses`. It applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
+
 A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The next tick tries again.
 
 ## Working rules
@@ -221,9 +225,9 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
-3. Answer. Print every `ALARM` line verbatim first. Then:
+3. Answer. Print every `ALARM` line verbatim first. Then print every line of the update list that the tick kept. Then:
    - For `failed`, add the report.
-   - With an `ALARM` line, never answer the silence form.
+   - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form that the harness page names, alone. The journal holds the report.
 
 ## Alarm

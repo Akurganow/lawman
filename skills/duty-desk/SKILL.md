@@ -154,7 +154,9 @@ Bring the clone `precincts/<name>` up to date with the repository on the host. D
 
 ### Step 6: List the departments
 
-The precinct's departments are the shared department pages plus the precinct's lines from step 5.3. A shared department page is a file in `lawman/skills/lawman-law/references/departments` whose name ends in `.md`. Its department name is the file name without that suffix.
+The precinct's departments are the shared department pages plus the precinct's lines from step 5.3. A shared department page is a file in `lawman/skills/lawman-law/references/departments` whose name ends in `.md`. Its department name is the file name without that suffix. A folder beside a page, which holds the links of that page, is not a page and not a department name.
+
+The page `licenses` is the one exception: step 8 skips it without consent.
 
 Send each department name to `rotation` on standard input, one name per line: the shared pages first, then the precinct's lines. Send them through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first seven characters of the sha>`. Before you send, check that no name equals the delimiter. If one does, end with `failed`.
 
@@ -171,6 +173,8 @@ Each output line is `<department><TAB><at><TAB><cap>`. The list is in rotation o
 Walk the printed list from top to bottom. For each name run step 8. Take the first name whose page passes and whose cap is above zero, or whose check printed `alarm-check`. Keep it as `<d>` and go to step 9.
 
 A name is capped when its page passes, its cap is 0 and its check printed no `alarm-check`. Skip a capped name and put nothing into Blockers for it. A bad page is skipped for this tick and named in Blockers, whatever its cap.
+
+A name that step 8 skipped for a missing consent counts as a name with a zero cap, whatever its check printed. It is not a bad page.
 
 When the list ends with no name and at least one name was capped, go back to step 3 and exclude this precinct. When the list ends with no name and none was capped, end with `skipped-bad-department`.
 
@@ -193,6 +197,14 @@ bin/journal lint-page department --name <d>
 - No location holds the file: the page is bad.
 - Any other exit ends with `failed`.
 
+When the name is `licenses` and the page is the law clone page (location 3), read `license_precincts` from `config.yaml` before step 7 takes the name.
+
+- Consent is the whole token `<precinct>=yes`, split on spaces.
+- No file, no key or no pair for the precinct means no consent. That is not `failed`.
+- Without consent, skip the name for this tick. Write no order and no visit, and put nothing into Blockers.
+- A `licenses` page at location 1 or 2 needs no consent.
+- A name from the shared list and a name from a line of the constitution follow the same rule.
+
 A bad page does not end the tick. Put its name and the first line of the reason into Blockers. Take the next name in the list and run this step again. When the list is exhausted, step 7 decides how the walk ends.
 
 ### Step 9: Write the order
@@ -213,10 +225,10 @@ The answer is the last text you write. The full report never goes into it.
 Build the answer from these rules:
 
 - If the tick stopped or failed, write one line `<outcome>: <reason>` first. A probe failure writes its line from step 0.1 instead.
-- Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim.
+- Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim. Then write every line of the update list that the sync printed, one per line, verbatim.
 - If neither applies, write the silence form that the harness page names, alone. The journal holds the report.
 
-Never write the silence form together with an `ALARM` line or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.
+Never write the silence form together with an `ALARM` line, a line of the update list or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.
 
 ## Report
 

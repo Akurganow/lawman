@@ -30,6 +30,8 @@ You may add your own `##` section to `LAWMAN.md`: among the listed sections, bef
 
 The check rejects a file in which a listed heading is missing or stands twice. The order of the sections does not matter. The check does not read an unknown section. `bin/journal lint-page constitution` prints each one as a line that starts with `#`, and the assembly shows it to you.
 
+The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 3. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
+
 ## What it must not hold
 
 - The restated contents of a file. Give the path and stop.
@@ -37,7 +39,7 @@ The check rejects a file in which a listed heading is missing or stands twice. T
 - A tool name in prose where a path would do.
 - Anything about the owner's machine, keys or accounts.
 
-Three per-precinct settings live outside the constitution for this reason: the weight, which [departments](departments.md#the-rotation) explains, the Jev pair and the catalog pair, which [configuration](configuration.md) explains. The catalog pair comes with the reading way of the precinct's dependencies, which lives in the host notes.
+Four per-precinct settings live outside the constitution for this reason. The weight is explained in [departments](departments.md#the-rotation). The Jev pair, the catalog pair and the license pair `license_precincts` are explained in [configuration](configuration.md). The catalog pair comes with the reading way of the precinct's dependencies, which lives in the host notes. The license pair comes with the entry under `## License reading` in the host notes. The `licenses` page is in the rotation of a precinct only when `license_precincts` holds the whole token `<precinct>=yes`.
 
 ## How the assembly writes it
 
@@ -48,6 +50,7 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 - It fills each section except Departments and Labels with paths and short facts.
 - It asks which label tells a person that an issue waits for them, and which other labels matter. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
 - It writes `none` where nothing applies.
+- It adds the section `## Licenses` to the same draft when you answer yes to the license question for the precinct.
 - It drops each line whose path is missing.
 - It proposes the sections and the judging documents of the shared departments in one proposal. You keep, change or add lines. The proposal notes that "Add a department" follows the merge.
 - It checks the draft with `bin/journal lint-page constitution`.
@@ -68,6 +71,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 - **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. The sections that the contract added or changed appear as rows of the proposal. A section of yours that the new contract lists, such as `Labels`, becomes the listed section and keeps its lines. Merge the pull request to bring the precinct back. While it stays unmerged, the precinct stays stopped. A hand edit of the file also brings it back. The order for an existing installation is in the README section [Update](../README.md#update).
 
   Version 3 also touches the owner-attention label. When its line carries exactly the old purpose, the amendment replaces it with the new one. The proposal then shows a row that sets the new description of the label on the host. The write follows the pull request, after your approval. Any other purpose text stays your words.
+- **The assembly amends the license facts.** For an existing constitution, the assembly opens a pull request from the branch `lawman/licenses-sources`. It checks the file with `bin/journal lint-page constitution`. After the edit, the diff changes only the section `## Licenses`. A merge by you may narrow `sources` or change `use`, and the assembly asks no question about it.
 - **The court adds precedents.** A ruling may carry one line in its Precedent section. The clerk assigns the number, adds the link to the ruling comment and opens a pull request. The number is one more than the highest in the section, and the first is 1. Numbers never repeat. A precedent binds the roles only after you merge its pull request.
 
 A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.

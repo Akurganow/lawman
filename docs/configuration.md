@@ -23,10 +23,11 @@ The file holds plain `key: value` lines. There is one line per key and no nestin
 - The action record: for each host action that the role skills name, how this machine does it with the chosen tool. That includes handing host data to the journal in its forms. `journal form` prints them.
 - The verifier of Lawman's release, or the record that you declined one.
 - The section `## Dependency reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the catalog check. The words say which dependencies to check, where they are listed and by what way they are read, or `none` when the precinct lists no dependencies. You and the assembly agree the line when the precinct joins or when the assembly asks for the missing answer. The way never runs code of the precinct or a tool that the precinct configures. The patrol reads the line and checks only what it names. A precinct that said yes and has no line gets no check. Rewriting the notes in part Host keeps every line of this section.
+- The section `## License reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the license question. Nested lines under it hold the blocks of the agreed license sources, which the assembly copies word for word from the file of each row. You see the whole entry before the assembly writes it. The entry says, for each ecosystem of the precinct, whether its lock records the license and which sources are agreed, in order. It also keeps the rows you refused and the number of pins a tick may read. It holds `none` when nothing is agreed. Rewriting the notes in part Host keeps every line of this section too.
 
 The menu item "Host" runs the part again, for a change of tool. It never changes `trusted_login`. See [the journal](journal.md#where-it-comes-from).
 
-## The fourteen keys
+## The fifteen keys
 
 ```
 harness: hermes
@@ -41,6 +42,7 @@ typesafe_precincts: none
 typesafe_key: none
 catalog: no
 catalog_precincts: none
+license_precincts: none
 contract_version: 3
 amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 ```
@@ -61,14 +63,15 @@ Every value above is a placeholder. `hermes` is the name of the one shipped harn
 | `typesafe_key` | The place where the assembly found the TypeSafe API key, or where you will put it, in words. `none` when TypeSafe is off. Never the value. | The assembly at install, or `law-sync` as a default |
 | `catalog` | `yes` or `no`. Whether the patrol may check the dependencies of a precinct against the OSV catalog. An absent key reads as no. | The assembly at install, or when it asks the missing answer |
 | `catalog_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the patrol may send the precinct's packages. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
+| `license_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the `licenses` department is in the rotation and may read a license source. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
 
 ## Who writes it
 
-The assembly writes the file at install. It writes `config.yaml` with the fourteen keys and reads it back. If a key is missing or empty, it stops.
+The assembly writes the file at install. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops.
 
-After a plugin update, the next tick of any role completes the update. The role downloads the journal of the new release and verifies it. Then it runs the `law-sync` command of that file. The command writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key` and `amended_law_commit`. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. It does not fill `catalog` or `catalog_precincts`. Only the assembly writes them, because only you can consent.
+After a plugin update, the next tick of any role completes the update. The role downloads the journal of the new release and verifies it. Then it runs the `law-sync` command of that file. The command writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key` and `amended_law_commit`. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 
@@ -78,15 +81,52 @@ The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, i
 
 The assembly sets `catalog_precincts` per precinct in the same way, when `catalog` is `yes`. It then agrees the reading way with you for each precinct that said yes. An installation that predates the keys has neither. Run the assembly: it sees the missing answer and asks only that. A skip writes `no`. A cancel or a timeout writes nothing, so the question returns at the next start. No role stops for a missing key, and no alarm or chat message goes out.
 
+The assembly sets `license_precincts` per precinct in the same way. It also writes the section `## Licenses` of the constitution. For an existing constitution it opens a pull request from the branch `lawman/licenses-sources`. For a precinct without one, the section goes into the draft of the same pull request. See [constitution](constitution.md).
+
+After an update, the tick that synced the law prints one line, `Licenses: run the Lawman assembly and answer the license question for <precinct names>.` It names each precinct that has weight and no pair in `license_precincts`. A yes or a no removes the line.
+
 ## What leaves the machine
 
-Roles read no network. The catalog check is the one exception for the patrol, and the record read is the one for the investigation. Both are off until you say yes.
+Roles read no network. Three exceptions exist: the catalog check of the patrol, the record read of the investigation and the license reading of both. All are off until you say yes.
 
 - The patrol sends the names and versions of the pinned packages of a precinct, with their ecosystems, to the OSV service at `api.osv.dev`. It does so for a private repository too. The paths of your tree do not leave.
 - The investigation sends one record identifier to the same service for a lead of the catalog check.
 - The service sees the address of the installation that sends.
 - The list leaves again at every visit of the department, even when the tree did not change, because the catalog changes without a commit.
 - Lawman states nothing about how the service keeps what it receives.
+- A license source gets only what the file of its row names, at every visit, and sees the address of the installation. The patrol and the investigation read a license source only when three things hold. The precinct said yes in `license_precincts`. Its entry under `## License reading` agrees the row. Its section `## Licenses` has no `sources` line, or has one that names the row and is not `none`. A `sources` value outside its form reads as `none`. The assembly sends one request for a public sample package of each offered row during the live read. A row that reads several hosts gets one for each host the pins use, six at most. These requests carry no data of the project. Its User-Agent names Lawman's own release, taken from `release_repo`, and never the repository of the precinct.
+- An expert may receive a license identifier or a quote of a clause. It never receives a package name or a path.
+
+The rows, each with the file that says what it receives:
+
+- [`deps-dev`](../skills/assembly/references/license-sources/deps-dev.md)
+- [`pypi-json`](../skills/assembly/references/license-sources/pypi-json.md)
+- [`npm-registry`](../skills/assembly/references/license-sources/npm-registry.md)
+- [`crates-io`](../skills/assembly/references/license-sources/crates-io.md)
+- [`rubygems`](../skills/assembly/references/license-sources/rubygems.md)
+- [`nuget-spec`](../skills/assembly/references/license-sources/nuget-spec.md)
+- [`packagist`](../skills/assembly/references/license-sources/packagist.md)
+- [`hackage`](../skills/assembly/references/license-sources/hackage.md)
+- [`crandb`](../skills/assembly/references/license-sources/crandb.md)
+- [`metacpan`](../skills/assembly/references/license-sources/metacpan.md)
+- [`vcpkg`](../skills/assembly/references/license-sources/vcpkg.md)
+- [`luarocks`](../skills/assembly/references/license-sources/luarocks.md)
+- [`clojars`](../skills/assembly/references/license-sources/clojars.md)
+- [`opam`](../skills/assembly/references/license-sources/opam.md)
+- [`elm`](../skills/assembly/references/license-sources/elm.md)
+- [`jsr`](../skills/assembly/references/license-sources/jsr.md)
+- [`cocoapods`](../skills/assembly/references/license-sources/cocoapods.md)
+- [`debian`](../skills/assembly/references/license-sources/debian.md)
+- [`ubuntu`](../skills/assembly/references/license-sources/ubuntu.md)
+- [`clearly-defined`](../skills/assembly/references/license-sources/clearly-defined.md)
+- [`conda-forge`](../skills/assembly/references/license-sources/conda-forge.md)
+- [`revision-file`](../skills/assembly/references/license-sources/revision-file.md)
+- [`software-heritage`](../skills/assembly/references/license-sources/software-heritage.md)
+- [`hex`](../skills/assembly/references/license-sources/hex.md)
+- [`homebrew`](../skills/assembly/references/license-sources/homebrew.md)
+- [`nimble`](../skills/assembly/references/license-sources/nimble.md)
+- [`pub-dev`](../skills/assembly/references/license-sources/pub-dev.md)
+- [`conan`](../skills/assembly/references/license-sources/conan.md)
 
 ## Who reads it
 
@@ -96,6 +136,7 @@ Ticks read the keys they need.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The patrol reads `catalog`, `catalog_precincts` and the precinct's line under `## Dependency reading` in `host.md`. The check runs only when `catalog` is exactly `yes`, the precinct pair is `yes` and the line names a way. Otherwise the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
+- The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
 
 See [the pipeline](pipeline.md) for the checks that open every tick.

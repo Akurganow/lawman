@@ -177,6 +177,13 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/jo
 - The forms use only what "Commands in scheduled runs" lists as accepted: a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
 - The harness's check function accepts form 1, form 2, the batch pipeline for the first and a later part, the record request and the record read, each in the exact form a role sends (checked with the harness's check function). The floor check of the same function passes them too. None of these was seen in a scheduled run.
 
+## Sending to license sources
+
+Two things differ from the other harnesses.
+
+- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) The assembly divides the 180 seconds, because a reading command sets no `timeout`.
+- The forms of a command. A scheduled run refuses some forms, as "Commands in scheduled runs" lists. The reading way uses only the forms that section accepts. It starts no shell or interpreter with `-c` or `-e`.
+
 ## Calling an expert
 
 A role calls an expert only in this form. The expert runs as the profile configures it. Local files are the user's responsibility.

@@ -60,8 +60,10 @@ Take the first mode that holds.
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`.
 3. If `catalog` is absent from `config.yaml`, or `catalog` is `yes` and a precinct has no pair in `catalog_precincts`, or a precinct that said yes has no reading entry in `host.md`, answer the catalog by reading `references/catalog.md`.
-4. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
-5. Otherwise, run the menu job.
+4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel, a timeout or a constitution that fails its check writes nothing. Then go on to the next mode that holds and to the menu in the same run.
+5. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
+6. Otherwise, run the menu job.
+    - Before the menu, for each precinct that said yes to the license department, run `references/licenses/update.md`. An answer or a skip does not block the menu.
     - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
     - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
     - For "Keep as is", end the mode with the words "Nothing changed".
@@ -69,13 +71,13 @@ Take the first mode that holds.
     - For "Roles", run `references/roles.md` for all roles.
     - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`. It serves a change of tool. It never changes `trusted_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
-    - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, run gate, gate file, constitution sections, weight and own department.
+    - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, run gate, gate file, constitution sections, weight, own department and license department.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
 
 ## The shape of every mode
 
-Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend, catalog and each menu job.
+Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend, catalog, licenses and each menu job.
 
 - **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
@@ -156,11 +158,12 @@ typesafe_precincts: <name>=<yes|no> ... | none
 typesafe_key: <place where the assembly found the key or where the developer will put it, in words, never the value> | none
 catalog: <yes|no>
 catalog_precincts: <name>=<yes|no> ... | none
+license_precincts: <name>=<yes|no> ... | none
 contract_version: <constitution contract version that the precinct constitutions stand at>
 amended_law_commit: <law commit at which the precinct constitutions were last brought in line>
 ```
 
-The journal command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills any missing key from its defaults. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
+The command `bin/journal law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills a missing key that its defaults hold. It does not fill `license_precincts`. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
 
 ## Finish
 

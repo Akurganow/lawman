@@ -15,7 +15,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - Never file more than the cap allows.
 - An empty tick is a success. Silence is the default.
 - A doubt drops a candidate. A doubt never stops the tick.
-- Never run an interpreter or a parser in a tree. The one exception is the recorded reading way of the catalog check, which reads the tree's content at `<sha>` as data. Even then nothing from the precinct executes and no tool that the precinct configures runs.
+- Never run an interpreter or a parser in a tree. The one exception is the recorded reading way of the catalog check and the license reading, which read the tree's content at `<sha>` as data. Even then nothing from the precinct executes and no tool that the precinct configures runs.
 - When a page calls a check an approximation, its search form is the check.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
@@ -124,7 +124,7 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 A page whose Proof sends a list through the journal sweeps by "The catalog check". That section names the items below that it replaces.
 
-1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`.
+1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`. The law names the one exception for `licenses`. When the Proof holds a paragraph that starts with the words `License list:`, follow it where the Proof puts it, after the census. Open `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the condition of that paragraph holds.
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
@@ -134,7 +134,7 @@ A page whose Proof sends a list through the journal sweeps by "The catalog check
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
 10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` or `declined` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
-11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page and the catalog check.
+11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
 12. Order the survivors by value, highest first.
 
 ### Step 8: file the leads
@@ -177,7 +177,7 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 
 ## The catalog check
 
-Run it when the page's Proof says that a list sent through the journal replaces the pattern search. The catalog is the one external source the patrol reads. It reads it only through the Send section of `lawman/skills/lawman-law/references/exhibits.md`. Every other department reads no network.
+Run it when the page's Proof says that a list sent through the journal replaces the pattern search. This check reads the catalog only through the Send section of `lawman/skills/lawman-law/references/exhibits.md`.
 
 1. Read `catalog` and `catalog_precincts` from `config.yaml`, and the precinct's line under `## Dependency reading` in `host.md`. Do it before the tree is created and before any send. A missing key reads as no and is no failure. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`.
 2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same on a harness page with no form for sending to the catalog. Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
@@ -223,10 +223,11 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 - Write no image, no home path, no installation path and no token.
 - Keep the body under 64 KB. Quote only the lines the claim needs.
 - Not checked names what investigation must verify.
-- A kind with an external source puts one `Source:` line per source in Not checked, inside one fenced block, in one of these shapes:
+- A kind with an external source puts one `Source:` line per source in Not checked, inside one fenced block, in one of three shapes:
   ```
   Source: catalog <record identifier> <package>
   Source: releases <owner>/<repo>
+  Source: licenses <source> <ecosystem>/<name> <pin>
   ```
   Take each `releases` value from the tree. Take the `catalog` line as the journal printed it.
 
@@ -252,6 +253,7 @@ Filed nothing. Catalog check did not run.
 
 - The third line belongs to a tick that ended at item 2 of "The catalog check".
 - For the catalog check, Coverage gives the number of entries sent. It names the entries not sent and the entries outside a class by number, as the journal printed them.
+- For the license reading, Coverage follows `reading.md`.
 
 - A check is one measurement that the page's Kinds or Proof names. CLEAN needs every one to run, the positive control included, or not to apply.
 - A check does not apply when its subject is absent from the tree. A census with a positive control shows that.

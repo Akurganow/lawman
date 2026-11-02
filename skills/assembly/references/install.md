@@ -70,6 +70,8 @@ Name the `<owner>/<repo>` of item 2 `release_repo`.
 
 In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
 
+Part Host keeps every line of the section `## License reading` of an existing `host.md` too. An item of that section has nested lines for its blocks. The license questions write it.
+
 Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. When no tool fits, ask whether the user wants to install one, and offer choices that fit this machine. Apply installs the chosen tool. The user may decline. Then say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing, and record the refusal in the notes.
 
 Finds:
@@ -209,7 +211,7 @@ Apply starts after the approval of round one.
 
 ### Write the host notes
 
-Write `<installation>/host.md` as the approved Host rows show, by the head of "Host". Read the existing `host.md` first. Carry every line of its section `## Dependency reading` over unchanged into the new file.
+Write `<installation>/host.md` as the approved Host rows show, by the head of "Host". Read the existing `host.md` first. Carry every line of its sections `## Dependency reading` and `## License reading` over unchanged into the new file.
 
 ### Install a verifier
 
@@ -237,9 +239,9 @@ At install, also confirm that the verifier rejects a changed copy of the binary.
 1. Read the commit that the law folder holds.
 2. Record that commit as `law_commit`.
 3. Read `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, and record it.
-4. Write `<installation>/config.yaml` with the fourteen keys listed in `SKILL.md`.
+4. Write `<installation>/config.yaml` with the fifteen keys listed in `SKILL.md`.
 5. Take `trusted_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe, and `catalog` from Catalog.
-6. Write `typesafe_precincts` and `catalog_precincts` as none.
+6. Write `typesafe_precincts`, `catalog_precincts` and `license_precincts` as none.
 7. Write `amended_law_commit` equal to `law_commit`.
 8. Read the file back, and stop if a key is missing or a value is empty.
 

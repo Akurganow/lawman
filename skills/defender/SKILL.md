@@ -113,7 +113,7 @@ A related issue is evidence of the case, never a reason to close it.
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path up to `<sha>`: the short hash and the subject of each commit that touched it.
 3. Search the tree at `<sha>` for the callers and tests of each symbol the charge names. Search also each place that the charge's `## Risk` names. Use a pattern from the charge only through the heredoc form.
-4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit.
+4. A command output quoted in the case or the charge counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that the law's Evidence section names is an exhibit too.
 5. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 6. A path that the case reports missing in its Not established section:
    - Re-read the commit that the case names, with item 2 of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.

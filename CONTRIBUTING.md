@@ -9,7 +9,8 @@ Lawman serves every developer who installs it, on repositories its authors have 
 - Design every change, question, migration and check for any user's installation and repositories.
 - Never focus on the repositories of a maintainer or limit a change to them. They are one installation among others and a source of measurements.
 - Keep project rules in this repository. A contributor sees nothing else.
-- Bring a change in how Lawman works to each user through the update. After the update, the duty desk must tell the user to run the assembly and answer its questions.
+- Bring a change in how Lawman works to each user through the update. After the update, the tick that synced the law must tell the user what to do, from the list in the section "Sync the law", and the assembly must explain it.
+- Ship law before code. Put code in the journal only for what must be safe and reliable, such as the cleaning of foreign text. Do not turn a rule into code before an error of the role is measured.
 - Make the assembly explain the change and ask the user what happens to the existing data. Make it ask the same at a first install into a repository that holds the old form.
 
 ## Develop the journal

@@ -2,7 +2,7 @@
 
 Lawman runs inside an agent harness, on that harness's own schedule. This page records the layout that lets one package serve every harness. It also records the facts that shaped the layout and the steps that add a harness.
 
-Hermes Agent is the only supported harness today. Seven more are planned. This page keeps their facts so that a change made for one harness does not break another.
+Lawman supports every harness of the set. Hermes Agent is the first one run, because the project is in development, and that is a stage and not a goal. Seven more follow. This page keeps their facts so that a change made for one harness does not break another.
 
 ## How to read the marks
 
@@ -23,7 +23,7 @@ One package serves every harness. The root of the repository holds no file that 
 
 - A file that one harness needs and the others do not read stays out of the root.
 - The law and the skills name no harness and no tool. They say what must happen.
-- The commands of one harness live on that harness's page under `skills/lawman-law/references/harnesses/`. That includes the send forms: the fixed commands that carry a request, which the journal built, to the catalog and hand its reply back.
+- A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine, such as the read of a license source, is recorded in `host.md` and not on a page. A page records only how its harness differs from the others.
 - The setup is the skill `assembly` on every harness. The user starts it from a chat. The package adds no command, hook or install script that runs it.
 
 ## The layout that serves the set

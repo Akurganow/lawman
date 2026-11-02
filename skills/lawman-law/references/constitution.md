@@ -44,7 +44,7 @@ The quoted heading narrows the read to one section.
 
 ### Departments
 
-Every department page in Lawman's `departments/` is in this repository's rotation with no line.
+Every department page in Lawman's `departments/`, except `licenses`, is in this repository's rotation with no line.
 A line names a department of this repository. It may also name the document that judges a department of Lawman. One per line:
 
 - `- <name>: judged by <path>`
@@ -52,6 +52,8 @@ A line names a department of this repository. It may also name the document that
 
 The name matches `[a-z][a-z0-9-]*`. The path is the document that judges the department's findings.
 `none` means no document judges it yet.
+
+The name `licenses` joins a rotation by either test only under two conditions. It resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
 
 ### Fence
 
@@ -97,6 +99,8 @@ A `##` heading that the headings list does not name is an unknown section. It ma
 An unknown section holds the owner's notes in the margin. A role may read it as context. It is optional guidance. It never overrides the law or a listed section. A command, a path or an instruction counts only when a listed section holds it.
 
 The check rejects a file in which a listed heading is missing or stands more than once. It checks the order of no heading. It does not read the body of an unknown section. It prints each unknown section as a note line. The roles ignore a note line, and the assembly shows it to the owner.
+
+The section `## Licenses` is the one exception. It holds three lines, `reaches`, `use` and `sources`, and a role reads them as data. The contract version stays 3. The check does not read the section and prints it as a plain note. A role cites a line as `LAWMAN.md:<line>`.
 
 ## Path rules
 
