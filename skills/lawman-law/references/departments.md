@@ -44,15 +44,17 @@ quote or count to show the kind. A kind names a symptom, never a tool.
 
 A kind that rests on an external source names its hook in the tree. The hook is
 the tree text that makes the source worth reading. Such a kind also names the
-`Source:` line its lead carries, in one of these two shapes:
+`Source:` line its lead carries, in one of these three shapes:
 
 - `Source: catalog <record identifier> <package>`: a record of the catalog and
   the package it names.
 - `Source: releases <owner>/<repo>`: the releases of one repository.
+- `Source: licenses <source> <ecosystem>/<name> <pin>`: the record of one pinned release in a source of licenses.
 
 The value of a releases line comes from the tree. Investigation checks it
 against the "Source values" table of `exhibits.md` before it reads the source.
 The classes of the catalog line live in the journal, which checks them.
+The values of a licenses line pass the classes of the same table before the read.
 
 A kind that rests on a source command names that command in its measurement.
 
@@ -67,6 +69,7 @@ and tools.
 the Fence, Not judged and every recorded reason. It also states
 the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed.
+The page `licenses` is the one exception to Not judged. It reads such paths only for signs of foreign material and statements of license.
 
 **Proof.** The commands that show each kind. A positive control: the same
 command run on a unit known to be in use, with both outputs quoted. The classes
@@ -118,8 +121,12 @@ tests:
 - A page with that name lies in Lawman's `departments/`.
 - A line of the precinct's Departments section names it.
 
+The name `licenses` joins a rotation by either test only under two conditions. It resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
+
 A page in the installation or in the precinct that neither test admits is not in
 the rotation. Name resolution then decides which page answers the name.
+
+A folder `departments/<name>/` may lie beside the page `departments/<name>.md` and hold its linked files. The folder is not a page and joins no rotation.
 
 ## Name resolution
 
