@@ -16,11 +16,11 @@ Host terms of raw.githubusercontent.com read as unclear: the acceptable use poli
 
 ## Traps
 
-Stated as "Microsoft's best understanding". `null` sends the reader to the copyright file. Custom registries do not fit. An old port can have no `license` key, which is absent, not null. Largest reply seen: 17 586 bytes.
+Stated as "Microsoft's best understanding". `null` sends the reader to the copyright file. Custom registries do not fit. A `version>=` constraint in the manifest of a dependency can raise the version above the baseline, and the tree does not show it. Read 2026-11-02. An old port can have no `license` key, which is absent, not null. Largest reply seen: 17 586 bytes.
 
 ## Fits when
 
-`vcpkg.json` names a baseline of the default registry. Read 2026-11-01.
+`vcpkg.json` names a baseline of the default registry, and the manifest sets no `overrides` entry and no `version>=` constraint for the port. Read 2026-11-02.
 
 ## Entry block
 
@@ -29,7 +29,7 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Source: vcpkg. Level: version. A finding rests on it: yes.
 - Pin carries: port name, baseline commit hash.
 - Request: GET https://raw.githubusercontent.com/microsoft/vcpkg/{baseline}/ports/{name}/vcpkg.json
-- Values: `{baseline}` passes the commit hash form of the class `<pin>`. Any other pin does not fit this row. `{name}` passes the class `<name>` of a `licenses` line.
+- Values: `{baseline}` passes the commit hash form of the class `<pin>`. Any other pin does not fit this row. A port that the manifest lists in `overrides` or names with a `version>=` constraint is `not-covered`. The manifest selects a version that the baseline may not hold. `{name}` passes the class `<name>` of a `licenses` line.
 - Key of the reply: `name`. It must equal the port name.
 - Take: the field `license`. When it is absent or `null`, the answer is `no-field`.
 - Reply form: JSON object
