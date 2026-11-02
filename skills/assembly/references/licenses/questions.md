@@ -13,7 +13,7 @@ No role stops for a missing answer. The patrol reads a missing answer as no. Thi
 3. A precinct is open when it has no pair in `license_precincts`.
 4. A precinct that said yes is open when its section `## Licenses` at the tip of the default branch has no `use` line. It is also open when a fitting row has no recorded answer in its entry under `## License reading`, as `references/licenses/update.md` says.
 5. A precinct whose open pull request of Lawman already carries the `use` line is not open for the use question. Show the link and ask nothing.
-6. A precinct whose page `licenses` sits in `.lawman/departments/` at the tip of its default branch, or in `departments/` of the installation, is never asked. Its answer is `no`.
+6. A precinct whose page `licenses` sits in `.lawman/departments/` at the tip of its default branch, or in `departments/` of the installation, is never asked. Its answer is `no`. That answer does not depend on the check of the constitution.
 7. For each open precinct, fetch the latest state into `precincts/<precinct name>`. Skip the precinct if the fetch fails, and say why.
 8. Check its constitution, and read its statements and signs, as "The license questions" says.
 
@@ -136,6 +136,7 @@ Signs of use that point to one value recommend that value. No sign recommends `u
     - A row that reads a file at a revision fits only when the address stands on a host of the host table in its file.
     - A row keyed by a hash fits only when the entry carries a commit hash or a tree hash.
     - A row that takes a repository address fits only on the host that its "Fits when" names.
+    - The pin carries every field that the `Pin carries` line of the row names.
 4. A manifest with ranges and no pin confirms no row. Say so in one line of the offer.
 5. Offer no container image, no range, no ecosystem without a row and no row that the reference removed. Name each ecosystem with no fitting row in the offer. It is no question, and the patrol counts it `not-covered`.
 6. Before the offer, read each fitting row once on its public sample. Take the sample and the expected value from the section "Live sample" of the file of the row. The request is the one the block of the row describes.
@@ -144,13 +145,15 @@ Signs of use that point to one value recommend that value. No sign recommends `u
 
 > The assembly found no way on this machine to take the license value from the reply of this source, so the row is not written.
 
-9. Count the pins per visit for each row. Take the time limit of a command from the harness page. When the page gives none, take 120 seconds (not verified). Divide it by the time of one pin and round down.
-    - The time of one pin is the "Requests per pin" of the block times the larger of two values. One is the interval of the pace of the block. The other is the time of the request in the live reading.
-    - A row that states no pace uses the time of the request alone.
-    - A batch row sends the batch of its block as one request.
+9. Count the pins per visit for each row. Take the time limit of a command from the harness page. When the page gives none, take 120 seconds (not verified).
+    - The time of one request is the larger of two values. One is the interval of the pace of the block. The other is the time of the request in the live reading.
+    - A pace of `n` requests per `t` seconds is an interval of `t/n` seconds.
+    - One request for each pin: divide the limit by the "Requests per pin" times the time of one request. Round down.
+    - A batch row: divide the limit by the time of one batch and round down. One batch costs its requests per batch times the time of one request. Multiply the result by the pins per request.
+    - A row of one file for each tick: every pin of the visit counts when one request fits the limit.
     - When the limit or the time of the request is missing, count no number. The row is not written, and the offer names the reason.
 10. Order the offer. The first fitting row of an ecosystem comes first. Every later row of that ecosystem is a second source. Inside both groups keep the order of the index.
-11. Write one text for each row: `<recipient> receives <fields>.` Take the recipient from the file of the row. Take the fields from the "Pin carries" and "Request" lines of its block. Add `path:line` of the file that showed the row fits. Add the pins per visit. Add this sentence, where `<n>` is the "Requests per pin" of the block: "Each pin costs up to `<n>` requests at every visit."
+11. Write one text for each row: `<recipient> receives <fields>.` Take the recipient from the file of the row. Take the fields from the "Pin carries" and "Request" lines of its block. Add `path:line` of the file that showed the row fits. Add the pins per visit. Add one sentence from the block. With one request for each pin, `<n>` is the "Requests per pin": "Each pin costs up to `<n>` requests at every visit." For a batch row, `<p>` is the pins per request: "Each request carries up to `<p>` pins, and each batch costs one request at every visit." For a row of one file: "One request serves all pins at every visit."
 12. Add the supplements below to the text of the row and to the question of the row.
 
 - A row of level `package`: "The answer is about the newest version and can be wrong for a pin."
@@ -204,7 +207,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;
-    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the tool name and version and the project address in the User-Agent line. For `revision-file`, copy the mapping table of pins and the host table of its file too;
+    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the tool name and version and the project address in the User-Agent line. For `revision-file`, copy its host table, its file names and its table "What maps to `revision-file` and what does not" too;
     - the rows refused, apart, so that the question does not return;
     - the pins per visit of each row;
     - the way of reading, as one fact, which item 7 of "The sources that fit" found and checked on this machine;
