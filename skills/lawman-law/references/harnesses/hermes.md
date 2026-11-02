@@ -88,7 +88,7 @@ From an agent session, start a role's job in the background with the tool `cronj
 
 - The result's `job` holds `"execution_mode": "background"` and a `delegation_id` when the run was dispatched. Do not wait or poll (read in the harness code: `tools/cronjob_tools.py`, `_action_run`).
 - The outcome arrives later as a new message in that session. It begins "Cron job '[lawman] <role>' (<job id>) finished its manual run." and gives `Result: ok` or `Result: FAILED` (read in the harness code: `tools/cronjob_tools.py`, `_manual_run_completion`, and `tools/async_delegation.py`).
-- A manual run of a gated job starts the agent only when the gate output changed. See "Run gate".
+- A manual run must always run the role, but Hermes applies the gate to it too, and no flag skips it. So for a gated job, clear the gate with the same tool, `action` set to `update` and `monitor_script` set to an empty string. Start the run. Set `monitor_script` back to `lawman-<role>.sh` after the outcome message arrives (read in the harness code: `cron/scheduler.py`, the monitor gate, and `tools/cronjob_tools.py`).
 - Background dispatch needs a session that takes a later message and a free slot in the background pool. Otherwise the call runs the job inline and returns when the run ends. An inline result holds no `execution_mode` (read in the harness code: `tools/cronjob_tools.py`, `_try_dispatch_background_run`).
 
 From a terminal, run the job with:
@@ -97,6 +97,7 @@ From a terminal, run the job with:
 hermes cron run "[lawman] <role>"
 ```
 
+- For a gated job, run `hermes cron edit <job id> --monitor-script ""` first, and `hermes cron edit <job id> --monitor-script lawman-<role>.sh` after the run returns. Without it the gate can skip the run (stated by `hermes cron edit --help`, read in the harness code).
 - The run executes inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false, and the reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." Resume the job first, with the form under "Paused jobs" (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`).
@@ -276,7 +277,7 @@ A job created paused has no stored slot, so `resume` sets its next future slot. 
 
 `--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
 
-A gated job runs its agent only when the gate output changed. A manual run with unchanged output does nothing. A tick that stopped before it took an order leaves the output unchanged. The role then waits for the next change, at the latest the next day. (seen in a patrol)
+The gate applies to manual runs too. A tick that stopped before it took an order leaves the output unchanged, so the next run skips the session until the output changes (seen in a patrol, read in the harness code). "Running a role once" clears the gate for a manual run.
 
 The form of a role's gate file. Replace the placeholders:
 

@@ -85,7 +85,7 @@
 
 1. Tell the developer:
 
-> A run gate is a small file the harness runs before a role's job. It asks the journal whether the role has an order it can take now. When the answer is the same as last time, the harness skips the session, and the run costs nothing. The first scheduled run of a gated role always starts a session once. After each stretch of work, one empty run follows, because the answer changes back to idle. The files live in the harness's scripts directory, outside the installation. They stay there after you remove Lawman.
+> A run gate is a small file the harness runs before a role's job. It asks the journal whether the role has an order it can take now. When the answer is the same as last time, the harness skips the session, and the run costs nothing. The first scheduled run of a gated role always starts a session once. After each stretch of work, one empty run follows, because the answer changes back to idle. A gate serves only scheduled runs: a run you start by hand always runs the role. The files live in the harness's scripts directory, outside the installation. They stay there after you remove Lawman.
 
 2. Tell the developer:
 
