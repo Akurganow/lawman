@@ -185,7 +185,7 @@ Mark `All listed` as recommended only when no row in the list has unclear terms.
 
 On `Choose`, ask one question for each fitting row, main rows first, each alone in its call. Offer "No" first and "Yes" second. A skip refuses that row.
 
-> Allow <recipient> to be asked about <owner>/<repo>? <recipient> receives <the pin fields that the row's address template uses>. Each pin costs up to <n> requests at every visit.
+> Allow <recipient> to be asked about <owner>/<repo>? <recipient> receives <the pin fields that the row's address template uses>. <The cost sentence of the row, from item 11.>
 
 Name the recipient and what leaves in each question. Add free text outside the offer and the choices to no question.
 
