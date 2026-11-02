@@ -4,6 +4,14 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.23.1 - 2026-11-02
+#### Bug Fixes
+- (**law**) keep the Blockers list open, name only the normal states (e594cf1)
+- (**law**) Blockers holds only what limited the tick (fa0ef13)
+
+- - -
+
+
 ## v0.23.0 - 2026-11-02
 #### Features
 - (**law**) speak to the user in the user's language (b91b4a0)
