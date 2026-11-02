@@ -29,7 +29,7 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Source: npm-registry. Level: version. A finding rests on it: yes.
 - Pin carries: name, version.
 - Request: GET https://registry.npmjs.org/{name}/{version}
-- Values: `{name}` is the `<name>` of the pin. A scoped name `@scope/pkg` becomes `@scope%2Fpkg`: the role encodes the slash and keeps the `@`. `{version}` is the `<pin>` of the pin. Each value is one encoded path segment, and `.` and `..` are refused.
+- Values: `{name}` passes the class `<name>` of a `licenses` line. A scoped name `@scope/pkg` becomes `@scope%2Fpkg`: the role encodes the slash and keeps the `@`. `{version}` passes the class `<pin>`.
 - Key of the reply: `version`. It must equal the pin.
 - Take: the field `license`. When it gives no value, the field `type` of each element of the list `licenses`.
 - Reply form: JSON object
