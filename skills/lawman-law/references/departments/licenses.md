@@ -6,22 +6,20 @@ contract_version: 1
 Find material in the project whose license terms the project's own license and
 its way of reaching people cannot honour, or that carries no stated terms.
 Material is a dependency, a dataset, media, a font, a set of weights, or code
-that another party wrote and the project holds. Three defects count: a family
-of license whose condition the project's license does not carry, a direct
-dependency with no stated license or held material with no license and no record
-of origin, and a duty to carry a text or a credit that the tree leaves unmet. Test: do the terms under which this
-material is in the project fit the project's license and the way the project
+that another party wrote and the project holds. Test: do the terms under which
+this material is in the project fit the project's license and the way the project
 reaches people?
 
 ## Kinds
 | kind | meaning | measurement |
 | :-- | :-- | :-- |
-| `conflict` | The material's license belongs to a family whose condition the project's license does not carry, and the recorded reach meets the family's trigger | The project's statement as `path:line`. The material's license: for a dependency read from a source, the evidence that `reading.md` names, or the license that a manifest or lockfile records as `path:line`; for held material the statement as `path:line`. The reach as `LAWMAN.md:<line>`, and for non-commercial material the use as `LAWMAN.md:<line>`, or, when the `use` line is absent, the `LAWMAN.md:<line>` of the heading `## Licenses`. The family and the condition in words. For a dependency read from a license source, in Not checked `Source: licenses <source> <ecosystem>/<name> <pin>` |
+| `conflict` | The material's license belongs to a family whose condition the project's license does not carry, and the recorded reach meets the family's trigger | The project's statement as `path:line`. The material's license: the license that a manifest or lockfile records as `path:line`, or for held material the statement as `path:line`. The reach as `LAWMAN.md:<line>`, and for non-commercial material the use as `LAWMAN.md:<line>`, or, when the `use` line is absent, the `LAWMAN.md:<line>` of the heading `## Licenses`. The family and the condition in words. |
 | `unlicensed` | A direct dependency has no stated license, or held material shows a sign of another origin and has no license of its own and no record of the terms | For a dependency named directly by the project: when a source was read, the `no-field` answer, as `reading.md` names it, and the line that names it. For held material: the sign of another origin as `path:line`, and the search for any statement of license with its control |
 | `unmet` | The license of held material asks copies to carry a text, a notice or a credit, copies leave, and no place in the tree carries it for this material | The statement as `path:line`, the reach as `LAWMAN.md:<line>`, and the claim of absence with its control |
 
 A kind that rests on a record read from a source names its hook: the line that
-pins the dependency. Held material names the place that holds it.
+pins the dependency. Its lead carries the `Source:` line that `reading.md` names.
+Held material names the place that holds it.
 
 ## Where to look
 **The project's statements.** Every place where the tree states the license of
@@ -29,9 +27,13 @@ the project: a file whose job is to hold one, a field of a manifest, a direct
 phrase in a front document, the words "all rights reserved" included. Quote
 each as `path:line`.
 
-**The reach and the use.** The section `## Licenses` of the constitution. Its `reaches` line records the reach and its `use` line records the use.
+**The reach and the use.** The section `## Licenses` of the constitution. Its
+`reaches` line is `internal`, `copies`, `service` or `copies,service`. Its `use`
+line is `commercial`, `non-commercial` or `unknown`. A value outside its form
+reads as absent, as the law says, and Blockers names it with its
+`LAWMAN.md:<line>`.
 
-**Dependencies.** The precinct's list of pinned dependencies, by the recorded reading way, and every place that names a dependency directly. A license that a manifest or a lockfile itself records for a dependency is a statement of the tree, read as `path:line` when no agreed source covers the dependency or the reading did not run.
+**Dependencies.** The precinct's list of pinned dependencies, by the recorded reading way, and every place that names a dependency directly. A license that a manifest or a lockfile itself records for a dependency is a statement of the tree, read as `path:line`.
 
 **Held material.** Every place where the tree holds material from another
 party: copies of outside code, bundles, directories that carry another
@@ -42,7 +44,8 @@ such material to be fetched when the project runs.
 metadata.
 
 In the paths that the constitution lists under Not judged, look only for signs
-of another origin and for statements of license. Judge nothing else there.
+of another origin and for statements of license. Judge nothing else there. Any
+kind may rest on such a sign or statement.
 
 ## Not findings
 Beyond what the law already excludes:
@@ -63,10 +66,15 @@ Run the same search over a statement known to exist, and quote both outputs. A
 zero proves nothing until the control prints a non-zero count.
 
 **No statement.** When the census finds no statement of the project's license,
-nothing can be compared. File nothing. Blockers names the missing statement, and
+nothing can be compared. File nothing, `unlicensed` included. Blockers names the missing statement, and
 the Filed line is the law's INCOMPLETE line.
 
-**License list:** when the precinct's entry in the host notes names an agreed source and `license_precincts` holds `<precinct>=yes`, follow `lawman/skills/lawman-law/references/departments/licenses/reading.md`. It says which sources to ask and how. Otherwise, on a manual run, or where the harness cannot send, the sweep goes on with the tree. It reports the check as not run only for the pins that no lock covers.
+**License list:** when the precinct's entry in the host notes names an agreed
+source and `license_precincts` holds `<precinct>=yes`, follow
+`lawman/skills/lawman-law/references/departments/licenses/reading.md`.
+Otherwise, or when the entry names no way of reading or a request cannot start,
+the sweep goes on with the tree. It reports the check as not run only for the
+pins that no lock covers.
 
 **Filing test.** File a `conflict` only when three exhibits stand together.
 
@@ -87,15 +95,14 @@ the Filed line is the law's INCOMPLETE line.
    differ, the gap must hold under each. For a non-commercial license the gap
    is a statement that does not bar commercial use.
 3. The trigger. The reach recorded in the constitution meets the family's
-   trigger. Copies meet it for copyleft, and service meets it as well for a copyleft whose condition also arises over a network. Copies or service meet it for non-commercial and for use restriction. For non-commercial material the recorded use must also be `commercial` or `unknown`, or the `use` line is absent. The use `non-commercial` files no non-commercial material. The material must also go into what leaves. A dependency that
+   trigger. Copies meet it for copyleft, and service meets it as well for a copyleft whose condition also arises over a network. Copies or service meet it for non-commercial and for use restriction. For non-commercial material the recorded use must also be `commercial` or `unknown`, or the `use` line is absent. The material must also go into what leaves. A dependency that
    the manifest marks as used only for development, test or build does not.
    Without a recorded reach there is no trigger: `conflict` and `unmet` are
    not filed, Blockers names the missing record, and `unlicensed` goes on.
 
-The test is a reason to file and never a verdict. The lead names the family,
-the gap and the trigger, and what each exhibit shows. It says nothing about a
-broken law. Doubt about a fact drops the candidate. Doubt whether the project's
-license carries the condition does not: Not checked names it for the expert.
+The test is a reason to file and never a verdict. A lead says nothing about a
+broken law. Doubt whether the project's license carries the condition keeps the
+candidate: Not checked names it for the expert.
 
 **Hidden readers.** A plain text search misses these classes. Check each and
 say which you could not check.
@@ -105,8 +112,7 @@ say which you could not check.
 
 Attack your own claim once. Look for a statement of license that covers the
 place and that the census missed, a recorded answer, and a judging document
-that settles the pair. Drop the candidate when one holds or when you are less
-than confident about a fact.
+that settles the pair. Drop the candidate when one holds.
 
 ## Anchors
 none
@@ -126,18 +132,18 @@ Analysed commit and Department come first. The law owns those two lines. Then
 these sections, in this order:
 
 - `What`: the material, where it lives, the family and the gap.
-- `Evidence`: every quote as `path:line`, for a dependency read from a source the evidence that `reading.md` names, and the commands with their output, controls included.
+- `Evidence`: every quote as `path:line`, and the commands with their output, controls included.
 - `Why it is <kind>`: the exhibits of the filing test, one for each.
 - `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
   confirmed|demonstrated`.
-- `Not checked`: what a person must settle, such as whether the material is combined with the project in the way the condition needs. A pin that names a mutable label. The clause of the license for the funnel's expert, by license identifier, or by the quote of the clause when it has none, with no package name and no path. The hidden-reader classes not searched. The `Source:` line of a dependency.
+- `Not checked`: what a person must settle, such as whether the material is combined with the project in the way the condition needs. A pin that names a mutable label. The clause of the license for the funnel's expert, by license identifier, or by the quote of the clause when it has none, with no package name and no path. The hidden-reader classes not searched.
 
 The marker is the last line.
 
 ## Identity
 `<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
-- For a dependency the path is the file that pins it. The symbol is `<ecosystem>/<name>`. No expression, text digest, version, line number, count or commit enters the identity. For a dependency read from a source, `reading.md` names the ecosystem token and the form of a git pin.
+- For a dependency the path is the file that pins it. The symbol is `<ecosystem>/<name>`. The ecosystem token is the one the precinct's entry names. A git pin is named `<host>/<path>`, with the host in lower case, no scheme and no `.git`.
 - For held material the path is its folder or file. The symbol is its name and
   the identifier of its license when the tree states one, otherwise `unstated`.
 
-No version, line number, count or commit enters the identity.
+No expression, text digest, version, line number, count or commit enters the identity.

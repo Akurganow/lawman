@@ -107,7 +107,6 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 1. Run the "Resolve the department page" section, which needs no tree. `<d>` is the department of the order. Read the Proof section of the page.
 2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now.
-   A page whose Proof holds a paragraph that starts with `License list:` follows that paragraph now. It opens `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the paragraph's condition holds: the precinct's entry names an agreed source and `license_precincts` holds `<precinct>=yes`.
 3. Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
 ### Step 6: read the rules
@@ -125,7 +124,7 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 A page whose Proof sends a list through the journal sweeps by "The catalog check". That section names the items below that it replaces.
 
-1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`. The page `licenses` is the one exception. It searches those paths only for signs of foreign material and for statements of license. It judges nothing else there.
+1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`. The law names the one exception for `licenses`. When the Proof holds a paragraph that starts with the words `License list:`, follow it where the Proof puts it, after the census. Open `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the condition of that paragraph holds.
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
@@ -178,9 +177,7 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 
 ## The catalog check
 
-Run it when the page's Proof says that a list sent through the journal replaces the pattern search. The catalog is the one external source the patrol reads. It reads it only through the Send section of `lawman/skills/lawman-law/references/exhibits.md`. Every other department reads no network.
-
-The paragraph above describes the catalog check. The `licenses` department also reads license sources, as `reading.md` says.
+Run it when the page's Proof says that a list sent through the journal replaces the pattern search. This check reads the catalog only through the Send section of `lawman/skills/lawman-law/references/exhibits.md`.
 
 1. Read `catalog` and `catalog_precincts` from `config.yaml`, and the precinct's line under `## Dependency reading` in `host.md`. Do it before the tree is created and before any send. A missing key reads as no and is no failure. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`.
 2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same on a harness page with no form for sending to the catalog. Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
@@ -233,7 +230,6 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
   Source: licenses <source> <ecosystem>/<name> <pin>
   ```
   Take each `releases` value from the tree. Take the `catalog` line as the journal printed it.
-  Write a `licenses` line only with values that passed their classes.
 
 Marker:
 

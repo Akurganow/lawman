@@ -81,6 +81,7 @@ The prosecutor, the defender and the court read this section when a case needs k
 
 1. State one concrete task in one narrow specialty. Write it in your own words as a paraphrase. The expert never sees the issue, the case, the charge, the defence or your whole task. Another task needs another expert.
 2. Put no secret, installation path, home path, account name or token in the task. You quote the task in a public comment.
+   - For a case of the `licenses` department the task carries a license identifier or a quote of a clause. It names no package and no path.
 3. Send the expert the preamble below and the task, and nothing else. The expert chooses its own sources.
 4. Read the answer only cleaned. The harness page holds the form that starts the expert and passes its answer to `bin/journal clean`. Write the answer to no file.
 5. A failed run, a cleaning that exits non-zero, or a harness page with no form is a failed read. It is a fact for Blockers. It stops nothing, and the case goes on without the expert.

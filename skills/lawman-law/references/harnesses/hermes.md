@@ -179,7 +179,10 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/jo
 
 ## Sending to license sources
 
-The only difference from the other harnesses is the time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) The assembly divides the 180 seconds, because a reading command sets no `timeout`.
+Two things differ from the other harnesses.
+
+- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) The assembly divides the 180 seconds, because a reading command sets no `timeout`.
+- The forms of a command. A scheduled run refuses some forms, as "Commands in scheduled runs" lists. The reading way uses only the forms that section accepts. It starts no shell or interpreter with `-c` or `-e`.
 
 ## Calling an expert
 
