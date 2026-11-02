@@ -63,7 +63,7 @@ journal next --role <role> [--exclude <precinct>]…
 - `tick`: `start` opens a tick and prints its id. `end` closes it with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
 - `due`: prints the precinct and the number of the next case or pull request that a role is due on. It prints nothing when the role has an open order.
 - `rotation`: reads department names on stdin and prints each with its last visit and its cap, in rotation order.
-- `wake`: the run gate. It prints `idle`, or one `order <id>` line per takeable order and a `day <date>` line. It also records the check.
+- `wake`: the run gate. It prints `idle`, or one `order <id>` line per takeable order and an `at <time>` line, so a role with work changes the output at every check. It also records the check.
 
 ```
 journal dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>>
