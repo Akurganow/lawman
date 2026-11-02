@@ -16,7 +16,7 @@ Terms read as unclear. The API is described for programs and no terms of use wer
 
 ## Traps
 
-Short names are not SPDX. Long files reach `too-large`. Some have no machine-readable stanza. The prefix of a `lib` name has four characters, read on `libxml2`. Keep the epoch. `bash-completion 1:2.16.0-8`: kept 200, encoded `1%3A` 200, dropped 404. Largest reply seen: 14 343 bytes.
+Short names are not SPDX. The role cuts a long file into small files. Some have no machine-readable stanza. The prefix of a `lib` name has four characters, read on `libxml2`. Keep the epoch. `bash-completion 1:2.16.0-8`: kept 200, encoded `1%3A` 200, dropped 404. Largest reply seen: 14 343 bytes.
 
 ## Fits when
 
@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the address names the pin
 - Take: the whole text
 - Reply form: text
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: hello 2.10-3. Expect: 2 264 bytes. Recorded reply: debian.old.
+- Sample: hello 2.10-3. Expect: 2 264 bytes.

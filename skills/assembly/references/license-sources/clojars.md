@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the address names the pin.
 - Take: the text of the element `name` of each element `license` under `licenses` in the POM.
 - Reply form: XML
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: ring/ring-core 1.15.6. Expect: The MIT License. Recorded reply: clojars.latest.
+- Sample: ring/ring-core 1.15.6. Expect: The MIT License.

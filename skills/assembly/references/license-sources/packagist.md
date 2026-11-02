@@ -8,7 +8,7 @@ repo.packagist.org
 
 ## Measured
 
-10 of 10, SPDX, read on the dynamic address, not on the static file
+10 of 10, SPDX, read on the dynamic address, not on the static file. Read on the static file 2026-11-02: `psr/log` answered 200 with 6 918 bytes and `["MIT"]`.
 
 ## Limits and terms
 
@@ -34,10 +34,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the field `license` of that element, or of the nearest element above it that has the field.
 - Reply form: JSON object
 - Special reading: the list is `packages["{vendor}/{package}"]`, in order, and the role compares that key without regard to case. A version leaves out a field equal to the one in the version above it. The value `__unset` means no license. A list of several licenses means OR.
-- Pace: at most 10 concurrent requests. No jobs at the start of an hour or at midnight.
+- Pace: at most 10 concurrent requests. The assembly sends one request at a time, so the interval is the time of the request at its live read. No jobs at the start of an hour or at midnight.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: psr/log 3.0.2. Expect: ["MIT"]. Recorded reply: packagist.minified.
+- Sample: psr/log 3.0.2. Expect: ["MIT"].

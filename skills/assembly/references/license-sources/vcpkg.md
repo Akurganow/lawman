@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `name`. It must equal the port name.
 - Take: the field `license`. When it is absent or `null`, the answer is `no-field`.
 - Reply form: JSON object
-- Pace: none stated by the service. After a 429 the source stops for the tick.
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly. After a 429 the source stops for the tick.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: zlib at the baseline 9a5dfef5d1a0438a7d24856a85bd60f309d355e9. Expect: Zlib. Recorded reply: vcpkg.latest.
+- Sample: zlib at the baseline 9a5dfef5d1a0438a7d24856a85bd60f309d355e9. Expect: Zlib.

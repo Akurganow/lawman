@@ -19,6 +19,8 @@ The rows of an ecosystem stand in the order of the offer. The first row is the m
 
 The last column says whether the lock of the ecosystem records the license of a pin. The value `(not verified)` reads as "does not record".
 
+A `git` pin is any pin that names a git address with a commit or a label. Examples are a Swift or Carthage entry, a submodule, a `uses:` step, a GitLab component or a git dependency of any language.
+
 | Ecosystem | Rows in order | The lock records the license |
 | :-- | :-- | :-- |
 | npm | [`deps-dev`](deps-dev.md), [`npm-registry`](npm-registry.md), [`clearly-defined`](clearly-defined.md) | A part of the pins. The field `license` of an entry under `packages` in `package-lock.json`. Public repository create-react-app, lock version 2: 11 of 2 589 entries, read 2026-11-02. |

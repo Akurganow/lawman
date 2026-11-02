@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `name`. It must equal the name of the formula.
 - Take: the field `license`.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: jq. Expect: MIT. Recorded reply: homebrew.latest.
+- Sample: jq. Expect: MIT.

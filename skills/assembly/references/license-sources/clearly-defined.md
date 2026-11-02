@@ -36,10 +36,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Reply form: JSON batch
 - Batch: up to 100 pins per request.
 - Pace: at most 250 requests per minute, the documented limit of the POST endpoints
-- Requests per pin: one request carries up to 100 pins.
+- Requests per pin: not counted for a batch row. One request carries up to 100 pins, and one batch is 1 request.
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: npm lodash 4.17.4. Expect: CC0-1.0 AND MIT. Recorded reply: clearly-defined.old.
-- Batch sample: npm lodash 4.17.4 expects CC0-1.0 AND MIT, Debian mini-httpd 1.30-0.2 expects BSD-2-Clause. Recorded reply: clearly-defined.old, clearly-defined.debian-populated.
+- Sample: npm lodash 4.17.4. Expect: CC0-1.0 AND MIT.
+- Batch sample: npm lodash 4.17.4 expects CC0-1.0 AND MIT, Debian mini-httpd 1.30-0.2 expects BSD-2-Clause.

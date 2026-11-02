@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `version`. It must equal the pin.
 - Take: the field `license`.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: elm/core 1.0.0. Expect: BSD-3-Clause. Recorded reply: elm.old.
+- Sample: elm/core 1.0.0. Expect: BSD-3-Clause.

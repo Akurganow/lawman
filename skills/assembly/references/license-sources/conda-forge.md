@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: the field `version` of each element of the list `distributions`. It must equal the pin. When any element differs, every pin of the reply is `unread`.
 - Take: the field `attrs.license` of each element of `distributions`. One value when the builds agree, otherwise the list of the distinct values. An empty `distributions` is `no-record`.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: numpy 1.26.4, 29 builds. Expect: BSD-3-Clause. Recorded reply: conda-forge.old.
+- Sample: numpy 1.26.4, 29 builds. Expect: BSD-3-Clause.

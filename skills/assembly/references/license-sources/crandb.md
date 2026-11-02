@@ -16,7 +16,7 @@ Named a public API by METACRAN. No terms and no limits found. robots.txt holds n
 
 ## Traps
 
-`MIT + file LICENSE` is not plain MIT. `GPL (>= 2)` needs reading. `shiny` and `lubridate` changed license between versions. Largest reply seen: 7 097 bytes.
+`MIT + file LICENSE` is not plain MIT. `GPL (>= 2)` needs reading. `shiny` and `lubridate` changed license between versions. Largest reply seen: 8 819 bytes (`shiny 1.8.0`, read 2026-11-02).
 
 ## Fits when
 
@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `Version`. It must equal the pin.
 - Take: the field `License`.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: shiny 1.8.0. Expect: GPL-3 | file LICENSE. Recorded reply: crandb.old.
+- Sample: shiny 1.8.0. Expect: GPL-3 | file LICENSE.

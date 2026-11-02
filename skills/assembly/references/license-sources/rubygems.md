@@ -39,4 +39,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 
 ## Live sample
 
-- Sample: rails 4.0.0. Expect: ["MIT"]. Recorded reply: rubygems.old.
+- Sample: rails 4.0.0. Expect: ["MIT"].

@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the address names the pin.
 - Take: the text of the element `license` that has the attribute `type="expression"`. An element `license` of type `file`, or a `licenseUrl` alone, is no license value: the answer is `no-field`.
 - Reply form: XML
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: newtonsoft.json 13.0.4. Expect: MIT. Recorded reply: nuget-spec.latest.
+- Sample: newtonsoft.json 13.0.4. Expect: MIT.

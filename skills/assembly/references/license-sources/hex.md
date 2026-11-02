@@ -16,7 +16,7 @@ The terms allow access through the published API. 100 requests per minute per IP
 
 ## Traps
 
-The version-level value sits in the tarball, not read here. `hex`, `homebrew` and `nimble` ignore the version. There is no old-version fixture. Largest reply seen: 36 975 bytes.
+The version-level value sits in the tarball, not read here. `hex`, `homebrew` and `nimble` ignore the version. Largest reply seen: 36 975 bytes.
 
 ## Fits when
 
@@ -39,4 +39,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 
 ## Live sample
 
-- Sample: jason. Expect: ["Apache-2.0"]. Recorded reply: hex.latest.
+- Sample: jason. Expect: ["Apache-2.0"].

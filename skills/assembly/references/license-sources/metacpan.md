@@ -35,11 +35,11 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the list of slugs `_source.license`.
 - Reply form: JSON batch
 - Batch: up to 100 pins per request.
-- Pace: none stated by the service
-- Requests per pin: one request carries up to 100 pins.
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Requests per pin: not counted for a batch row. One request carries up to 100 pins, and one batch is 1 request.
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: Try-Tiny 0.31. Expect: ["mit"]. Recorded reply: metacpan.latest.
-- Batch sample: Try-Tiny 0.31 expects ["mit"], Mojolicious 9.34 expects ["artistic_2"], DBI 1.643 expects ["perl_5"]. Recorded reply: metacpan.batch6.
+- Sample: Try-Tiny 0.31. Expect: ["mit"].
+- Batch sample: Try-Tiny 0.31 expects ["mit"], Mojolicious 9.34 expects ["artistic_2"], DBI 1.643 expects ["perl_5"].

@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `version`. It must equal the pin.
 - Take: the field `license`. It is a string, or an object whose `type` is a string.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: Alamofire 5.8.0, shard d/a/2. Expect: MIT. Recorded reply: cocoapods.old.
+- Sample: Alamofire 5.8.0, shard d/a/2. Expect: MIT.

@@ -34,10 +34,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the value assigned to `license` in the text of the recipe.
 - Reply form: source text
 - Special reading: the text is Python code. The role reads it as text and never runs it.
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: zlib 1.3.1 at recipe revision cac0f6daea041b0ccf42934163defb20. Expect: Zlib. Recorded reply: conan.zlib-1.3.1.
+- Sample: zlib 1.3.1 at recipe revision cac0f6daea041b0ccf42934163defb20. Expect: Zlib.

@@ -34,10 +34,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none. The reply holds no version and the address names the pin.
 - Take: the field `license`.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: aeson 1.0.0.0. Expect: BSD-3-Clause. Recorded reply: hackage.old.
+- Sample: aeson 1.0.0.0. Expect: BSD-3-Clause.

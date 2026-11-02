@@ -39,4 +39,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 
 ## Live sample
 
-- Sample: serde 1.0.0. Expect: MIT/Apache-2.0. Recorded reply: crates-io.old.
+- Sample: serde 1.0.0. Expect: MIT/Apache-2.0.

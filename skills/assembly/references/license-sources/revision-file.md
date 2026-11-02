@@ -29,7 +29,7 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Source: revision-file. Level: revision for a commit and ref for a label. A finding rests on it: yes.
 - Pin carries: the address of the repository as the tree writes it, and a commit hash or a label.
 - Request: GET <address of the host table row, once for each file name>
-- Values: The host of the address chooses the row of the host table. The host name must equal a table host after the role writes it in lowercase. A host outside the table gets no request: the result is `unknown-host`. The role cuts off a `.git` suffix and trailing slashes. An address with a user name or a password sends nothing. An address with a port is `unknown-host`. Each segment of `<owner>`, `<repo>`, `<workspace>` and `<path>` passes the class `<name>` of a `licenses` line. `<path>` has several segments on `gitlab.com` and on `chromium.googlesource.com`. `<rev>` and `<commit>` pass the class `<pin>`. `<file>` is a file name of the list below. The rows of `codeberg.org`, `gitea.com` and `chromium.googlesource.com` take a commit only. A label there is `unknown-host`. A pin with a hash whose host is outside the table goes to the source `software-heritage` when that source is agreed.
+- Values: The host of the address chooses the row of the host table. The host name must equal a table host after the role writes it in lowercase. A host outside the table gets no request: the result is `unknown-host`. The role cuts off a `.git` suffix and trailing slashes. An address with a user name or a password sends nothing, and its pin goes to Coverage as `unknown-host`. An address with a port is `unknown-host`. Each segment of `<owner>`, `<repo>`, `<workspace>` and `<path>` passes the class `<name>` of a `licenses` line. `<path>` has several segments on `gitlab.com` and on `chromium.googlesource.com`. `<rev>` and `<commit>` pass the class `<pin>`. `<file>` is a file name of the list below. The rows of `codeberg.org`, `gitea.com` and `chromium.googlesource.com` take a commit only. A label there is `unknown-host`. A pin with a hash whose host is outside the table goes to the source `software-heritage` when that source is agreed.
 - Key of the reply: none: the address names the pin
 - Take: the whole text of the first file found. The role tries the file names in the order of the list and stops at the first reply that holds a file. A 404 moves to the next name. When no name finds a file, the result is `no-record`.
 - Reply form: text. For `chromium.googlesource.com`: base64 text.
@@ -66,11 +66,11 @@ Copy this block into the entry of the precinct word for word. The assembly fills
   | Git dependency of any language | Commit or label at its address |
   | Julia `git-tree-sha1` | Tree hash, `software-heritage` |
 
-- Pace: none stated by the service. A 429 stops the requests to that host.
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly. A 429 stops the requests to that host.
 - Requests per pin: up to 12
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: gitlab-org/cli at commit 9ed43f6507f1214b165fcb79f88e5e503f4a3539, file `LICENSE`. Expect: 1 107 bytes. Recorded reply: revision-file.gitlab.com.cli-v1.40.0.01-license.
+- Sample: gitlab-org/cli at commit 9ed43f6507f1214b165fcb79f88e5e503f4a3539, file `LICENSE`. Expect: 1 107 bytes.
 - Samples of the other hosts, one each, read 2026-11-02: github.com redis/redis at commit d2c8a4b91e8c0e6aefd1f5bc0bf582cddbe046b7, file `COPYING`, 1 487 bytes. bitbucket.org atlassian/aws-s3-deploy at commit 1bdbb7dbe014019eaf03b00c6f14a40768549c04, file `LICENSE.txt`, 560 bytes. codeberg.org forgejo/forgejo at commit d595393bb619d5fafe16b38d15aa004256a414df, file `LICENSE`, 35 149 bytes. gitea.com gitea/tea at commit fff1af1029a1c63c078e058c9a5c4d3ac7054594, file `LICENSE`, 1 097 bytes. chromium.googlesource.com webm/libvpx at commit 10b9492dcf05b652e2e4b370e205bd605d421972, file `LICENSE`, 2 052 bytes of base64.

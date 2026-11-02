@@ -34,10 +34,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the whole text of step 3
 - Reply form: JSON object at step 1, a JSON list of entries at step 2, text at step 3
 - Chain: Step 1 is the request above and runs for a commit hash only. Take `directory` from the reply. Step 2 is GET https://archive.softwareheritage.org/api/1/directory/{directory}/. For a tree hash the chain starts here and `{directory}` is the pin. Take `target` from the first entry of the list that has `type` equal to `file` and a `name` equal to a file name. The role tries the names in this order: `LICENSE`, `LICENSE.txt`, `LICENSE.md`, `License.md`, `COPYING`, `COPYING.md`, `COPYING.txt`, `LICENCE`, `UNLICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`, `MIT-LICENSE`. Step 3 is GET https://archive.softwareheritage.org/api/1/content/sha1_git:{target}/raw/. Take the whole text. Each hash taken from a reply passes the class `^[0-9a-f]{40}$` before the role puts it in an address. Otherwise the result is `unread`. A list without a file of those names gives `no-record`.
-- Pace: 120 anonymous requests, named by a response header. The service states no window. The result `rate-limited` stops this source for the tick.
+- Pace: 120 anonymous requests, named by a response header. The service states no window, so the interval is the time of the request at the live read of the assembly. The result `rate-limited` stops this source for the tick.
 - Requests per pin: 3 (2 for a tree hash)
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: commit f455c2975872ccd2d9c81594c658af65716e9b9a (Alamofire), directory 6277481508af31b3050f66dd77659dc7a86314a6, file `LICENSE` with target cae030a02d93e6c36df2528dc394c59a5688d19b. Expect: 1 102 bytes. Recorded reply: software-heritage.revision, software-heritage.directory, software-heritage.content.
+- Sample: commit f455c2975872ccd2d9c81594c658af65716e9b9a (Alamofire), directory 6277481508af31b3050f66dd77659dc7a86314a6, file `LICENSE` with target cae030a02d93e6c36df2528dc394c59a5688d19b. Expect: 1 102 bytes.

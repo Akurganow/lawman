@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `info.version`. It must equal the pin.
 - Take: the field `info.license_expression`. When it is empty, the field `info.license`. When that is empty too, the entries of `info.classifiers` that start with `License :: `, with the prefix cut.
 - Reply form: JSON object
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: Django 1.11.29. Expect: BSD. Recorded reply: pypi-json.old.
+- Sample: Django 1.11.29. Expect: BSD.

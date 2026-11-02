@@ -16,7 +16,7 @@ Terms read as unclear. The Canonical website terms allow download and print of p
 
 ## Traps
 
-Needs the component. File names are Debian names, not always SPDX. Same limits as Debian. Drop the epoch. `bash-completion_2.16.0-8build1`: dropped 200, kept 404, encoded 404. Largest reply seen: 14 343 bytes.
+Needs the component. File names are Debian names, not always SPDX. Same traps as Debian: short names are not SPDX, and some files have no machine-readable stanza. Drop the epoch. `bash-completion_2.16.0-8build1`: dropped 200, kept 404, encoded 404. Largest reply seen: 14 343 bytes.
 
 ## Fits when
 
@@ -33,10 +33,10 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the address names the pin
 - Take: the whole text
 - Reply form: text
-- Pace: none stated by the service
+- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
 - Requests per pin: 1
 - User-Agent: <tool name and version>; <project address>
 
 ## Live sample
 
-- Sample: main/hello 2.10-3. Expect: 2 264 bytes. Recorded reply: ubuntu.old.
+- Sample: main/hello 2.10-3. Expect: 2 264 bytes.
