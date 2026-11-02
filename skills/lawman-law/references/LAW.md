@@ -65,13 +65,7 @@ The lines of the update list are delivered to the owner too. The update list is 
 
 ## Language
 
-Lawman speaks to the user in the language that the agent's own rules or instructions name. When they name none, it speaks the language of the user's latest message. A role with no rule and no message keeps the language of the law. One rule holds for the whole project.
-
-- Everything said to the user follows it. The assembly applies it to every question, choice, proposal, summary, explanation and stop. A role applies it to the answer it delivers. That covers the free words of an alarm line and a line of the update list. It covers the reason of a stop and the report of a failed tick.
-- These keep their current language: the law, the skills, records, markers, tokens, commands and values written to files. So does text posted to a repository host. Tokens are outcome names, the word `ALARM` with its kind, closure classes and the silence form.
-- Quoted values stay as written inside translated text. They are paths, `path:line`, identifiers, license identifiers, option values and numbers.
-- A fixed text of the law keeps its meaning when translated. Every fact, number, choice and consequence survives.
-- A translated label never reaches a file. The assembly writes the value that the reference names.
+Use the user's language.
 
 ## Evidence
 

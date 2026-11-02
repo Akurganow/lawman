@@ -166,7 +166,7 @@ Run this section once for a precinct, when its catalog consent is "Yes" or its l
 68. Propose which dependencies to check, where they are listed and by what way they are read, one row for each place.
 69. When no place lists dependencies, propose the conclusion that the precinct lists none. That conclusion is an entry.
 70. Never execute code of the precinct or a tool the precinct configures.
-71. Ask in the question tool, and offer "Agree" (recommended) and "Change".
+71. Ask in the question tool, and offer "Agree" (recommended) and "Change". Say why: Lawman reads these files to list the packages it checks.
 72. On "Change", take the developer's change as free text, show the changed rows, marked, and ask again.
 73. Treat a skip, an empty answer, a cancel or a timeout as no entry, and return to the section that called this one. On the add path with no caller, go on with the section "Add the precinct".
 
