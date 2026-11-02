@@ -241,7 +241,7 @@ Every patrol tick that analyses ends with a report in this shape, so reports com
    - `Filed nothing. CLEAN at <sha>.` when every check the department names ran or does not apply.
    - `Filed nothing. INCOMPLETE at <sha>, <n> checks not run.` when any check that applies did not run.
 4. Strongest rejected: up to three of the best unfiled candidates, each with the reason it was not filed. This is the most useful part of a quiet tick.
-5. Blockers: missing tools, unreadable sources, tracker errors, and the state of the precinct's clone at the end of the tick.
+5. Blockers, and only these: missing tools, unreadable sources, tracker errors, the state of the precinct's clone at the end of the tick, what the role's report template names and what a step of the law sends there. A state the law calls normal is no blocker, such as a department with no line in the constitution or a note about a section the contract does not list.
 
 A check does not apply when its subject is absent from the tree. A census with a positive control shows that.
 
