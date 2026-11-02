@@ -58,7 +58,7 @@ Send the report through a quoted heredoc whose delimiter is `LAWMAN_<id>_<first 
 
 ### Step 0: Guards
 
-0.1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. Keep every `ALARM` line that the sync printed, for the answer. Keep also every line of the update list that the section prints, for the answer. Then run `bin/journal probe --schema 6`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
+0.1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. Keep every `ALARM` line that the sync printed, for the answer. Then run `bin/journal probe --schema 6`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 0.2. Run `bin/journal tick start --role duty-desk`. Keep the printed number as `<id>`. On a non-zero exit, answer `journal unavailable: <stderr>` and stop.
 
@@ -199,7 +199,7 @@ bin/journal lint-page department --name <d>
 
 When the name is `licenses` and the page is the law clone page (location 3), read `license_precincts` from `config.yaml` before step 7 takes the name.
 
-- Consent is the whole token `<precinct>=yes`, split on spaces. A substring does not count: `alpha-js=yes` does not open `alpha`.
+- Consent is the whole token `<precinct>=yes`, split on spaces.
 - No file, no key or no pair for the precinct means no consent. That is not `failed`.
 - Without consent, skip the name for this tick. Write no order and no visit, and put nothing into Blockers.
 - A `licenses` page at location 1 or 2 needs no consent.
@@ -225,7 +225,7 @@ The answer is the last text you write. The full report never goes into it.
 Build the answer from these rules:
 
 - If the tick stopped or failed, write one line `<outcome>: <reason>` first. A probe failure writes its line from step 0.1 instead.
-- Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim. Then write every line of the update list from step 0.1, one per line, verbatim.
+- Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim. Then write every line of the update list that the sync printed, one per line, verbatim.
 - If neither applies, write the silence form that the harness page names, alone. The journal holds the report.
 
 Never write the silence form together with an `ALARM` line, a line of the update list or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.

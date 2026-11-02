@@ -15,7 +15,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - Never run code from the precinct, except a command listed verbatim under Regression proof, as the Execution section allows. Never in the clone.
 - Write one comment per tick. File no issue.
 - A stale order is a success. Silence is the default.
-- What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`. A `licenses` line ends the tick that way only when its read could not start: no network, no tool or a refused approval.
+- What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
@@ -137,7 +137,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    - Rows came back, or the journal printed a `catalog record` line: that is an exhibit in Claims checked. Quote the exact command you ran, its verbatim output and the UTC read time. For a `catalog` line, quote the journal's output with the record's identifier and its UTC time of reading, and quote nothing of the reply. Give the immutable ids: a catalog record's identifier with its modified time, and a release's tag with its permanent id.
    - No rows came back, or the journal printed `reason=unconfirmed`: the claim is `not confirmed`.
    - The reply is an HTTP 404, 410 or 422 error, or the journal printed `reason=missing`: the source goes to Not established. The host's last error line, or the journal's line, is the exhibit. The case is written.
-   - Any other failure, or `reason=failed`: end the tick with `stopped-source-read`. Write no case. For a `licenses` line, only a read that could not start does this: no network, no tool or a refused approval.
+   - Any other failure, or `reason=failed`: end the tick with `stopped-source-read`. Write no case.
 6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
 7. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Run it verbatim in a subshell with the tree as its working directory. Quote its output and its exit code. A non-zero exit changes no outcome.
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
@@ -146,7 +146,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
 10. For a requirement, also record these tree facts under Claims checked, and no opinion. Record the claim of absence with its control search, or the lines of the shape. Record the places that already name the subject. A request too vague to test goes to Not established.
 11. A claim may touch how the project is used. Then read the `use` line of the section `## Licenses` of `LAWMAN.md` at `<sha>` and compare its value with the tree. The value is `commercial`, `non-commercial` or `unknown`. Any other value reads as absent. A feature of the tree that contradicts the line goes in Claims checked with `LAWMAN.md:<line>` and the place of the feature. This adds no outcome. Without the section or the line there is nothing to compare: add nothing.
 
-When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The same holds for a finding of the `licenses` department and for a match with the text of a source. The case is still written.
+When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The case is still written.
 
 ### Step 9: write the case
 

@@ -69,7 +69,6 @@ and tools.
 the Fence, Not judged and every recorded reason. It also states
 the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed.
-The page `licenses` is the one exception to Not judged. It reads such paths only for signs of foreign material and statements of license.
 
 **Proof.** The commands that show each kind. A positive control: the same
 command run on a unit known to be in use, with both outputs quoted. The classes
@@ -121,7 +120,7 @@ tests:
 - A page with that name lies in Lawman's `departments/`.
 - A line of the precinct's Departments section names it.
 
-The name `licenses` joins a rotation by either test only under two conditions. It resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
+The page `licenses` from Lawman joins a rotation only when `license_precincts` holds the whole token `<precinct>=yes`. A missing key or pair reads as no.
 
 A page in the installation or in the precinct that neither test admits is not in
 the rotation. Name resolution then decides which page answers the name.

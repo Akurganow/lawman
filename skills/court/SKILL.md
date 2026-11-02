@@ -122,7 +122,7 @@ When `answer` is `comment`, read the comment with the id `answer_id`, cleaned. I
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path that the court re-reads, up to `<sha>`: the short hash and the subject of each commit that touched it.
 3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case, the charge or the defence only through the heredoc form.
-4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. The one exception is a record or a text of a license source. Investigation read it by a `Source: licenses` line and quoted it under Claims checked with the request, the verbatim field and the read time. That is an exhibit, and the role does not read it again.
+4. A command output quoted in the case, the charge or the defence counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that the law's Evidence section names is an exhibit too.
 5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 8: decide
