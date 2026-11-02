@@ -107,7 +107,7 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 1. Run the "Resolve the department page" section, which needs no tree. `<d>` is the department of the order. Read the Proof section of the page.
 2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now.
-   A page whose Proof holds a paragraph that starts with `License list:` follows `lawman/skills/lawman-law/references/departments/licenses/reading.md` now.
+   A page whose Proof holds a paragraph that starts with `License list:` follows that paragraph now. It opens `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the paragraph's condition holds: the precinct's entry names an agreed source and `license_precincts` holds `<precinct>=yes`.
 3. Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
 ### Step 6: read the rules
