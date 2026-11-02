@@ -4,6 +4,23 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.23.0 - 2026-11-02
+#### Features
+- (**law**) speak to the user in the user's language (b91b4a0)
+#### Bug Fixes
+- (**assembly**) merge on request, keep answers on timeout (2a94cb2)
+- (**assembly**) always ask license use, true answers on cancel and consent (68d5bd3)
+- (**assembly**) ask plain license questions after reading the repository (a85e499)
+- (**hermes**) a manual run clears the gate so it always runs the role (0563843)
+- (**journal**) a role with an order passes its run gate at every check (d0fc553)
+- (**law**) apply branch review findings (a0bbc92)
+- (**licenses**) write no for a repository without a license, keep row status mappings in the first check (95c6933)
+#### Refactoring
+- (**licenses**) the patrol reads sources, the assembly only asks consent (b012b69)
+
+- - -
+
+
 ## v0.22.1 - 2026-11-02
 #### Documentation
 - add the license facts to LAWMAN.md (8ee37aa)
