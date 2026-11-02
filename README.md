@@ -74,7 +74,7 @@ TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 
 The catalog check is off by default, and the assembly asks for your consent at install and again for each repository. When you say yes, the names and versions of the pinned packages of that repository, a private one too, go to the OSV service at every visit, and the service sees the installation's address. The check works on any harness whose page carries a send form. The Hermes page carries one today. On a harness without one, the patrol sends nothing and reports that the check did not run. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
-The license department is off by default. The assembly asks once for each repository. A license source gets data only after a separate yes for that source. The one exception is a single request for a public sample package during the live read, which carries no data of the project. See [configuration](docs/configuration.md#what-leaves-the-machine).
+The license department is off by default. The assembly asks once for each repository. A license source gets data only after a separate yes for that source. The one exception is the public sample requests of the live read. Each offered row gets one request. A row that reads several hosts gets one for each host its pins use, six at most. They carry no data of the project. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
 Run the assembly again to change the installation. It offers keep as is, roles, precincts or host.
 

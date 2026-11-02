@@ -2,7 +2,7 @@
 
 Use this reference when a precinct lacks an answer about the license department. The department is off for a repository until the developer says yes for it. This mode asks only the answers that are missing. It follows the shape in `SKILL.md`.
 
-At the start of the mode, tell the developer what changes. The department is new and off. No source receives anything without a separate consent for its row. The one exception is a single request to a public sample package at the live reading, and it carries no data of this project. The answers add an entry under `## License reading` in `host.md`, a section `## Licenses` in `LAWMAN.md` and the key `license_precincts` in `config.yaml`. Existing data stays as it is: the keys `catalog_*` and `typesafe_*`, the lines under `## Dependency reading` and the closed leads. Ask no question about a migration.
+At the start of the mode, tell the developer what changes. The department is new and off. No source receives anything without a separate consent for its row. The one exception is the public sample requests of the live reading. Each offered row gets one request. A row that reads several hosts gets one for each host the pins use, six at most. They carry no data of this project. The answers add an entry under `## License reading` in `host.md`, a section `## Licenses` in `LAWMAN.md` and the key `license_precincts` in `config.yaml`. Existing data stays as it is: the keys `catalog_*` and `typesafe_*`, the lines under `## Dependency reading` and the closed leads. Ask no question about a migration.
 
 No role stops for a missing answer. The patrol reads a missing answer as no. This mode sends no alarm, no chat message and no notice. It sends no data of this project to a license source.
 
@@ -171,7 +171,7 @@ When no row is written for an ecosystem, name that ecosystem and the reason in t
 
 Show the offer before the first question. Say this sentence before the first question:
 
-> Before you choose, one request goes to a public sample package of each offered source. It carries the User-Agent line of the row and no data of this project.
+> Before you choose, one request goes to a public sample package of each offered source. A source that reads several hosts gets one for each host the pins use, six at most. These requests carry the User-Agent line of the row and no data of this project.
 
 Then ask the first question alone in its call.
 
