@@ -133,6 +133,7 @@ Check for a secret only after the developer chooses the feature that needs it. L
 
 - Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action. A step may also name what to watch for, such as a list that spans pages.
 - Before you run or write anything, on this machine or on the host, tell the user in one line what you are about to do.
+- Say everything to the user as the section "Language" of the law says.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.
 - Never edit the harness configuration. Show the lines. The developer applies them and confirms.
 - Never merge a pull request.

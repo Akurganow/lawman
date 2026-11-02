@@ -21,7 +21,7 @@ This reference sets up the scheduled job of each role. It follows the shape of e
 - Create and edit jobs in this interactive session only, because scheduled sessions cannot do it.
 - The tiers, the plans, the clock order and the gate recommendation are advice. The developer may override each one.
 - The sections "Command forms" and "Create or edit" use two words for answers. A keep answer is the choice "Keep as is". A default answer is the choice "Use the harness default".
-- Ask in the developer's language when it is not English. Keep every fact.
+- Ask as the section "Language" of the law says. Keep every fact.
 
 Before the first part, stop if "Schedule forms and time zone" names no schedule form, and tell the developer the page lacks one.
 

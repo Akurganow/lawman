@@ -204,6 +204,8 @@ The first run of a gated role always starts a session. A gate check counts as ac
 
 Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you, and a stop of the law sync or of the duty desk.
 
+What reaches you uses your language, as the section "Language" of the law says. The outcome tokens, the word `ALARM` with its kind and reference, paths, numbers and the silence form stay as written. Records, markers and text posted to your repositories keep their language.
+
 ### Alarms
 
 The journal computes the first six alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
@@ -221,7 +223,7 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 | `sweep` | Patrol finds a live secret in the tree or the history. |
 | `referral` | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. The words after the reference use your language. An alarm line defeats the silence form, so the reply is delivered.
 
 The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
 

@@ -45,7 +45,7 @@ Never do these:
 
 The list has one entry, `licenses`. It applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
 
-A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The next tick tries again.
+A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The reason follows the section "Language" of the law. The next tick tries again.
 
 ## Working rules
 
@@ -225,8 +225,8 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
-3. Answer. Print every `ALARM` line verbatim first. Then print every line of the update list that the tick kept. Then:
-   - For `failed`, add the report.
+3. Answer, as the section "Language" of the law says. Print every `ALARM` line first. Then print every line of the update list that the tick kept. Then:
+   - For `failed`, add the report. The stored copy stays as written.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form that the harness page names, alone. The journal holds the report.
 
