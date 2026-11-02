@@ -17,7 +17,6 @@ import {
 tempDb();
 beforeEach(() => seed((d) => precinct(d, "main")));
 
-const DAY = BASE.slice(0, 10);
 const wake = (clock = BASE, role = "patrol") =>
 	inproc(clock, ["wake", "--role", role]);
 const take = (clock = BASE, role = "patrol") =>
@@ -25,17 +24,17 @@ const take = (clock = BASE, role = "patrol") =>
 const idOf = () => rows("SELECT id FROM dispatches")[0]?.id;
 
 describe("wake in process", () => {
-	test("prints idle, then an untaken order with the UTC day", () => {
+	test("prints idle, then an untaken order with the check time", () => {
 		expect(wake()).toMatchObject({ code: 0, out: "idle\n" });
 		seed((d) => order(d, "main", "patrol"));
-		expect(wake().out).toBe(`order ${idOf()}\nday ${DAY}\n`);
+		expect(wake().out).toBe(`order ${idOf()}\nat ${BASE}\n`);
 	});
 
 	test("a taken order shows again only after the claim limit", () => {
 		seed((d) => order(d, "main", "patrol", { takenAt: BASE }));
 		expect(wake(later(24, -1)).out).toBe("idle\n");
 		expect(wake(later(24)).out).toBe("idle\n");
-		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nday /);
+		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nat /);
 	});
 
 	test("agrees with dispatch take on every case, the boundary second included", () => {

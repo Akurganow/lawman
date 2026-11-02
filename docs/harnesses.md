@@ -23,7 +23,7 @@ One package serves every harness. The root of the repository holds no file that 
 
 - A file that one harness needs and the others do not read stays out of the root.
 - The law and the skills name no harness and no tool. They say what must happen.
-- A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine, such as the read of a license source, is recorded in `host.md` and not on a page. A page records only how its harness differs from the others.
+- A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine is recorded in `host.md` and not on a page. A page records only how its harness differs from the others.
 - The setup is the skill `assembly` on every harness. The user starts it from a chat. The package adds no command, hook or install script that runs it.
 
 ## The layout that serves the set

@@ -63,6 +63,10 @@ A tick that succeeds or skips answers only the silence form that the harness pag
 
 The lines of the update list are delivered to the owner too. The update list is the one that the "Sync the law" section of `tick.md` names. A reply that holds a line of it is not a silence form.
 
+## Language
+
+Write what you say to the user in the user's language.
+
 ## Evidence
 
 - An exhibit is a path and line quoted at the analysed commit, or a command with its verbatim output. Where nothing can run, a path traced with every step quoted is the exhibit for "this can happen".

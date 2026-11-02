@@ -17,5 +17,6 @@ export function wake(args: string[]): void {
 		return;
 	}
 	for (const o of orders) out(`order ${o.id}`);
-	out(`day ${stamp.slice(0, 10)}`);
+	// the time changes the output on every check, so a gate never skips a role that has work
+	out(`at ${stamp}`);
 }

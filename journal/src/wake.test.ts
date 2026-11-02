@@ -21,7 +21,6 @@ const wake = (clock = BASE, role = "patrol") =>
 	call(clock, ["wake", "--role", role]);
 const take = (clock = BASE, role = "patrol") =>
 	call(clock, ["dispatch", "take", "--role", role]);
-const DAY = BASE.slice(0, 10);
 
 function seedOrders(body: (db: Database) => void): void {
 	seed((db) => {
@@ -43,21 +42,19 @@ describe("wake", () => {
 		expect(wake()).toMatchObject({ code: 0, out: "idle\n" });
 	});
 
-	test("prints an untaken order and the UTC day, then idle once it is taken", () => {
+	test("prints an untaken order and the check time, then idle once it is taken", () => {
 		seedOrders((db) => order(db, "main", "patrol"));
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
-		expect(wake().out).toBe(`order ${id}\nday ${DAY}\n`);
+		expect(wake().out).toBe(`order ${id}\nat ${BASE}\n`);
 		expect(take().code).toBe(0);
 		expect(wake().out).toBe("idle\n");
 	});
 
-	test("the day line follows the UTC date and two calls the same day print the same bytes", () => {
+	test("an order left untaken changes the output at every check, idle stays the same", () => {
+		seedOrders(() => {});
+		expect(wake(later(1)).out).toBe(wake(later(2)).out);
 		seedOrders((db) => order(db, "main", "patrol"));
-		const evening = "2026-05-01T23:59:59Z";
-		const first = wake(evening);
-		expect(first.out).toEndWith("day 2026-05-01\n");
-		expect(wake(evening).out).toBe(first.out);
-		expect(wake("2026-05-02T00:00:00Z").out).toEndWith("day 2026-05-02\n");
+		expect(wake(later(1)).out).not.toBe(wake(later(2)).out);
 	});
 
 	test("lists several orders oldest first and prints no precinct or issue text", () => {
@@ -75,7 +72,7 @@ describe("wake", () => {
 		);
 		const [late, early, tie] = ids;
 		expect(wake(later(3)).out).toBe(
-			`order ${early}\norder ${tie}\norder ${late}\nday ${DAY}\n`,
+			`order ${early}\norder ${tie}\norder ${late}\nat ${later(3)}\n`,
 		);
 	});
 

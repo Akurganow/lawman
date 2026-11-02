@@ -4,7 +4,7 @@ Use this reference for a precinct that said yes to the license department. It se
 
 Every such run takes the tip of the default branch for each precinct that said yes. It runs "Agree the reading way" of `references/precinct.md` again and compares the result with the recorded entry. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
 
-Ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
+Read the tip as items 1 to 5 of "Read the repository" of `references/licenses/questions.md` say, before any question. Ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
 
 This table has these rows and no others.
 
@@ -29,11 +29,11 @@ Rules of the update:
 
 Replace the first sentence of the first source question with this one when a fitting row has no recorded answer.
 
-> <owner>/<repo> now fits these sources, and you have not answered for them. Which may the patrol ask?
+> <owner>/<repo> now fits these outside services, and you have not answered for them. Which may Lawman ask?
 
-Replace the first sentence of the use question with this one when the section has no `use` line.
+Put this sentence before the use question when the section has no `use` line.
 
-> The section `## Licenses` of <owner>/<repo> records no use. Is the project used commercially?
+> Lawman has no record yet of whether <owner>/<repo> earns money.
 
 Show this message when a pull request of Lawman already carries the change.
 

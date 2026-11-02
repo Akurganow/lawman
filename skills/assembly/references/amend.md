@@ -13,7 +13,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 5. Ask in the question tool. Offer "Amend now" (recommended) and "Later".
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
-8. Stop on "Later", an empty answer, a cancel or a timeout.
+8. Stop on "Later", an empty answer or a cancel.
 9. On "Amend now", read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them.
 
 ## Step 2. Amend the precincts

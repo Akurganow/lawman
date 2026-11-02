@@ -195,8 +195,8 @@ The duty desk starts first. The other roles start 15 to 135 minutes later. Late 
 A run gate skips a session that has nothing to do. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
 
 - The journal prints `idle` when the role has no order it can take.
-- Otherwise it prints one `order <id>` line per takeable order and a `day <date>` line.
-- When the output matches the last run, the harness skips the session.
+- Otherwise it prints one `order <id>` line per takeable order and an `at <time>` line.
+- When the output matches the last run, the harness skips the session. Only `idle` can match, so a role with an order always runs.
 
 The first run of a gated role always starts a session. A gate check counts as activity for the `role-silent` alarm. The duty desk takes no order and never gets a gate. The assembly writes the gates. See [the journal](journal.md).
 

@@ -24,7 +24,7 @@ The file is minified: a version leaves out a field equal to the one in the versi
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: packagist. Level: version. A finding rests on it: yes.
 - Pin carries: name `<vendor>/<package>`, version as the tree writes it with the `v` kept.
@@ -34,10 +34,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the field `license` of that element, or of the nearest element above it that has the field.
 - Reply form: JSON object
 - Special reading: the list is `packages["{vendor}/{package}"]`, in order, and the role compares that key without regard to case. A version leaves out a field equal to the one in the version above it. The value `__unset` means no license. A list of several licenses means OR.
-- Pace: at most 10 concurrent requests. The assembly sends one request at a time, so the interval is the time of the request at its live read. No jobs at the start of an hour or at midnight.
+- Pace: at most 10 concurrent requests. No jobs at the start of an hour or at midnight.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: psr/log 3.0.2. Expect: ["MIT"].
+- User-Agent: lawman <release_tag>; <release_repo>

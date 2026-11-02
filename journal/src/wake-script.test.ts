@@ -71,7 +71,7 @@ describe("gate file", () => {
 		expect(gate()).toEqual({ code: 0, out: "idle\n" });
 	});
 
-	test("prints the order and the day for a takeable order", () => {
+	test("prints the order and the check time for a takeable order", () => {
 		seed((db) => {
 			precinct(db, "main");
 			order(db, "main", ROLE);
@@ -79,7 +79,7 @@ describe("gate file", () => {
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
 		expect(gate()).toEqual({
 			code: 0,
-			out: `order ${id}\nday ${BASE.slice(0, 10)}\n`,
+			out: `order ${id}\nat ${BASE}\n`,
 		});
 	});
 

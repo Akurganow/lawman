@@ -43,7 +43,7 @@ Four per-precinct settings live outside the constitution for this reason. The we
 
 ## How the assembly writes it
 
-The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`. You review it. The assembly never merges.
+The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`. You review it. The assembly merges it only when you explicitly ask it to.
 
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
 - It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the nine headings.

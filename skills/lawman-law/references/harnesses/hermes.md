@@ -181,8 +181,8 @@ curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/jo
 
 Two things differ from the other harnesses.
 
-- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) The assembly divides the 180 seconds, because a reading command sets no `timeout`.
-- The forms of a command. A scheduled run refuses some forms, as "Commands in scheduled runs" lists. The reading way uses only the forms that section accepts. It starts no shell or interpreter with `-c` or `-e`.
+- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) A reading command without `timeout` lives 180 seconds, and the patrol starts no new request to a row after that time.
+- The forms of a command. A scheduled run refuses some forms, as "Commands in scheduled runs" lists. The command that reads a source uses only the forms that section accepts. It starts no shell or interpreter with `-c` or `-e`.
 
 ## Calling an expert
 
@@ -273,7 +273,9 @@ A job created paused has no stored slot, so `resume` sets its next future slot. 
 
 ### Run gate
 
-`--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+`--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the `idle` output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+
+The gate applies to manual runs too. A role with an order still runs at every check, because the journal's gate output carries the check time then (read in the journal code).
 
 The form of a role's gate file. Replace the placeholders:
 

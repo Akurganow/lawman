@@ -29,18 +29,18 @@ Ask in the question tool, in one call.
 3. When `catalog` is `no`, ask no precinct question.
 4. Treat a skip or an empty answer as no.
 5. For each precinct whose consent is yes, and for each precinct that said yes and has no entry, agree the reading way by the section "Agree the reading way" in `references/precinct.md`.
-6. When the developer cancels a question or it times out, end the mode without a write. The question returns at the next start.
+6. When the developer cancels a question, end the mode without a write. The question returns at the next start.
 
 ## Apply
 
-Ask for one approval. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer, a cancel or a timeout as no, and write nothing.
+Ask for one approval. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer or a cancel as no, and write nothing.
 
 After the approval, write in this order.
 
 1. Set `catalog` to the answer, when it was absent. When `catalog_precincts` is absent, set it to `none`.
 2. Set `<precinct name>=<answer>` in `catalog_precincts` for each consent asked. Replace `none`, replace an existing pair of that name, and never append a second one.
 3. Write `config.yaml`, and read it back.
-4. Write each agreed reading entry under `## Dependency reading` in `host.md`, by items 79 and 80 of the section "Add the precinct" in `references/precinct.md`. Run no other item of that section.
+4. Write each agreed reading entry under `## Dependency reading` in `host.md`, by items 78 and 79 of the section "Add the precinct" in `references/precinct.md`. Run no other item of that section.
 5. Read `host.md` back. Never write an entry into a repository.
 
 A "No" writes the pair and no entry.

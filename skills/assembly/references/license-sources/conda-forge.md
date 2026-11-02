@@ -24,7 +24,7 @@ A conda lock pins from conda-forge. Read 2026-11-01.
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: conda-forge. Level: build. A finding rests on it: yes.
 - Pin carries: name, version.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: the field `version` of each element of the list `distributions`. It must equal the pin. When any element differs, every pin of the reply is `unread`.
 - Take: the field `attrs.license` of each element of `distributions`. One value when the builds agree, otherwise the list of the distinct values. An empty `distributions` is `no-record`.
 - Reply form: JSON object
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: numpy 1.26.4, 29 builds. Expect: BSD-3-Clause.
+- User-Agent: lawman <release_tag>; <release_repo>

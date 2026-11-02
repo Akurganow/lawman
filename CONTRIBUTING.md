@@ -12,6 +12,7 @@ Lawman serves every developer who installs it, on repositories its authors have 
 - Bring a change in how Lawman works to each user through the update. After the update, the tick that synced the law must tell the user what to do, from the list in the section "Sync the law", and the assembly must explain it.
 - Ship law before code. Put code in the journal only for what must be safe and reliable, such as the cleaning of foreign text. Do not turn a rule into code before an error of the role is measured.
 - Make the assembly explain the change and ask the user what happens to the existing data. Make it ask the same at a first install into a repository that holds the old form.
+- Let the assembly read the repository before it asks. Ask every question that has no answer in the record, and recommend the answer that a file shows, with its path and line.
 
 ## Develop the journal
 

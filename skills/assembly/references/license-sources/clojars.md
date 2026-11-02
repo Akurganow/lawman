@@ -24,7 +24,7 @@ A lock pins a Clojars artifact. Read 2026-11-01.
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: clojars. Level: version. A finding rests on it: yes.
 - Pin carries: name `<group>/<artifact>`, version. A name of one word means the group equals the artifact.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the address names the pin.
 - Take: the text of the element `name` of each element `license` under `licenses` in the POM.
 - Reply form: XML
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: ring/ring-core 1.15.6. Expect: The MIT License.
+- User-Agent: lawman <release_tag>; <release_repo>
