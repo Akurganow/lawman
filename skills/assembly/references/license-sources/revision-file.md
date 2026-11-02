@@ -29,12 +29,12 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Source: revision-file. Level: revision for a commit and ref for a label. A finding rests on it: yes.
 - Pin carries: the address of the repository as the tree writes it, and a commit hash or a label.
 - Request: GET <address of the host table row, once for each file name>
-- Values: The host of the address chooses the row of the host table. The host name must equal a table host after the role writes it in lowercase. A host outside the table gets no request: the result is `unknown-host`. The role cuts off a `.git` suffix and trailing slashes. An address with a user name or a password sends nothing, and its pin goes to Coverage as `unknown-host`. An address with a port is `unknown-host`. Each segment of `<owner>`, `<repo>`, `<workspace>` and `<path>` passes the class `<name>` of a `licenses` line. `<path>` has several segments on `gitlab.com` and on `chromium.googlesource.com`. `<rev>` and `<commit>` pass the class `<pin>`. `<file>` is a file name of the list below. The rows of `codeberg.org`, `gitea.com` and `chromium.googlesource.com` take a commit only. A label there is `unknown-host`. A pin with a hash whose host is outside the table goes to the source `software-heritage` when that source is agreed.
+- Values: The host of the address chooses the row of the host table. The host name must equal a table host after the role writes it in lowercase. A host outside the table gets no request: the result is `unknown-host`. The role cuts off a `.git` suffix and trailing slashes. An address with a user name or a password sends nothing, and its pin goes to Coverage as `unknown-host`. An address with a port is `unknown-host`. Each segment of `<owner>`, `<repo>`, `<workspace>` and `<path>` passes the class `<name>` of a `licenses` line. `<path>` has several segments on `gitlab.com` and on `chromium.googlesource.com`. `<rev>` and `<commit>` pass the class `<pin>`. `<file>` is a file name of the list below. The rows of `codeberg.org`, `gitea.com` and `chromium.googlesource.com` take a commit only. A label there is `unknown-host`. A pin with a hash whose host is outside the table goes to the source `software-heritage` when that source is agreed. Run no git, clone nothing and walk no tree. Fetch one file at one commit.
 - Key of the reply: none: the address names the pin
 - Take: the whole text of the first file found. The role tries the file names in the order of the list and stops at the first reply that holds a file. A 404 moves to the next name. When no name finds a file, the result is `no-record`.
-- Reply form: text. For `chromium.googlesource.com`: base64 text.
+- Reply form: text
 - Special reading: The reply of `chromium.googlesource.com` is base64. The role decodes it before it reads the text.
-- Host table: six hosts, five address templates. A template with a commit takes only a commit.
+- Host table:
 
   | Host of the pin | Address of the request |
   | :-- | :-- |
@@ -42,8 +42,8 @@ Copy this block into the entry of the precinct word for word. The assembly fills
   | gitlab.com | `https://gitlab.com/<path>/-/raw/<rev>/<file>` |
   | codeberg.org | `https://codeberg.org/<owner>/<repo>/raw/commit/<commit>/<file>` |
   | gitea.com | `https://gitea.com/<owner>/<repo>/raw/commit/<commit>/<file>` |
-  | bitbucket.org | `https://bitbucket.org/<workspace>/<repo>/raw/<rev>/<file>`. The anonymous limit of 60 requests per hour is for API requests, and raw is not named |
-  | chromium.googlesource.com | `https://chromium.googlesource.com/<path>/+/<commit>/<file>?format=TEXT`, the reply is base64 |
+  | bitbucket.org | `https://bitbucket.org/<workspace>/<repo>/raw/<rev>/<file>` |
+  | chromium.googlesource.com | `https://chromium.googlesource.com/<path>/+/<commit>/<file>?format=TEXT` |
 
 - File names, up to 12, in this order: `LICENSE`, `LICENSE.txt`, `LICENSE.md`, `License.md`, `COPYING`, `COPYING.md`, `COPYING.txt`, `LICENCE`, `UNLICENSE`, `LICENSE-MIT`, `LICENSE-APACHE`, `MIT-LICENSE`.
 - What maps to `revision-file` and what does not:

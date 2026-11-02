@@ -139,8 +139,8 @@ Signs of use that point to one value recommend that value. No sign recommends `u
     - The pin carries every field that the `Pin carries` line of the row names.
 4. A manifest with ranges and no pin confirms no row. Say so in one line of the offer.
 5. Offer no container image, no range, no ecosystem without a row and no row that the reference removed. Name each ecosystem with no fitting row in the offer. It is no question, and the patrol counts it `not-covered`.
-6. Before the offer, read each fitting row once on its public sample. Take the sample and the expected value from the section "Live sample" of the file of the row. The request is the one the block of the row describes.
-7. Find the way to read the row on this machine. A way sends the request of the block. It uses https alone, follows no redirect and ignores the settings of the user's tool. It sends the User-Agent line of the block. It returns the body and the status code apart. It takes from the reply what the block names, before `bin/journal clean`. It carries no value from the tree or the reply, opens no address and runs no code of the reply.
+6. Before the offer, read each fitting row once on its public sample. Take the sample and the expected value from the section "Live sample" of the file of the row. The request is the one the block of the row describes. A row whose "Live sample" lists several hosts is read once for each host of its table that the pins use.
+7. Find the way to read the row on this machine. A way sends the request of the block. It uses https alone, follows no redirect and ignores the settings of the user's tool. It sends the User-Agent line of the block. The project address in that line is the `release_repo` of `config.yaml`, the `<owner>/<repo>` of Lawman's own release. The line carries no name and no address of the repository of the precinct or of this installation. The way uses only the forms that the harness page accepts for commands in a scheduled run. A way that the page would refuse is no way. It returns the body and the status code apart. It takes from the reply what the block names, before `bin/journal clean`. It carries no value from the tree or the reply, opens no address and runs no code of the reply.
 8. Compare the value taken with the expected value. When no way is found, or the value differs, the row is not written. The offer names the reason and adds this sentence to the text of the row:
 
 > The assembly found no way on this machine to take the license value from the reply of this source, so the row is not written.
@@ -171,7 +171,7 @@ When no row is written for an ecosystem, name that ecosystem and the reason in t
 
 Show the offer before the first question. Say this sentence before the first question:
 
-> Before you choose, one request goes to a public sample package of each offered source. It carries no data of this project.
+> Before you choose, one request goes to a public sample package of each offered source. It carries the User-Agent line of the row and no data of this project.
 
 Then ask the first question alone in its call.
 
@@ -205,9 +205,9 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 | "No", a skip or an empty answer to the enable question, full silence, or its own page `licenses` | `no` | not written | not written |
 | Cancel or timeout on any question, including "Agree the reading way", or a constitution that fails | not written | not written | no pull request |
 
-2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct it holds:
+2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;
-    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the tool name and version and the project address in the User-Agent line. For `revision-file`, copy its host table, its file names and its table "What maps to `revision-file` and what does not" too;
+    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the tool name and version and the project address in the User-Agent line, as item 7 of "The sources that fit" says. For `revision-file`, copy its host table, its file names and its table "What maps to `revision-file` and what does not" too;
     - the rows refused, apart, so that the question does not return;
     - the pins per visit of each row;
     - the way of reading, as one fact, which item 7 of "The sources that fit" found and checked on this machine;

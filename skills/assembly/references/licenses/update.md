@@ -4,7 +4,7 @@ Use this reference for a precinct that said yes to the license department. It se
 
 Every such run takes the tip of the default branch for each precinct that said yes. It runs "Agree the reading way" of `references/precinct.md` again and compares the result with the recorded entry. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
 
-Ask the findings at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the agreed rows. Ask the approval of Apply before "Write the answers".
+Ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
 
 This table has these rows and no others.
 
@@ -22,7 +22,7 @@ Rules of the update:
 - A pull request of Lawman is an open pull request of the trusted login, from the branch `lawman/licenses-sources` or `lawman/constitution`.
 - An owner who narrowed `sources`, or changed `use` at the merge, gets no question and no pull request.
 - Never remove a recorded answer because the tree or a release changed. Only the row for a request in "Re-check a precinct" replaces answers. A returning ecosystem raises no question.
-- A value of `sources` outside the index is rejected. Read it as absent, and name it.
+- An id of `sources` outside the index is rejected and named. A value with no valid id reads as `none`, as the law says.
 - "Agree the reading way" asks at an update only about the differences with the record. The answer updates both records, `## Dependency reading` and `## License reading`.
 - A precinct that said yes and has no `use` line gets its question once.
 - Add no fifth task to the menu.
