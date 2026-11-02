@@ -24,7 +24,7 @@ const withProof = (proof: string) =>
 
 describe("lint-page alarm-check line", () => {
 	test("the shipped security page prints it and no other shipped page does", () => {
-		for (const file of readdirSync(PAGES)) {
+		for (const file of readdirSync(PAGES).filter((f) => f.endsWith(".md"))) {
 			const name = file.slice(0, -".md".length);
 			const r = cli(
 				["lint-page", "department", "--name", name],
