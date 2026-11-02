@@ -24,7 +24,7 @@ A tag, latest only. `fsf-libre` and `osi-approved` are flags and not licenses. `
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: pub-dev. Level: package. A finding rests on it: no.
 - Pin carries: name, version. The request sends only the name.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: none: the answer is for the package
 - Take: the entries of the list `tags` that start with `license:`, with the prefix cut, except the flags `fsf-libre` and `osi-approved`.
 - Reply form: JSON object
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: yaml. Expect: mit.
+- User-Agent: lawman <release_tag>; <release_repo>

@@ -24,7 +24,7 @@ A lockfile pins a version in one of these ecosystems, from the public registry. 
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: deps-dev. Level: version. A finding rests on it: yes.
 - Pin carries: name, version.
@@ -35,12 +35,7 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the list of strings `responses[i].version.licenses`. When the object `version` is missing, the answer is `no-record`.
 - Reply form: JSON batch
 - Batch: up to 100 pins per request.
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: not counted for a batch row. One request carries up to 100 pins, and one batch is 1 request.
-- User-Agent: <tool name and version>; <project address>
+- User-Agent: lawman <release_tag>; <release_repo>
 - Attribution: Open Source Insights (deps.dev), CC-BY-4.0
-
-## Live sample
-
-- Sample: NPM lodash 4.0.0. Expect: ["MIT"].
-- Batch sample: NPM lodash 4.0.0 expects ["MIT"], PYPI Django 4.2 expects ["BSD-3-Clause"], GO github.com/hashicorp/terraform 1.6.0 expects ["MPL-2.0", "BSD-3-Clause"].

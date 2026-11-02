@@ -24,7 +24,7 @@ A lockfile pins a JSR package. Read 2026-11-01.
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: jsr. Level: version. A finding rests on it: yes.
 - Pin carries: name `@<scope>/<package>`, version.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `version`. It must equal the pin.
 - Take: the field `license`. The value `null` is `no-field`.
 - Reply form: JSON object
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: @std/path 1.1.6. Expect: MIT.
+- User-Agent: lawman <release_tag>; <release_repo>

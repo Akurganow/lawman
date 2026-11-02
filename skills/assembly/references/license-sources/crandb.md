@@ -24,7 +24,7 @@ Named a public API by METACRAN. No terms and no limits found. robots.txt holds n
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: crandb. Level: version. A finding rests on it: yes.
 - Pin carries: name, version.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `Version`. It must equal the pin.
 - Take: the field `License`.
 - Reply form: JSON object
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: shiny 1.8.0. Expect: GPL-3 | file LICENSE.
+- User-Agent: lawman <release_tag>; <release_repo>

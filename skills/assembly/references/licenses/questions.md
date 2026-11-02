@@ -2,9 +2,9 @@
 
 Use this reference when a precinct lacks an answer about the license department. The department is off for a repository until the developer says yes for it. This mode asks every question that has no answer in the record, and it recommends the answer that a file shows. It follows the shape in `SKILL.md`.
 
-At the start of the mode, tell the developer in plain words what changes. The department is new and off. No source receives anything without a separate consent for its row. The one exception is the public sample requests of the live reading. Each offered row gets one request. A row that reads several hosts gets one for each host the pins use, six at most. They carry no data of this project. The answers add an entry under `## License reading` in `host.md`, a section `## Licenses` in `LAWMAN.md` and the key `license_precincts` in `config.yaml`. Existing data stays as it is: the keys `catalog_*` and `typesafe_*`, the lines under `## Dependency reading` and the closed leads. Ask no question about a migration.
+At the start of the mode, tell the developer in plain words what changes. The department is new and off. No source receives anything without a separate consent for its row. The assembly sends nothing to a source. The patrol finds the way to ask each source and checks it on its first request. The answers add an entry under `## License reading` in `host.md`, a section `## Licenses` in `LAWMAN.md` and the key `license_precincts` in `config.yaml`. Existing data stays as it is: the keys `catalog_*` and `typesafe_*`, the lines under `## Dependency reading` and the closed leads. Ask no question about a migration.
 
-No role stops for a missing answer. The patrol reads a missing answer as no. This mode sends no alarm, no chat message and no notice. It sends no data of this project to a license source.
+No role stops for a missing answer. The patrol reads a missing answer as no. This mode sends no alarm, no chat message and no notice. It sends nothing to a license source.
 
 ## Find
 
@@ -34,7 +34,7 @@ For each open precinct whose constitution passes, ask the questions of "The lice
 
 Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer or a cancel as no, and write nothing. A timeout asks the Apply question again.
 
-Show the whole entry for `host.md` of each precinct in the Apply question, with the pins per visit of each row. Show the values of `reaches` and `use` too. After the approval, run "Write the answers" for each precinct that has answers.
+Show the whole entry for `host.md` of each precinct in the Apply question. Show the values of `reaches` and `use` too. After the approval, run "Write the answers" for each precinct that has answers.
 
 ## Summary
 
@@ -129,22 +129,9 @@ The answer is the value of `use`.
     - The pin carries every field that the `Pin carries` line of the row names.
 4. A manifest with ranges and no pin confirms no row. Say so in one line of the offer.
 5. Offer no container image, no range, no ecosystem without a row and no row that the reference removed. Name each ecosystem with no fitting row in the offer. It is no question, and the patrol counts it `not-covered`.
-6. Before the offer, read each fitting row once on its public sample. Take the sample and the expected value from the section "Live sample" of the file of the row. The request is the one the block of the row describes. A row whose "Live sample" lists several hosts is read once for each host of its table that the pins use.
-7. Find the way to read the row on this machine. A way sends the request of the block. It uses https alone, follows no redirect and ignores the settings of the user's tool. It sends the User-Agent line of the block. The project address in that line is the `release_repo` of `config.yaml`, the `<owner>/<repo>` of Lawman's own release. The line carries no name and no address of the repository of the precinct or of this installation. The way uses only the forms that the harness page accepts for commands in a scheduled run. A way that the page would refuse is no way. It returns the body and the status code apart. It takes from the reply what the block names, before `bin/journal clean`. It carries no value from the tree or the reply, opens no address and runs no code of the reply.
-8. Compare the value taken with the expected value. When no way is found, or the value differs, the row is not written. The offer names the reason and adds this sentence to the text of the row:
-
-> The assembly found no way on this machine to take the license value from the reply of this source, so the row is not written.
-
-9. Count the pins per visit for each row. Take the time limit of a command from the harness page. When the page gives none, take 120 seconds (not verified).
-    - The time of one request is the larger of two values. One is the interval of the pace of the block. The other is the time of the request in the live reading.
-    - A pace of `n` requests per `t` seconds is an interval of `t/n` seconds.
-    - One request for each pin: divide the limit by the "Requests per pin" times the time of one request. Round down.
-    - A batch row: divide the limit by the time of one batch and round down. One batch costs its requests per batch times the time of one request. Multiply the result by the pins per request.
-    - A row of one file for each tick: every pin of the visit counts when one request fits the limit.
-    - When the limit or the time of the request is missing, count no number. The row is not written, and the offer names the reason.
-10. Order the offer. The first fitting row of an ecosystem comes first. Every later row of that ecosystem is a second source. Inside both groups keep the order of the index.
-11. Write one text for each row: `<recipient> receives <fields>.` Take the recipient from the file of the row. Take the fields from the "Pin carries" and "Request" lines of its block. Add `path:line` of the file that showed the row fits. Add the pins per visit. Add one sentence from the block. With one request for each pin, `<n>` is the "Requests per pin": "Each dependency costs up to `<n>` requests at every scheduled run." For a batch row, `<p>` is the pins per request: "Each request carries up to `<p>` dependencies, and each batch costs one request at every scheduled run." For a row of one file: "One request serves all dependencies at every scheduled run."
-12. Add the supplements below to the text of the row and to the question of the row.
+6. Order the offer. The first fitting row of an ecosystem comes first. Every later row of that ecosystem is a second source. Inside both groups keep the order of the index.
+7. Write one text for each row: `<recipient> receives <fields>.` Take the recipient from the file of the row. Take the fields from the "Pin carries" and "Request" lines of its block. Add `path:line` of the file that showed the row fits. Add one sentence from the block. With one request for each pin, `<n>` is the "Requests per pin": "Each dependency costs up to `<n>` requests at every scheduled run." For a batch row, `<p>` is the pins per request: "Each request carries up to `<p>` dependencies, and each batch costs one request at every scheduled run." For a row of one file: "One request serves all dependencies at every scheduled run."
+8. Add the supplements below to the text of the row and to the question of the row.
 
 - A row of level `package`: "The answer is about the newest version and can be wrong for the version you use."
 - A row of level `recipe`: "The answer is about the recipe, and a recipe can serve several versions. It can be wrong for the version you use."
@@ -153,17 +140,13 @@ The answer is the value of `use`.
 - A row whose file says that an unknown name queues a harvest: "An unknown name stays in the service's queue for a later scan, for a private repository too."
 - A row whose request uses no pin field: "<recipient> receives one file request. No name leaves."
 
-When no row is written for an ecosystem, name that ecosystem and the reason in the offer. When nothing fits, show the notes of items 4 and 5 and this message, write `sources none` and ask no source question.
+When nothing fits, show the notes of items 4 and 5 and this message, write `sources none` and ask no source question.
 
 > No source in the reference fits <owner>/<repo>: it pins nothing that a source can answer for. The department works from the tree. Coverage names what it could not check.
 
 ### The source questions
 
-Show the offer before the first question. Say this sentence before the first question:
-
-> Before you choose, one request goes to a public sample package of each offered source. A source that reads several hosts gets one for each host your dependencies use, six at most. These requests carry Lawman's own name and no data of this project.
-
-Then ask the first question with one question for each precinct and no other step in its call.
+Show the offer before the first question. Then ask the first question with one question for each precinct and no other step in its call.
 
 > Which outside services may Lawman ask about the dependencies of <owner>/<repo>? Lawman needs the license of each dependency. The lock file does not record it. I list only the services that fit this repository. A service you allow receives what the list above says at every scheduled run and sees the network address of this computer. The repository is <private|public>, and the names of the dependencies leave even when the repository is private. Names from a private registry leave as well when its lock also holds public packages. If you allow none, Lawman checks only the files of the repository.
 
@@ -175,7 +158,7 @@ Mark `All listed` as recommended only when no row in the list has unclear terms.
 
 On `Choose`, ask one question for each fitting row, main rows first, with one question for each precinct and no other step in the call. Offer "No" first and "Yes" second. A skip refuses that row.
 
-> Allow <recipient> to be asked about <owner>/<repo>? <recipient> receives <the dependency fields that the row's address template uses>. <The cost sentence of the row, from item 11.>
+> Allow <recipient> to be asked about <owner>/<repo>? <recipient> receives <the dependency fields that the row's address template uses>. <The cost sentence of the row, from item 7.>
 
 Name the recipient and what leaves in each question. Add free text outside the offer and the choices to no question.
 
@@ -197,12 +180,10 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;
-    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the tool name and version and the project address in the User-Agent line, as item 7 of "The sources that fit" says. For `revision-file`, copy its host table, its file names and its table "What maps to `revision-file` and what does not" too;
+    - the agreed rows in order. Copy the block of the file of each row word for word. Fill in only the User-Agent line, as `lawman <release_tag>; <release_repo>`, with both values read from `config.yaml`. The line names no repository of the precinct or of this installation. For `revision-file`, copy its host table, its file names and its table "What maps to `revision-file` and what does not" too;
     - the rows refused, apart, so that the question does not return;
-    - the pins per visit of each row;
-    - the way of reading, as one fact, which item 7 of "The sources that fit" found and checked on this machine;
     - the word `none` when nothing is agreed.
-3. The entry takes from the tree only values that passed their class. These are a path by the path rules and the id of a row from the index. It holds no free phrase from the tree or from a reply. It holds no token and no key. The words of the author of the assembly stay out of it, except the way of reading.
+3. The entry takes from the tree only values that passed their class. These are a path by the path rules and the id of a row from the index. It holds no free phrase from the tree or from a reply. It holds no token and no key. The words of the author of the assembly stay out of it.
 4. Show the entry whole before the write. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
 5. Write the section `## Licenses` with these lines and no free phrase:
     - `reaches <internal|copies|service|copies,service>`

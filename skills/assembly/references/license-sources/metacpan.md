@@ -24,7 +24,7 @@ Slugs such as `perl_5` are not SPDX and go down the text path. `perl_5` means tw
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: metacpan. Level: version. A finding rests on it: yes.
 - Pin carries: distribution name, version.
@@ -35,11 +35,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the list of slugs `_source.license`.
 - Reply form: JSON batch
 - Batch: up to 100 pins per request.
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: not counted for a batch row. One request carries up to 100 pins, and one batch is 1 request.
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: Try-Tiny 0.31. Expect: ["mit"].
-- Batch sample: Try-Tiny 0.31 expects ["mit"], Mojolicious 9.34 expects ["artistic_2"], DBI 1.643 expects ["perl_5"].
+- User-Agent: lawman <release_tag>; <release_repo>

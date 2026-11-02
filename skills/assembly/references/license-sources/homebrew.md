@@ -24,7 +24,7 @@ Current formula only. Casks have no license. The version is ignored. Largest rep
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: homebrew. Level: package. A finding rests on it: no.
 - Pin carries: name, version. The request sends only the name.
@@ -33,10 +33,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Key of the reply: `name`. It must equal the name of the formula.
 - Take: the field `license`.
 - Reply form: JSON object
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: jq. Expect: MIT.
+- User-Agent: lawman <release_tag>; <release_repo>

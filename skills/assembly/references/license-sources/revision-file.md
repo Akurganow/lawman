@@ -24,7 +24,7 @@ The tree pins a git address on a table host. Read 2026-11-01.
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: revision-file. Level: revision for a commit and ref for a label. A finding rests on it: yes.
 - Pin carries: the address of the repository as the tree writes it, and a commit hash or a label.
@@ -66,11 +66,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
   | Git dependency of any language | Commit or label at its address |
   | Julia `git-tree-sha1` | Tree hash, `software-heritage` |
 
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly. A 429 stops the requests to that host.
+- Pace: none stated by the service. A 429 stops the requests to that host.
 - Requests per pin: up to 12
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: gitlab-org/cli at commit 9ed43f6507f1214b165fcb79f88e5e503f4a3539, file `LICENSE`. Expect: 1 107 bytes.
-- Samples of the other hosts, one each, read 2026-11-02: github.com redis/redis at commit d2c8a4b91e8c0e6aefd1f5bc0bf582cddbe046b7, file `COPYING`, 1 487 bytes. bitbucket.org atlassian/aws-s3-deploy at commit 1bdbb7dbe014019eaf03b00c6f14a40768549c04, file `LICENSE.txt`, 560 bytes. codeberg.org forgejo/forgejo at commit d595393bb619d5fafe16b38d15aa004256a414df, file `LICENSE`, 35 149 bytes. gitea.com gitea/tea at commit fff1af1029a1c63c078e058c9a5c4d3ac7054594, file `LICENSE`, 1 097 bytes. chromium.googlesource.com webm/libvpx at commit 10b9492dcf05b652e2e4b370e205bd605d421972, file `LICENSE`, 2 052 bytes of base64.
+- User-Agent: lawman <release_tag>; <release_repo>

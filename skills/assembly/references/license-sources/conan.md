@@ -24,7 +24,7 @@ Python source: never run. `opencv/4.1.2` declares a license its upstream file do
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: conan. Level: recipe. A finding rests on it: no.
 - Pin carries: name, `<version>#<recipe revision>`. A pin without a recipe revision does not fit.
@@ -34,10 +34,6 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Take: the value assigned to `license` in the text of the recipe.
 - Reply form: source text
 - Special reading: the text is Python code. The role reads it as text and never runs it.
-- Pace: none stated by the service. The interval is the time of the request at the live read of the assembly.
+- Pace: none stated by the service.
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: zlib 1.3.1 at recipe revision cac0f6daea041b0ccf42934163defb20. Expect: Zlib.
+- User-Agent: lawman <release_tag>; <release_repo>

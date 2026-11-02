@@ -24,7 +24,7 @@ The version-level value sits in the tarball, not read here. `hex`, `homebrew` an
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: hex. Level: package. A finding rests on it: no.
 - Pin carries: name, version. The request sends only the name.
@@ -35,8 +35,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Reply form: JSON object
 - Pace: at most 100 requests per 60 seconds
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: jason. Expect: ["Apache-2.0"].
+- User-Agent: lawman <release_tag>; <release_repo>

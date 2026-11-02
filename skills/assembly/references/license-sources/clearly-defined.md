@@ -24,7 +24,7 @@ A pin in these ecosystems. A `git` pin only on a github.com address. Read 2026-1
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: clearly-defined. Level: version. A finding rests on it: yes.
 - Pin carries: name, version. A git pin carries the commit hash.
@@ -37,9 +37,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Batch: up to 100 pins per request.
 - Pace: at most 250 requests per minute, the documented limit of the POST endpoints
 - Requests per pin: not counted for a batch row. One request carries up to 100 pins, and one batch is 1 request.
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: npm lodash 4.17.4. Expect: CC0-1.0 AND MIT.
-- Batch sample: npm lodash 4.17.4 expects CC0-1.0 AND MIT, Debian mini-httpd 1.30-0.2 expects BSD-2-Clause.
+- User-Agent: lawman <release_tag>; <release_repo>

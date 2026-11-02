@@ -24,7 +24,7 @@ A pinned crate from the public registry. Read 2026-11-01.
 
 ## Entry block
 
-Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
+Copy this block into the entry of the precinct word for word. The assembly fills `<release_tag>` and `<release_repo>` in the User-Agent line from `config.yaml`.
 
 - Source: crates-io. Level: version. A finding rests on it: yes.
 - Pin carries: name, version.
@@ -35,8 +35,4 @@ Copy this block into the entry of the precinct word for word. The assembly fills
 - Reply form: JSON object
 - Pace: at most 1 request per second
 - Requests per pin: 1
-- User-Agent: <tool name and version>; <project address>
-
-## Live sample
-
-- Sample: serde 1.0.0. Expect: MIT/Apache-2.0.
+- User-Agent: lawman <release_tag>; <release_repo>

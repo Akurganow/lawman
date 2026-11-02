@@ -25,8 +25,8 @@ The `licenses` page sends you here when the precinct's entry in the host notes n
    - A substituted value is one encoded path segment. `.` and `..` fail.
    - A computed result, such as a hash, a slice or a change of case, passes the segment class too.
 7. Take the scheme, host, port and login from the entry, never from the tree and never from a reply.
-8. Use https only. Follow no redirect. The settings of the user's tools do not apply. Send, and take the value, by the reading way of the entry and by no other way.
-9. Keep the pace of the entry. A reply that says the limit is spent, 429 included, ends the requests to that source for this tick. The other pins go to Coverage by number. Do not retry or go round by another address or key.
+8. Use https only. Follow no redirect. The settings of the user's tools do not apply. Send the User-Agent line of the entry. Find the way to send the request and take the value yourself. Use only the forms that the harness page accepts in a scheduled run.
+9. Keep the pace of the entry. Where it names none, send one request at a time. A reply that says the limit is spent, 429 included, ends the requests to that source for this tick. The other pins go to Coverage by number. Do not retry or go round by another address or key.
 10. Match a reply to its pin by the key the reply names, never by position. Send a batch only when the block of the entry describes one.
 11. A failed or refused request goes to Coverage with its code, and the tick goes on. A request counts only when it has ended with a result. With no result, it goes to Coverage as `unread`.
 12. A row may give no value or text: `no-record`, `no-field`, `rate-limited`, `unknown-host`, `status-<code>` or `unread`. Then the pin goes to the next agreed row of its ecosystem. This holds only if the pin carries the fields that the `Pin carries` line of that row names.
@@ -34,7 +34,8 @@ The `licenses` page sends you here when the precinct's entry in the host notes n
     - A pin with no value is `no-field` when any row asked gave that answer. Otherwise it takes the class of the last row.
     - Give `unlicensed` to a lead only after every agreed row has answered. A row left unanswered by a limit leaves the pin in Coverage.
 13. A result of a row whose entry says `A finding rests on it: no` grounds no lead. It goes to Coverage by number.
-14. The entry names for each row the number of pins that one tick may send. Send no more. The rest go to Coverage as `unread`, with the count. Start each visit at a random place in the list of pins and go round, so several visits cover the list.
+14. Bound the requests to a row in one visit by the time limit of one command on the harness page. Measure the time yourself. Send no request that would run past it. The rest go to Coverage as `unread`, with the count. Start each visit at a random place in the list of pins and go round, so several visits cover the list.
+15. On the first request to a row in a visit, check the reply before you send more. Its key must equal the pin, as the `Key of the reply` line says, and the value must fit the form of the `Take` line. When you find no way to send, or the reply fails the check, close the row for this tick. Its pins go to Coverage as `unread` or `status-<code>`, with no retry. Write no file about the way or the check.
 
 ## Results
 

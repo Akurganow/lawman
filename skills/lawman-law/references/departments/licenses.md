@@ -72,7 +72,7 @@ the Filed line is the law's INCOMPLETE line.
 **License list:** when the precinct's entry in the host notes names an agreed
 source and `license_precincts` holds `<precinct>=yes`, follow
 `lawman/skills/lawman-law/references/departments/licenses/reading.md`.
-Otherwise, or when the entry names no way of reading or a request cannot start,
+Otherwise, or when a request cannot start,
 the sweep goes on with the tree. It reports the check as not run only for the
 pins that no lock covers.
 
