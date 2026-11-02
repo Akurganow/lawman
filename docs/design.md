@@ -65,12 +65,14 @@ A developer who maintains many repositories wants the same review process on eac
 | How a stage reacts to a gap | A stop that waits for a person | A return with one question, capped at three rounds | Stuck work needs attention, and a cap ends every case |
 | What a court can rule | Ten verdicts as first proposed | Conviction, acquittal and, for a requirement, referral | A doubt about a defect is an acquittal, so the court never returns a case. A precedent records a settled reason |
 | Where process state lives | A shared set of labels, or a text journal | Markers on the host, and a SQLite journal behind one command | No setup per repository, and roles never write SQL |
-| Which departments a precinct runs | A list of attached shared departments in the constitution | Every shared page rotates, and a precinct adds its own | No reason was recorded |
+| Which departments a precinct runs | A list of attached shared departments in the constitution | Every shared page rotates, except `licenses`, which rotates only with a yes for the precinct, and a precinct adds its own | No reason was recorded |
 | How much a role runs | Ten roles that all run daily, which spend model usage fast | Every day, economy or custom plan, chosen at install | A role takes one case per run, so its days set the speed and the cost |
 | How Lawman installs | Agent plugins alone | An Agent Plugins package that also keeps its law, journal binary and assembly | The harness updates it with its own commands, and the binary is still verified |
 | Where the binaries live | A second repository | This repository | A second repository is not needed |
 | How a repository is reached | Guiding the user through tokens, or scripts that call the host | The tools already signed in on the machine | Scripts must not reach the host, and Lawman records only where a credential lives |
 | How the journal is built | Python | TypeScript on Bun, compiled to one binary per platform | The language the maintainer works in, and Bun compiles it to one binary |
+| Where the logic of a new department lives | Journal commands and tables for each external source | Law text, one reference file per source and a note of the precinct | Lawman ships law that the user's machine turns into a working check. Code goes into the journal only for what must be safe and reliable |
+| Where facts of a precinct about licenses live | Tails on the Departments line | A section `## Licenses` in the constitution and one entry in the host notes | A note needs no change to the check, and the address and the form depend on the machine |
 
 ## What is still open
 
