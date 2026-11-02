@@ -35,7 +35,7 @@ The `licenses` page sends you here when the precinct's entry in the host notes n
     - Give `unlicensed` to a lead only after every agreed row has answered. A row left unanswered by a limit leaves the pin in Coverage.
 13. A result of a row whose entry says `A finding rests on it: no` grounds no lead. It goes to Coverage by number.
 14. Take the clock before the first request to a row in a visit. Start no new request once the time limit of one command on the harness page has passed since then. The rest go to Coverage as `unread`, with the count. Start each visit at a random place in the list of pins and go round, so several visits cover the list.
-15. On the first request to a row in a visit, check the reply before you send more. The reply for the pin you sent must be a readable answer of the row's form. An honest `no-record` or `no-field` reply passes. When you find no way to send, or the reply is one you cannot read, close the row for this tick. Its pins go to Coverage as `unread` or `status-<code>`, with no retry. Write no file about the way or the check.
+15. On the first request to a row in a visit, check the reply before you send more. The reply for the pin you sent must be a readable answer of the row's form. An honest `no-record` or `no-field` reply passes, and so does any reply the row's block maps to a result, a status such as a 404 or a 301 among them. When you find no way to send, or the reply is one you cannot read, close the row for this tick. Its pins go to Coverage as `unread` or `status-<code>`, with no retry. Write no file about the way or the check.
 
 ## Results
 

@@ -176,6 +176,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 | "Yes", nothing chosen: `None`, a skip on the first question, or no on every row | `yes` | every offered row marked refused | `reaches`, `use`, `sources none` |
 | "Yes", nothing fits or the lock records the licenses | `yes` | the fact about the lock from the index, no agreed row | `reaches`, `use`, `sources none` |
 | "No", a skip or an empty answer to the enable question, full silence, or its own page `licenses` | `no` | not written | not written |
+| The repository states no license anywhere | `no` | not written | not written |
 | Cancel on any question: the mode ends. A skip on "Agree the reading way", or a skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
