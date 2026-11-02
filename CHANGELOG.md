@@ -4,6 +4,13 @@ All notable changes to Lawman are listed here, newest first. The release workflo
 
 - - -
 
+## v0.22.1 - 2026-11-02
+#### Documentation
+- add the license facts to LAWMAN.md (8ee37aa)
+
+- - -
+
+
 ## v0.22.0 - 2026-11-02
 #### Features
 - (**assembly**) add the software-heritage license source row (8f75415)
