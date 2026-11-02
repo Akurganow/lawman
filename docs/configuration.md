@@ -94,7 +94,7 @@ Roles read no network. Three exceptions exist: the catalog check of the patrol, 
 - The service sees the address of the installation that sends.
 - The list leaves again at every visit of the department, even when the tree did not change, because the catalog changes without a commit.
 - Lawman states nothing about how the service keeps what it receives.
-- A license source gets only what the file of its row names, at every visit, and sees the address of the installation. The patrol and the investigation read a license source only when three things hold. The precinct said yes in `license_precincts`. Its entry under `## License reading` agrees the row. Its section `## Licenses` does not narrow `sources` to `none`. The assembly sends one request for a public sample package of each offered row during the live read. That request carries no data of the project.
+- A license source gets only what the file of its row names, at every visit, and sees the address of the installation. The patrol and the investigation read a license source only when three things hold. The precinct said yes in `license_precincts`. Its entry under `## License reading` agrees the row. Its section `## Licenses` has no `sources` line, or has one that names the row and is not `none`. The assembly sends one request for a public sample package of each offered row during the live read. That request carries no data of the project.
 - An expert may receive a license identifier or a quote of a clause. It never receives a package name or a path.
 
 The rows, each with the file that says what it receives:
@@ -136,7 +136,7 @@ Ticks read the keys they need.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The patrol reads `catalog`, `catalog_precincts` and the precinct's line under `## Dependency reading` in `host.md`. The check runs only when `catalog` is exactly `yes`, the precinct pair is `yes` and the line names a way. Otherwise the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
-- The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when the pair is `yes`, the entry agrees the row and the section does not narrow `sources` to `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
+- The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
 
 See [the pipeline](pipeline.md) for the checks that open every tick.
