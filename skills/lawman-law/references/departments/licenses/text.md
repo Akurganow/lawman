@@ -14,4 +14,5 @@
    - You decide what is standard from that start. No reference texts exist.
 6. The investigation reads all the files.
 7. A closing line belongs to a file read whole. A file without its line, and a text with a needed file unread, is `unclear`. It goes to Coverage with no quote and no ground for a finding.
+   - Item 7 does not apply to the 4 000-byte read of the patrol. That read is whole when it ends with the line that gives the number of files and the size of the text.
 8. Take the quote from the cleaned text. Leave out placeholder lines such as `<year>`.
