@@ -12,7 +12,7 @@ Two things set it apart. The page may name the paths and tools of its precinct. 
 
 | Place | File | Names paths and tools | Source commands | In the rotation |
 | :-- | :-- | :-- | :-- | :-- |
-| Shared | Lawman's `skills/lawman-law/references/departments/<name>.md` | Of no specific repository | No | In every precinct, with no line |
+| Shared | Lawman's `skills/lawman-law/references/departments/<name>.md` | Of no specific repository | No | In every precinct, with no line. The page `licenses` also needs a yes for the precinct in `license_precincts` |
 | Installation | `departments/<name>.md` in the installation | Not of one repository | No | In a precinct with a Departments line |
 | Special | `.lawman/departments/<name>.md` in the precinct | Of its precinct | Yes | In a precinct with a Departments line |
 

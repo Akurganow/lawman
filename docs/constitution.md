@@ -30,7 +30,7 @@ You may add your own `##` section to `LAWMAN.md`: among the listed sections, bef
 
 The check rejects a file in which a listed heading is missing or stands twice. The order of the sections does not matter. The check does not read an unknown section. `bin/journal lint-page constitution` prints each one as a line that starts with `#`, and the assembly shows it to you.
 
-The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends, and a value outside the list reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 3. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
+The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 3. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
 
 ## What it must not hold
 
