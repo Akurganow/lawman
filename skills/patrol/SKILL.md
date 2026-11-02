@@ -70,7 +70,7 @@ Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Item
 
 ### Step 1: take an order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/skills/lawman-law/references/tick.md` and end the tick with `failed`. The added order joins the queue, and item 2 takes the oldest open order, which may be another one. A named order waits behind older ones.
+1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/skills/lawman-law/references/tick.md` and end the tick with `failed`. A named order waits behind older ones.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```

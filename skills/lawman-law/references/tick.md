@@ -225,7 +225,7 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
-3. Answer. Print every `ALARM` line first. Then print every line of the update list that the tick kept. Then:
+3. Answer. Print every `ALARM` line verbatim first. Then print every line of the update list that the tick kept. Then:
    - For `failed`, add the report.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form that the harness page names, alone. The journal holds the report.

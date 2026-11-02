@@ -225,7 +225,7 @@ The answer is the last text you write. The full report never goes into it.
 Build the answer from these rules:
 
 - If the tick stopped or failed, write one line `<outcome>: <reason>` first. A probe failure writes its line from step 0.1 instead.
-- Write every `ALARM` line from step 0.1 and from step 1, one per line. Then write every line of the update list that the sync printed, one per line.
+- Write every `ALARM` line from step 0.1 and from step 1, one per line, verbatim. Then write every line of the update list that the sync printed, one per line, verbatim.
 - If neither applies, write the silence form that the harness page names, alone. The journal holds the report.
 
 Never write the silence form together with an `ALARM` line, a line of the update list or a stop line. A clean tick, a duplicate order and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.

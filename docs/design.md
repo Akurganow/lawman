@@ -73,7 +73,7 @@ A developer who maintains many repositories wants the same review process on eac
 | How the journal is built | Python | TypeScript on Bun, compiled to one binary per platform | The language the maintainer works in, and Bun compiles it to one binary |
 | Where the logic of a new department lives | Journal commands and tables for each external source | Law text, one reference file per source and a note of the precinct | Lawman ships law that the user's machine turns into a working check. Code goes into the journal only for what must be safe and reliable |
 | Where facts of a precinct about licenses live | Tails on the Departments line | A section `## Licenses` in the constitution and one entry in the host notes | A note needs no change to the check, and the address and the form depend on the machine |
-| What the assembly asks about licenses | The same questions for every repository | It reads the tree first, recommends the answer that a file shows with its path and line, and asks both license-use questions every time, with no recommendation where the tree shows nothing | The user can judge a question only when it is plain and the recommendation shows its file. The user decides the answer |
+| What the assembly asks about licenses | The same questions for every repository | It reads the tree first, recommends the answer that a file shows with its path and line, and asks both license-use questions even when a file shows the answer, with no recommendation where the tree shows nothing | The user can judge a question only when it is plain and the recommendation shows its file. The user decides the answer |
 
 ## What is still open
 

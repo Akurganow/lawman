@@ -65,7 +65,7 @@ The lines of the update list are delivered to the owner too. The update list is 
 
 ## Language
 
-Use the user's language.
+Write what you say to the user in the user's language.
 
 ## Evidence
 
