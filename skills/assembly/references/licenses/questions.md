@@ -32,7 +32,7 @@ For each open precinct whose constitution passes, ask the questions of "The lice
 
 ## Apply
 
-Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer, a cancel or a timeout as no, and write nothing.
+Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer or a cancel as no, and write nothing. A timeout asks the Apply question again.
 
 Show the whole entry for `host.md` of each precinct in the Apply question, with the pins per visit of each row. Show the values of `reaches` and `use` too. After the approval, run "Write the answers" for each precinct that has answers.
 
@@ -66,10 +66,10 @@ Run this section for the open repositories. The add path of `references/precinct
 
 ### Order of the calls
 
-Every call is one call of the question tool. Text that is the same for all stands once in the message before the call. A cancel or a timeout in any call ends the mode and writes nothing, including the answers of the earlier calls. The pairs and the pull requests are written once, after the last answer.
+Every call is one call of the question tool. Text that is the same for all stands once in the message before the call. A cancel in any call ends the mode and writes nothing, including the answers of the earlier calls. A timeout means nobody answered and refuses nothing: ask the same call again and keep the answers of the earlier calls. The pairs and the pull requests are written once, after the last answer.
 
 1. The enable question, one for each precinct.
-2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the role takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it. A cancel or a timeout there ends the mode with no write.
+2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the role takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it. A cancel there ends the mode with no write. A timeout there asks the same call again.
 3. The two questions of "How people get the project and what it earns", for each precinct that said yes.
 4. The first source question of each precinct that has a fitting source.
 5. After "Choose", one call for each fitting source.
@@ -193,7 +193,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 | "Yes", nothing chosen: `None`, a skip on the first question, or no on every row | `yes` | every offered row marked refused | `reaches`, `use`, `sources none` |
 | "Yes", nothing fits or the lock records the licenses | `yes` | the fact about the lock from the index, no agreed row | `reaches`, `use`, `sources none` |
 | "No", a skip or an empty answer to the enable question, full silence, or its own page `licenses` | `no` | not written | not written |
-| Cancel or timeout on any question: the mode ends. A skip on "Agree the reading way", or a skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
+| Cancel on any question: the mode ends. A timeout is no refusal: the same call is asked again and the earlier answers stay. A skip on "Agree the reading way", or a skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;
@@ -210,7 +210,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
     - `sources <none|id,...>`, with ids from the index
 6. For a repository without a constitution, put the section into the draft of the same pull request. Run `bin/journal lint-page constitution` on the draft until it passes.
 7. For an existing constitution, make a working copy of the tip of the default branch on a new branch `lawman/licenses-sources`. Add or change the section `## Licenses` in `LAWMAN.md`, with only the lines whose answer is new. Run `bin/journal lint-page constitution` on the file, and check that the diff touches only that section.
-8. Commit `LAWMAN.md`, publish the branch and open a pull request with the title "Update the license facts in LAWMAN.md". Never merge it. When the section already holds the answer, open none.
+8. Commit `LAWMAN.md`, publish the branch and open a pull request with the title "Update the license facts in LAWMAN.md". Merge it only as `SKILL.md` allows. When the section already holds the answer, open none.
 9. When a pull request of Lawman is open for the section, run item 7 on `LAWMAN.md` as it is at the head of its branch. Commit on that branch and open no new pull request.
 10. Show no note `# <n>` about the section `## Licenses`. The assembly writes that section itself.
 11. A pull request that did not open leaves the pairs in place. Say so, and name the way back: remove the pairs of this repository from `config.yaml` and start the assembly.

@@ -23,7 +23,7 @@ A `git` pin is any pin that names a git address with a commit or a label. Exampl
 
 | Ecosystem | Rows in order | The lock records the license |
 | :-- | :-- | :-- |
-| npm | [`deps-dev`](deps-dev.md), [`npm-registry`](npm-registry.md), [`clearly-defined`](clearly-defined.md) | A part of the pins. The field `license` of an entry under `packages` in `package-lock.json`. Public repository create-react-app, lock version 2: 11 of 2 589 entries, read 2026-11-02. |
+| npm | [`deps-dev`](deps-dev.md), [`npm-registry`](npm-registry.md), [`clearly-defined`](clearly-defined.md) | A part of the pins. The field `license` of an entry under `packages` in `package-lock.json`. Public repository create-react-app, lock version 2: 11 of 2 589 entries, read 2026-11-02. A `bun.lock` of the same ecosystem records no license at any pin. |
 | PyPI | [`deps-dev`](deps-dev.md), [`pypi-json`](pypi-json.md), [`clearly-defined`](clearly-defined.md) | (not verified) |
 | crates.io | [`deps-dev`](deps-dev.md), [`crates-io`](crates-io.md), [`clearly-defined`](clearly-defined.md) | (not verified) |
 | Go | [`deps-dev`](deps-dev.md), [`clearly-defined`](clearly-defined.md) | (not verified) |

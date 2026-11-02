@@ -144,10 +144,10 @@ Then decide.
 55. Show the changed rows, marked, and ask this call again.
 56. On "Open the pull request", run item 57a, then the sections "Commit and open the pull request", "Agree the reading way" and "Add the precinct".
 57. On "Add the precinct", run item 57a, then only the sections "Agree the reading way" and "Add the precinct".
-57a. Run `references/licenses/questions.md` before "Commit and open the pull request". Run it when the user chose "Open the pull request" or "Add the precinct" and `license_precincts` holds no pair for this repository. Run it only when neither `.lawman/departments/licenses.md` at `HEAD` nor `departments/licenses.md` of the installation exists. A cancel or a timeout in these questions adds the precinct without a pair. The question returns at the next start. When one of those pages exists, ask nothing and write the pair `no` with the other pairs. The section "Agree the reading way" runs once, inside these questions or after them. On "Add the precinct" the constitution exists. The section `## Licenses` then goes into a pull request from `lawman/licenses-sources`, as item 7 of "Write the answers" in that file says.
+57a. Run `references/licenses/questions.md` before "Commit and open the pull request". Run it when the user chose "Open the pull request" or "Add the precinct" and `license_precincts` holds no pair for this repository. Run it only when neither `.lawman/departments/licenses.md` at `HEAD` nor `departments/licenses.md` of the installation exists. A cancel in these questions adds the precinct without a pair, and the question returns at the next start. A timeout asks the same call again and keeps the earlier answers. When one of those pages exists, ask nothing and write the pair `no` with the other pairs. The section "Agree the reading way" runs once, inside these questions or after them. On "Add the precinct" the constitution exists. The section `## Licenses` then goes into a pull request from `lawman/licenses-sources`, as item 7 of "Write the answers" in that file says.
 58. After the approval, run "Open an issue in the repository" when the user chose it. Open an issue there that asks for the documents, and show its link.
 59. After the approval, run "Create them now" when the user chose it. Draft the documents with the developer in this session.
-60. Deliver the drafted documents to the repository only by a pull request, opened after the approval, and never merge it.
+60. Deliver the drafted documents to the repository only by a pull request, opened after the approval, and merge it only as `SKILL.md` allows.
 
 ### Commit and open the pull request
 
@@ -155,7 +155,7 @@ Then decide.
 62. Commit `LAWMAN.md` in the clone with the message "Add the Lawman constitution".
 63. Publish the branch `lawman/constitution` to the repository, and stop if it fails.
 64. Open a pull request from the branch `lawman/constitution` in the repository. Its title is "Add the Lawman constitution". Its body is "Adds LAWMAN.md. Review the paths and the department lines." Stop if it fails, showing the link.
-65. Never merge the pull request.
+65. Merge the pull request only as `SKILL.md` allows.
 
 ### Agree the reading way
 
@@ -168,7 +168,7 @@ Run this section once for a precinct, when its catalog consent is "Yes" or its l
 70. Never execute code of the precinct or a tool the precinct configures.
 71. Ask in the question tool, and offer "Agree" (recommended) and "Change". Say why: Lawman reads these files to list the packages it checks.
 72. On "Change", take the developer's change as free text, show the changed rows, marked, and ask again.
-73. Treat a skip, an empty answer, a cancel or a timeout as no entry, and return to the section that called this one. On the add path with no caller, go on with the section "Add the precinct".
+73. Treat a skip, an empty answer or a cancel as no entry, and return to the section that called this one. A timeout asks the same call again. On the add path with no caller, go on with the section "Add the precinct".
 
 ### Add the precinct
 
@@ -319,7 +319,7 @@ When the judging document is not `none`, check that its path exists in the copy.
 6. Commit the change in the copy with the message "Add the <name> department".
 7. Publish the branch `lawman/department-<name>` to the repository, and stop if it fails.
 8. Open a pull request from the branch `lawman/department-<name>` in `<owner>/<repo>`. Its title is "Add the <name> department". Its body is "Adds the <name> department to the rotation. Review the changed files." Stop if it fails, showing the link.
-9. Never merge the pull request.
+9. Merge the pull request only as `SKILL.md` allows.
 
 ### Step 9. Remove the copy
 

@@ -114,7 +114,7 @@ The three places differ in what the pull request holds:
 - **A page in the installation's `departments/`.** The assembly copies the page into the installation with no pull request. The precinct gets a Departments line by pull request. Run the job again for each further precinct.
 - **A shared department of Lawman.** The precinct gets only a Departments line with its judging document, by pull request.
 
-The assembly writes the line with `bin/journal department-line`. It commits on the branch `lawman/department-<name>` and opens the pull request. It never merges. The department enters the rotation once you merge the pull request.
+The assembly writes the line with `bin/journal department-line`. It commits on the branch `lawman/department-<name>` and opens the pull request. It merges it only when you explicitly ask. The department enters the rotation once you merge the pull request.
 
 The assembly also proposes the judging documents of the shared departments when it adds a precinct. See [constitution](constitution.md).
 
