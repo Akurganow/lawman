@@ -26,10 +26,10 @@ Stated as "Microsoft's best understanding". `null` sends the reader to the copyr
 
 Copy this block into the entry of the precinct word for word. The assembly fills only the tool name and version and the project address in the User-Agent line.
 
-- Source: vcpkg. Level: version. A finding rests on it: yes.
+- Source: vcpkg. Level: recipe. A finding rests on it: no.
 - Pin carries: port name, baseline commit hash.
 - Request: GET https://raw.githubusercontent.com/microsoft/vcpkg/{baseline}/ports/{name}/vcpkg.json
-- Values: `{baseline}` passes the commit hash form of the class `<pin>`. Any other pin does not fit this row. A port that the manifest lists in `overrides` or names with a `version>=` constraint is `not-covered`. The manifest selects a version that the baseline may not hold. `{name}` passes the class `<name>` of a `licenses` line.
+- Values: `{baseline}` passes the commit hash form of the class `<pin>`. Any other pin does not fit this row. A port that the manifest lists in `overrides` or names with a `version>=` constraint is `not-covered`. The manifest selects a version that the baseline may not hold. A `version>=` in the manifest of a dependency can also raise it, and the tree cannot prove the selected version equals the baseline, so the read grounds no finding. `{name}` passes the class `<name>` of a `licenses` line.
 - Key of the reply: `name`. It must equal the port name.
 - Take: the field `license`. When it is absent or `null`, the answer is `no-field`.
 - Reply form: JSON object
