@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
-import { existsSync, readFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as clean from "./clean";
 import { EXIT } from "./db";
@@ -96,6 +96,27 @@ describe("run: the command and its outcome", () => {
 		});
 		const listed = await inprocAsync(BASE, ["commands", "main"]);
 		expect(listed.out).toContain("\nfetch empty\n");
+	});
+
+	test("a folder named after the operation is no command", async () => {
+		mkdirSync(join(configs("main"), "fetch"), { recursive: true });
+		expect((await run("fetch")).out).toBe("fetch empty\n");
+		expect((await inprocAsync(BASE, ["commands", "main"])).out).toContain(
+			"\nfetch empty\n",
+		);
+	});
+
+	test("a file in place of the precinct folder makes every operation empty", async () => {
+		mkdirSync(join(dir, "configs"));
+		writeFileSync(configs("main"), "not a folder");
+		expect(await run("fetch")).toEqual({
+			code: EXIT.OK,
+			out: "fetch empty\n",
+			err: "",
+		});
+		expect((await inprocAsync(BASE, ["commands", "main"])).out).toContain(
+			"\nfetch empty\n",
+		);
 	});
 
 	test("a command that reads standard input ends without waiting", async () => {

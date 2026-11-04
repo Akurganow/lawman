@@ -23,7 +23,7 @@ import {
 tempDb();
 beforeEach(() => addPrecincts({ a: 1, b: 1 }));
 
-const HIDDEN = "seen <!-- unseen --> text​";
+const HIDDEN = "seen <!-- unseen --> text\u200B";
 const AT = "2026-10-14T09:00:00Z";
 const LATER = "2026-10-14T10:00:00Z";
 

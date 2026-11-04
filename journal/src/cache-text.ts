@@ -26,13 +26,16 @@ async function cleanText(text: HostText): Promise<HostText> {
 	};
 }
 
-export async function cleanTexts(texts: HostText[]): Promise<HostText[]> {
+export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 	try {
-		return await Promise.all(texts.map(cleanText));
+		return await work();
 	} catch {
 		throw new CleanFailed();
 	}
 }
+
+export const cleanTexts = (texts: HostText[]) =>
+	cleaning(() => Promise.all(texts.map(cleanText)));
 
 export function dropComments(db: Database, precinct: string, kind: TextKind) {
 	db.run("DELETE FROM comments WHERE precinct = ? AND kind = ?", [
@@ -93,7 +96,7 @@ export async function printCached(
 			"SELECT id, author, at, body FROM comments WHERE precinct = ? AND kind = ? AND number = ? ORDER BY at, id",
 		)
 		.all(precinct, kind, number) as CommentText[];
-	try {
+	return cleaning(async () => {
 		const blocks = [fenced(kind, await cleanHostText(row.body))];
 		for (const c of comments)
 			blocks.push(
@@ -101,7 +104,5 @@ export async function printCached(
 				fenced("comment", `${await header(c)}\n${await cleanHostText(c.body)}`),
 			);
 		return blocks.join("\n");
-	} catch {
-		throw new CleanFailed();
-	}
+	});
 }

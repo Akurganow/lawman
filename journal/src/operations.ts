@@ -1,5 +1,5 @@
 import { check, fits, parseArgs, usage } from "./args";
-import { CleanFailed } from "./cache-text";
+import { CleanFailed, cleaning } from "./cache-text";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, out, withDb } from "./db";
 import { decide } from "./decider";
@@ -89,13 +89,7 @@ function parseCall(operation: Operation, rest: string[]): Call {
 const fitsSlot = (slot: Slot, value: string) =>
 	slot === "word" ? WORDS.includes(value) : fits(slot, value);
 
-async function characters(text: string): Promise<string> {
-	try {
-		return await cleanCharacters(text);
-	} catch {
-		throw new CleanFailed();
-	}
-}
+const characters = (text: string) => cleaning(() => cleanCharacters(text));
 
 function oneLine(text: string, kind: "revision" | "login"): string {
 	const line = text.replace(/\r?\n$/, "");

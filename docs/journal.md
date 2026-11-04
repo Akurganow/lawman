@@ -229,10 +229,7 @@ The journal checks every argument against its class before the command runs. An 
 
 ### Failures and their reasons
 
-A failure prints one line and an `error` fence below it:
-
-- `<operation> failed reason=<reason>`, then the `error` fence;
-- `<operation> empty`.
+A failure prints one line, `<operation> failed reason=<reason>`, and an `error` fence below it.
 
 The reasons are `argument`, `start`, `exit`, `form` and `clean`.
 
@@ -248,7 +245,7 @@ The text inside the `error` fence passes the character layer of the cleaning. Ev
 
 ### Fences
 
-The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The text itself is not changed. A tilde fence also sits safely inside a harness that wraps the output in backticks.
+The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The fence adds no change to the text. A tilde fence also sits safely inside a harness that wraps the output in backticks.
 
 The kinds so far are `issue`, `comment`, `pull`, `file`, `files` and `error`. Later kinds join as the journal prints more foreign text.
 

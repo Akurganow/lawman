@@ -28,14 +28,14 @@ const KEY_BODY = KEY.split("\n")[1] ?? "";
 const SAMPLE = [
 	`token ${TOKEN} here`,
 	KEY,
-	"hidden​join and ‮turned",
+	"hidden\u200Bjoin and \u202Eturned",
 	"<!-- a note -->",
 	"![a](http://x/y.png)",
 	'<img src="http://x/z.png">',
 	"```",
 	"~~~",
 	"~~~~~~~~",
-	"~~​~~~~~~~~~~",
+	"~~\u200B~~~~~~~~~~",
 	MARKER,
 	"```",
 ].join("\n");

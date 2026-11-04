@@ -19,8 +19,14 @@ export const precinctPlace = (precinct: string) =>
 	join(commandFolder(), "configs", precinct);
 export const installationPlace = () => join(commandFolder(), "shared");
 
-export const hasCommand = (place: string, operation: string) =>
-	statSync(join(place, operation), { throwIfNoEntry: false }) !== undefined;
+// a folder, a dangling link or a place that is a file holds no command
+export function hasCommand(place: string, operation: string): boolean {
+	try {
+		return statSync(join(place, operation)).isFile();
+	} catch {
+		return false;
+	}
+}
 
 export type Ran = { ok: boolean; stdout: Uint8Array; stderr: Uint8Array };
 
