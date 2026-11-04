@@ -364,6 +364,10 @@ describe("parts of the role group", () => {
 		orderFor("court");
 		expect(wake("court")).toMatchObject({ code: 1, out: "" });
 		expect(part("court", 2)).toMatchObject({ code: 1, out: "" });
+		for (const value of ["0", "007", "-5", "1.5"]) {
+			config(`${CONFIG}input_chars: ${value}\n`);
+			expect([value, wake("court").code]).toEqual([value, 1]);
+		}
 	});
 
 	test("a part outside the group exits 1", () => {
@@ -371,6 +375,7 @@ describe("parts of the role group", () => {
 		sized(WIDE);
 		expect(part("court", 2)).toMatchObject({ code: 1, out: "" });
 		expect(part("judge", 1)).toMatchObject({ code: 1, out: "" });
+		expect(part("constructor", 1)).toMatchObject({ code: 1, out: "" });
 		expect(part("court", 1).out).toStartWith(
 			"lawman input 1 role=court part 1 of 1\n",
 		);

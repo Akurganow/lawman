@@ -216,4 +216,8 @@ const DUTY_DESK_LAW: Read[] = [
 ];
 
 export const lawOf = (role: string): Read[] =>
-	role === DUTY_DESK ? DUTY_DESK_LAW : (ROLES[role]?.law ?? []);
+	role === DUTY_DESK ? DUTY_DESK_LAW : (inputOf(role)?.law ?? []);
+
+// an own key only, so a role named like an object member has no input
+export const inputOf = (role: string): RoleInput | undefined =>
+	Object.hasOwn(ROLES, role) ? ROLES[role] : undefined;

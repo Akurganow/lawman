@@ -15,7 +15,7 @@ import {
 	readText,
 } from "./input-files";
 import { type Block, fencedBlock, framed, pack, render } from "./input-parts";
-import { ROLES, type RoleInput, type StageFields } from "./input-roles";
+import { inputOf, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
@@ -254,7 +254,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	const { opt } = parseArgs(args, 0, ["role", "order"], START_USAGE);
 	const role = check("role", opt.role);
 	const id = count(opt.order, "order", 1);
-	const input = ROLES[role];
+	const input = inputOf(role);
 	if (input === undefined)
 		throw new Fail(EXIT.USAGE, `no tick input for role ${role}`);
 	const stamp = now();
@@ -459,7 +459,7 @@ export async function tickInput(args: string[]): Promise<number> {
 		out(part);
 		return EXIT.OK;
 	}
-	const input = ROLES[row.role];
+	const input = inputOf(row.role);
 	const orderId = row.dispatch;
 	if (input === undefined || orderId === null)
 		throw new Fail(EXIT.USAGE, `tick ${id} took no order`);

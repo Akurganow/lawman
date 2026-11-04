@@ -804,6 +804,7 @@ describe("tick input usage", () => {
 			["--role", "investigation", "--order"],
 			["--role", "Bad", "--order", "1"],
 			["--role", "judge", "--order", "1"],
+			["--role", "constructor", "--order", "1"],
 		])
 			expect([args, call(BASE, ["tick", "start", ...args]).code]).toEqual([
 				args,

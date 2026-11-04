@@ -10,7 +10,7 @@ import {
 	readText,
 } from "./input-files";
 import { type Block, framed, pack } from "./input-parts";
-import { DUTY_DESK, HARNESS_SECTIONS, lawOf, ROLES } from "./input-roles";
+import { DUTY_DESK, HARNESS_SECTIONS, inputOf, lawOf } from "./input-roles";
 import { commandFolder } from "./launch";
 import { sectionsOf } from "./law-sections";
 import { configValue } from "./law-sync";
@@ -77,7 +77,7 @@ const PART_USAGE = "tick input --role <r> --part <k>";
 export function rolePartCommand(args: string[]): number {
 	const { opt } = parseArgs(args, 0, ["role", "part"], PART_USAGE);
 	const role = check("role", opt.role);
-	if (role !== DUTY_DESK && ROLES[role] === undefined)
+	if (role !== DUTY_DESK && inputOf(role) === undefined)
 		throw new Fail(EXIT.USAGE, `no input for role ${role}`);
 	const k = count(opt.part, "part", 1);
 	const orders = withDb((db) => takeableOrders(db, role, now()));
