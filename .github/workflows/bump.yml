@@ -67,7 +67,9 @@ jobs:
           fi
           template="$RUNNER_TEMP/breaking.tera"
           printf '%s' '{% for commit in commits %}{% if commit.breaking_change %}{{ commit.id }} {% endif %}{% endfor %}' > "$template"
-          breaking=$(cog changelog --template "$template" "$(cog get-version --tag)..HEAD")
+          # Its own assignment, so bash -e stops on a failure.
+          base=$(cog get-version --tag)
+          breaking=$(cog changelog --template "$template" "$base..HEAD")
           increment=--auto
           if [ -n "$breaking" ]; then
             increment=--major

@@ -66,7 +66,7 @@ The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.c
 
 A version tag starts with `v`, and it starts the release workflow. The workflow installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
 
-A push to `release-trial` runs the same build, tests and attestations without the version check. It publishes nothing: no release, no tag and no pre-release. Push a change to the release workflow there before the next tag.
+A push to `release-trial` runs the same build, tests and attestations without the version check. It publishes nothing: no release, no tag and no pre-release.
 
 ### Beta
 
