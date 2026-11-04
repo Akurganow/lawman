@@ -4,11 +4,20 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 
 ## Where it lives
 
-`config.yaml` sits in the installation directory. The directory also holds `lawman/`, the link to the plugin folder, `bin/journal` and `host.md`. See [the journal](journal.md).
+`config.yaml` sits in the installation directory. The directory also holds `lawman/`, the link to the plugin folder, `bin/journal`, `host.md`, `configs/` and `shared/`. See [the journal](journal.md).
 
 The file stays in the installation. It never enters a precinct, a pull request, an issue or a commit. Only `host.md` holds such facts beside it.
 
 The file holds plain `key: value` lines. There is one line per key and no nesting.
+
+## The commands
+
+The journal looks for `configs/` and `shared/` in the folder of its database, which is the installation directory.
+
+- `configs/<precinct>/` holds the commands of one precinct and the files they need.
+- `shared/` holds the commands of the installation and the files they need.
+
+A command reads only and never writes to the host. The assembly writes each command with your consent. An operation without a command is a step that the role does itself. See [the commands](journal.md#commands-of-the-installation-and-the-precincts).
 
 ## What it never holds
 

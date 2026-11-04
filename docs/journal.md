@@ -1,8 +1,8 @@
 # The journal
 
-The journal is the memory of an installation. It is one program on Bun with SQLite. It keeps the precincts, the orders, the ticks, the alarms and a cache of each tracker. Every role asks it what to do next and records what it did.
+The journal is the memory of an installation. It is one program on Bun with SQLite. It keeps the precincts, the orders, the ticks, the alarms and a cache of each tracker, with the cleaned texts of its issues, pull requests and comments. Every role asks it what to do next and records what it did.
 
-The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool. Roles hand it host data on standard input, in the input forms that `journal form` prints.
+The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool of its own. The only programs it starts are your commands in `configs/` and `shared/` beside its database. See [commands of the installation and the precincts](#commands-of-the-installation-and-the-precincts). Without a command, a role hands it host data on standard input, in the input forms that `journal form` prints.
 
 ## Where it comes from
 
@@ -40,7 +40,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|catalog|wake|law-sync> [args]
+journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
@@ -85,7 +85,7 @@ journal status
 
 ### The tracker cache
 
-- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache.
+- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. A cleaning library that fails gives exit 1 and leaves the cache as it was.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
@@ -156,6 +156,108 @@ It cleans a quote and does not reject it. It checks no path, no mention and no s
 
 See [the law](../skills/lawman-law/references/LAW.md) for when roles call it.
 
+## Commands of the installation and the precincts
+
+The journal knows a fixed set of read operations. Your command for an operation decides how it runs on your machine. A command only reads: it never writes to the host. The assembly writes each command with your consent. An operation without a command is a step that the role does itself.
+
+### Where the commands live
+
+The journal looks for two folders in the folder of its database. Without `LAWMAN_DB` that is the installation directory.
+
+- `configs/<precinct>/` holds the commands of one precinct and the files they need. It lies outside the clone and outside the precinct's repository.
+- `shared/` holds the commands of the installation and the files they need.
+
+A command is an executable file named after its operation. No file means the operation is empty.
+
+### How a command runs
+
+- The journal runs the file by its absolute path, with no shell, and passes each argument as one value.
+- Standard input is closed, so a command that reads it ends at once.
+- The working folder is the command's folder.
+- The command gets the journal's environment unchanged.
+- There is no time limit.
+
+### The operations of a precinct
+
+| Operation | Arguments | Output of the command |
+| :-- | :-- | :-- |
+| `fetch` | none | one line: the revision at the tip of the default branch after the clone is updated |
+| `identity` | none | one line: the login the tool acts as |
+| `issues` | none | the form of `journal form issues` |
+| `pulls` | none | the form of `journal form pulls` |
+| `decider` | the word `issue` or `pull`, and a number | the form of `journal form decider` |
+| `file` | a revision and a path of a precinct file | the text of the file at the revision |
+| `files` | a revision | the paths of the files at the revision, one per line |
+
+- `issues`, `pulls` and `decider` use the forms that `journal form` prints. The same readers take them as take the standard input of `sync` and `decider`.
+- The output of `fetch` passes the revision class, the output of `identity` the login class.
+- A one-line output may end in one `\n` or one `\r\n`. Any other output is outside the form.
+- Output that does not read as UTF-8 is outside the form.
+- The lines of `files` are not checked: the list prints inside a fence. A path from the list passes the path class when it goes to `file`.
+- A missing file at a revision has no mark of its own. Whoever reads a file takes the list of `files` first.
+- `fetch` updates the local clone of the precinct. That is not a write to the host.
+
+The installation has the operations `release` and `verify`. Their forms come with the update of the binary.
+
+### The commands
+
+- `commands`: prints `folder <folder>`, the folder the journal found, then one line per operation: `<operation> command` when the file is there, `<operation> empty` otherwise. Without a precinct it lists the operations of the installation, with one the operations of the precinct. The `empty` lines are the steps that the role does itself. A precinct with no folder in `configs/` has every operation empty.
+- `run`: runs one operation of a precinct, as the role's entry runs it.
+  - `issues` and `pulls` take `--author <login>`, and `issues` takes `--reset`, as `sync` does. They update the cache by the same path and print the same counts as `sync`.
+  - `fetch` prints `revision=<revision>`.
+  - `identity` prints `login=<login>`.
+  - `file` prints the text in a `file` fence, `files` the list in a `files` fence.
+  - `decider` prints what `journal decider` prints on the same form.
+  - An operation without a command prints `<operation> empty` and exits 0.
+
+A wrong number of arguments, an unknown operation or a precinct that the journal does not list is a usage error with exit 1. The messages name only what the journal itself holds.
+
+```
+journal commands [<precinct>]
+journal run <precinct> <fetch|identity|files <revision>|file <revision> <path>|decider <issue|pull> <number>|issues --author <login> [--reset]|pulls --author <login>>
+```
+
+### The classes of the arguments
+
+The journal checks every argument against its class before the command runs. An argument outside its class never reaches the command.
+
+- A revision is one string of ASCII letters, digits and `.` `_` `-` `/` `:` `+`. It does not start with `-`. Its length and shape are free, so a Git hash of 40 or 64 characters and a Subversion number both pass.
+- A path of a precinct file is a string of ASCII letters, digits and `.` `_` `-` `/`. It has no `..` segment and does not start with `/` or `-`. The command reads `./a` and `a//b` itself. A file whose name lies outside the class shows in the list of `files`, but `file` does not read it.
+- A number of an issue or a pull request is a positive integer without a leading zero.
+- A link is an `https` or `http` address with no space and no control character. No operation takes a link yet.
+- The word of `decider` is exactly `issue` or `pull`.
+
+### Failures and their reasons
+
+A failure prints one line and an `error` fence below it:
+
+- `<operation> failed reason=<reason>`, then the `error` fence;
+- `<operation> empty`.
+
+The reasons are `argument`, `start`, `exit`, `form` and `clean`.
+
+| Reason | When | Inside the `error` fence | Exit code |
+| :-- | :-- | :-- | :-- |
+| `argument` | an argument is outside its class, and the command did not run | nothing | 5 |
+| `start` | the file did not start | nothing, because the system message carries the installation path | 5 |
+| `exit` | a non-zero exit or a signal | the command's standard error | 5 |
+| `form` | the output is outside the operation's form, or a reader refused it | the journal's message, with the form for a reader's refusal | 4, or 3 for the ceiling of 1000 issues |
+| `clean` | a cleaning library failed | nothing, because the library's message can quote the input | 5 |
+
+The text inside the `error` fence passes the character layer of the cleaning. Every refusal of the readers of `issues`, `pulls` and `decider` prints as `form` inside the fence: the ceiling, an empty list over a filled cache without `--reset`, and a broken cache constraint. A comment id that repeats has its own message.
+
+### Fences
+
+The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The text itself is not changed. A tilde fence also sits safely inside a harness that wraps the output in backticks.
+
+The kinds so far are `issue`, `comment`, `pull`, `file`, `files` and `error`. Later kinds join as the journal prints more foreign text.
+
+### Texts in the cache
+
+The cache holds the texts of issues, pull requests and comments after the cleaning of `journal clean`. The output of `file` and `files` and the text of `error` are data, not Markdown: they pass the character layer, which removes hidden characters and masks secrets. A text is cleaned again each time it prints, so a text that an older cleaning stored prints clean.
+
+A printed issue or pull request is its body in an `issue` or `pull` fence, then each comment, by time and then by id. Each comment has a `comment at=<time>` line and a `comment` fence. The first line inside that fence is `id="<id>" author="<login>"`, written as JSON strings, or `author=null` when the host gave no author.
+
 ## The catalog check
 
 The patrol of the department `vulnerabilities` and the investigation of its leads use `catalog`. The journal builds every request and reads every reply. It opens no socket and starts no process. The role sends what the journal printed, with a send form of the harness page, and hands the reply back unread. The check works on any harness whose page carries those forms. The Hermes page carries them today, in its section "Sending to the catalog". A harness page without them cannot send, so the patrol ends its tick and reports that the check did not run. See [harnesses](harnesses.md).
@@ -224,11 +326,12 @@ When no record can be shown, the journal prints `catalog none reason=<reason>`:
 | 2 | Duplicate open order |
 | 3 | Issue sync ceiling reached |
 | 4 | Invalid sync input |
+| 5 | A command of the installation or of a precinct failed |
 | 6 | Database newer than the binary, or a schema version above the supported one was requested |
 | 7 | Body check rejection |
 | 8 | Page check rejection |
 
-Code 5 is not used. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
+Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
 
 A role treats exit 2 as silence. Skills cite the other codes by number.
 
@@ -238,6 +341,11 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [db.ts](../journal/src/db.ts): the exit codes and the database path.
 - [form.ts](../journal/src/form.ts): the input forms and their examples.
 - [migrations.ts](../journal/src/migrations.ts): the schema.
+- [args.ts](../journal/src/args.ts): the classes of the arguments.
+- [launch.ts](../journal/src/launch.ts): the places of the commands and their start.
+- [operations.ts](../journal/src/operations.ts): `commands`, `run`, the forms of the output and the reasons.
+- [fence.ts](../journal/src/fence.ts): the fence.
+- [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache and their print.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
 - [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
 - [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.

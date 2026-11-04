@@ -1,5 +1,11 @@
 import type { Database } from "bun:sqlite";
-import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
+import {
+	cleanTexts,
+	dropComments,
+	type HostText,
+	storeComments,
+} from "./cache-text";
+import { EXIT, Fail, inTransaction, isConstraint, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
@@ -162,46 +168,81 @@ function workOf(
 		: "ready";
 }
 
-export function readPulls(input: string, login: string): PullRow[] {
+export type ReadPull = { row: PullRow; text: HostText };
+
+const pullText = (pull: Pull): HostText => ({
+	body: pull.body,
+	comments: pull.comments.map((c) => ({
+		id: c.id,
+		author: c.author === "" ? null : c.author,
+		at: c.createdAt,
+		body: c.body,
+	})),
+});
+
+export function readPulls(input: string, login: string): ReadPull[] {
 	const { writers, pulls } = readForm(input);
-	const rows: PullRow[] = [];
+	const read: ReadPull[] = [];
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
 		if (asciiLower(text(raw.author)) !== asciiLower(login)) continue;
 		const pull = readPull(raw);
 		const spec = newestMarker(pull, login, SPEC);
-		rows.push({
-			number: pull.number,
-			issues: sourceNumbers(pull),
-			spec: specVote(spec, writers),
-			work: workOf(pull, login, writers, spec),
-			spec_id: spec?.comment.id ?? NO_SPEC_ID,
+		read.push({
+			row: {
+				number: pull.number,
+				issues: sourceNumbers(pull),
+				spec: specVote(spec, writers),
+				work: workOf(pull, login, writers, spec),
+				spec_id: spec?.comment.id ?? NO_SPEC_ID,
+			},
+			text: pullText(pull),
 		});
 	}
-	return rows;
+	return read;
 }
 
-function replacePulls(db: Database, name: string, rows: PullRow[]): void {
+function replacePulls(db: Database, name: string, read: ReadPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
-	for (const row of rows)
+	dropComments(db, name, "pull");
+	for (const { row, text } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES (?, ?, ?, ?, ?, ?)",
-			[name, row.number, row.issues, row.spec, row.work, row.spec_id],
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			[
+				name,
+				row.number,
+				row.issues,
+				row.spec,
+				row.work,
+				row.spec_id,
+				text.body,
+			],
 		);
+		storeComments(db, name, "pull", row.number, text.comments, reject);
+	}
 }
 
-export function syncPulls(name: string, login: string, input: string): void {
+// The texts are cleaned before the transaction, so a failed cleaning leaves the cache as it was.
+export async function syncPulls(
+	name: string,
+	login: string,
+	input: string,
+): Promise<string> {
 	withDb((db) => {
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
-		const rows = readPulls(input, login);
+	});
+	const parsed = readPulls(input, login);
+	const texts = await cleanTexts(parsed.map((p) => p.text));
+	const read = parsed.map((p, i) => ({ ...p, text: texts[i] as HostText }));
+	return withDb((db) => {
 		try {
-			inTransaction(db, () => replacePulls(db, name, rows));
+			inTransaction(db, () => replacePulls(db, name, read));
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
 			throw reject("a pull request number repeats");
 		}
-		out(`pulls=${rows.length}`);
+		return `pulls=${read.length}`;
 	});
 }

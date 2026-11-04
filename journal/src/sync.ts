@@ -2,6 +2,13 @@ import type { Database } from "bun:sqlite";
 import { answerOf, hasMarkerLine, MARKER_PREFIX } from "./answer";
 import { check, parseArgs, usage } from "./args";
 import {
+	CleanFailed,
+	cleanTexts,
+	dropComments,
+	type HostText,
+	storeComments,
+} from "./cache-text";
+import {
 	EXIT,
 	Fail,
 	inTransaction,
@@ -18,6 +25,8 @@ import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 export { SYNC_LIMIT } from "./sync-issues";
 
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
+const CLEAN_FAILED =
+	"sync: a library failed while cleaning the text; run the command again";
 
 type SyncStats = {
 	issues: number;
@@ -85,16 +94,27 @@ function storeMarkers(
 		markers.filter((m) => m.marker.fields.legacy === undefined).length;
 }
 
+const issueText = (issue: SyncIssue): HostText => ({
+	body: issue.body,
+	comments: issue.comments.map((c) => ({
+		id: c.id,
+		author: c.author?.login ?? null,
+		at: c.createdAt,
+		body: c.body,
+	})),
+});
+
 function storeIssue(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
+	text: HostText,
 	trust: Trust,
 	stats: SyncStats,
 ): void {
 	const answer = answerOf(issue, trust.login, trust.writers);
 	db.run(
-		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		[
 			name,
 			issue.number,
@@ -106,8 +126,10 @@ function storeIssue(
 			repliedAt(issue),
 			answer?.answer ?? null,
 			answer?.id ?? null,
+			text.body,
 		],
 	);
+	storeComments(db, name, "issue", issue.number, text.comments, syncInput);
 	storeMarkers(db, name, issue, trust.login, stats);
 	stats.issues++;
 }
@@ -117,6 +139,7 @@ function replaceCache(
 	name: string,
 	trust: Trust,
 	issues: SyncIssue[],
+	texts: Map<SyncIssue, HostText>,
 	reset: boolean,
 ): SyncStats {
 	const stats: SyncStats = {
@@ -135,9 +158,11 @@ function replaceCache(
 		throw syncInput("empty list over a filled cache needs --reset");
 	db.run("DELETE FROM markers WHERE precinct = ?", [name]);
 	db.run("DELETE FROM issues WHERE precinct = ?", [name]);
+	dropComments(db, name, "issue");
 	for (const issue of issues) {
-		if (!isHuman(issue)) stats.skipped++;
-		else storeIssue(db, name, issue, trust, stats);
+		const text = texts.get(issue);
+		if (text === undefined) stats.skipped++;
+		else storeIssue(db, name, issue, text, trust, stats);
 	}
 	db.run("UPDATE precincts SET synced_at = ? WHERE name = ?", [now(), name]);
 	return stats;
@@ -150,23 +175,24 @@ function takeFlag(args: string[], flag: string): [string[], boolean] {
 	return [rest, rest.length < args.length];
 }
 
-export function sync(args: string[]): void {
-	const [withoutReset, reset] = takeFlag(args, "--reset");
-	const [rest, pulls] = takeFlag(withoutReset, "--pulls");
-	if (reset && pulls) throw usage(SYNC_USAGE);
-	const { pos, opt } = parseArgs(rest, 1, ["author"], SYNC_USAGE);
-	const name = check("precinct", pos[0]);
-	const login = check("login", opt.author);
-	if (pulls) {
-		syncPulls(name, login, readStdin());
-		return;
-	}
-	const { writers, issues } = readIssues(readStdin());
-	withDb((db) => {
+// The texts are cleaned before the transaction, so a failed cleaning leaves the cache as it was.
+export async function syncIssues(
+	name: string,
+	login: string,
+	input: string,
+	reset: boolean,
+): Promise<string> {
+	const { writers, issues } = readIssues(input);
+	const stored = issues.filter(isHuman);
+	const cleaned = await cleanTexts(stored.map(issueText));
+	const texts = new Map(
+		stored.map((issue, i) => [issue, cleaned[i] as HostText]),
+	);
+	return withDb((db) => {
 		let stats: SyncStats;
 		try {
 			stats = inTransaction(db, () =>
-				replaceCache(db, name, { login, writers }, issues, reset),
+				replaceCache(db, name, { login, writers }, issues, texts, reset),
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
@@ -174,8 +200,27 @@ export function sync(args: string[]): void {
 				"the issues break a cache constraint, for example a repeated number",
 			);
 		}
-		out(
-			`issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}`,
-		);
+		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}`;
 	});
+}
+
+export async function sync(args: string[]): Promise<number> {
+	const [withoutReset, reset] = takeFlag(args, "--reset");
+	const [rest, pulls] = takeFlag(withoutReset, "--pulls");
+	if (reset && pulls) throw usage(SYNC_USAGE);
+	const { pos, opt } = parseArgs(rest, 1, ["author"], SYNC_USAGE);
+	const name = check("precinct", pos[0]);
+	const login = check("login", opt.author);
+	const input = readStdin();
+	try {
+		out(
+			pulls
+				? await syncPulls(name, login, input)
+				: await syncIssues(name, login, input, reset),
+		);
+	} catch (e) {
+		if (e instanceof CleanFailed) throw new Fail(EXIT.USAGE, CLEAN_FAILED);
+		throw e;
+	}
+	return EXIT.OK;
 }

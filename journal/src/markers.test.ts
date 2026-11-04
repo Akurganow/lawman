@@ -64,14 +64,16 @@ describe("parseMarker", () => {
 		).toBeNull();
 	});
 
-	test("a lead needs role patrol, department, id and a lowercase 40 hex sha", () => {
+	test("a lead needs role patrol, department, id and a revision as sha", () => {
 		expect(parseMarker(lead())).not.toBeNull();
 		expect(parseMarker(lead().replace("role=patrol", "role=judge"))).toBeNull();
 		expect(parseMarker(lead().replace(" department=core", ""))).toBeNull();
 		expect(parseMarker(lead().replace(` id=${LEAD_ID}`, ""))).toBeNull();
 		expect(parseMarker(lead().replace(` sha=${SHA}`, ""))).toBeNull();
-		expect(parseMarker(lead().replace(SHA, SHA.toUpperCase()))).toBeNull();
-		expect(parseMarker(lead().replace(SHA, SHA.slice(1)))).toBeNull();
+		for (const revision of ["r4521", "4521", SHA.toUpperCase(), "a".repeat(64)])
+			expect(parseMarker(lead().replace(SHA, revision))).not.toBeNull();
+		for (const revision of ["-x", "a--b", "a::b", "a'b"])
+			expect(parseMarker(lead().replace(SHA, revision))).toBeNull();
 	});
 
 	test("a response-unit lead is valid with department -, and no other role is", () => {

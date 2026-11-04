@@ -21,6 +21,7 @@ describe("exit codes", () => {
 			DUPLICATE_ORDER: 2,
 			SYNC_LIMIT: 3,
 			SYNC_INPUT: 4,
+			COMMAND: 5,
 			SCHEMA: 6,
 			LINT_BODY: 7,
 			LINT_PAGE: 8,
@@ -139,6 +140,7 @@ describe("open", () => {
 				spec: "up",
 				work: "todo",
 				spec_id: "-",
+				body: "",
 			},
 		]);
 		expect(() =>
@@ -167,6 +169,7 @@ describe("open", () => {
 				spec: "up",
 				work: "todo",
 				spec_id: "-",
+				body: "",
 			},
 		]);
 		db.run(
@@ -192,8 +195,7 @@ describe("open", () => {
 	test("migration 7 keeps the issues of a schema 6 database and adds empty answer and answer_id", () => {
 		seedSchema(6);
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(7);
-		expect(MIGRATIONS.length).toBe(7);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(
 			db.query("SELECT issue, title, answer, answer_id FROM issues").all(),
 		).toEqual([{ issue: 7, title: "t", answer: null, answer_id: null }]);
@@ -223,6 +225,42 @@ describe("open", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		db.close();
 	});
+
+	test("migration 8 keeps every row of a schema 7 database and adds empty texts", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 7)) old.run(sql);
+		old.run("PRAGMA user_version = 7");
+		for (const sql of [
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
+			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
+			"INSERT INTO dispatches (at, precinct, role, issue) VALUES ('t', 'p', 'patrol', 7)",
+			"INSERT INTO ticks (role, precinct, started_at, outcome, report) VALUES ('patrol', 'p', 't', 'silent', 'r')",
+			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('k', 'r', 'd', 't', 't')",
+			"INSERT INTO pauses (started_at) VALUES ('t')",
+			"INSERT INTO issues (precinct, issue, state, title, created_at, replied_at, answer, answer_id) VALUES ('p', 7, 'OPEN', 't', 'c', 'r', 'up', 'IC_1')",
+			"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('p', 7, 'o', 'patrol', 'lead', '{}', 'raw')",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES ('p', 3, '7', 'up', 'ready', 'IC_2')",
+		])
+			old.run(sql);
+		const before = Object.fromEntries(
+			tables(old).map((t) => [t, old.query(`SELECT * FROM ${t}`).all()]),
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(8);
+		const textless = ["issues", "pulls"];
+		for (const [table, list] of Object.entries(before)) {
+			expect(list).toHaveLength(1);
+			const after = db.query(`SELECT * FROM ${table}`).all();
+			expect(after).toEqual(
+				list.map((row) =>
+					textless.includes(table) ? { ...(row as object), body: "" } : row,
+				),
+			);
+		}
+		expect(db.query("SELECT * FROM comments").all()).toEqual([]);
+		db.close();
+	});
 });
 
 describe("probe", () => {
@@ -241,12 +279,13 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "7"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "6"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "8"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "9"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

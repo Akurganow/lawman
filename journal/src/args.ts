@@ -6,14 +6,30 @@ const PATTERNS = {
 	department: /^[a-z][a-z0-9-]*$/,
 	repo: /^(?!(?:.*\/)?\.{1,2}(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+$/,
 	login: /^[A-Za-z0-9_][A-Za-z0-9._-]*$/,
+	revision: /^(?!-)[A-Za-z0-9._/:+-]+$/,
+	path: /^(?![/-])(?!(?:.*\/)?\.\.(?:\/|$))[A-Za-z0-9._/-]+$/,
+	number: /^[1-9][0-9]*$/,
 	outcome:
 		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|defended|refuted|convicted|acquitted|recorded|admitted|asked|handed|shut|settled|kept|specified|out|executed|referred|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
 
+export const fits = (kind: keyof typeof PATTERNS, value: string) =>
+	PATTERNS[kind].test(value);
+
 export function check(kind: keyof typeof PATTERNS, value: string): string {
-	if (!PATTERNS[kind].test(value)) {
+	if (!fits(kind, value)) {
 		throw new Fail(EXIT.USAGE, `invalid ${kind}: ${JSON.stringify(value)}`);
 	}
+	return value;
+}
+
+export const REVISION = PATTERNS.revision;
+
+// a local file or another scheme never reaches a command
+export function checkLink(value: string): string {
+	const scheme = URL.parse(value)?.protocol;
+	if (/[\s\p{Cc}]/u.test(value) || (scheme !== "https:" && scheme !== "http:"))
+		throw new Fail(EXIT.USAGE, `invalid link: ${JSON.stringify(value)}`);
 	return value;
 }
 

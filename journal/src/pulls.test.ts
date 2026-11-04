@@ -12,7 +12,8 @@ import {
 } from "./pulls-fixture";
 import { mark } from "./test-helpers";
 
-const read = (input: unknown) => readPulls(JSON.stringify(input), BOT);
+const rowsOf = (input: string) => readPulls(input, BOT).map((p) => p.row);
+const read = (input: unknown) => rowsOf(JSON.stringify(input));
 const readOf = (pulls: Pull[], writers?: string[]) =>
 	read(hostPulls(pulls, writers));
 const voteOf = (comments: Comment[]) =>
@@ -51,7 +52,7 @@ describe("readPulls validity", () => {
 	});
 
 	test("the committed fixture reads", () => {
-		expect(readPulls(JSON.stringify(fixture), BOT)).toEqual(FIXTURE_ROWS);
+		expect(read(fixture)).toEqual(FIXTURE_ROWS);
 	});
 });
 

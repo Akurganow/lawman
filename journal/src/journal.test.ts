@@ -99,22 +99,57 @@ describe("a command that finishes later", () => {
 });
 
 describe("source constraints", () => {
-	test("the journal never starts processes or touches the network", () => {
-		const sources = readdirSync(join(JOURNAL, "src")).filter(
-			(f) => f.endsWith(".ts") && !f.includes("test"),
-		);
+	const LAUNCH = "launch.ts";
+	const sources = readdirSync(join(JOURNAL, "src")).filter(
+		(f) => f.endsWith(".ts") && !f.includes("test"),
+	);
+	const source = (file: string) =>
+		readFileSync(join(JOURNAL, "src", file), "utf8");
+
+	test("no module of the journal touches the network", () => {
 		expect(sources).toContain("journal.ts");
-		for (const file of sources) {
-			const src = readFileSync(join(JOURNAL, "src", file), "utf8");
+		for (const file of sources)
+			for (const banned of [
+				"fetch(",
+				"node:net",
+				"node:http",
+				"node:dgram",
+				"node:tls",
+				"WebSocket",
+				"XMLHttpRequest",
+				"Bun.connect",
+				"Bun.listen",
+				"Bun.serve",
+			])
+				expect(source(file)).not.toContain(banned);
+	});
+
+	test("only the launch module starts a process", () => {
+		expect(sources).toContain(LAUNCH);
+		for (const file of sources.filter((f) => f !== LAUNCH))
 			for (const banned of [
 				"spawn",
 				"Bun.$",
 				"child_process",
-				"fetch(",
 				"exec(",
-			]) {
-				expect(src).not.toContain(banned);
-			}
-		}
+				"Worker(",
+			])
+				expect(source(file)).not.toContain(banned);
+	});
+
+	test("the launch module runs the command file itself, with no interpreter", () => {
+		const launch = source(LAUNCH);
+		expect(launch.match(/spawn/g)).toEqual(["spawn"]);
+		expect(launch).toContain("Bun.spawn([join(place, operation), ...args], {");
+		for (const banned of [
+			"Bun.$",
+			"child_process",
+			"exec(",
+			"/bin/",
+			'"sh"',
+			'"-c"',
+			"shell",
+		])
+			expect(launch).not.toContain(banned);
 	});
 });

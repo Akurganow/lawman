@@ -6,6 +6,7 @@ import {
 	addPrecincts,
 	cli,
 	dbFile,
+	issueOf,
 	issues,
 	issuesForm,
 	lead,
@@ -104,6 +105,7 @@ describe("sync", () => {
 			replied_at: null,
 			answer: null,
 			answer_id: null,
+			body: issueOf(17).body,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
