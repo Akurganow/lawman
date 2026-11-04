@@ -27,7 +27,7 @@ export const DEPARTMENT_HEADINGS = [
 
 const LINT_PAGE_USAGE =
 	"lint-page <constitution|department> [--name <expected>] (stdin: the page)";
-type PageKind = "constitution" | "department";
+export type PageKind = "constitution" | "department";
 const PAGE_HEADINGS: Record<PageKind, string[]> = {
 	constitution: CONSTITUTION_HEADINGS,
 	department: DEPARTMENT_HEADINGS,
@@ -259,6 +259,14 @@ export function lintPage(
 	return page;
 }
 
+// the lines lint-page prints for a page
+export const pageLines = (page: PageLint) => [
+	...page.reasons,
+	...page.departments.map(([name, judgedBy]) => `${name}\t${judgedBy}`),
+	...(page.alarmCheck ? ["alarm-check"] : []),
+	...(page.notes ?? []),
+];
+
 export function lintPageCommand(args: string[]): number {
 	const { pos, opt } = parseArgs(args, 1, [], LINT_PAGE_USAGE, ["name"]);
 	const kind = pos[0];
@@ -267,9 +275,6 @@ export function lintPageCommand(args: string[]): number {
 	const expected =
 		opt.name === undefined ? undefined : check("department", opt.name);
 	const page = lintPage(kind, readStdin(), expected);
-	for (const reason of page.reasons) out(reason);
-	for (const [name, judgedBy] of page.departments) out(name, judgedBy);
-	if (page.alarmCheck) out("alarm-check");
-	for (const note of page.notes ?? []) out(note);
+	for (const line of pageLines(page)) out(line);
 	return page.reasons.length > 0 ? EXIT.LINT_PAGE : EXIT.OK;
 }

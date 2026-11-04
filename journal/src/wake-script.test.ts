@@ -66,21 +66,23 @@ describe("gate file", () => {
 		expect(lines.join("\n")).not.toMatch(/\||grep|\|\| true/);
 	});
 
-	test("prints idle with no order", () => {
+	test("prints nothing with no order", () => {
 		seed(() => {});
-		expect(gate()).toEqual({ code: 0, out: "idle\n" });
+		expect(gate()).toEqual({ code: 0, out: "" });
 	});
 
-	test("prints the order and the check time for a takeable order", () => {
+	test("prints the role's input behind the check time for a takeable order", () => {
 		seed((db) => {
 			precinct(db, "main");
 			order(db, "main", ROLE);
 		});
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
-		expect(gate()).toEqual({
-			code: 0,
-			out: `order ${id}\nat ${BASE}\n`,
-		});
+		const r = gate();
+		expect(r.code).toBe(0);
+		expect(r.out).toStartWith(
+			`lawman input 1 role=${ROLE} at=${BASE} part 1 of 1\n`,
+		);
+		expect(r.out).toEndWith(`\norder ${id} main o/main - -\nend part 1 of 1\n`);
 	});
 
 	test("passes a broken database through as a non-zero exit and empty stdout", () => {

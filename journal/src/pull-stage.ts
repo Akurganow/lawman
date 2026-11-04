@@ -87,15 +87,13 @@ export function stageOf(
 	};
 }
 
+export const pullLine = (s: PullStage) =>
+	`need=${s.need} spec=${s.spec} spec_id=${s.specId} work=${s.work} sources=${s.sources} priority=${s.priority}`;
+
 export function pullCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(PULL_USAGE);
 	const [name, number] = args as [string, string];
 	check("precinct", name);
 	const m = count(number, "pull request", 1);
-	withDb((db) => {
-		const s = stageOf(db, name, m);
-		out(
-			`need=${s.need} spec=${s.spec} spec_id=${s.specId} work=${s.work} sources=${s.sources} priority=${s.priority}`,
-		);
-	});
+	withDb((db) => out(pullLine(stageOf(db, name, m))));
 }

@@ -44,7 +44,7 @@ function dispatchAdd(db: Database, args: string[]): void {
 	}
 }
 
-type Taken = {
+export type Taken = {
 	id: number;
 	precinct: string;
 	repo: string;
@@ -105,7 +105,7 @@ export function dispatch(args: string[]): void {
 }
 
 const TICK_USAGE =
-	"tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
+	"tick <start --role <r> [--order <id>]|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
 
 function tickStart(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["role"], TICK_USAGE);
@@ -137,7 +137,7 @@ function tickEnd(db: Database, args: string[]): void {
 	const report = readStdin();
 	inTransaction(db, () => {
 		const changed = db.run(
-			`UPDATE ticks SET ended_at = ?, outcome = ?, report = ?,
+			`UPDATE ticks SET ended_at = ?, outcome = ?, report = ?, parts = NULL,
          precinct = COALESCE(?, precinct), department = COALESCE(?, department)
        WHERE id = ? AND ended_at IS NULL`,
 			[now(), outcome, report, precinctName, department, id],
@@ -207,7 +207,14 @@ const TICK_COMMANDS: Record<string, (db: Database, args: string[]) => void> = {
 	list: tickList,
 };
 
-export function tick(args: string[]): void {
-	const { run, rest } = subcommand(TICK_COMMANDS, args, TICK_USAGE);
-	withDb((db) => run(db, rest));
+// the start with an order and the input load the parser and the cleaning inside the command
+export function tick(args: string[]): undefined | Promise<number> {
+	const [name, ...rest] = args;
+	if (name === "start" && rest.includes("--order"))
+		return import("./tick-start").then((m) => m.tickStart(rest));
+	if (name === "input")
+		return import("./tick-start").then((m) => m.tickInput(rest));
+	const { run, rest: tail } = subcommand(TICK_COMMANDS, args, TICK_USAGE);
+	withDb((db) => run(db, tail));
+	return undefined;
 }

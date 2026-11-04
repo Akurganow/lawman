@@ -33,24 +33,30 @@ function seedOrders(body: (db: Database) => void): void {
 
 const checkedAt = () =>
 	rows("SELECT name, checked_at FROM roles ORDER BY name");
+const ordersOf = (out: string) =>
+	out.split("\n").filter((line) => line.startsWith("order "));
+const head = (clock = BASE, role = "patrol") =>
+	`lawman input 1 role=${role} at=${clock} part 1 of 1`;
 
 describe("wake", () => {
-	test("prints idle with no order and for another role's order", () => {
+	test("prints nothing with no order and for another role's order", () => {
 		seedOrders(() => {});
-		expect(wake()).toMatchObject({ code: 0, out: "idle\n" });
+		expect(wake()).toMatchObject({ code: 0, out: "" });
 		seedOrders((db) => order(db, "main", "judge"));
-		expect(wake()).toMatchObject({ code: 0, out: "idle\n" });
+		expect(wake()).toMatchObject({ code: 0, out: "" });
 	});
 
-	test("prints an untaken order and the check time, then idle once it is taken", () => {
+	test("prints an untaken order behind the check time, then nothing once it is taken", () => {
 		seedOrders((db) => order(db, "main", "patrol"));
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
-		expect(wake().out).toBe(`order ${id}\nat ${BASE}\n`);
+		const r = wake();
+		expect(r.out).toStartWith(`${head()}\n`);
+		expect(r.out).toEndWith(`order ${id} main o/main - -\nend part 1 of 1\n`);
 		expect(take().code).toBe(0);
-		expect(wake().out).toBe("idle\n");
+		expect(wake().out).toBe("");
 	});
 
-	test("an order left untaken changes the output at every check, idle stays the same", () => {
+	test("an order left untaken changes the output at every check, no work stays the same", () => {
 		seedOrders(() => {});
 		expect(wake(later(1)).out).toBe(wake(later(2)).out);
 		seedOrders((db) => order(db, "main", "patrol"));
@@ -71,9 +77,11 @@ describe("wake", () => {
 			(r) => r.id,
 		);
 		const [late, early, tie] = ids;
-		expect(wake(later(3)).out).toBe(
-			`order ${early}\norder ${tie}\norder ${late}\nat ${later(3)}\n`,
-		);
+		expect(ordersOf(wake(later(3)).out)).toEqual([
+			`order ${early} main o/main core 4`,
+			`order ${tie} main o/main - 5`,
+			`order ${late} main o/main - 3`,
+		]);
 	});
 
 	test("records the check time for a role with a row only", () => {
@@ -87,7 +95,7 @@ describe("wake", () => {
 			{ name: "judge", checked_at: null },
 			{ name: "patrol", checked_at: later(1) },
 		]);
-		expect(wake(later(2), "clerk")).toMatchObject({ code: 0, out: "idle\n" });
+		expect(wake(later(2), "clerk")).toMatchObject({ code: 0, out: "" });
 		expect(checkedAt()).toHaveLength(2);
 	});
 

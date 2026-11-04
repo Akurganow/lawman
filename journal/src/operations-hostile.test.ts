@@ -6,6 +6,7 @@ import { stripInvisible } from "./clean";
 import * as db from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
+import { renderAll } from "./input-parts";
 import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
 import { command, configs } from "./operations-test-fixture";
@@ -210,7 +211,9 @@ describe("a hostile sample through every line the journal prints about a command
 				["issue", 1],
 				["pull", 2],
 			] as const) {
-				const printed = (await printCached(opened, "main", kind, n)) ?? "";
+				const printed = renderAll(
+					(await printCached(opened, "main", kind, n)) ?? [],
+				);
 				expect(printed).toContain(`author=${JSON.stringify(NEWLINED)}`);
 				await expectSafe(printed);
 			}
@@ -246,7 +249,9 @@ describe("the hostile sample on sync's stdin", () => {
 		}
 		const opened = db.open(dbFile);
 		try {
-			await expectSafe((await printCached(opened, "main", "issue", 1)) ?? "");
+			await expectSafe(
+				renderAll((await printCached(opened, "main", "issue", 1)) ?? []),
+			);
 		} finally {
 			opened.close();
 		}

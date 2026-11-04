@@ -6,6 +6,7 @@ import * as cleanHost from "./clean-host";
 import * as db from "./db";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
+import { renderAll } from "./input-parts";
 import { command, configs } from "./operations-test-fixture";
 import { SYNC_LIMIT } from "./sync";
 import {
@@ -102,10 +103,11 @@ const texts = (precinct: string) => ({
 	),
 });
 
-const printed = (precinct: string, kind: "issue" | "pull", n: number) => {
+const printed = async (precinct: string, kind: "issue" | "pull", n: number) => {
 	const opened = db.open(dbFile);
 	try {
-		return printCached(opened, precinct, kind, n);
+		const blocks = await printCached(opened, precinct, kind, n);
+		return blocks === null ? null : renderAll(blocks);
 	} finally {
 		opened.close();
 	}

@@ -4,6 +4,7 @@ import { cleanCharacters } from "./clean";
 import { EXIT, Fail, out, withDb } from "./db";
 import { decide } from "./decider";
 import { fenced } from "./fence";
+import { type Block, fencedBlock, renderAll } from "./input-parts";
 import {
 	commandFolder,
 	hasCommand,
@@ -16,10 +17,10 @@ import {
 import { syncPulls } from "./pulls";
 import { syncIssues } from "./sync";
 
-type Operation = (typeof PRECINCT_OPERATIONS)[number];
+export type Operation = (typeof PRECINCT_OPERATIONS)[number];
 type Reason = "argument" | "start" | "exit" | "form" | "clean";
 type Slot = "revision" | "path" | "number" | "word";
-type Call = { args: string[]; author: string; reset: boolean };
+export type Call = { args: string[]; author: string; reset: boolean };
 
 const COMMANDS_USAGE = "commands [<precinct>]";
 const RUN_USAGE =
@@ -129,8 +130,12 @@ async function output(place: string, operation: Operation, args: string[]) {
 	}
 }
 
-async function read(name: string, operation: Operation, call: Call) {
-	const text = await output(precinctPlace(name), operation, call.args);
+async function read(
+	name: string,
+	operation: Operation,
+	call: Call,
+	text: string,
+) {
 	try {
 		return await READERS[operation](text, name, call);
 	} catch (e) {
@@ -148,9 +153,47 @@ async function refusal(operation: Operation, refused: Refused) {
 	} catch {
 		[reason, code, detail] = ["clean", EXIT.COMMAND, ""];
 	}
-	out(`${operation} failed reason=${reason}`);
-	out(fenced("error", detail));
-	return code;
+	return {
+		code,
+		blocks: [
+			{ line: `${operation} failed reason=${reason}` },
+			fencedBlock("error", detail),
+		],
+	};
+}
+
+export type Operated = {
+	code: number;
+	blocks: Block[];
+	// the command's own output, when it ran and its reader accepted it
+	text: string | null;
+};
+
+// One operation as `run` does it: what it prints and its exit code.
+export async function operate(
+	name: string,
+	operation: Operation,
+	call: Call,
+): Promise<Operated> {
+	try {
+		if (
+			!SLOTS[operation].every((slot, i) => fitsSlot(slot, call.args[i] ?? ""))
+		)
+			throw new Refused("argument", EXIT.COMMAND);
+		if (!hasCommand(precinctPlace(name), operation))
+			return {
+				code: EXIT.OK,
+				blocks: [{ line: `${operation} empty` }],
+				text: null,
+			};
+		const text = await output(precinctPlace(name), operation, call.args);
+		const line = await read(name, operation, call, text);
+		return { code: EXIT.OK, blocks: [{ line }], text };
+	} catch (e) {
+		if (e instanceof Refused)
+			return { ...(await refusal(operation, e)), text: null };
+		throw e;
+	}
 }
 
 export async function runCommand(args: string[]): Promise<number> {
@@ -158,17 +201,7 @@ export async function runCommand(args: string[]): Promise<number> {
 	if (name === undefined || !isOperation(operation)) throw usage(RUN_USAGE);
 	const call = parseCall(operation, rest);
 	registered(check("precinct", name));
-	try {
-		if (!SLOTS[operation].every((slot, i) => fitsSlot(slot, rest[i] ?? "")))
-			throw new Refused("argument", EXIT.COMMAND);
-		if (!hasCommand(precinctPlace(name), operation)) {
-			out(`${operation} empty`);
-			return EXIT.OK;
-		}
-		out(await read(name, operation, call));
-		return EXIT.OK;
-	} catch (e) {
-		if (e instanceof Refused) return refusal(operation, e);
-		throw e;
-	}
+	const { code, blocks } = await operate(name, operation, call);
+	out(renderAll(blocks));
+	return code;
 }

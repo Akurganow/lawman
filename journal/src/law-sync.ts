@@ -36,7 +36,7 @@ type Default = [key: string, value: (config: string) => string];
 
 const lineOf = (key: string) => new RegExp(`^${key}:[ \\t]*(.*)$`, "m");
 
-function configValue(text: string, key: string): string | undefined {
+export function configValue(text: string, key: string): string | undefined {
 	return text.match(lineOf(key))?.[1]?.trim() || undefined;
 }
 

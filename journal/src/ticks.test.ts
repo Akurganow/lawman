@@ -182,7 +182,7 @@ describe("ticks", () => {
 	describe("tick list", () => {
 		const list = (...args: string[]) => call(BASE, ["tick", "list", ...args]);
 		const LIST_USAGE =
-			"tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
+			"tick <start --role <r> [--order <id>]|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
 		const ended = (
 			role: string,
 			startedAt: string,
