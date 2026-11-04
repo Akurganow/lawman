@@ -1,3 +1,5 @@
+import type { TextKind } from "./cache-text";
+
 // The blocks of each role's input: what its skill reads or runs at the start.
 // A section is named by its heading without the # signs. INTRO is the text
 // before the first second-level heading, WHOLE the whole file. The sections of
@@ -5,10 +7,9 @@
 
 export const INTRO = "intro";
 export const WHOLE = "";
-export type Read = [file: string, sections: string[]];
-export type Sync = "issues" | "pulls";
-export type StageKind = "case" | "intake" | "pull";
-export type Text = "issue" | "pull";
+type Read = [file: string, sections: string[]];
+type Sync = "issues" | "pulls";
+type StageKind = "case" | "intake" | "pull";
 // the fields a stale rule reads from a stage function's structure
 export type StageFields = { need: string; state: string };
 
@@ -17,10 +18,11 @@ export type RoleInput = {
 	number: "issue" | "pull" | "department";
 	sync: Sync[];
 	stage: StageKind | null;
-	stale: (s: StageFields) => boolean;
+	// absent for a role without a stage
+	stale?: (s: StageFields) => boolean;
 	constitution: boolean;
 	department: "order" | "stage" | null;
-	texts: Text[];
+	texts: TextKind[];
 };
 
 export const HARNESS_SECTIONS = ["Silence"];
@@ -66,7 +68,6 @@ const law = (tick: string[], extra: Read[] = []): Read[] => [
 	...extra,
 ];
 
-const never = () => false;
 const closed = (s: StageFields) => s.state === "CLOSED";
 const notOpen = (s: StageFields) => s.state !== "OPEN";
 const needNot = (need: string) => (s: StageFields) => s.need !== need;
@@ -130,7 +131,6 @@ export const ROLES: Record<string, RoleInput> = {
 		number: "department",
 		sync: ["issues"],
 		stage: null,
-		stale: never,
 		constitution: true,
 		department: "order",
 		texts: [],

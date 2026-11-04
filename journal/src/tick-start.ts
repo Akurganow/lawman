@@ -2,18 +2,20 @@ import type { Database } from "bun:sqlite";
 import { join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs } from "./args";
-import { CleanFailed, printCached } from "./cache-text";
+import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, inTransaction, now, open, out, withDb } from "./db";
 import { type Taken, takeableOrders } from "./dispatch";
-import { type Block, fencedBlock, framed, pack, render } from "./input-parts";
 import {
-	ROLES,
-	type RoleInput,
-	type StageFields,
-	type Text,
-} from "./input-roles";
+	inputChars,
+	orderLine,
+	REFERENCES,
+	readConfig,
+	readText,
+} from "./input-files";
+import { type Block, fencedBlock, framed, pack, render } from "./input-parts";
+import { ROLES, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
@@ -21,13 +23,6 @@ import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
 import { pullLine, stageOf } from "./pull-stage";
-import {
-	inputChars,
-	orderLine,
-	REFERENCES,
-	readConfig,
-	readText,
-} from "./role-entry";
 
 const TICK_INPUT_USAGE = "tick input (<id> [--part <k>]|--role <r> --part <k>)";
 const START_USAGE = "tick start --role <r> --order <id>";
@@ -81,6 +76,8 @@ function textsOf(
 	stage: Stage | null,
 ): [Text, number][] {
 	return input.texts.flatMap((kind): [Text, number][] => {
+		// the order's number is the issue, or the pull request of a pull request role;
+		// the clerk's pull request comes from the stage
 		if (kind === "issue" || input.number === "pull")
 			return o.issue === null ? [] : [[kind, o.issue]];
 		const pull = stage?.pull ?? NONE;
@@ -224,11 +221,11 @@ async function lintedPage(
 	name?: string,
 ): Promise<{ passed: boolean; reasons: string[] } | null> {
 	const lint = lintPage(kind, page.text, name);
+	const passed = lint.reasons.length === 0;
 	const lines = await characters(pageLines(lint).join("\n"));
-	const text = await characters(page.text);
+	const text = passed ? await characters(page.text) : "";
 	if (lines === null || text === null) return null;
 	o.add(fencedBlock("lint", lines));
-	const passed = lint.reasons.length === 0;
 	if (passed) o.add(fencedBlock(kind, text));
 	return { passed, reasons: lint.reasons };
 }
@@ -345,7 +342,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		if (stage === null)
 			return ended(t, o, "failed", "The stage check failed", id);
 		o.line(stage.line);
-		if (input.stale(stage))
+		if (input.stale?.(stage))
 			return ended(t, o, "silent", `Order stale: ${stage.line}`, id);
 	}
 	let files: string | null = null;
@@ -452,9 +449,11 @@ export async function tickInput(args: string[]): Promise<number> {
 	);
 	if (row === null || row.ended_at !== null)
 		throw new Fail(EXIT.USAGE, `no open tick with id ${id}`);
-	if (opt.part !== undefined) {
-		const k = count(opt.part, "part", 1);
-		const part = (JSON.parse(row.parts ?? "[]") as string[])[k - 1];
+	const stored = JSON.parse(row.parts ?? "[]") as string[];
+	// a built group stays as it was, so its constitution and page are not lost
+	if (opt.part !== undefined || stored.length > 0) {
+		const k = opt.part === undefined ? 1 : count(opt.part, "part", 1);
+		const part = stored[k - 1];
 		if (part === undefined)
 			throw new Fail(EXIT.USAGE, `tick ${id} has no part ${k}`);
 		out(part);

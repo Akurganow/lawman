@@ -399,7 +399,7 @@ The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the
 
 The journal stores the tick group when it builds it. `journal tick input <tick id> --part <k>` prints a stored part. `tick end` and an end by the journal clear the parts.
 
-The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution and the department page become self lines. It ends no tick and applies no stale rule.
+The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution and the department page become self lines. It ends no tick and applies no stale rule.
 
 An unknown tick, an ended tick and a part outside the group are usage errors with exit 1.
 

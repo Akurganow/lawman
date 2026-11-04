@@ -3,7 +3,6 @@ import { CleanFailed, cleaning } from "./cache-text";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, out, withDb } from "./db";
 import { decide } from "./decider";
-import { fenced } from "./fence";
 import { type Block, fencedBlock, renderAll } from "./input-parts";
 import {
 	commandFolder,
@@ -108,8 +107,10 @@ const READERS: Record<
 	issues: (text, name, call) => syncIssues(name, call.author, text, call.reset),
 	pulls: (text, name, call) => syncPulls(name, call.author, text),
 	decider: async (text) => decide(text),
-	file: async (text) => fenced("file", await characters(text)),
-	files: async (text) => fenced("files", await characters(text)),
+	file: async (text) =>
+		renderAll([fencedBlock("file", await characters(text))]),
+	files: async (text) =>
+		renderAll([fencedBlock("files", await characters(text))]),
 };
 
 async function output(place: string, operation: Operation, args: string[]) {

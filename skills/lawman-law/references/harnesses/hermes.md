@@ -279,7 +279,7 @@ A job created paused has no stored slot, so `resume` sets its next future slot. 
 
 ### Run gate
 
-This section describes the role entry. It keeps its old name for now.
+This section describes the role entry. The assembly reads it by the name `Run gate`.
 
 The role entry is a file that runs `bin/journal wake --role <role>` before the session. A job runs it in one of two modes, and one file serves both. `--script <file>` puts its output into the prompt. `--monitor-script <file>` compares its output with the last run. `hermes cron create` and `hermes cron edit` take both, and one job may hold both (read in the harness code).
 

@@ -58,7 +58,7 @@ amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 
 Every value above is a placeholder. `hermes` is the name of the one shipped harness page. The order follows the assembly skill.
 
-One more key is optional. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. A value that is not a whole number above zero makes the role's input exit 1 when the role has work. Nobody writes the key for you. See [the journal](journal.md#the-role-entry).
+One more key is optional. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. A value that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |

@@ -15,9 +15,8 @@ describe("the role table", () => {
 			const reads = lawOf(role);
 			expect(reads.length).toBeGreaterThan(0);
 			for (const [path, wanted] of reads) {
-				const missing = wanted.filter(
-					(_, i) => sectionsOf(read(path), wanted)[i] === null,
-				);
+				const found = sectionsOf(read(path), wanted);
+				const missing = wanted.filter((_, i) => found[i] === null);
 				expect([path, missing]).toEqual([path, []]);
 			}
 		},

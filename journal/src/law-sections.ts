@@ -28,7 +28,7 @@ export function sectionsOf(
 	text: string,
 	wanted: string[],
 ): (string[] | null)[] {
-	const found = headings(text);
+	const found = wanted.every((name) => name === WHOLE) ? [] : headings(text);
 	return wanted.map((name) => {
 		if (name === WHOLE) return lines(text);
 		if (name === INTRO) {

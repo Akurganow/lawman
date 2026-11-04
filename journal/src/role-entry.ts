@@ -1,38 +1,21 @@
-import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { check, count, fits, parseArgs } from "./args";
 import { EXIT, Fail, now, out, withDb } from "./db";
 import { type Taken, takeableOrders } from "./dispatch";
-import { type Block, DEFAULT_INPUT_CHARS, framed, pack } from "./input-parts";
-import { DUTY_DESK, HARNESS_SECTIONS, lawOf } from "./input-roles";
+import {
+	inputChars,
+	orderLine,
+	REFERENCES,
+	readConfig,
+	readText,
+} from "./input-files";
+import { type Block, framed, pack } from "./input-parts";
+import { DUTY_DESK, HARNESS_SECTIONS, lawOf, ROLES } from "./input-roles";
 import { commandFolder } from "./launch";
 import { sectionsOf } from "./law-sections";
 import { configValue } from "./law-sync";
 
-export const REFERENCES = join("lawman", "skills", "lawman-law", "references");
 const UNNAMED_HARNESS = "<harness>";
-
-export function readText(path: string): string | null {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return null;
-	}
-}
-
-export const readConfig = () => readText(join(commandFolder(), "config.yaml"));
-
-// read only when there is something to print, so a bad value never touches an idle check
-export function inputChars(config: string | null): number {
-	const value = configValue(config ?? "", "input_chars");
-	if (value === undefined) return DEFAULT_INPUT_CHARS;
-	if (!fits("number", value))
-		throw new Fail(
-			EXIT.USAGE,
-			`invalid input_chars in config.yaml: ${JSON.stringify(value)}`,
-		);
-	return Number(value);
-}
 
 const selfLine = (kind: string, path: string, section: string): Block => ({
 	line: `self ${kind} ${path} ${section}`.trimEnd(),
@@ -42,13 +25,16 @@ const selfLine = (kind: string, path: string, section: string): Block => ({
 function fileBlocks(kind: string, path: string, wanted: string[]): Block[] {
 	const text = readText(join(commandFolder(), REFERENCES, path));
 	if (text === null) return wanted.map((s) => selfLine(kind, path, s));
-	return [
-		{ line: `${kind} ${path}` },
-		...sectionsOf(text, wanted).map(
-			(lines, i): Block =>
-				lines === null ? selfLine(kind, path, wanted[i] ?? "") : { law: lines },
-		),
-	];
+	const head = `${kind} ${path}`;
+	const blocks = sectionsOf(text, wanted).map(
+		(lines, i): Block =>
+			lines === null ? selfLine(kind, path, wanted[i] ?? "") : { law: lines },
+	);
+	// the file's line stays with its first section, so no part ends on it
+	const [first, ...rest] = blocks;
+	return first !== undefined && "law" in first
+		? [{ head, law: first.law }, ...rest]
+		: [{ line: head }, ...blocks];
 }
 
 function harnessBlocks(config: string | null): Block[] {
@@ -59,9 +45,6 @@ function harnessBlocks(config: string | null): Block[] {
 	if (!safe) return HARNESS_SECTIONS.map((s) => selfLine("harness", path, s));
 	return fileBlocks("harness", path, HARNESS_SECTIONS);
 }
-
-export const orderLine = (o: Taken) =>
-	`order ${o.id} ${o.precinct} ${o.repo} ${o.department ?? "-"} ${o.issue ?? "-"}`;
 
 // Split, the orders take parts of their own at the end, so the parts of the
 // law and the page stay the same while the orders change.
@@ -94,6 +77,8 @@ const PART_USAGE = "tick input --role <r> --part <k>";
 export function rolePartCommand(args: string[]): number {
 	const { opt } = parseArgs(args, 0, ["role", "part"], PART_USAGE);
 	const role = check("role", opt.role);
+	if (role !== DUTY_DESK && ROLES[role] === undefined)
+		throw new Fail(EXIT.USAGE, `no input for role ${role}`);
 	const k = count(opt.part, "part", 1);
 	const orders = withDb((db) => takeableOrders(db, role, now()));
 	const parts = framed(

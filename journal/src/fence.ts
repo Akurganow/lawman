@@ -6,11 +6,3 @@ const MIN_FENCE = 3;
 // closes the fence, and a backtick line inside cannot close it either.
 export const fenceOf = (content: string) =>
 	"~".repeat(fenceLength(content, "~", MIN_FENCE));
-
-export function fenced(label: string, text: string): string {
-	const content = text.replace(/\r?\n$/, "");
-	const fence = fenceOf(content);
-	return [`${fence}${label}`, ...(content === "" ? [] : [content]), fence].join(
-		"\n",
-	);
-}

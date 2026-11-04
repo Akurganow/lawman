@@ -319,6 +319,8 @@ describe("parts of the role group", () => {
 				lines_.reduce((n, l) => n + [...l].length + 1, 0),
 			).toBeLessThanOrEqual(size);
 			expect(lines(printed).at(-1)).toBe(`end part ${i + 1} of ${all.length}`);
+			// a file's line goes with its first section, so no part ends on it
+			expect(content(printed).at(-1)).not.toMatch(/^(law|harness) /);
 		}
 		expect(all.flatMap(content)).toEqual(whole);
 	});
@@ -368,6 +370,7 @@ describe("parts of the role group", () => {
 		orderFor("court");
 		sized(WIDE);
 		expect(part("court", 2)).toMatchObject({ code: 1, out: "" });
+		expect(part("judge", 1)).toMatchObject({ code: 1, out: "" });
 		expect(part("court", 1).out).toStartWith(
 			"lawman input 1 role=court part 1 of 1\n",
 		);

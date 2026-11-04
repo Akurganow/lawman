@@ -183,7 +183,7 @@ const NO_LEAD = {
 	kind: "-",
 };
 
-export type CaseStage = {
+type CaseStage = {
 	need: Need;
 	department: string;
 	state: string;
@@ -192,22 +192,24 @@ export type CaseStage = {
 };
 
 // The stage of one cached issue. An issue missing from the cache fails with code 1.
+// The command's argument goes to the lookup as it came, as before.
 export function caseStage(
 	db: Database,
 	name: string,
-	issue: number,
+	asked: number | string,
 ): CaseStage {
+	const issue = Number(asked);
 	const row = db
 		.query(
 			"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
 		)
-		.get(name, issue) as {
+		.get(name, asked) as {
 		state: string;
 		answer: string | null;
 		answer_id: string | null;
 	} | null;
 	if (row === null)
-		throw new Fail(EXIT.USAGE, `unknown issue ${name} #${issue}`);
+		throw new Fail(EXIT.USAGE, `unknown issue ${name} #${asked}`);
 	const markers = markersOf(db, name, issue);
 	const lead = leadFields(db, name, issue, markers);
 	const { need, clerk } = caseOf(
@@ -232,5 +234,5 @@ export function caseStage(
 export function caseCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(CASE_USAGE);
 	const [name, issue] = args as [string, string];
-	withDb((db) => out(caseStage(db, name, Number(issue)).line));
+	withDb((db) => out(caseStage(db, name, issue).line));
 }

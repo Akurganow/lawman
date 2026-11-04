@@ -1,8 +1,8 @@
 import { cpSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { REFERENCES } from "./input-files";
 import { dir, ROOT, TRUSTED } from "./test-helpers";
 
-export const REFERENCES = join("lawman", "skills", "lawman-law", "references");
 export const CONFIG = `harness: hermes\ntrusted_login: ${TRUSTED}\n`;
 export const ROLE_NAMES = [
 	"patrol",

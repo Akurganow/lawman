@@ -43,7 +43,7 @@ const withLead = (department: string, ...marks: string[]): Spec => ({
 const HEAD = (role: string, tick = 1) =>
 	`lawman input 1 role=${role} tick=${tick} part 1 of 1`;
 const RAN = [`login=${TRUSTED}`];
-const ORDER = (_role: string, issue = "3", department = "-") => [
+const ORDER = (issue = "3", department = "-") => [
 	`order 1 main o/main ${department} ${issue}`,
 ];
 const REVISION = `revision=${SHA}`;
@@ -75,7 +75,7 @@ const CASES: Record<string, Case> = {
 			}),
 		skeleton: [
 			...RAN,
-			...ORDER("patrol", "-", "fixtures"),
+			...ORDER("-", "fixtures"),
 			REVISION,
 			"issues",
 			...CONSTITUTION_FENCES,
@@ -89,7 +89,7 @@ const CASES: Record<string, Case> = {
 		setup: () => host({ issues: { 3: human("OPEN") } }),
 		skeleton: [
 			...RAN,
-			...ORDER("response-unit"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"need=intake",
@@ -102,7 +102,7 @@ const CASES: Record<string, Case> = {
 		setup: () => host({ issues: { 3: withLead("fixtures") } }),
 		skeleton: [
 			...RAN,
-			...ORDER("investigation"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"need=investigation",
@@ -115,7 +115,7 @@ const CASES: Record<string, Case> = {
 		setup: () => host({ issues: { 3: withLead("fixtures", caseMark()) } }),
 		skeleton: [
 			...RAN,
-			...ORDER("prosecutor"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"need=prosecutor",
@@ -137,7 +137,7 @@ const CASES: Record<string, Case> = {
 		},
 		skeleton: [
 			...RAN,
-			...ORDER("defender"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"need=defender",
@@ -160,7 +160,7 @@ const CASES: Record<string, Case> = {
 			}),
 		skeleton: [
 			...RAN,
-			...ORDER("court"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"need=court",
@@ -181,7 +181,7 @@ const CASES: Record<string, Case> = {
 			}),
 		skeleton: [
 			...RAN,
-			...ORDER("clerk"),
+			...ORDER(),
 			REVISION,
 			"issues",
 			"pulls",
@@ -198,7 +198,7 @@ const CASES: Record<string, Case> = {
 		},
 		skeleton: [
 			...RAN,
-			...ORDER("spec-writer", "7"),
+			...ORDER("7"),
 			REVISION,
 			"pulls",
 			"need=spec-writer",
@@ -214,7 +214,7 @@ const CASES: Record<string, Case> = {
 		},
 		skeleton: [
 			...RAN,
-			...ORDER("executor", "7"),
+			...ORDER("7"),
 			REVISION,
 			"pulls",
 			"need=executor",
@@ -712,7 +712,7 @@ describe("an operation that is empty or fails", () => {
 		expect(skeleton(r.out)).toEqual([
 			HEAD("defender"),
 			...RAN,
-			...ORDER("defender"),
+			...ORDER(),
 			"fetch empty",
 			"issues",
 			"self fetch",
@@ -841,16 +841,11 @@ describe("in process", () => {
 		expect(
 			await inprocAsync(BASE, ["tick", "input", "1", "--part", "1"]),
 		).toMatchObject({ code: 0, out: r.out });
-		const again = await inprocAsync(BASE, ["tick", "input", "1"]);
-		expect(skeleton(again.out)).toEqual([
-			HEAD("prosecutor"),
-			"need=prosecutor",
-			...ISSUE_TEXT,
-			"comment at=2026-10-14T10:00:00Z",
-			"~comment",
-			"self constitution",
-			END,
-		]);
+		// a built group prints as it was stored
+		expect(await inprocAsync(BASE, ["tick", "input", "1"])).toMatchObject({
+			code: 0,
+			out: r.out,
+		});
 		expect((await inprocAsync(BASE, ["tick", "input", "9"])).code).toBe(1);
 		expect(
 			(

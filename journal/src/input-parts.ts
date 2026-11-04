@@ -5,10 +5,10 @@ export const INPUT_FORM = 1;
 export const DEFAULT_INPUT_CHARS = 16000;
 
 // A journal line is never cut. Law lines print behind "| ". A fenced text
-// keeps one fence for all its pieces, and its head line goes with the first.
+// keeps one fence for all its pieces. A head line goes with the first piece.
 export type Block =
 	| { line: string }
-	| { law: string[] }
+	| { head?: string; law: string[] }
 	| { head?: string; label: string; fence: string; lines: string[] };
 
 export function fencedBlock(label: string, text: string, head?: string): Block {
@@ -25,14 +25,9 @@ const lawLine = (line: string) => (line === "" ? "|" : `| ${line}`);
 
 export function render(block: Block): string[] {
 	if ("line" in block) return [block.line];
-	if ("law" in block) return block.law.map(lawLine);
-	const { head, label, fence, lines } = block;
-	return [
-		...(head === undefined ? [] : [head]),
-		`${fence}${label}`,
-		...lines,
-		fence,
-	];
+	const head = block.head === undefined ? [] : [block.head];
+	if ("law" in block) return [...head, ...block.law.map(lawLine)];
+	return [...head, `${block.fence}${block.label}`, ...block.lines, block.fence];
 }
 
 export const renderAll = (blocks: Block[]) => blocks.flatMap(render).join("\n");
@@ -76,12 +71,15 @@ const PREFIX = 2;
 
 function cut(block: Block, size: number): Block[] {
 	if ("line" in block) return [block];
-	if ("law" in block)
-		return runs(block.law, size, PREFIX).map((law) => ({ law }));
+	const head = block.head === undefined ? 0 : chars(block.head);
+	if ("law" in block) {
+		const [first = [], ...rest] = runs(block.law, size - head, PREFIX);
+		const tail = rest.length === 0 ? [] : runs(rest.flat(), size, PREFIX);
+		return [{ ...block, law: first }, ...tail.map((law) => ({ law }))];
+	}
 	const frame = cost([`${block.fence}${block.label}`, block.fence]);
-	const { head, ...bare } = block;
-	const room = size - frame - (head === undefined ? 0 : chars(head));
-	return runs(block.lines, room, 0).map((lines, i) =>
+	const { head: _, ...bare } = block;
+	return runs(block.lines, size - frame - head, 0).map((lines, i) =>
 		i === 0 ? { ...block, lines } : { ...bare, lines },
 	);
 }
@@ -107,21 +105,16 @@ export function pack(blocks: Block[], size: number): string[][] {
 	return parts;
 }
 
-export const endLine = (k: number, n: number) => `end part ${k} of ${n}`;
-
-// the first line of a part, the fields between the form and the part number
-export const firstLine = (fields: string, k: number, n: number) =>
-	`lawman input ${INPUT_FORM} ${fields} part ${k} of ${n}`;
-
+// each part between its first line, which names the form, and its last
 export function framed(
 	parts: string[][],
 	fields: (k: number) => string,
 ): string[] {
 	return parts.map((lines, i) =>
 		[
-			firstLine(fields(i + 1), i + 1, parts.length),
+			`lawman input ${INPUT_FORM} ${fields(i + 1)} part ${i + 1} of ${parts.length}`,
 			...lines,
-			endLine(i + 1, parts.length),
+			`end part ${i + 1} of ${parts.length}`,
 		].join("\n"),
 	);
 }

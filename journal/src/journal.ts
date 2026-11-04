@@ -24,9 +24,7 @@ export { open } from "./db";
 type Handler =
 	| ((args: string[]) => void)
 	| ((args: string[]) => number)
-	| ((args: string[]) => Promise<number>)
-	| ((args: string[]) => number | Promise<number>)
-	| ((args: string[]) => undefined | Promise<number>);
+	| ((args: string[]) => Promise<number>);
 
 // the cleaning libraries load only for the commands that use them, so every
 // other call starts as fast as before

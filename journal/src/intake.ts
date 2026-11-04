@@ -58,7 +58,7 @@ const orderIsOpen = (db: Database, precinct: string) =>
 		)
 		.get(RESPONSE_UNIT, precinct) !== null;
 
-export type IntakeStage = {
+type IntakeStage = {
 	need: "intake" | "none";
 	state: string;
 	line: string;
