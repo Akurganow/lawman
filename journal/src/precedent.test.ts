@@ -10,6 +10,7 @@ import {
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import { fits } from "./args";
 import { issuesJson, T } from "./cases-fixture";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
@@ -112,7 +113,10 @@ async function written(section: string[], marker = ACQUITTAL) {
 	const r = await record();
 	expect(r.err).toBe("");
 	expect(r.code).toBe(EXIT.OK);
-	return r.out.replace(/\n$/, "").split("\n");
+	const out = r.out.replace(/\n$/, "").split("\n");
+	for (const l of out.filter((l) => l.startsWith("entry\t")))
+		expect([l, fits("precedent", l.split("\t")[1] ?? "")]).toEqual([l, true]);
+	return out;
 }
 
 const body = (name: string) =>
@@ -135,8 +139,21 @@ describe("precedent: a new precedent", () => {
 			date: DATE,
 			ruling: SOURCE,
 		});
-		expect(readFileSync(file(`${DATE}-empty-doubles`), "utf8")).toEndWith(
-			"\n---\n\nAn empty double is not dead.\n",
+		// Bun.YAML.stringify leaves a space after `departments:`
+		expect(readFileSync(file(`${DATE}-empty-doubles`), "utf8")).toBe(
+			[
+				"---",
+				"kind: protects",
+				"departments: ",
+				"  []",
+				"issue: 1",
+				`date: ${DATE}`,
+				`ruling: "${SOURCE}"`,
+				"---",
+				"",
+				"An empty double is not dead.",
+				"",
+			].join("\n"),
 		);
 	});
 

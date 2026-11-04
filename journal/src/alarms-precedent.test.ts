@@ -1,94 +1,109 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { mkdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { fields, human, pairMark, put, withLead } from "./cases-fixture";
-import { inproc, inprocAsync } from "./inproc";
+import {
+	human,
+	issuesJson,
+	pairMark,
+	type Spec,
+	withLead,
+} from "./cases-fixture";
+import { inproc, inprocAsync, inprocFed } from "./inproc";
 import { config } from "./input-test-fixture";
 import { headerOf } from "./precedent-file";
 import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
-	addPrecincts,
-	alarm,
 	BASE,
-	call,
 	caseMark,
 	charge,
 	defence,
 	dir,
 	later,
 	mark,
+	precinct,
 	rows,
 	SHA,
+	seed,
 	TRUSTED,
 	tempDb,
 	WAITS_WORK,
 } from "./test-helpers";
 
 tempDb();
-beforeEach(() => addPrecincts({ main: 1 }));
+beforeEach(() => seed((db) => precinct(db, "main")));
 
 const WAITS = "pull request waits for a decision on its precedent";
 const line = (ref: string, detail = WAITS) =>
 	`ALARM decision-waiting ${ref} ${detail}\n`;
 const clerk = (stage: string, pull: number) =>
 	mark("clerk", stage, ` pull=${pull}`);
-const syncPulls = (...pulls: Parameters<typeof hostPulls>[0]) =>
-	expect(
-		call(
-			BASE,
-			["sync", "main", "--pulls", "--author", BOT],
-			JSON.stringify(hostPulls(pulls)),
-		).code,
-	).toBe(0);
+const alarm = (clock: string) => inproc(clock, ["alarm"]).out;
+async function put(specs: Record<number, Spec>) {
+	const r = await inprocFed(
+		BASE,
+		["sync", "main", "--author", TRUSTED],
+		issuesJson(specs),
+	);
+	expect(r.code).toBe(0);
+}
+async function syncPulls(...pulls: Parameters<typeof hostPulls>[0]) {
+	const r = await inprocFed(
+		BASE,
+		["sync", "main", "--pulls", "--author", BOT],
+		JSON.stringify(hostPulls(pulls)),
+	);
+	expect(r.code).toBe(0);
+}
 const open = () =>
 	rows("SELECT ref, cleared_at FROM alarms ORDER BY id") as {
 		ref: string;
 		cleared_at: string | null;
 	}[];
+const caseLine = (n: number) => inproc(BASE, ["case", "main", String(n)]).out;
 
 describe("decision-waiting for a precedent pull request", () => {
-	test("an open precedent pull request without sources alarms by its entry marker", () => {
-		put({ 3: human("CLOSED", clerk("entry", 7)) });
-		syncPulls({ number: 7 });
+	test("an open precedent pull request without sources alarms by its entry marker", async () => {
+		await put({ 3: human("CLOSED", clerk("entry", 7)) });
+		await syncPulls({ number: 7 });
 		expect(rows("SELECT issues FROM pulls")).toEqual([{ issues: "" }]);
-		expect(alarm(BASE).out).toBe(line("main#7"));
+		expect(alarm(BASE)).toBe(line("main#7"));
 	});
 
-	test("a pull request that left the cache clears the alarm", () => {
-		put({ 3: human("CLOSED", clerk("entry", 7)) });
-		syncPulls({ number: 7 });
+	test("a pull request that left the cache clears the alarm", async () => {
+		await put({ 3: human("CLOSED", clerk("entry", 7)) });
+		await syncPulls({ number: 7 });
 		alarm(BASE);
-		syncPulls();
-		expect(alarm(later(1)).out).toBe("");
+		await syncPulls();
+		expect(alarm(later(1))).toBe("");
 		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
 	});
 
 	test.each(["final", "kept"])(
 		"a %s marker after the entry clears the alarm",
-		(stage) => {
-			put({ 3: human("CLOSED", clerk("entry", 7)) });
-			syncPulls({ number: 7 });
+		async (stage) => {
+			await put({ 3: human("CLOSED", clerk("entry", 7)) });
+			await syncPulls({ number: 7 });
 			alarm(BASE);
-			put({ 3: human("CLOSED", clerk("entry", 7), clerk(stage, 7)) });
-			expect(alarm(later(1)).out).toBe("");
+			await put({ 3: human("CLOSED", clerk("entry", 7), clerk(stage, 7)) });
+			expect(alarm(later(1))).toBe("");
 			expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
 		},
 	);
 
-	test("an entry of another pull request or of the old form does not alarm", () => {
-		put({
+	test("an entry of another pull request or of the old form does not alarm", async () => {
+		await put({
 			3: human("CLOSED", clerk("entry", 8)),
 			4: human("CLOSED", mark("clerk", "entry")),
 		});
-		syncPulls({ number: 7 });
-		expect(alarm(BASE).out).toBe("");
+		await syncPulls({ number: 7 });
+		expect(alarm(BASE)).toBe("");
 	});
 
-	test("a precinct of weight 0 does not alarm", () => {
-		put({ 3: human("CLOSED", clerk("entry", 7)) });
-		syncPulls({ number: 7 });
-		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
-		expect(alarm(BASE).out).toBe("");
+	test("a precinct of weight 0 does not alarm", async () => {
+		await put({ 3: human("CLOSED", clerk("entry", 7)) });
+		await syncPulls({ number: 7 });
+		inproc(BASE, ["precinct", "set", "main", "--weight", "0"]);
+		expect(alarm(BASE)).toBe("");
 	});
 });
 
@@ -105,11 +120,9 @@ describe("the conviction path on a fixture", () => {
 
 	test("the file rides the draft, which alarms only once the work is ready", async () => {
 		const spec = withLead(caseMark(), charge(), defence(), ruling);
-		put({ 1: spec });
-		expect(fields(1)).toMatchObject({
-			job: "open",
-			branch: "lawman/execute-1-1",
-		});
+		await put({ 1: spec });
+		expect(caseLine(1)).toContain(" job=open ");
+		expect(caseLine(1)).toContain(" branch=lawman/execute-1-1 ");
 		config(`trusted_login: ${TRUSTED}\n`);
 		const tree = join(dir, "tree");
 		mkdirSync(tree);
@@ -127,20 +140,19 @@ describe("the conviction path on a fixture", () => {
 		const file = join(tree, ".lawman", "precedents", "2026-10-14-no-panics.md");
 		expect(headerOf(readFileSync(file, "utf8")).kind).toBe("condemns");
 
-		const comments = spec.comments ?? [];
-		put({
+		await put({
 			1: {
 				...spec,
 				comments: [
-					...comments,
+					...(spec.comments ?? []),
 					["2026-10-14T16:00:00Z", pairMark("handed", 9, "open")],
 				],
 			},
 		});
-		syncPulls({ number: 9, closes: [1] });
+		await syncPulls({ number: 9, closes: [1] });
 		expect(rows("SELECT work FROM pulls")).toEqual([{ work: "todo" }]);
-		expect(alarm(BASE).out).toBe("");
-		syncPulls({
+		expect(alarm(BASE)).toBe("");
+		await syncPulls({
 			number: 9,
 			closes: [1],
 			comments: [
@@ -148,14 +160,13 @@ describe("the conviction path on a fixture", () => {
 				{ body: `Executor\n\n${READY}`, at: "2026-10-14T17:00:00Z" },
 			],
 		});
-		expect(alarm(later(1)).out).toBe(line("main#9", WAITS_WORK));
+		expect(alarm(later(1))).toBe(line("main#9", WAITS_WORK));
 	});
 });
 
 describe("case in process: the decision job", () => {
-	test("an entry gives the decision job only once its pull request left the cache", () => {
-		const caseLine = () => inproc(BASE, ["case", "main", "3"]).out;
-		put({
+	test("an entry gives the decision job only once its pull request left the cache", async () => {
+		await put({
 			3: withLead(
 				caseMark(),
 				charge(),
@@ -164,11 +175,11 @@ describe("case in process: the decision job", () => {
 				clerk("entry", 7),
 			),
 		});
-		syncPulls({ number: 7 });
-		expect(caseLine()).toContain("job=- ");
-		syncPulls();
-		expect(caseLine()).toContain("need=clerk ");
-		expect(caseLine()).toContain(
+		await syncPulls({ number: 7 });
+		expect(caseLine(3)).toContain("job=- ");
+		await syncPulls();
+		expect(caseLine(3)).toStartWith("need=clerk ");
+		expect(caseLine(3)).toContain(
 			"job=decision action=- pull=7 sources=- branch=-",
 		);
 	});
