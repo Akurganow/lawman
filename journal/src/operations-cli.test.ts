@@ -50,6 +50,7 @@ describe("commands and run as programs", () => {
 		expect(r.err).toContain("usage: journal run");
 	});
 
+	// the journal's own input stays open here, so an inherited input would hang the command
 	test("the command does not wait for the journal's standard input", async () => {
 		command(configs("main"), "fetch", `cat\nprintf '%s\\n' ${SHA}`);
 		const child = Bun.spawn(["bun", "src/journal.ts", "run", "main", "fetch"], {

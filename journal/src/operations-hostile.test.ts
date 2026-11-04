@@ -63,6 +63,11 @@ async function expectSafe(printed: string) {
 	expect(lines.filter((line, i) => !fenced[i] && !OWN.test(line))).toEqual([]);
 }
 
+// the sample also sits in the command file, as comment lines the journal never prints
+const commented = (body: string) =>
+	`${SAMPLE.split("\n")
+		.map((line) => `# ${line}`)
+		.join("\n")}\n${body}`;
 const sample = (operation: string) => {
 	writeFileSync(join(configs("main"), "sample.txt"), SAMPLE);
 	return operation;
@@ -92,10 +97,30 @@ describe("a hostile sample through every line the journal prints about a command
 		await expectSafe(r.out);
 	});
 
-	test("the commands list", async () => {
-		command(configs("main"), "file", "true");
+	test("the commands list, with the sample in the text of a command", async () => {
+		command(configs("main"), "file", commented("true"));
 		await expectSafe((await inprocAsync(BASE, ["commands", "main"])).out);
 	});
+
+	test.each([
+		["fetch", []],
+		["identity", []],
+		["issues", ["--author", TRUSTED]],
+		["pulls", ["--author", TRUSTED]],
+		["decider", ["issue", "1"]],
+	])(
+		"the sample as the stdout of %s is refused as form, never echoed",
+		async (operation, args) => {
+			command(configs("main"), operation, commented("cat sample.txt"));
+			sample(operation);
+			const r = await run(operation, ...args);
+			expect(r.code).toBe(4);
+			expect(r.out).toStartWith(`${operation} failed reason=form\n~~~error\n`);
+			for (const line of SAMPLE.split("\n").filter((l) => l.length > 3))
+				expect(r.out).not.toContain(line);
+			await expectSafe(r.out);
+		},
+	);
 
 	test("arguments outside a class never print, arguments inside come back cleaned", async () => {
 		command(configs("main"), "files", `printf '%s\\n' "$@"`);

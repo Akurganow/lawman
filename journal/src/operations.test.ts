@@ -119,11 +119,6 @@ describe("run: the command and its outcome", () => {
 		);
 	});
 
-	test("a command that reads standard input ends without waiting", async () => {
-		command(configs("main"), "fetch", `cat\nprintf '%s\\n' ${SHA}`);
-		expect((await run("fetch")).out).toBe(`revision=${SHA}\n`);
-	});
-
 	test("the command runs in its own folder", async () => {
 		command(configs("main"), "files", "pwd -P");
 		const r = await run("files", SHA);
@@ -170,6 +165,10 @@ describe("run: the arguments", () => {
 			err: "",
 		});
 		expect(started()).toBe("");
+	});
+
+	test("an argument outside its class is refused before the file is looked for", async () => {
+		expect((await run("files", "a b")).out).toBe(refused("files", "argument"));
 	});
 
 	test("arguments that pass their class reach the command unchanged", async () => {

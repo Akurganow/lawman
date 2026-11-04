@@ -209,6 +209,7 @@ The installation has the operations `release` and `verify`. Their forms come wit
   - `file` prints the text in a `file` fence, `files` the list in a `files` fence.
   - `decider` prints what `journal decider` prints on the same form.
   - An operation without a command prints `<operation> empty` and exits 0.
+  - The arguments pass their classes before the journal looks for the file, so an argument outside its class gives `reason=argument` even for an empty operation.
 
 A wrong number of arguments, an unknown operation or a precinct that the journal does not list is a usage error with exit 1. The messages name only what the journal itself holds.
 
@@ -245,7 +246,7 @@ The text inside the `error` fence passes the character layer of the cleaning. Ev
 
 ### Fences
 
-The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The fence adds no change to the text. A tilde fence also sits safely inside a harness that wraps the output in backticks.
+The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The fence adds no change to the text, except that it drops one final line break. A tilde fence also sits safely inside a harness that wraps the output in backticks.
 
 The kinds so far are `issue`, `comment`, `pull`, `file`, `files` and `error`. Later kinds join as the journal prints more foreign text.
 
