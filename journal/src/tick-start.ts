@@ -484,7 +484,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	}
 	if (input.constitution) o.selfs.push("constitution");
 	const d = departmentOf(input, order, stage);
-	if (d !== NONE && fits("department", d)) o.selfs.push(`department ${d}`);
+	// a name outside its class stays out of the output, the role's own check refuses it
+	if (d !== NONE)
+		o.selfs.push(fits("department", d) ? `department ${d}` : "department");
 	const texts = await withDbAsync((db) =>
 		caseTexts(db, order.precinct, textsOf(input, order, stage)),
 	);

@@ -382,6 +382,7 @@ A line `self <step>` names a step that the journal could not do. The role does i
 | `stage` | the section "Read the stage", "Check the intake order" or "Read the pull stage" |
 | `constitution` | the section "Check the constitution" |
 | `department <d>` | the section "Resolve the department page" |
+| `department` | the same section, for a name outside its class, which the line leaves out |
 | `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |

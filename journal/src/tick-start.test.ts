@@ -276,6 +276,44 @@ describe("tick start with an order", () => {
 		expect(r.out).toContain("\n~~~title\nissue 3\n~~~\n~~~issue\n");
 	});
 
+	test("the stored parts join to the unsplit group, and tick input returns each part's stored bytes", () => {
+		const startAt = (size: number) => {
+			setUp(`${CONFIG}input_chars: ${size}\n`);
+			orderOf("defender", { issue: 3 });
+			CASES.defender?.setup();
+			return start("defender").out;
+		};
+		const whole = content(startAt(1_000_000));
+		rmSync(dir, { recursive: true, force: true });
+		mkdirSync(dir);
+		startAt(300);
+		const stored = JSON.parse(String(ticks()[0]?.parts)) as string[];
+		expect(stored.length).toBeGreaterThan(3);
+		for (const [i, part] of stored.entries())
+			expect(input("1", "--part", String(i + 1)).out).toBe(`${part}\n`);
+		// a fence cut at a part's end opens again with the same label in the next part
+		const joined = stored.map(content).reduce((all, next) => {
+			const close = all.at(-1) ?? "";
+			const opened = all.findLast((l) => l.startsWith(close) && l !== close);
+			const cut = /^~+$/.test(close) && next[0] === opened;
+			return [
+				...(cut ? all.slice(0, -1) : all),
+				...(cut ? next.slice(1) : next),
+			];
+		}, [] as string[]);
+		expect(joined).toEqual(whole);
+	});
+
+	test("a tick the journal ends prints one part even above the size", () => {
+		setUp(`${CONFIG}input_chars: 40\n`);
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures", caseMark()) } });
+		const r = start("investigation");
+		expect(lines(r.out)[0]).toBe(HEAD("investigation"));
+		expect(lines(r.out).at(-1)).toBe(END);
+		expect(content(r.out).join("\n").length).toBeGreaterThan(40);
+	});
+
 	test("a group above the size splits into stored parts, and the end of the tick clears them", () => {
 		setUp(`${CONFIG}input_chars: 400\n`);
 		orderOf("prosecutor", { issue: 3 });
@@ -771,6 +809,24 @@ describe("an operation that is empty or fails", () => {
 		const r = start("patrol");
 		expect(lines(r.out).slice(-2)).toEqual(["self department fixtures", END]);
 		expect(r.out).not.toContain("place=");
+	});
+});
+
+describe("a department outside its class in tick input", () => {
+	test("gives the self step without the name", () => {
+		setUp();
+		seed((d) => order(d, "main", "patrol", { department: "Bad" }));
+		host();
+		rmSync(join(configs("main"), "fetch"));
+		expect(lines(start("patrol").out).slice(-2)).toEqual(["self fetch", END]);
+		const r = input("1");
+		expect(r.code).toBe(0);
+		expect(lines(r.out).slice(-3)).toEqual([
+			"self constitution",
+			"self department",
+			END,
+		]);
+		expect(r.out).not.toContain("Bad");
 	});
 });
 

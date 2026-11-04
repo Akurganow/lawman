@@ -26,19 +26,19 @@ const HARNESS = join(
 	"harnesses",
 	"hermes.md",
 );
-const RUN_GATE = /^### Run gate\n([\s\S]*?)(?=^### )/m;
+const ENTRY_SECTION = /^### Run gate\n([\s\S]*?)(?=^### )/m;
 const PRINTF = /^printf '%s\\n' ((?:'[^']*' ?)+) > .+\/lawman-<role>\.sh$/m;
 
-function gateLines(): string[] {
-	const section = RUN_GATE.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
+function entryLines(): string[] {
+	const section = ENTRY_SECTION.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
 	const args = PRINTF.exec(section)?.[1];
 	if (args === undefined) {
-		throw new Error("hermes.md Run gate section has no gate file command");
+		throw new Error("hermes.md Run gate section has no entry file command");
 	}
 	return [...args.matchAll(/'([^']*)'/g)].map((m) => (m[1] ?? "").trim());
 }
 
-function gate() {
+function entry() {
 	const installation = join(dir, "installation");
 	mkdirSync(join(installation, "bin"), { recursive: true });
 	const wrapper = join(installation, "bin", "journal");
@@ -48,7 +48,7 @@ function gate() {
 	);
 	chmodSync(wrapper, 0o755);
 	const file = join(dir, `lawman-${ROLE}.sh`);
-	writeFileSync(file, `${gateLines().join("\n").replace("<role>", ROLE)}\n`);
+	writeFileSync(file, `${entryLines().join("\n").replace("<role>", ROLE)}\n`);
 	const r = Bun.spawnSync(["bash", file], {
 		cwd: installation,
 		env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
@@ -56,9 +56,9 @@ function gate() {
 	return { code: r.exitCode, out: r.stdout.toString() };
 }
 
-describe("gate file", () => {
+describe("role entry file", () => {
 	test("has the interpreter line and one exec line without pipe, grep or fallback", () => {
-		const lines = gateLines();
+		const lines = entryLines();
 		expect(lines).toEqual([
 			"#!/bin/bash",
 			`exec bin/journal wake --role <role>`,
@@ -67,13 +67,14 @@ describe("gate file", () => {
 	});
 
 	test("names the safe size of a part", () => {
-		const section = RUN_GATE.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
+		const section =
+			ENTRY_SECTION.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
 		expect(section).toContain("\ninput_chars: 49000\n");
 	});
 
 	test("prints nothing with no order", () => {
 		seed(() => {});
-		expect(gate()).toEqual({ code: 0, out: "" });
+		expect(entry()).toEqual({ code: 0, out: "" });
 	});
 
 	test("prints the role's input behind the check time for a takeable order", () => {
@@ -82,7 +83,7 @@ describe("gate file", () => {
 			order(db, "main", ROLE);
 		});
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
-		const r = gate();
+		const r = entry();
 		expect(r.code).toBe(0);
 		expect(r.out).toStartWith(
 			`lawman input 1 role=${ROLE} at=${BASE} part 1 of 1\n`,
@@ -92,7 +93,7 @@ describe("gate file", () => {
 
 	test("passes a broken database through as a non-zero exit and empty stdout", () => {
 		writeFileSync(dbFile, "not a database".repeat(100));
-		const r = gate();
+		const r = entry();
 		expect([r.code === 0, r.out]).toEqual([false, ""]);
 	});
 });

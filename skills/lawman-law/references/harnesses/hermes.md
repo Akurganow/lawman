@@ -113,7 +113,7 @@ Refused, seen in scheduled runs:
 
 - a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
 - an interpreter started with `-c`: `python3 -c`;
-- a recursive delete: `rm -r`, `rm -rf`, `rm --recursive`.
+- a recursive delete: `rm -rf`.
 
 A role removes a folder without a recursive delete. Each form below passed the harness's check function as a role sends it. Removing the files with `rm -f` and then the folder with `rmdir` was seen in scheduled runs.
 
@@ -124,7 +124,8 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 
 - other shells started with `-c`: `sh -c`, `zsh -c`;
 - an interpreter started with `-e`: `node -e`, `bun -e`;
-- a heredoc fed to a shell or an interpreter: `bash <<`.
+- a heredoc fed to a shell or an interpreter: `bash <<`;
+- other recursive deletes: `rm -r`, `rm --recursive`.
 
 Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the Send body. The pipe passed when a role repeated a refused command without the wrapper.
 
