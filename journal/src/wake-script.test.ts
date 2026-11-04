@@ -66,6 +66,11 @@ describe("gate file", () => {
 		expect(lines.join("\n")).not.toMatch(/\||grep|\|\| true/);
 	});
 
+	test("names the safe size of a part", () => {
+		const section = RUN_GATE.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
+		expect(section).toContain("\ninput_chars: 49000\n");
+	});
+
 	test("prints nothing with no order", () => {
 		seed(() => {});
 		expect(gate()).toEqual({ code: 0, out: "" });
