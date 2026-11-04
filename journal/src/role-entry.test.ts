@@ -4,7 +4,10 @@ import { join } from "node:path";
 import type { Root } from "mdast";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
-import { inprocAsync } from "./inproc";
+import { withDb } from "./db";
+import { takeableOrders } from "./dispatch";
+import { captured, inprocAsync } from "./inproc";
+import { readConfig } from "./input-files";
 import {
 	CONFIG,
 	config,
@@ -21,6 +24,7 @@ import {
 	recording,
 	shared,
 } from "./operations-test-fixture";
+import { roleParts } from "./role-entry";
 import {
 	BASE,
 	call,
@@ -348,14 +352,37 @@ describe("parts of the role group", () => {
 		expect(total(wake("investigation").out)).toBe(1);
 	});
 
+	// Each call of tick input builds the whole group again, so this test builds
+	// the parts once and checks the command against the first and the last.
 	test("at a small size no line starts with a backtick and long law lines are cut behind the prefix", async () => {
 		orderFor("executor");
 		sized(300);
-		for (const printed of await parts("executor")) {
-			expect(printed).not.toMatch(BACKTICK_LINE);
-			for (const line of content(printed))
+		let built: string[] = [];
+		captured(BASE, () => {
+			const orders = withDb((d) => takeableOrders(d, "executor", BASE));
+			built = roleParts("executor", orders, readConfig()).map((p) =>
+				p.join("\n"),
+			);
+		});
+		expect(built.length).toBeGreaterThan(100);
+		for (const part of built) {
+			expect(part).not.toMatch(BACKTICK_LINE);
+			for (const line of part.split("\n"))
 				expect([...line].length + 1).toBeLessThanOrEqual(300);
 		}
+		const law = readFileSync(join(LAW, "LAW.md"), "utf8").split("\n");
+		expect(law.some((line) => [...line].length + 3 > 300)).toBe(true);
+		const last = await inprocAsync(BASE, [
+			"tick",
+			"input",
+			"--role",
+			"executor",
+			"--part",
+			String(built.length),
+		]);
+		expect(content(last.out)).toEqual((built.at(-1) ?? "").split("\n"));
+		const first = await inprocAsync(BASE, ["wake", "--role", "executor"]);
+		expect(content(first.out)).toEqual((built[0] ?? "").split("\n"));
 	});
 
 	test("an input_chars outside the class exits 1 with work and changes nothing without", () => {

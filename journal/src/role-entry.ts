@@ -48,7 +48,7 @@ function harnessBlocks(config: string | null): Block[] {
 
 // Split, the orders take parts of their own at the end, so the parts of the
 // law and the page stay the same while the orders change.
-function roleParts(
+export function roleParts(
 	role: string,
 	orders: Taken[],
 	config: string | null,
