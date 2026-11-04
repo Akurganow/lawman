@@ -13,6 +13,7 @@ import {
 	out,
 	withDb,
 } from "./db";
+import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
 
 const ORDER_UNTAKEN_MS = 48 * HOUR_MS;
@@ -176,13 +177,7 @@ function decisionWaiting(db: Database): Candidate[] {
 			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
 		}));
 	return [...pairs, ...precedentWaiting(db)]
-		.sort((a, b) =>
-			a.precinct === b.precinct
-				? a.number - b.number
-				: a.precinct < b.precinct
-					? -1
-					: 1,
-		)
+		.sort((a, b) => byText(a.precinct, b.precinct) || a.number - b.number)
 		.map((p) => ({
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
@@ -197,23 +192,19 @@ function precedentWaiting(db: Database): Waiting[] {
 	const open = db
 		.query(
 			`SELECT p.precinct, p.number FROM pulls p
-       WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)
-       ORDER BY p.precinct, p.number`,
+       WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)`,
 		)
 		.all() as { precinct: string; number: number }[];
-	const waiting = new Map<string, Set<number>>();
-	const waitingIn = (precinct: string) => {
-		let found = waiting.get(precinct);
-		if (found === undefined) {
-			found = new Set(
+	const waiting = new Map(
+		[...new Set(open.map((p) => p.precinct))].map((precinct) => [
+			precinct,
+			new Set(
 				[...clerkMarkersOf(db, precinct).values()].flatMap(awaitingDecision),
-			);
-			waiting.set(precinct, found);
-		}
-		return found;
-	};
+			),
+		]),
+	);
 	return open
-		.filter((p) => waitingIn(p.precinct).has(p.number))
+		.filter((p) => waiting.get(p.precinct)?.has(p.number))
 		.map((p) => ({ ...p, detail: WAITS_FOR_PRECEDENT }));
 }
 

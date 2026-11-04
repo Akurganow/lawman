@@ -110,8 +110,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
 | `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
-| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair | `pull`, `issue` |
-| `clerk` | `kept` | the comment after someone who decides nothing closes a precedent pull request | `pull` |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair; a `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
 | `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 | `executor` | `ready` | the `Executor` comment on a pull request | `sha` |
 

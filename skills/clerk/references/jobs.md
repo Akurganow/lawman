@@ -67,7 +67,7 @@ A non-zero exit ends the tick with `failed`. The output has one line per change:
 - `none`: the ruling adds no precedent, and the folder does not change.
 - `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
 
-A `none` or `no-entry` line means no folder change to record. Blockers names every reason. A reason never goes to the owner.
+A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output and every `cancel` line with `missing`. A reason never goes to the owner.
 
 ### Record the precedent files
 

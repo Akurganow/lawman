@@ -107,7 +107,7 @@ function stateAction(
 	return "kept";
 }
 
-type Row = { job: Job; action: Action; decided?: number };
+type Row = { job: Job; action: Action; pull?: string };
 const job = (j: Job, action: Action = NONE): Row => ({ job: j, action });
 const NO_JOB = job(NONE);
 
@@ -126,7 +126,8 @@ function tableRow(
 	const decided = awaitingDecision(i.markers).find(
 		(m) => !i.pulls.some((p) => p.number === m),
 	);
-	if (decided !== undefined) return { ...job("decision"), decided };
+	if (decided !== undefined)
+		return { ...job("decision"), pull: String(decided) };
 	if (k !== undefined || i.ruling === undefined) return NO_JOB;
 	if (i.ruling.stage === "conviction") return open ? job("open") : NO_JOB;
 	const answered = i.markers.some(
@@ -135,7 +136,7 @@ function tableRow(
 			ANSWERS.includes(m.stage) &&
 			m.ord > (i.ruling?.ord ?? ""),
 	);
-	return answered ? NO_JOB : job("precedent");
+	return answered ? NO_JOB : { ...job("precedent"), pull: NONE };
 }
 
 function rowOf(
@@ -205,18 +206,10 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 			.sort((a, b) => a.number - b.number)[0];
 	const row = rowOf(i, k, baseOf(pairs), pull);
 	const found = pull === undefined ? NONE : String(pull.number);
-	const { decided, ...shown } = row;
 	return {
 		priority: priorityOf(i.markers),
-		...shown,
-		pull:
-			decided !== undefined
-				? String(decided)
-				: row.job === "precedent"
-					? NONE
-					: row.job === "adopt"
-						? found
-						: (k?.fields.pull ?? found),
+		...row,
+		pull: row.pull ?? (row.job === "adopt" ? found : (k?.fields.pull ?? found)),
 		sources: sourcesOf(i, row, pull, k),
 		branch: branchOf(i, pairs, row),
 	};

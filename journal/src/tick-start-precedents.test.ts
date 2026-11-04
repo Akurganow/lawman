@@ -15,7 +15,6 @@ import {
 	CONSTITUTION,
 	departmentPage,
 	host,
-	input,
 	leadIn,
 	orderOf,
 	setUp,
@@ -193,7 +192,6 @@ describe("the precedents of the tick group", () => {
 		ROLES.prosecutor?.setup(tree());
 		command(configs("main"), "fetch", "exit 0");
 		expect(lines(start("prosecutor").out)).toContain("self fetch");
-		expect(precedentLines(input("1").out)).toEqual([SELF]);
 		const r = await inprocAsync(BASE, ["tick", "input", "1"]);
 		expect(precedentLines(r.out)).toEqual([SELF]);
 	});

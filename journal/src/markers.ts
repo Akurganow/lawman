@@ -258,7 +258,7 @@ export function extractMarkers(
 	return found;
 }
 
-const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+export const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 export function collectIssueMarkers(issue: GhIssue, trustedLogin: string) {
 	const comments = [...issue.comments].sort((a, b) =>

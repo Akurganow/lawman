@@ -5,26 +5,34 @@ import { INTRO, WHOLE } from "./input-roles";
 
 type Found = { name: string; depth: number; start: number };
 
+const parse = (text: string) => unified().use(remarkParse).parse(text) as Root;
+
 // the heading's text as written, from its first inline node to its last
+const titleOf = (text: string, h: Heading) =>
+	text.slice(
+		h.children[0]?.position?.start.offset ?? 0,
+		h.children.at(-1)?.position?.end.offset ?? 0,
+	);
+
+// a heading written with `#`, at or above the depth; an underlined one is not
+const atxHeading = (
+	text: string,
+	node: RootContent,
+	depth: number,
+): node is Heading =>
+	node.type === "heading" &&
+	node.depth <= depth &&
+	text[node.position?.start.offset ?? 0] === "#";
+
 function headings(text: string): Found[] {
 	return parse(text)
 		.children.filter((node): node is Heading => node.type === "heading")
 		.map((h) => ({
-			name: text.slice(
-				h.children[0]?.position?.start.offset ?? 0,
-				h.children.at(-1)?.position?.end.offset ?? 0,
-			),
+			name: titleOf(text, h),
 			depth: h.depth,
 			start: h.position?.start.offset ?? 0,
 		}));
 }
-
-const parse = (text: string) => unified().use(remarkParse).parse(text) as Root;
-
-const atxHeading = (text: string, node: RootContent, depth: number) =>
-	node.type === "heading" &&
-	node.depth <= depth &&
-	text[node.position?.start.offset ?? 0] === "#";
 
 // The top-level nodes of every `## <name>` section, in order. A section ends at the
 // next heading of level two or higher written with `#`; an underlined one stays inside.
@@ -32,13 +40,8 @@ export function sectionNodes(text: string, name: string): RootContent[][] {
 	const nodes = parse(text).children;
 	const found: RootContent[][] = [];
 	nodes.forEach((node, i) => {
-		if (!atxHeading(text, node, 2) || (node as Heading).depth !== 2) return;
-		const h = node as Heading;
-		const title = text.slice(
-			h.children[0]?.position?.start.offset ?? 0,
-			h.children.at(-1)?.position?.end.offset ?? 0,
-		);
-		if (title !== name) return;
+		if (!atxHeading(text, node, 2) || node.depth !== 2) return;
+		if (titleOf(text, node) !== name) return;
 		const end = nodes.findIndex((n, k) => k > i && atxHeading(text, n, 2));
 		found.push(nodes.slice(i + 1, end < 0 ? nodes.length : end));
 	});

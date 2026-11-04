@@ -234,23 +234,25 @@ async function lintedPage(
 	return { passed, reasons: lint.reasons };
 }
 
-const departmentOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
-	input.department === "order"
+// the department of the order or of the stage, `-` for any other source
+const departmentFrom = (
+	source: string | null,
+	order: Taken,
+	stage: Stage | null,
+) =>
+	source === "order"
 		? (order.department ?? NONE)
-		: input.department === "stage"
+		: source === "stage"
 			? (stage?.department ?? NONE)
 			: NONE;
+
+const departmentOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
+	departmentFrom(input.department, order, stage);
 
 const precedentsOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
 	input.precedents === null
 		? null
-		: input.precedents === "order"
-			? (order.department ?? NONE)
-			: input.precedents === "stage"
-				? (stage?.department ?? NONE)
-				: NONE;
-
-const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+		: departmentFrom(input.precedents, order, stage);
 
 // Each direct file of the folder, by name, when it serves the department. A file
 // the journal cannot read leaves one self line, so the role reads the folder itself.
@@ -271,7 +273,7 @@ async function precedentBlocks(
 		.filter((f) => f.startsWith(PRECEDENTS) && f.endsWith(".md"))
 		.map((f) => f.slice(PRECEDENTS.length, -".md".length))
 		.filter((name) => !name.includes("/"))
-		.sort(byText);
+		.sort();
 	let missed = false;
 	let shown = 0;
 	for (const name of names) {

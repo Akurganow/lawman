@@ -17,6 +17,7 @@ import { extractMarkers, stripCr } from "./markers";
 import {
 	buildPrecedent,
 	type Fields,
+	KINDS,
 	NO_VALUE,
 	splitPrecedent,
 } from "./precedent-file";
@@ -32,10 +33,11 @@ const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
 const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
 const OLD_SOURCE = /^(.+) \((\S+)\)$/;
-const KIND_OF: Record<string, string> = {
-	conviction: "condemns",
-	acquittal: "protects",
-};
+// a Map, so a stage named like an object member gives no kind
+const KIND_OF = new Map([
+	["conviction", "condemns"],
+	["acquittal", "protects"],
+]);
 
 // an underlined heading never applies as written
 type Item = { text: string; bad: boolean };
@@ -51,9 +53,7 @@ function itemsOf(text: string, nodes: RootContent[]): Item[] {
 		if (node.type === "list")
 			return node.children.flatMap((li) => {
 				const t = sliceOf(text, li.children[0], li.children.at(-1));
-				return li.children.length > 0 && t !== ""
-					? [{ text: t, bad: false }]
-					: [];
+				return t === "" ? [] : [{ text: t, bad: false }];
 			});
 		if (
 			node.type === "heading" &&
@@ -70,11 +70,12 @@ function itemsOf(text: string, nodes: RootContent[]): Item[] {
 	});
 }
 
-type Kind = "absent" | "file" | "other";
+type Kind = "absent" | "file" | "dir" | "other";
 
 function kindAt(path: string): Kind {
 	try {
-		return lstatSync(path).isFile() ? "file" : "other";
+		const stat = lstatSync(path);
+		return stat.isFile() ? "file" : stat.isDirectory() ? "dir" : "other";
 	} catch (e) {
 		if ((e as NodeJS.ErrnoException).code === "ENOENT") return "absent";
 		throw e;
@@ -91,27 +92,21 @@ const unsafe = (path: string) =>
 // until every path checks out.
 class Folder {
 	private readonly dir: string;
+	// every name this call wrote, in the order of its first write
 	private readonly state = new Map<string, string | null>();
-	private readonly taken = new Set<string>();
 
 	constructor(tree: string) {
 		const lawman = join(tree, ".lawman");
 		this.dir = join(lawman, "precedents");
-		for (const path of [lawman, this.dir]) {
-			const kind = kindAt(path);
-			if (
-				kind === "file" ||
-				(kind === "other" && !lstatSync(path).isDirectory())
-			)
-				throw unsafe(path);
-		}
+		for (const path of [lawman, this.dir])
+			if (!["absent", "dir"].includes(kindAt(path))) throw unsafe(path);
 	}
 
 	private path = (name: string) => join(this.dir, `${name}.md`);
 
 	private disk(name: string): string | null {
 		const kind = kindAt(this.path(name));
-		if (kind === "other") throw unsafe(this.path(name));
+		if (kind === "dir" || kind === "other") throw unsafe(this.path(name));
 		return kind === "file" ? readFileSync(this.path(name), "utf8") : null;
 	}
 
@@ -123,19 +118,18 @@ class Folder {
 
 	set(name: string, text: string | null): void {
 		this.state.set(name, text);
-		this.taken.add(name);
 	}
 
 	free(base: string): string {
 		for (let k = 1; ; k++) {
 			const name = k === 1 ? base : `${base}-${k}`;
-			if (!this.taken.has(name) && kindAt(this.path(name)) === "absent")
+			if (!this.state.has(name) && kindAt(this.path(name)) === "absent")
 				return name;
 		}
 	}
 
 	// the names whose final text differs from the disk, written only when all are safe
-	commit(): Set<string> {
+	commit(): string[] {
 		const changed = [...this.state].filter(
 			([name, text]) => text !== this.disk(name),
 		);
@@ -143,28 +137,27 @@ class Folder {
 		for (const [name, text] of changed)
 			if (text === null) unlinkSync(this.path(name));
 			else writeFileSync(this.path(name), text);
-		return new Set(changed.map(([name]) => name));
+		return changed.map(([name]) => name);
 	}
 }
 
 type Ruling = { kind: string; date: string; issue: number; source: string };
-type Change = { name: string; reason?: string };
 
 function apply(items: Item[], ruling: Ruling, folder: Folder): string[] {
-	const fields = (): Fields => ({
+	const fields: Fields = {
 		kind: ruling.kind,
 		departments: [],
 		issue: ruling.issue,
 		date: ruling.date,
 		ruling: ruling.source,
-	});
-	const written: Change[] = [];
+	};
+	const reasons = new Map<string, string>();
 	const lines: string[] = [];
 	const create = (base: string, text: string, reason?: string) => {
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		folder.set(name, buildPrecedent(fields(), text));
-		written.push({ name, ...(why === undefined ? {} : { reason: why }) });
+		folder.set(name, buildPrecedent(fields, text));
+		if (why !== undefined) reasons.set(name, why);
 	};
 	const keep = `${ruling.date}-issue-${ruling.issue}`;
 	for (const { text, bad } of items) {
@@ -182,27 +175,21 @@ function apply(items: Item[], ruling: Ruling, folder: Folder): string[] {
 			const was = folder.current(refined);
 			const split = was === null ? null : splitPrecedent(was);
 			if (split === null) create(keep, update.trim(), "refine-missing");
-			else if (split.body.trim() !== update.trim()) {
+			else if (split.body.trim() !== update.trim())
 				folder.set(refined, `${split.header}\n\n${update.trim()}\n`);
-				written.push({ name: refined });
-			}
 		} else if (cancelled !== undefined) {
 			const name = fits("precedent", cancelled) ? cancelled : null;
-			if (name !== null && folder.current(name) !== null) {
+			if (name !== null && folder.current(name) !== null)
 				folder.set(name, null);
-				written.push({ name });
-			} else lines.push(`cancel\t${name ?? NO_VALUE}\tmissing`);
+			else lines.push(`cancel\t${name ?? NO_VALUE}\tmissing`);
 		} else if (!(single && text === NONE)) create(keep, text, "bad-line");
 	}
-	const changed = folder.commit();
-	const seen = new Set<string>();
-	for (const c of written) {
-		if (!changed.has(c.name) || seen.has(c.name)) continue;
-		seen.add(c.name);
+	for (const name of folder.commit()) {
+		const reason = reasons.get(name);
 		lines.push(
-			folder.current(c.name) === null
-				? `cancel\t${c.name}`
-				: ["entry", c.name, ...(c.reason ? [c.reason] : [])].join("\t"),
+			folder.current(name) === null
+				? `cancel\t${name}`
+				: ["entry", name, ...(reason === undefined ? [] : [reason])].join("\t"),
 		);
 	}
 	return lines;
@@ -217,33 +204,21 @@ function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 			"SELECT stage, fields, raw FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
 		)
 		.get(precinct, issue) as Stored | null;
-	if (row === null || KIND_OF[row.stage] === undefined)
+	if (row === null || !KIND_OF.has(row.stage))
 		throw new Fail(EXIT.USAGE, `no court ruling on ${precinct} #${issue}`);
 	return row;
 }
 
-const lastLine = (text: string) =>
-	text
+// the counted marker on the last non-empty line of the text, if any
+function markerAtEnd(text: string, author: string | null, login: string) {
+	const at = text
 		.split("\n")
 		.map(stripCr)
-		.findLast((l) => l.trim() !== "");
-
-// true when the last non-empty line of the text is a counted marker equal to raw
-function endsWith(
-	text: string,
-	author: string | null,
-	login: string,
-	raw?: string,
-): ReturnType<typeof extractMarkers>[number] | undefined {
-	const lines = text.split("\n").map(stripCr);
-	const at = lines.findLastIndex((l) => l.trim() !== "");
-	const found = extractMarkers(
+		.findLastIndex((l) => l.trim() !== "");
+	return extractMarkers(
 		{ text, createdAt: "", rank: 1, author: author ?? "" },
 		login,
-	).find((f) => f.line === at + 1);
-	return found !== undefined && (raw === undefined || found.marker.raw === raw)
-		? found
-		: undefined;
+	).find((f) => f.line === at + 1)?.marker;
 }
 
 // the cached ruling comment: its last line is the newest ruling marker of the case
@@ -260,7 +235,7 @@ function rulingText(
 		)
 		.all(precinct, issue) as { author: string | null; body: string }[];
 	const ruling = comments.find(
-		(c) => lastLine(c.body) === raw && endsWith(c.body, c.author, login, raw),
+		(c) => markerAtEnd(c.body, c.author, login)?.raw === raw,
 	);
 	if (ruling === undefined)
 		throw new Fail(
@@ -304,7 +279,7 @@ export function precedentCommand(args: string[]): number {
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	const ruling = {
-		kind: KIND_OF[marker.stage] ?? NO_VALUE,
+		kind: KIND_OF.get(marker.stage) ?? NO_VALUE,
 		date: at.slice(0, 10),
 		issue,
 		source,
@@ -336,7 +311,7 @@ const linkOf = (value: string) => {
 };
 
 // One numbered line of an old Precedents section becomes a file. Without a
-// counted ruling marker and without a kind from the user, the user is asked.
+// counted court ruling marker and without a kind from the user, the user is asked.
 export function oldLineToFile(o: OldLine): Moved {
 	if (!GIST.test(o.gist))
 		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
@@ -347,16 +322,13 @@ export function oldLineToFile(o: OldLine): Moved {
 	const [, date, , rest] = line ?? [];
 	if (date === undefined || rest === undefined)
 		throw new Fail(EXIT.USAGE, `no precedent line #${o.number}`);
-	const stage =
-		o.comment &&
-		endsWith(o.comment.body, o.comment.author, o.login)?.marker.stage;
+	const marker =
+		o.comment && markerAtEnd(o.comment.body, o.comment.author, o.login);
 	const kind =
-		(stage && KIND_OF[stage]) ??
-		(o.kind !== undefined && Object.values(KIND_OF).includes(o.kind)
-			? o.kind
-			: undefined);
+		(marker?.role === "court" ? KIND_OF.get(marker.stage) : undefined) ??
+		(o.kind !== undefined && KINDS.includes(o.kind) ? o.kind : undefined);
 	if (kind === undefined) return { result: "ask" };
-	const [, rule, link] = rest.match(OLD_SOURCE) ?? [];
+	const [, rule = rest, link] = rest.match(OLD_SOURCE) ?? [];
 	const ruling = link === undefined ? undefined : linkOf(link);
 	const folder = new Folder(o.tree);
 	const name = folder.free(`${date}-${o.gist}`);
@@ -369,7 +341,7 @@ export function oldLineToFile(o: OldLine): Moved {
 				date,
 				...(ruling === undefined ? {} : { ruling }),
 			},
-			ruling === undefined ? rest : (rule ?? rest),
+			ruling === undefined ? rest : rule,
 		),
 	);
 	folder.commit();

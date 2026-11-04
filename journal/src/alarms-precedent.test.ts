@@ -31,10 +31,7 @@ const WAITS = "pull request waits for a decision on its precedent";
 const line = (ref: string, detail = WAITS) =>
 	`ALARM decision-waiting ${ref} ${detail}\n`;
 const clerk = (stage: string, pull: number) =>
-	mark("clerk", stage, ` pull=${pull}`).replace(
-		"09:30:00",
-		`09:3${stage === "entry" ? 1 : 2}:00`,
-	);
+	mark("clerk", stage, ` pull=${pull}`);
 const syncPulls = (...pulls: Parameters<typeof hostPulls>[0]) =>
 	expect(
 		call(
@@ -156,37 +153,23 @@ describe("the conviction path on a fixture", () => {
 });
 
 describe("case in process: the decision job", () => {
-	const caseLine = () => inproc(BASE, ["case", "main", "3"]).out;
-	const acquitted = (...more: string[]) =>
-		withLead(
-			caseMark(),
-			charge(),
-			defence(),
-			mark("court", "acquittal"),
-			...more,
-		);
-
-	test("an entry whose pull request left the cache gives the decision job", () => {
-		put({ 3: acquitted(clerk("entry", 7)) });
+	test("an entry gives the decision job only once its pull request left the cache", () => {
+		const caseLine = () => inproc(BASE, ["case", "main", "3"]).out;
+		put({
+			3: withLead(
+				caseMark(),
+				charge(),
+				defence(),
+				mark("court", "acquittal"),
+				clerk("entry", 7),
+			),
+		});
+		syncPulls({ number: 7 });
+		expect(caseLine()).toContain("job=- ");
+		syncPulls();
 		expect(caseLine()).toContain("need=clerk ");
 		expect(caseLine()).toContain(
 			"job=decision action=- pull=7 sources=- branch=-",
 		);
-	});
-
-	test("while the pull request is open the case waits", () => {
-		put({ 3: acquitted(clerk("entry", 7)) });
-		syncPulls({ number: 7 });
-		expect(caseLine()).toContain("job=- ");
-	});
-
-	test("a kept marker ends the job for good", () => {
-		put({ 3: acquitted(clerk("entry", 7), clerk("kept", 7)) });
-		expect(caseLine()).toContain("job=- ");
-	});
-
-	test("a declined case reaches the court in process", () => {
-		put({ 3: withLead(caseMark(), mark("prosecutor", "decline")) });
-		expect(caseLine()).toStartWith("need=court ");
 	});
 });

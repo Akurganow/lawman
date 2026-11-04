@@ -17,12 +17,13 @@ import { config } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
 import {
+	acquittal,
 	BASE,
+	conviction,
 	dir,
 	lead,
 	mark,
 	precinct,
-	SHA,
 	seed,
 	TRUSTED,
 	tempDb,
@@ -32,8 +33,8 @@ tempDb();
 
 const SOURCE = "https://git.example.com/o/main/issues/1#comment-7";
 const DATE = "2026-10-14";
-const ACQUITTAL = mark("court", "acquittal");
-const CONVICTION = mark("court", "conviction", ` sha=${SHA}`);
+const ACQUITTAL = acquittal();
+const CONVICTION = conviction();
 const ruling = (section: string[], marker = ACQUITTAL) =>
 	["Ruling.", "", ...section, "", marker].join("\n");
 const precedentSection = (...lines: string[]) => ["## Precedent", "", ...lines];
@@ -429,6 +430,14 @@ describe("precedent: the ruling comes from the cache", () => {
 		expect((await record()).out).toBe(`entry\t${DATE}-new\n`);
 	});
 
+	test("a court stage named like an object member is no ruling", async () => {
+		await cache([
+			ruling(precedentSection("- new x: y"), mark("court", "constructor")),
+		]);
+		expect((await record()).code).toBe(EXIT.USAGE);
+		expect(names()).toEqual([]);
+	});
+
 	test("a newer court marker that is no ruling fails", async () => {
 		await cache([
 			ruling(precedentSection("- new x: y")),
@@ -561,6 +570,15 @@ describe("oldLineToFile", () => {
 	])("a comment of %s gives no kind, so the user is asked", (_, author) => {
 		expect(move({ comment: comment(author) })).toEqual({ result: "ask" });
 		expect(names()).toEqual([]);
+	});
+
+	test.each([
+		["another role", mark("executor", "acquittal")],
+		["a stage named like an object member", mark("court", "constructor")],
+	])("a marker of %s gives no kind", (_, marker) => {
+		expect(move({ comment: comment(TRUSTED, marker) })).toEqual({
+			result: "ask",
+		});
 	});
 
 	test("a marker that is not the last line gives no kind", () => {

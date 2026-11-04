@@ -183,7 +183,7 @@ The precedent comment is written on the issue. Its sentence and marker:
 | Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
 
-The pair comment is written on a source issue. The `kept` row below is the pair form. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
+The pair comment is written on a source issue. The `kept` of the pair carries `issue`, the `kept` of a precedent pull request does not. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
 
 | Stage | Sentence |
 | :-- | :-- |
@@ -215,7 +215,7 @@ Pull request #31 carries this issue.
 
 Rules:
 
-- The no-entry reason goes to Blockers, never to the comment.
+- The reasons of the precedent output, `missing` included, go to Blockers, never to the comment.
 - Write no home path, no installation path, no token and no login.
 
 ## Report
@@ -225,7 +225,7 @@ Three lines:
 ```
 Coverage: <tip>, issue #<n>.
 Written: <comment, pull request and issue URLs, or the closures and reopenings with their reasons, or none>.
-Blockers: <tool, source or tracker errors, the stop token, the no-entry reason, any facts about evidence, the state of the clone>.
+Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, any facts about evidence, the state of the clone>.
 ```
 
 When the order is empty or stale, the report is the one line of step 1 or step 5.
