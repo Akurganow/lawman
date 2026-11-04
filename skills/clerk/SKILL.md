@@ -1,6 +1,6 @@
 ---
 name: clerk
-description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
+description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, decision, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
 ---
 
 # Clerk
@@ -21,15 +21,15 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 ## Working rules
 
 - In a clone, only bring it up to date, update its record of the host's default branch, read commits and file contents, add the tree of the tick, remove it and read whether the clone holds a change.
-- In the tree `runs/<tick id>/tree`, only record one commit, empty or holding `LAWMAN.md`, and publish the one branch of the open or precedent recipe.
+- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents`, record one commit, empty or holding that folder, and publish the one branch of the open or precedent recipe.
 - Never change what a clone has checked out, discard a change, create or move a branch or tag other than that one branch, merge, set changes aside or publish another ref.
 - Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
   - Read the issues, the pull requests, the writers and the last actor as the "Sync the tracker", "Sync the pull requests" and "Check the decider" sections of `tick.md` say.
   - Read the comments of an issue, and the state of an issue.
-  - Read one comment by its id, for the ruling body and the read-back.
-  - Read the state, the merge commit, the draft state and the body of a pull request, or fewer of these.
+  - Read one comment by its id, for the read-back.
+  - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
   - Open a draft pull request with the fixed title and the fixed body.
   - Open a pull request that is not a draft, with the fixed precedent title and body, for the precedent job only.
   - Replace the body of a pull request with the fixed body only.
@@ -51,13 +51,14 @@ A value that reaches a command or a comment passes its check first. A failed che
 | `<owner/repo>` | The order's value. The journal checked it with `check("repo")` when the precinct was added. |
 | `<login>` | `trusted_login`. The journal runs `check("login")` in `sync` and `decider`. |
 | Issue, pull request and source numbers | Digits as `case` prints them. In a marker they match `^[1-9][0-9]*$`. A marker with any other number counts for nothing. |
-| Pull request link from the host's reply to an open | `^https://` and ends with the pull request number. |
+| Pull request link from the host's reply to an open, or from a read | `^https://` and ends with the pull request number. |
 | Pull request number from that reply | `^[1-9][0-9]*$`. |
 | Comment id | The id the host's reply gives, matching `^[1-9][0-9]*$`. |
 | Merge commit | `^[0-9a-f]{40}$`. It enters comment text only. |
 | Branch | The `branch` of `case`, which is built from integers. Never read the branch name from the host's pull request. |
 | Reaction | The clerk reads none. The journal compares reactions with two constants. |
-| Ruling, old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Ruling URL | The URL of the ruling comment, as the host returned it. It passes the journal's link check. |
 | Comments | Stdin or a quoted heredoc only. Never an argument. |
 
 ## Tick
@@ -130,7 +131,7 @@ Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
 1. `job=state`: run the "Check the decider" section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
 2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
-3. `job=adopt`, `settle`, `open` or `precedent`: run the recipe of that name.
+3. `job=adopt`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
 | `action` | Recipe |
 | :-- | :-- |
@@ -150,6 +151,7 @@ The outcome is the token below. After a failed step it is the token that the ste
 | Recipe | Outcome |
 | :-- | :-- |
 | **precedent** | `recorded` after an opened pull request and a read-back `entry` comment. `silent` after a read-back `no-entry` comment. |
+| **decision** | `settled` after a merge. `shut` after a close by a decider. `kept` after a close by anyone else. `silent` for an open pull request. |
 | **open**, **adopt**, **reopen**, **reopen-issue** | `handed` |
 | **close-pull** | `shut`. `silent` when the pull request is not open. |
 | **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
@@ -175,10 +177,13 @@ The precedent comment is written on the issue. Its sentence and marker:
 
 | Form | Sentence | Marker |
 | :-- | :-- | :-- |
-| Entry | `Precedent <number> is proposed in <pull request URL>. It takes effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry at=<UTC> -->` |
+| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> at=<UTC> -->` |
 | No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry at=<UTC> -->` |
+| Final, merged | `The owner merged <pull request URL>. The precedents are binding.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
+| Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
+| Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
 
-The pair comment is written on a source issue. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
+The pair comment is written on a source issue. The `kept` row below is the pair form. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
 
 | Stage | Sentence |
 | :-- | :-- |
@@ -193,9 +198,9 @@ A realistic entry comment:
 ````
 Clerk
 
-Precedent 3 is proposed in https://git.example.com/example/widgets/pull/31. It takes effect when the owner merges it.
+The precedents are proposed in https://git.example.com/example/widgets/pull/31. They take effect when the owner merges it.
 
-<!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=entry pull=31 at=2026-10-16T10:45:00Z -->
 ````
 
 A realistic pair comment:

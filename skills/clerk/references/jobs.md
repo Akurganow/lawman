@@ -28,7 +28,7 @@ Reopen the issue `<s>` as the end of the "Close the issue" section says. Read th
 
 ### Pull request state
 
-Read the state of the pull request `<pull>` from the host, with its draft state and its merge commit. The state is open, merged or closed. A failed read gives `stopped-issue-read`.
+Read the state of the pull request `<pull>` from the host, with its draft state, its merge commit and its link. The state is open, merged or closed. A failed read gives `stopped-issue-read`.
 
 ### Make the pull request a draft
 
@@ -46,25 +46,32 @@ The output is the comment. Write it unchanged as a conversation comment on pull 
 
 ### Read the ruling
 
-Read the comments of the issue `<n>` from the host. A failed read gives `stopped-issue-read`. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Keep its id and its URL as the host returned them.
+Read the comments of the issue `<n>` from the host. A failed read gives `stopped-issue-read`. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. The ruling URL is its URL as the host returned it. Keep it with the id.
 
 ### Create the tree
 
 Add the tree `runs/<tick id>/tree` to the clone `precincts/<p>`, at `<tip>` and on no branch. A failure ends the tick with `failed`.
 
-### Add the precedent line
+### Write the precedent files
 
-The journal reads the Precedent section of the ruling. On an entry, it adds the numbered line to `LAWMAN.md` in the tree. Read the body of the ruling comment from the host by its id. Send it to the journal on standard input, unread, exactly as the host returned it. The `--source` URL is the ruling URL.
+The journal reads the ruling from its own cache and writes the precedent files into the tree. `<ruling URL>` is the URL that the "Read the ruling" section gave.
 
 ```
-bin/journal precedent --page runs/<tick id>/tree/LAWMAN.md --source <ruling URL>
+bin/journal precedent <p> --issue <n> --source <ruling URL> --tree runs/<tick id>/tree
 ```
 
-The output is one line. A non-zero exit ends the tick with `failed`. Otherwise:
+A non-zero exit ends the tick with `failed`. The output has one line per change:
 
-- `entry<TAB><number>`: the line is in the tree. Keep the number.
-- `none`: no line was added.
-- `no-entry<TAB><reason>`: no line was added. Blockers names the reason.
+- `entry<TAB><name>[<TAB><reason>]`: the file `<name>` is written. A reason is `name-taken`, `refine-missing` or `bad-line`.
+- `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
+- `none`: the ruling adds no precedent, and the folder does not change.
+- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
+
+A `none` or `no-entry` line means no folder change to record. Blockers names every reason. A reason never goes to the owner.
+
+### Record the precedent files
+
+Run it only when the output holds no `none` and no `no-entry` line. Stage the folder `.lawman/precedents` of the tree, deletions included. Record one commit with the message `Record precedents of #<n>`.
 
 ## kept
 
@@ -125,9 +132,9 @@ Leave out the last line when there is no ruling. The title is `Execute #<n>`.
 
 1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`. `<k>` is the digits after the last hyphen.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
-   The first skeleton carries the precedent line. It is the skeleton with `<k>` equal to 1, when a conviction exists. For it, run the "Check the constitution" section.
+   The first skeleton carries the precedent files. It is the skeleton with `<k>` equal to 1, when a conviction exists.
 3. Create the tree.
-4. First skeleton only: add the precedent line. On `entry`, record `LAWMAN.md` in the tree as one commit with the message `Add precedent <number>`. Then go to step 6.
+4. First skeleton only: write the precedent files. Without a `none` or `no-entry` line, record the precedent files as the first commit of the pull request, then go to step 6.
 5. Otherwise record one commit with no change and the message `Open execution of #<n>`.
 6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
 7. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
@@ -156,12 +163,23 @@ Taken up by the clerk as a draft that counts as not started.
 
 ## precedent
 
-1. Run the "Check the constitution" section. No other file of the precinct is read in this tick.
-2. Read the ruling. It must be an acquittal. Otherwise the tick ends with `failed`.
-3. Create the tree. Add the precedent line.
-4. On `entry`, the branch is `lawman/precedent-<n>-<number>`. Record `LAWMAN.md` in the tree as one commit with the message `Add precedent <number>`. Otherwise go to step 7.
+1. Read the ruling. It must be an acquittal. Otherwise the tick ends with `failed`.
+2. Create the tree.
+3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
+4. Record the precedent files.
 5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Add precedent <number>`. The body is `Appends precedent <number> from the court ruling <ruling URL>. Merge it to make the precedent binding.` The host's reply gives its link. Check it against the class check and keep it. There is no read-back of the pull request.
-7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form after `entry` and the no-entry form after `none` or `no-entry`.
+6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Precedents of #<n>`. The body is `Records the precedents of the court ruling <ruling URL>. Merge it to make them binding.` The body holds no closing word and no fingerprint line. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 6 and the no-entry form after a `none` or `no-entry` line.
 
 When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
+
+## decision
+
+1. Read the pull request state. `<pull>` is the precedent pull request.
+2. `OPEN`: the cache is stale. End the tick with `silent` and the report `Order stale: pull request #<pull> is open`.
+3. `MERGED`: write the comment on the issue `<n>` in the final form for a merge. The outcome is `settled`.
+4. `CLOSED`: run the "Check the decider" section for the pull request `<pull>`.
+   1. `decider=yes`: write the comment in the final form for a close. The outcome is `shut`.
+   2. `decider=no`: write the comment in the kept form. The outcome is `kept`.
+
+The comment carries the pull request link that step 1 read. It is the last write of the job. The job closes no pull request and no issue.

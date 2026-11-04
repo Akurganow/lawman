@@ -52,7 +52,7 @@ typesafe_key: none
 catalog: no
 catalog_precincts: none
 license_precincts: none
-contract_version: 3
+contract_version: 4
 amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 ```
 

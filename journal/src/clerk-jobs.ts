@@ -9,6 +9,7 @@ export type Job =
 	| "settle"
 	| "open"
 	| "precedent"
+	| "decision"
 	| "-";
 export type Action = "close-pull" | "reopen" | "open" | "kept" | "-";
 export type ClerkCase = {
@@ -33,6 +34,7 @@ export type ClerkInput = {
 const PAIR_STAGES = ["handed", "shut", "settled", "kept"];
 const ISSUE_STATES = ["open", "closed"];
 const ANSWERS = ["entry", "no-entry"];
+const DECISION_STAGES = ["entry", "final", "kept"];
 const POSITIVE = /^[1-9][0-9]*$/;
 const PRIORITY = /^P[0-3]$/;
 export const DEFAULT_PRIORITY = "P2";
@@ -51,6 +53,23 @@ const pairMarkers = (markers: CaseMarker[]) =>
 	markers.filter(isPairMarker).sort(byOrd);
 
 export const hasPair = (markers: CaseMarker[]) => markers.some(isPairMarker);
+
+// the precedent pull requests of an issue whose newest entry, final or kept marker is entry, ascending
+export function awaitingDecision(markers: CaseMarker[]): number[] {
+	const newest = new Map<string, CaseMarker>();
+	for (const m of [...markers].sort(byOrd))
+		if (
+			m.role === "clerk" &&
+			DECISION_STAGES.includes(m.stage) &&
+			m.fields.issue === undefined &&
+			POSITIVE.test(m.fields.pull ?? "")
+		)
+			newest.set(m.fields.pull ?? "", m);
+	return [...newest]
+		.filter(([, m]) => m.stage === "entry")
+		.map(([pull]) => Number(pull))
+		.sort((a, b) => a - b);
+}
 
 export function priorityOf(markers: CaseMarker[]): string {
 	const newest = markers
@@ -88,7 +107,7 @@ function stateAction(
 	return "kept";
 }
 
-type Row = { job: Job; action: Action };
+type Row = { job: Job; action: Action; decided?: number };
 const job = (j: Job, action: Action = NONE): Row => ({ job: j, action });
 const NO_JOB = job(NONE);
 
@@ -104,6 +123,10 @@ function tableRow(
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
 	if (pull === undefined && base === "handed") return job("settle");
+	const decided = awaitingDecision(i.markers).find(
+		(m) => !i.pulls.some((p) => p.number === m),
+	);
+	if (decided !== undefined) return { ...job("decision"), decided };
 	if (k !== undefined || i.ruling === undefined) return NO_JOB;
 	if (i.ruling.stage === "conviction") return open ? job("open") : NO_JOB;
 	const answered = i.markers.some(
@@ -131,6 +154,12 @@ function rowOf(
 }
 
 function branchOf(i: ClerkInput, pairs: CaseMarker[], row: Row) {
+	if (row.job === "precedent") {
+		const entries = i.markers.filter(
+			(m) => m.role === "clerk" && m.stage === "entry",
+		).length;
+		return `lawman/precedent-${i.issue}-${entries + 1}`;
+	}
 	const opens =
 		row.job === "open" || row.action === "open" || row.action === "reopen";
 	if (!opens) return NONE;
@@ -158,6 +187,7 @@ function sourcesOf(
 	pull: CachedPull | undefined,
 	k: CaseMarker | undefined,
 ) {
+	if (row.job === "precedent" || row.job === "decision") return NONE;
 	if (pull !== undefined) return pull.issues.join(",") || NONE;
 	if (row.job === "settle") return peersOf(i, k?.fields.pull, "handed");
 	if (row.action === "reopen") return peersOf(i, k?.fields.pull, "shut");
@@ -175,10 +205,18 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 			.sort((a, b) => a.number - b.number)[0];
 	const row = rowOf(i, k, baseOf(pairs), pull);
 	const found = pull === undefined ? NONE : String(pull.number);
+	const { decided, ...shown } = row;
 	return {
 		priority: priorityOf(i.markers),
-		...row,
-		pull: row.job === "adopt" ? found : (k?.fields.pull ?? found),
+		...shown,
+		pull:
+			decided !== undefined
+				? String(decided)
+				: row.job === "precedent"
+					? NONE
+					: row.job === "adopt"
+						? found
+						: (k?.fields.pull ?? found),
 		sources: sourcesOf(i, row, pull, k),
 		branch: branchOf(i, pairs, row),
 	};

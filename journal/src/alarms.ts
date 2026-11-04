@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
+import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
 import {
 	CLAIM_TTL_MS,
 	HOUR_MS,
@@ -150,6 +151,8 @@ function brokenLead(db: Database): Candidate[] {
 
 const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
 const WAITS_FOR_VOTE = "pull request waits for a vote on its newest spec";
+const WAITS_FOR_PRECEDENT =
+	"pull request waits for a decision on its precedent";
 
 function decisionWaiting(db: Database): Candidate[] {
 	// a precinct of weight 0 is never synced, so its cached rows go stale
@@ -166,13 +169,52 @@ function decisionWaiting(db: Database): Candidate[] {
 		issues: string;
 		work: string;
 	}[];
-	return waiting
+	const pairs = waiting
 		.filter((p) => isHanded(sourceMarkers(db, p.precinct, p.issues), p.number))
+		.map((p) => ({
+			...p,
+			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
+		}));
+	return [...pairs, ...precedentWaiting(db)]
+		.sort((a, b) =>
+			a.precinct === b.precinct
+				? a.number - b.number
+				: a.precinct < b.precinct
+					? -1
+					: 1,
+		)
 		.map((p) => ({
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
-			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
+			detail: p.detail,
 		}));
+}
+
+type Waiting = { precinct: string; number: number; detail: string };
+
+// a precedent pull request has no sources: the clerk's entry marker names it
+function precedentWaiting(db: Database): Waiting[] {
+	const open = db
+		.query(
+			`SELECT p.precinct, p.number FROM pulls p
+       WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)
+       ORDER BY p.precinct, p.number`,
+		)
+		.all() as { precinct: string; number: number }[];
+	const waiting = new Map<string, Set<number>>();
+	const waitingIn = (precinct: string) => {
+		let found = waiting.get(precinct);
+		if (found === undefined) {
+			found = new Set(
+				[...clerkMarkersOf(db, precinct).values()].flatMap(awaitingDecision),
+			);
+			waiting.set(precinct, found);
+		}
+		return found;
+	};
+	return open
+		.filter((p) => waitingIn(p.precinct).has(p.number))
+		.map((p) => ({ ...p, detail: WAITS_FOR_PRECEDENT }));
 }
 
 const DETECTORS = [

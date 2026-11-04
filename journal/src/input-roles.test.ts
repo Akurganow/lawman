@@ -1,7 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { HARNESS_SECTIONS, lawOf, TICK_ORDER, WHOLE } from "./input-roles";
+import {
+	DUTY_DESK,
+	HARNESS_SECTIONS,
+	inputOf,
+	lawOf,
+	TICK_ORDER,
+	WHOLE,
+} from "./input-roles";
 import { ROLE_NAMES } from "./input-test-fixture";
 import { sectionsOf } from "./law-sections";
 import { LAW } from "./test-helpers";
@@ -21,6 +28,24 @@ describe("the role table", () => {
 			}
 		},
 	);
+
+	test("every role has its precedents, the duty desk none", () => {
+		const precedents = Object.fromEntries(
+			ROLE_NAMES.map((role) => [role, inputOf(role)?.precedents]),
+		);
+		expect(precedents).toEqual({
+			patrol: "order",
+			"response-unit": "stage",
+			investigation: "stage",
+			prosecutor: "all",
+			defender: "all",
+			court: "all",
+			clerk: null,
+			"spec-writer": "all",
+			executor: "all",
+			[DUTY_DESK]: undefined,
+		});
+	});
 
 	test("every section of the harness page stands on the Hermes page", () => {
 		const page = read(join("harnesses", "hermes.md"));

@@ -25,7 +25,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    1. Create and switch to the branch `lawman/constitution-v<n>` from the origin's head in the precinct, and stop if that fails.
    2. Use the comparison of step 1 item 4 to see what the new contract version requires.
    3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`. A section that the new contract names and that the file holds as an unknown section is a collision. That section becomes the listed one and keeps its lines. Write no second heading.
-   4. Make one row of the proposal for each section that the new contract added or changed. The Labels section is one: its questions come from the section "Pick the labels" in `references/precinct.md`. A file with no Labels heading gets one before Precedents. The place is no rule.
+   4. Make one row of the proposal for each section that the new contract added or changed. The Labels section is one: its questions come from the section "Pick the labels" in `references/precinct.md`. A file with no Labels heading gets one. The place is no rule.
    5. List the files of the folder `lawman/skills/lawman-law/references/departments/` at `amended_law_commit` and at `law_commit`. List only the files whose name ends in `.md`, because a folder beside a page is no page. The names present only at `law_commit` are the shared departments added since, except `licenses`. Write no line for `licenses`.
    6. For those departments only, make one row each, with its pair from the section "Departments" in `references/precinct.md`.
    7. Write the department lines that those pairs describe.

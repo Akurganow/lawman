@@ -1,250 +1,377 @@
-import { readFileSync, writeFileSync } from "node:fs";
-import { parseArgs } from "./args";
-import { EXIT, Fail, out, readStdin } from "./db";
-import { HEADING, lintPage } from "./lint";
-import { fencedLines, parseMarker, stripCr } from "./markers";
+import type { Database } from "bun:sqlite";
+import {
+	lstatSync,
+	mkdirSync,
+	readFileSync,
+	unlinkSync,
+	writeFileSync,
+} from "node:fs";
+import { join } from "node:path";
+import type { RootContent } from "mdast";
+import { check, checkLink, fits, parseArgs } from "./args";
+import { EXIT, Fail, out, withDb } from "./db";
+import { readConfig } from "./input-files";
+import { sectionNodes } from "./law-sections";
+import { configValue } from "./law-sync";
+import { extractMarkers, stripCr } from "./markers";
+import {
+	buildPrecedent,
+	type Fields,
+	NO_VALUE,
+	splitPrecedent,
+} from "./precedent-file";
 
-const PRECEDENT_USAGE =
-	"precedent --page <path> --source <ruling comment URL> (stdin: the ruling comment)";
-const MERGE_USAGE =
-	"precedent-merge --base <file> --ours <file> --theirs <file> --out <file>";
-const SECTION_HEADING = /^ {0,3}## +Precedent *$/;
-const ANY_HEADING = /^ {0,3}#{1,6} +\S/;
-const PAGE_HEADING = /^ {0,3}## +Precedents *$/;
-const RULING_LINE = /^- (\d{4}-\d{2}-\d{2}): (.*\S.*)$/;
-const NUMBERED_LINE = /^- \S+ #(\d+):/;
-const ADDED_LINE = /^(- \d{4}-\d{2}-\d{2} )#(\d+)(: \S.*)$/;
+const USAGE =
+	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>";
+const SECTION = "Precedent";
+const OLD_SECTION = "Precedents";
 const NONE = "none";
+const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const NEW_LINE = /^new ([^\s:]+): (.+)$/;
+const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
+const CANCEL_LINE = /^cancel (\S+)$/;
+const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
+const OLD_SOURCE = /^(.+) \((\S+)\)$/;
+const KIND_OF: Record<string, string> = {
+	conviction: "condemns",
+	acquittal: "protects",
+};
 
-export type PrecedentResult =
-	| { kind: "entry"; number: number; page: string }
-	| { kind: "none" }
-	| { kind: "no-entry"; reason: string };
+// an underlined heading never applies as written
+type Item = { text: string; bad: boolean };
 
-const noEntry = (reason: string): PrecedentResult => ({
-	kind: "no-entry",
-	reason,
-});
-const isBlank = (line: string) => line.trim() === "";
+const sliceOf = (text: string, first?: RootContent, last?: RootContent) =>
+	text
+		.slice(first?.position?.start.offset ?? 0, last?.position?.end.offset ?? 0)
+		.trim();
 
-function sectionBounds(lines: string[], hidden: boolean[]): number[][] {
-	const bounds: number[][] = [];
-	lines.forEach((line, i) => {
-		if (hidden[i] || !SECTION_HEADING.test(line)) return;
-		let end = i + 1;
-		while (
-			end < lines.length &&
-			(hidden[end] ||
-				!(ANY_HEADING.test(lines[end] ?? "") || parseMarker(lines[end] ?? "")))
+function itemsOf(text: string, nodes: RootContent[]): Item[] {
+	return nodes.flatMap((node): Item[] => {
+		if (node.type === "html" || node.type === "thematicBreak") return [];
+		if (node.type === "list")
+			return node.children.flatMap((li) => {
+				const t = sliceOf(text, li.children[0], li.children.at(-1));
+				return li.children.length > 0 && t !== ""
+					? [{ text: t, bad: false }]
+					: [];
+			});
+		if (
+			node.type === "heading" &&
+			text[node.position?.start.offset ?? 0] !== "#"
 		)
-			end++;
-		bounds.push([i + 1, end]);
+			return [
+				{
+					text: sliceOf(text, node.children[0], node.children.at(-1)),
+					bad: true,
+				},
+			];
+		const t = sliceOf(text, node, node);
+		return t === "" ? [] : [{ text: t, bad: false }];
 	});
-	return bounds;
 }
 
-function readRuling(
+type Kind = "absent" | "file" | "other";
+
+function kindAt(path: string): Kind {
+	try {
+		return lstatSync(path).isFile() ? "file" : "other";
+	} catch (e) {
+		if ((e as NodeJS.ErrnoException).code === "ENOENT") return "absent";
+		throw e;
+	}
+}
+
+const unsafe = (path: string) =>
+	new Fail(
+		EXIT.USAGE,
+		`not a plain file or folder, nothing written: ${JSON.stringify(path)}`,
+	);
+
+// The precinct clone is foreign: no link is followed, and nothing is written
+// until every path checks out.
+class Folder {
+	private readonly dir: string;
+	private readonly state = new Map<string, string | null>();
+	private readonly taken = new Set<string>();
+
+	constructor(tree: string) {
+		const lawman = join(tree, ".lawman");
+		this.dir = join(lawman, "precedents");
+		for (const path of [lawman, this.dir]) {
+			const kind = kindAt(path);
+			if (
+				kind === "file" ||
+				(kind === "other" && !lstatSync(path).isDirectory())
+			)
+				throw unsafe(path);
+		}
+	}
+
+	private path = (name: string) => join(this.dir, `${name}.md`);
+
+	private disk(name: string): string | null {
+		const kind = kindAt(this.path(name));
+		if (kind === "other") throw unsafe(this.path(name));
+		return kind === "file" ? readFileSync(this.path(name), "utf8") : null;
+	}
+
+	current(name: string): string | null {
+		return this.state.has(name)
+			? (this.state.get(name) ?? null)
+			: this.disk(name);
+	}
+
+	set(name: string, text: string | null): void {
+		this.state.set(name, text);
+		this.taken.add(name);
+	}
+
+	free(base: string): string {
+		for (let k = 1; ; k++) {
+			const name = k === 1 ? base : `${base}-${k}`;
+			if (!this.taken.has(name) && kindAt(this.path(name)) === "absent")
+				return name;
+		}
+	}
+
+	// the names whose final text differs from the disk, written only when all are safe
+	commit(): Set<string> {
+		const changed = [...this.state].filter(
+			([name, text]) => text !== this.disk(name),
+		);
+		if (changed.length > 0) mkdirSync(this.dir, { recursive: true });
+		for (const [name, text] of changed)
+			if (text === null) unlinkSync(this.path(name));
+			else writeFileSync(this.path(name), text);
+		return new Set(changed.map(([name]) => name));
+	}
+}
+
+type Ruling = { kind: string; date: string; issue: number; source: string };
+type Change = { name: string; reason?: string };
+
+function apply(items: Item[], ruling: Ruling, folder: Folder): string[] {
+	const fields = (): Fields => ({
+		kind: ruling.kind,
+		departments: [],
+		issue: ruling.issue,
+		date: ruling.date,
+		ruling: ruling.source,
+	});
+	const written: Change[] = [];
+	const lines: string[] = [];
+	const create = (base: string, text: string, reason?: string) => {
+		const name = folder.free(base);
+		const why = reason ?? (name === base ? undefined : "name-taken");
+		folder.set(name, buildPrecedent(fields(), text));
+		written.push({ name, ...(why === undefined ? {} : { reason: why }) });
+	};
+	const keep = `${ruling.date}-issue-${ruling.issue}`;
+	for (const { text, bad } of items) {
+		const single = !bad && !text.includes("\n");
+		const [, gist, rule] = (single && text.match(NEW_LINE)) || [];
+		const [, refined, update] = (single && text.match(REFINE_LINE)) || [];
+		const [, cancelled] = (single && text.match(CANCEL_LINE)) || [];
+		if (gist !== undefined && rule !== undefined && GIST.test(gist)) {
+			create(`${ruling.date}-${gist}`, rule.trim());
+		} else if (
+			refined !== undefined &&
+			update !== undefined &&
+			fits("precedent", refined)
+		) {
+			const was = folder.current(refined);
+			const split = was === null ? null : splitPrecedent(was);
+			if (split === null) create(keep, update.trim(), "refine-missing");
+			else if (split.body.trim() !== update.trim()) {
+				folder.set(refined, `${split.header}\n\n${update.trim()}\n`);
+				written.push({ name: refined });
+			}
+		} else if (cancelled !== undefined) {
+			const name = fits("precedent", cancelled) ? cancelled : null;
+			if (name !== null && folder.current(name) !== null) {
+				folder.set(name, null);
+				written.push({ name });
+			} else lines.push(`cancel\t${name ?? NO_VALUE}\tmissing`);
+		} else if (!(single && text === NONE)) create(keep, text, "bad-line");
+	}
+	const changed = folder.commit();
+	const seen = new Set<string>();
+	for (const c of written) {
+		if (!changed.has(c.name) || seen.has(c.name)) continue;
+		seen.add(c.name);
+		lines.push(
+			folder.current(c.name) === null
+				? `cancel\t${c.name}`
+				: ["entry", c.name, ...(c.reason ? [c.reason] : [])].join("\t"),
+		);
+	}
+	return lines;
+}
+
+type Stored = { stage: string; fields: string; raw: string };
+
+// the newest court marker of the case, which must be a ruling
+function rulingMarker(db: Database, precinct: string, issue: number): Stored {
+	const row = db
+		.query(
+			"SELECT stage, fields, raw FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
+		)
+		.get(precinct, issue) as Stored | null;
+	if (row === null || KIND_OF[row.stage] === undefined)
+		throw new Fail(EXIT.USAGE, `no court ruling on ${precinct} #${issue}`);
+	return row;
+}
+
+const lastLine = (text: string) =>
+	text
+		.split("\n")
+		.map(stripCr)
+		.findLast((l) => l.trim() !== "");
+
+// true when the last non-empty line of the text is a counted marker equal to raw
+function endsWith(
 	text: string,
-): { date: string; ruling: string } | PrecedentResult {
+	author: string | null,
+	login: string,
+	raw?: string,
+): ReturnType<typeof extractMarkers>[number] | undefined {
 	const lines = text.split("\n").map(stripCr);
-	const bounds = sectionBounds(lines, fencedLines(lines));
-	const [first, ...more] = bounds;
-	if (first === undefined) return noEntry("no-section");
-	if (more.length > 0) return noEntry("several-sections");
-	const body = lines.slice(first[0], first[1]);
-	const start = body.findIndex((l) => !isBlank(l));
-	if (start < 0) return noEntry("empty-section");
-	const content = body.slice(start, body.findLastIndex((l) => !isBlank(l)) + 1);
-	if (content.length > 1) return noEntry("several-lines");
-	if (content[0] === NONE) return { kind: "none" };
-	const [, date, ruling] = content[0]?.match(RULING_LINE) ?? [];
-	return date === undefined || ruling === undefined
-		? noEntry("bad-line")
-		: { date, ruling };
+	const at = lines.findLastIndex((l) => l.trim() !== "");
+	const found = extractMarkers(
+		{ text, createdAt: "", rank: 1, author: author ?? "" },
+		login,
+	).find((f) => f.line === at + 1);
+	return found !== undefined && (raw === undefined || found.marker.raw === raw)
+		? found
+		: undefined;
 }
 
-function nextNumber(sectionLines: string[], hidden: boolean[]): number {
-	const numbers = sectionLines.map((l, i) =>
-		hidden[i] ? Number.NaN : Number(l.match(NUMBERED_LINE)?.[1]),
-	);
-	return Math.max(0, ...numbers.filter(Number.isFinite)) + 1;
-}
-
-type Section = { heading: number; end: number };
-
-// ends at the next `##` heading; a page without the heading is one section to its end
-function precedentsSection(lines: string[], hidden: boolean[]): Section {
-	const heading = lines.findIndex(
-		(l, i) => !hidden[i] && PAGE_HEADING.test(stripCr(l)),
-	);
-	const next = lines.findIndex(
-		(l, i) => i > heading && !hidden[i] && HEADING.test(stripCr(l)),
-	);
-	return { heading, end: heading < 0 || next < 0 ? lines.length : next };
-}
-
-// the index of the lone `none` line in the section, or -1
-function placeholderAt(lines: string[], { heading, end }: Section): number {
-	if (heading < 0) return -1;
-	const filled = lines.flatMap((l, i) =>
-		i > heading && i < end && !isBlank(l) ? [i] : [],
-	);
-	const only = filled[0];
-	return filled.length === 1 &&
-		only !== undefined &&
-		stripCr(lines[only] ?? "") === NONE
-		? only
-		: -1;
-}
-
-function addLine(
-	page: string,
-	build: (number: number) => string,
-): { page: string; number: number } {
-	const lines = page.split("\n");
-	const hidden = fencedLines(lines);
-	const section = precedentsSection(lines, hidden);
-	const from = section.heading + 1;
-	const number = nextNumber(
-		lines.slice(from, section.end),
-		hidden.slice(from, section.end),
-	);
-	const noneAt = placeholderAt(lines, section);
-	const top = Math.max(section.heading, 0);
-	const last =
-		top + lines.slice(top, section.end).findLastIndex((l) => !isBlank(l));
-	const at = noneAt >= 0 ? noneAt : last + 1;
-	const cr = lines[noneAt >= 0 ? noneAt : at - 1]?.endsWith("\r") ? "\r" : "";
-	lines.splice(at, noneAt >= 0 ? 1 : 0, build(number) + cr);
-	return { page: lines.join("\n"), number };
-}
-
-export function precedent(
-	page: string,
-	decision: string,
-	source: string,
-): PrecedentResult {
-	const ruled = readRuling(decision);
-	if ("kind" in ruled) return ruled;
-	const added = addLine(
-		page,
-		(n) => `- ${ruled.date} #${n}: ${ruled.ruling} (${source})`,
-	);
-	return { kind: "entry", ...added };
-}
-
-export type MergeResult =
-	| { kind: "merged"; page: string; moves: string[] }
-	| { kind: "unresolved"; reason: string };
-
-const unresolved = (reason: string): MergeResult => ({
-	kind: "unresolved",
-	reason,
-});
-
-// indices of `ours` lines left over once `base` is matched in order, or null when base is not a subsequence
-function insertedLines(base: string[], ours: string[]): number[] | null {
-	const added: number[] = [];
-	let matched = 0;
-	ours.forEach((line, i) => {
-		if (line === base[matched]) matched++;
-		else added.push(i);
-	});
-	return matched === base.length ? added : null;
-}
-
-function withoutPlaceholder(lines: string[]): string[] {
-	const at = placeholderAt(lines, precedentsSection(lines, fencedLines(lines)));
-	return lines.filter((_, i) => i !== at);
-}
-
-export function mergePrecedents(
-	base: string,
-	ours: string,
-	theirs: string,
-): MergeResult {
-	if (isBlank(base)) return unresolved("no-base");
-	const baseLines = base.split("\n").map(stripCr);
-	const oursLines = ours.split("\n").map(stripCr);
-	const hidden = fencedLines(oursLines);
-	const section = precedentsSection(oursLines, hidden);
-	const added =
-		insertedLines(baseLines, oursLines) ??
-		insertedLines(withoutPlaceholder(baseLines), oursLines);
-	if (added === null) return unresolved("other-change");
-	const lines = added.map((i) => oursLines[i] ?? "");
-	if (
-		added.some(
-			(i, k) =>
-				hidden[i] ||
-				section.heading < 0 ||
-				i <= section.heading ||
-				i >= section.end ||
-				isBlank(lines[k] ?? ""),
+// the cached ruling comment: its last line is the newest ruling marker of the case
+function rulingText(
+	db: Database,
+	precinct: string,
+	issue: number,
+	raw: string,
+	login: string,
+): string {
+	const comments = db
+		.query(
+			"SELECT author, body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at DESC, rowid DESC",
 		)
-	)
-		return unresolved("other-change");
-	if (lines.length === 0) return unresolved("no-added-lines");
-	let merged = theirs;
-	const moves: string[] = [];
-	for (const line of lines) {
-		const [, prefix, old, rest] = line.match(ADDED_LINE) ?? [];
-		if (prefix === undefined || old === undefined || rest === undefined)
-			return unresolved("bad-line");
-		const placed = addLine(merged, (n) => `${prefix}#${n}${rest}`);
-		merged = placed.page;
-		moves.push(`#${old}->#${placed.number}`);
-	}
-	return lintPage("constitution", merged).reasons.length > 0
-		? unresolved("bad-page")
-		: { kind: "merged", page: merged, moves };
-}
-
-function readPage(path: string): string {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		throw new Fail(EXIT.USAGE, `cannot read the page: ${JSON.stringify(path)}`);
-	}
-}
-
-export function precedentCommand(args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["page", "source"], PRECEDENT_USAGE);
-	const result = precedent(readPage(opt.page), readStdin(), opt.source);
-	if (result.kind === "entry") {
-		writeFileSync(opt.page, result.page);
-		out("entry", String(result.number));
-	} else if (result.kind === "none") {
-		out(NONE);
-	} else {
-		out("no-entry", result.reason);
-	}
-}
-
-function readBase(path: string): string {
-	try {
-		return readFileSync(path, "utf8");
-	} catch {
-		return "";
-	}
-}
-
-export function precedentMergeCommand(args: string[]): void {
-	const { opt } = parseArgs(
-		args,
-		0,
-		["base", "ours", "theirs", "out"],
-		MERGE_USAGE,
+		.all(precinct, issue) as { author: string | null; body: string }[];
+	const ruling = comments.find(
+		(c) => lastLine(c.body) === raw && endsWith(c.body, c.author, login, raw),
 	);
-	const result = mergePrecedents(
-		readBase(opt.base),
-		readPage(opt.ours),
-		readPage(opt.theirs),
-	);
-	if (result.kind === "merged") {
-		writeFileSync(opt.out, result.page);
-		out("merged", result.moves.join(","));
-	} else {
-		out("unresolved", result.reason);
+	if (ruling === undefined)
+		throw new Fail(
+			EXIT.USAGE,
+			`no cached comment carries the court ruling of ${precinct} #${issue}`,
+		);
+	return ruling.body;
+}
+
+function trustedLogin(): string {
+	const login = configValue(readConfig() ?? "", "trusted_login");
+	if (login === undefined || !fits("login", login))
+		throw new Fail(EXIT.USAGE, "config.yaml has no trusted_login");
+	return login;
+}
+
+function summary(sections: Item[][], lines: string[]): string[] {
+	const changed = lines.some((l) => !l.endsWith("\tmissing"));
+	if (changed) return lines;
+	const items = sections.flat();
+	const end =
+		sections.length === 0
+			? "no-entry\tno-section"
+			: items.some((i) => i.bad || i.text !== NONE)
+				? "no-entry\tno-change"
+				: items.length > 0
+					? NONE
+					: "no-entry\tempty-section";
+	return [...lines, end];
+}
+
+export function precedentCommand(args: string[]): number {
+	const { pos, opt } = parseArgs(args, 1, ["issue", "source", "tree"], USAGE);
+	const precinct = check("precinct", pos[0]);
+	const issue = Number(check("number", opt.issue));
+	const source = checkLink(opt.source);
+	const login = trustedLogin();
+	const { marker, text } = withDb((db) => {
+		const m = rulingMarker(db, precinct, issue);
+		return { marker: m, text: rulingText(db, precinct, issue, m.raw, login) };
+	});
+	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
+	const ruling = {
+		kind: KIND_OF[marker.stage] ?? NO_VALUE,
+		date: at.slice(0, 10),
+		issue,
+		source,
+	};
+	const sections = sectionNodes(text, SECTION).map((s) => itemsOf(text, s));
+	const folder = new Folder(opt.tree);
+	for (const line of summary(sections, apply(sections.flat(), ruling, folder)))
+		out(line);
+	return EXIT.OK;
+}
+
+export type OldLine = {
+	page: string;
+	number: number;
+	gist: string;
+	login: string;
+	comment?: { body: string; author: string | null };
+	kind?: string;
+	tree: string;
+};
+export type Moved = { result: "ask" } | { result: "entry"; name: string };
+
+const linkOf = (value: string) => {
+	try {
+		return checkLink(value);
+	} catch {
+		return undefined;
 	}
+};
+
+// One numbered line of an old Precedents section becomes a file. Without a
+// counted ruling marker and without a kind from the user, the user is asked.
+export function oldLineToFile(o: OldLine): Moved {
+	if (!GIST.test(o.gist))
+		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
+	const line = sectionNodes(o.page, OLD_SECTION)
+		.flatMap((nodes) => itemsOf(o.page, nodes))
+		.map((i) => i.text.match(OLD_LINE))
+		.find((m) => m !== null && Number(m[2]) === o.number);
+	const [, date, , rest] = line ?? [];
+	if (date === undefined || rest === undefined)
+		throw new Fail(EXIT.USAGE, `no precedent line #${o.number}`);
+	const stage =
+		o.comment &&
+		endsWith(o.comment.body, o.comment.author, o.login)?.marker.stage;
+	const kind =
+		(stage && KIND_OF[stage]) ??
+		(o.kind !== undefined && Object.values(KIND_OF).includes(o.kind)
+			? o.kind
+			: undefined);
+	if (kind === undefined) return { result: "ask" };
+	const [, rule, link] = rest.match(OLD_SOURCE) ?? [];
+	const ruling = link === undefined ? undefined : linkOf(link);
+	const folder = new Folder(o.tree);
+	const name = folder.free(`${date}-${o.gist}`);
+	folder.set(
+		name,
+		buildPrecedent(
+			{
+				kind,
+				departments: [],
+				date,
+				...(ruling === undefined ? {} : { ruling }),
+			},
+			ruling === undefined ? rest : (rule ?? rest),
+		),
+	);
+	folder.commit();
+	return { result: "entry", name };
 }

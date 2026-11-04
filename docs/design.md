@@ -43,7 +43,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **The method lives once.** A department is one page and not an agent. So a narrow department costs one page, and a user can add one without asking the project.
 
-**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings add precedents, so a settled question stops at the early stages next time. Settings of the installation, such as the weight, stay outside it.
+**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings add precedents as files in `.lawman/precedents/`, so a settled question stops at the early stages next time. Settings of the installation, such as the weight, stay outside it.
 
 **No set of labels per repository.** Creating the same labels in every repository is wasteful, so markers in comments record the process. The journal caches them and keeps the only record of orders and ticks. A constitution names the one label that tells a person an issue waits for them.
 

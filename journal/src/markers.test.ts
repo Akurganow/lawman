@@ -436,15 +436,18 @@ describe("law examples", () => {
 		expect(must(found[1]).fields).not.toHaveProperty("sha");
 	});
 
-	test("E14 and E15 are valid clerk markers without sha", () => {
+	test("E14, E15, E20 and E21 are valid clerk markers without sha", () => {
 		const lines = must(blocks[6]).split("\n");
-		expect(lines).toHaveLength(2);
+		expect(lines).toHaveLength(4);
 		const found = lines.map((l) => must(parseMarker(l)));
 		expect(found).toMatchObject([
-			{ role: "clerk", stage: "entry" },
+			{ role: "clerk", stage: "entry", fields: { pull: "7" } },
 			{ role: "clerk", stage: "no-entry" },
+			{ role: "clerk", stage: "final", fields: { pull: "7" } },
+			{ role: "clerk", stage: "kept", fields: { pull: "7" } },
 		]);
 		for (const marker of found) expect(marker.fields).not.toHaveProperty("sha");
+		expect(must(found[3]).fields).not.toHaveProperty("issue");
 	});
 
 	test("E16, E17 and E18 are valid response-unit markers", () => {

@@ -40,7 +40,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|precedent-merge|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
+journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
@@ -116,8 +116,7 @@ journal form <issues|pulls|decider|catalog>
 - `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. It then prints one line that starts with `#` for each section the contract does not list. A good department page with an alarm check prints `alarm-check`.
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
 - `handoff`: builds the hand-over comment of the clerk for a pull request and prints it. With `--adopted` it cleans the old body of the pull request first. It never exits with 7.
-- `precedent`: reads a ruling comment on stdin and adds its numbered precedent line to a constitution file. It prints `entry <n>`, `none` or `no-entry <reason>`.
-- `precedent-merge`: resolves a conflict in the Precedents section. It moves the lines that a pull request added after the highest number of the main branch.
+- `precedent`: reads the newest counted ruling of a case from the journal's cache and writes its precedent files into the folder `.lawman/precedents/` of a tree. It prints one line for each change: `entry <name> [<reason>]`, `cancel <name or -> [missing]`, `none` or `no-entry <reason>`. A taken name gets the next free one, so no precedent is lost. The model passes no ruling text. A link or a folder in the path that is no plain file or folder gives a non-zero exit and no write.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
 - `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
 
@@ -127,8 +126,7 @@ journal lint-body [--no-marker] (stdin: the text to write)
 journal lint-page <constitution|department> [--name <expected>] (stdin: the page)
 journal department-line --name <department> --judged-by <path|none> (stdin: the constitution)
 journal handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old pull request body, with --adopted)
-journal precedent --page <path> --source <ruling comment URL> (stdin: the ruling comment)
-journal precedent-merge --base <file> --ours <file> --theirs <file> --out <file>
+journal precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>
 journal jev <request|answer> --kind <p0|grade|requirement>
 journal catalog request --kind batch --tick <tick id> [--precinct <p>] (stdin with --precinct: the list)
 journal catalog answer --kind batch --tick <tick id> (stdin: the reply, then the status line)
@@ -313,6 +311,7 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 9. When `fetch`, `issues` or `pulls` gave a self line, the start prints its lines and stops. The role does those steps itself and then runs `tick input <tick id>`.
 10. It reads the stage: `case` for the issue roles but the response unit, `intake` for the response unit and `pull` for the spec writer and the executor. The line prints as the command prints it.
 11. For the roles that read a constitution, it lists the files at the revision and reads `LAWMAN.md`. The check of `lint-page constitution` prints in a `lint` fence, the text in a `constitution` fence.
+    For the roles that get precedents, it reads each direct `.md` file of `.lawman/precedents/` from the same list. It prints the line `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and the whole file in a `precedent` fence, by name. An empty or missing folder prints `precedents none`. A value outside its class prints `-`. A department list outside its class reads as all departments. The prosecutor, the defender, the court, the spec writer and the executor get all precedents. Investigation and the response unit get those of the case's department. Patrol gets those of the visit's department. A department `-` gets all precedents. The clerk gets none.
 12. For patrol, the defender and the court, it resolves the department page. Patrol takes the department from the order, the defender and the court from the stage. `-` means no page. The places are `.lawman/departments/<d>.md` of the precinct, `departments/<d>.md` of the installation and the page of the law, in that order. A failed check never falls through. The line `department <d> place=<1|2|3>` stands before the fences. The check prints in a `lint` fence, the page in a `department` fence.
 13. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field.
 14. The self lines come last.
@@ -364,6 +363,7 @@ The tick group:
 - `login=<login>`, `revision=<revision>` and the sync counts as `journal run` prints them;
 - the stage line as `case`, `intake` or `pull` prints it;
 - `department <d> place=<1|2|3>`;
+- `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and `precedents none`;
 - `comment at=<time>` as the print of the cache gives it;
 - `<operation> empty`, `<operation> failed reason=<reason>` and the `error` fence as `journal run` prints them;
 - `self <step>`;
@@ -381,6 +381,7 @@ A line `self <step>` names a step that the journal could not do. The role does i
 | `pulls` | the section "Sync the pull requests" |
 | `stage` | the section "Read the stage", "Check the intake order" or "Read the pull stage" |
 | `constitution` | the section "Check the constitution" |
+| `precedents .lawman/precedents/` | reads the direct `.md` files of that folder at the revision, and the filter by department of its role |
 | `department <d>` | the section "Resolve the department page" |
 | `department` | the same section, for a name outside its class, which the line leaves out |
 | `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
@@ -400,7 +401,7 @@ The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the
 
 The journal stores the tick group when it builds it. `journal tick input <tick id> --part <k>` prints a stored part. `tick end` and an end by the journal clear the parts.
 
-The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution and the department page become self lines. It ends no tick and applies no stale rule.
+The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
 
 An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
 
