@@ -36,14 +36,14 @@ const KEY_BODY = KEY.split("\n")[1] ?? "";
 const SAMPLE = [
 	`token ${TOKEN} here`,
 	KEY,
-	"hidden​join and ‮turned",
+	"hidden\u200Bjoin and \u202Eturned",
 	"<!-- a note -->",
 	"![a](http://x/y.png)",
 	'<img src="http://x/z.png">',
 	"```",
 	"~~~",
 	"~~~~~~~~",
-	"~~​~~~~~~~~~~",
+	"~~\u200B~~~~~~~~~~",
 	MARKER,
 	"```",
 ].join("\n");
@@ -93,7 +93,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 					{
 						number: 3,
 						state: "OPEN",
-						title: `${MARKER} ${TOKEN} ~~~~~~~~~~~~ ​`,
+						title: `${MARKER} ${TOKEN} ~~~~~~~~~~~~ \u200B`,
 						createdAt: TIME,
 						author: { login: TRUSTED },
 						body: `${SAMPLE}\n${leadIn("fixtures")}`,
