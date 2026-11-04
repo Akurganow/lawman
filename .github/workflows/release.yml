@@ -1,7 +1,9 @@
 on:
   push:
+    # A v* tag is a version tag. Any other tag here is a beta tag, set by hand.
     tags:
       - "v*"
+      - "beta-*"
     branches:
       - release-trial
 
@@ -30,8 +32,9 @@ jobs:
       - name: Install
         working-directory: journal
         run: bun install --frozen-lockfile
+      # A beta keeps the version of its branch, so only a version tag is checked.
       - name: Check the version against the tag
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
         working-directory: journal
         run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
       - name: Test
@@ -107,10 +110,10 @@ jobs:
           name: dist
           path: dist/*
           if-no-files-found: error
-      # The notes are the changelog section that cog bump wrote for the tag,
-      # headed "## <tag> - <date>".
+      # The notes of a version tag are the changelog section that cog bump
+      # wrote for the tag, headed "## <tag> - <date>". A beta has no section.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        if: github.ref_type == 'tag'
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
         with:
           path: source
           sparse-checkout: CHANGELOG.md
@@ -125,10 +128,14 @@ jobs:
         run: |
           if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
             gh release upload "$GITHUB_REF_NAME" --clobber journal-* SHA256SUMS
-          else
+          elif [[ $GITHUB_REF_NAME == v* ]]; then
             notes="$RUNNER_TEMP/notes.md"
             awk -v head="## $GITHUB_REF_NAME " 'index($0, head) == 1 { p = 1; next } p && (/^- - -$/ || /^## /) { exit } p' \
               ../source/CHANGELOG.md > "$notes"
             [ -s "$notes" ] || { echo "::error::no changelog section for $GITHUB_REF_NAME"; exit 1; }
             gh release create "$GITHUB_REF_NAME" --verify-tag --title "$GITHUB_REF_NAME" --notes-file "$notes" journal-* SHA256SUMS
+          else
+            gh release create "$GITHUB_REF_NAME" --verify-tag --prerelease --title "$GITHUB_REF_NAME" \
+              --notes "Beta built from $GITHUB_SHA. It carries the version of its branch, and the merge into main releases the version." \
+              journal-* SHA256SUMS
           fi

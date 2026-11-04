@@ -1,5 +1,5 @@
 # cocogitto configuration (https://docs.cocogitto.io/reference/config).
-# The release workflow runs `cog bump --auto` on main.
+# The bump workflow runs `cog bump` on main.
 
 tag_prefix = "v"
 # Pull requests merge with merge commits; the commits inside them count.
@@ -23,8 +23,8 @@ cog verify --file "$1"
 
 # main holds only releases, and an installation stops on a commit without a
 # release tag. So every commit type releases: feat bumps the minor version
-# and every other type the patch. A breaking change bumps the major version
-# from 1.0.0 on and the minor version before it.
+# and every other type the patch. The bump workflow raises the major version
+# on a breaking change, before 1.0.0 too.
 [commit_types]
 chore = { changelog_title = "Miscellaneous Chores", bump_patch = true }
 revert = { changelog_title = "Revert", bump_patch = true }

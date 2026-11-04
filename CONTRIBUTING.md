@@ -54,19 +54,31 @@ CI runs on every push and pull request, in six jobs.
 
 `main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag.
 
-Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version from 1.0.0 on and the minor version before it. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
+Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version, before 1.0.0 too. A breaking change carries `!` after the type or scope, or a `BREAKING CHANGE` footer. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
 
 1. Open a pull request and wait until its CI is green.
 2. Merge the pull request on the host.
 3. Wait until the release lists the four binaries, the provenance file beside each and `SHA256SUMS`.
 
-Never bump a version, write a changelog entry or push a tag by hand. Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host, or by the version commit of the bump workflow.
+Never bump a version, write a changelog entry or push a version tag by hand. The one tag set by hand is a beta tag, described below. Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host, or by the version commit of the bump workflow.
 
-The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
+The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. `cog bump --auto` never reaches 1.0.0, so the workflow asks for the major version when a breaking change came after the last version tag. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
 
-The tag starts the release workflow. It installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
+A version tag starts with `v`, and it starts the release workflow. The workflow installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
 
-A push to `release-trial` runs the build without the version check and publishes no release.
+A push to `release-trial` runs the same build, tests and attestations without the version check. It publishes nothing: no release, no tag and no pre-release. Push a change to the release workflow there before the next tag.
+
+### Beta
+
+Large work can gather on a working branch, and its pull requests merge into that branch. A beta lets a tester install that branch before it merges into `main`.
+
+- Set a beta tag by hand on a commit of the working branch, and only when the maintainer says so.
+- Name it `beta-<version>.<n>`, such as `beta-1.0.0.1` for the first beta of 1.0.0. cocogitto does not read this form as a version, and the bump workflow reads only `v*` tags.
+- The beta tag starts the release workflow. It builds, tests and attests the same files as for a version tag and publishes them as a pre-release.
+- On a beta tag the workflow does not check `journal --version` against the tag, and it takes no notes from `CHANGELOG.md`.
+- A beta changes no file of the branch. The manifests keep the old version, so `journal --version` of a beta prints that version, and `CHANGELOG.md` gets no section.
+- Install the beta at the commit of its tag, then fetch the tag into the plugin's clone by hand. The install and the law sync need a release tag on that commit.
+- The merge of the working branch into `main` is the release. The bump counts from the last version tag, so the changelog entry lists every change since that release.
 
 ## Write law and skill text
 
