@@ -209,7 +209,7 @@ The installation has the operations `release` and `verify`. Their forms come wit
   - `file` prints the text in a `file` fence, `files` the list in a `files` fence.
   - `decider` prints what `journal decider` prints on the same form.
   - An operation without a command prints `<operation> empty` and exits 0.
-  - The arguments pass their classes before the journal looks for the file, so an argument outside its class gives `reason=argument` even for an empty operation.
+  - The arguments pass their classes before the journal looks for the file, so an argument for the command outside its class gives `reason=argument` even for an empty operation.
 
 A wrong number of arguments, an unknown operation or a precinct that the journal does not list is a usage error with exit 1. The messages name only what the journal itself holds.
 

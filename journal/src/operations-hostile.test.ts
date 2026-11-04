@@ -4,6 +4,7 @@ import { join } from "node:path";
 import { printCached } from "./cache-text";
 import { stripInvisible } from "./clean";
 import * as db from "./db";
+import { formText } from "./form";
 import { inprocAsync } from "./inproc";
 import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
@@ -102,20 +103,28 @@ describe("a hostile sample through every line the journal prints about a command
 		await expectSafe((await inprocAsync(BASE, ["commands", "main"])).out);
 	});
 
+	const NOT_JSON =
+		"sync input rejected, cache untouched: stdin is not valid JSON";
 	test.each([
-		["fetch", []],
-		["identity", []],
-		["issues", ["--author", TRUSTED]],
-		["pulls", ["--author", TRUSTED]],
-		["decider", ["issue", "1"]],
+		["fetch", [], "the output is not one line that holds a revision"],
+		["identity", [], "the output is not one line that holds a login"],
+		["issues", ["--author", TRUSTED], `${NOT_JSON}\n\n${formText("issues")}`],
+		["pulls", ["--author", TRUSTED], `${NOT_JSON}\n\n${formText("pulls")}`],
+		[
+			"decider",
+			["issue", "1"],
+			`decider input rejected: not JSON\n\n${formText("decider")}`,
+		],
 	])(
 		"the sample as the stdout of %s is refused as form, never echoed",
-		async (operation, args) => {
+		async (operation, args, message) => {
 			command(configs("main"), operation, commented("cat sample.txt"));
 			sample(operation);
 			const r = await run(operation, ...args);
 			expect(r.code).toBe(4);
-			expect(r.out).toStartWith(`${operation} failed reason=form\n~~~error\n`);
+			expect(r.out).toBe(
+				`${operation} failed reason=form\n~~~error\n${message}\n~~~\n`,
+			);
 			for (const line of SAMPLE.split("\n").filter((l) => l.length > 3))
 				expect(r.out).not.toContain(line);
 			await expectSafe(r.out);
