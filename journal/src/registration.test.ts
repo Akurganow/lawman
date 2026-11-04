@@ -22,6 +22,8 @@ describe("registration", () => {
 		"catalog",
 		"wake",
 		"law-sync",
+		"commands",
+		"run",
 	])("%s is a registered command", (name) => {
 		expect(Object.keys(COMMANDS)).toContain(name);
 	});
@@ -37,6 +39,8 @@ describe("registration", () => {
 			"catalog",
 			"wake",
 			"law-sync",
+			"commands",
+			"run",
 		])
 			expect(err).toContain(name);
 	});

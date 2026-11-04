@@ -1,0 +1,174 @@
+import { check, fits, parseArgs, usage } from "./args";
+import { CleanFailed, cleaning } from "./cache-text";
+import { cleanCharacters } from "./clean";
+import { EXIT, Fail, out, withDb } from "./db";
+import { decide } from "./decider";
+import { fenced } from "./fence";
+import {
+	commandFolder,
+	hasCommand,
+	INSTALLATION_OPERATIONS,
+	installationPlace,
+	launch,
+	PRECINCT_OPERATIONS,
+	precinctPlace,
+} from "./launch";
+import { syncPulls } from "./pulls";
+import { syncIssues } from "./sync";
+
+type Operation = (typeof PRECINCT_OPERATIONS)[number];
+type Reason = "argument" | "start" | "exit" | "form" | "clean";
+type Slot = "revision" | "path" | "number" | "word";
+type Call = { args: string[]; author: string; reset: boolean };
+
+const COMMANDS_USAGE = "commands [<precinct>]";
+const RUN_USAGE =
+	"run <precinct> <fetch|identity|files <revision>|file <revision> <path>|decider <issue|pull> <number>|issues --author <login> [--reset]|pulls --author <login>>";
+const RESET = "--reset";
+const WORDS = ["issue", "pull"];
+const SLOTS: Record<Operation, Slot[]> = {
+	fetch: [],
+	identity: [],
+	issues: [],
+	pulls: [],
+	decider: ["word", "number"],
+	file: ["revision", "path"],
+	files: ["revision"],
+};
+
+class Refused {
+	constructor(
+		readonly reason: Reason,
+		readonly code: number,
+		readonly detail = "",
+	) {}
+}
+
+const formRefused = (why: string) => new Refused("form", EXIT.SYNC_INPUT, why);
+
+function registered(name: string): void {
+	withDb((db) => {
+		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
+			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
+	});
+}
+
+export function commandsCommand(args: string[]): number {
+	const [name] = args;
+	if (args.length > 1) throw usage(COMMANDS_USAGE);
+	if (name !== undefined) registered(check("precinct", name));
+	const [place, operations] =
+		name === undefined
+			? [installationPlace(), INSTALLATION_OPERATIONS]
+			: [precinctPlace(name), PRECINCT_OPERATIONS];
+	out(`folder ${commandFolder()}`);
+	for (const operation of operations)
+		out(`${operation} ${hasCommand(place, operation) ? "command" : "empty"}`);
+	return EXIT.OK;
+}
+
+const isOperation = (name: string | undefined): name is Operation =>
+	PRECINCT_OPERATIONS.some((operation) => operation === name);
+
+// the journal's own flags of issues and pulls, as sync takes them
+function parseCall(operation: Operation, rest: string[]): Call {
+	if (operation !== "issues" && operation !== "pulls") {
+		if (rest.length !== SLOTS[operation].length) throw usage(RUN_USAGE);
+		return { args: rest, author: "", reset: false };
+	}
+	const flags = operation === "issues" ? rest.filter((a) => a !== RESET) : rest;
+	if (rest.length - flags.length > 1) throw usage(RUN_USAGE);
+	const { opt } = parseArgs(flags, 0, ["author"], RUN_USAGE);
+	return {
+		args: [],
+		author: check("login", opt.author),
+		reset: flags.length < rest.length,
+	};
+}
+
+const fitsSlot = (slot: Slot, value: string) =>
+	slot === "word" ? WORDS.includes(value) : fits(slot, value);
+
+const characters = (text: string) => cleaning(() => cleanCharacters(text));
+
+function oneLine(text: string, kind: "revision" | "login"): string {
+	const line = text.replace(/\r?\n$/, "");
+	if (/[\r\n]/.test(line) || !fits(kind, line))
+		throw formRefused(`the output is not one line that holds a ${kind}`);
+	return line;
+}
+
+const READERS: Record<
+	Operation,
+	(text: string, name: string, call: Call) => Promise<string>
+> = {
+	fetch: async (text) => `revision=${oneLine(text, "revision")}`,
+	identity: async (text) => `login=${oneLine(text, "login")}`,
+	issues: (text, name, call) => syncIssues(name, call.author, text, call.reset),
+	pulls: (text, name, call) => syncPulls(name, call.author, text),
+	decider: async (text) => decide(text),
+	file: async (text) => fenced("file", await characters(text)),
+	files: async (text) => fenced("files", await characters(text)),
+};
+
+async function output(place: string, operation: Operation, args: string[]) {
+	const ran = await launch(place, operation, args);
+	if (ran === null) throw new Refused("start", EXIT.COMMAND);
+	if (!ran.ok)
+		throw new Refused(
+			"exit",
+			EXIT.COMMAND,
+			new TextDecoder().decode(ran.stderr),
+		);
+	try {
+		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+			ran.stdout,
+		);
+	} catch {
+		throw formRefused("the output is not UTF-8");
+	}
+}
+
+async function read(name: string, operation: Operation, call: Call) {
+	const text = await output(precinctPlace(name), operation, call.args);
+	try {
+		return await READERS[operation](text, name, call);
+	} catch (e) {
+		if (e instanceof CleanFailed) throw new Refused("clean", EXIT.COMMAND);
+		if (e instanceof Fail) throw new Refused("form", e.code, e.message);
+		throw e;
+	}
+}
+
+// the error fence holds the command's own words, so they pass the character layer
+async function refusal(operation: Operation, refused: Refused) {
+	let { reason, code, detail } = refused;
+	try {
+		detail = await cleanCharacters(detail);
+	} catch {
+		[reason, code, detail] = ["clean", EXIT.COMMAND, ""];
+	}
+	out(`${operation} failed reason=${reason}`);
+	out(fenced("error", detail));
+	return code;
+}
+
+export async function runCommand(args: string[]): Promise<number> {
+	const [name, operation, ...rest] = args;
+	if (name === undefined || !isOperation(operation)) throw usage(RUN_USAGE);
+	const call = parseCall(operation, rest);
+	registered(check("precinct", name));
+	try {
+		if (!SLOTS[operation].every((slot, i) => fitsSlot(slot, rest[i] ?? "")))
+			throw new Refused("argument", EXIT.COMMAND);
+		if (!hasCommand(precinctPlace(name), operation)) {
+			out(`${operation} empty`);
+			return EXIT.OK;
+		}
+		out(await read(name, operation, call));
+		return EXIT.OK;
+	} catch (e) {
+		if (e instanceof Refused) return refusal(operation, e);
+		throw e;
+	}
+}

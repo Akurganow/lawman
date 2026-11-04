@@ -168,3 +168,7 @@ export async function maskSecrets(text: string): Promise<string> {
 		out = out.slice(0, start) + label(kind) + out.slice(end);
 	return out;
 }
+
+// the character layer: for text that is data, not Markdown
+export const cleanCharacters = (text: string) =>
+	maskSecrets(stripInvisible(text));

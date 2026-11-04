@@ -86,4 +86,17 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE issues ADD COLUMN answer TEXT;
   ALTER TABLE issues ADD COLUMN answer_id TEXT;
   `,
+	`
+  ALTER TABLE issues ADD COLUMN body TEXT NOT NULL DEFAULT '';
+  ALTER TABLE pulls ADD COLUMN body TEXT NOT NULL DEFAULT '';
+  CREATE TABLE comments (
+    precinct TEXT NOT NULL,
+    kind     TEXT NOT NULL CHECK (kind IN ('issue', 'pull')),
+    number   INTEGER NOT NULL,
+    id       TEXT NOT NULL,
+    author   TEXT,
+    at       TEXT NOT NULL,
+    body     TEXT NOT NULL,
+    PRIMARY KEY (precinct, kind, number, id));
+  `,
 ];

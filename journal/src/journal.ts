@@ -17,7 +17,6 @@ import { precedentCommand, precedentMergeCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
 import { rotation } from "./rotation";
-import { sync } from "./sync";
 import { wake } from "./wake";
 
 export { open } from "./db";
@@ -38,7 +37,10 @@ export const COMMANDS: Record<string, Handler> = {
 	tick,
 	alarm,
 	status,
-	sync,
+	sync: async (args) => (await import("./sync")).sync(args),
+	commands: async (args) =>
+		(await import("./operations")).commandsCommand(args),
+	run: async (args) => (await import("./operations")).runCommand(args),
 	leads,
 	seen,
 	cap,
