@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { cleanCharacters } from "./clean";
 import { cleanHostText } from "./clean-host";
 import { type Fail, isConstraint } from "./db";
-import { fenced } from "./fence";
+import { type Block, fencedBlock } from "./input-parts";
 
 export type TextKind = "issue" | "pull";
 export type CommentText = {
@@ -80,13 +80,14 @@ async function header(c: CommentText): Promise<string> {
 }
 
 // Every cached text is cleaned again, so a text an older cleaning stored prints clean.
-// Null when the cache holds no such issue or pull request.
+// A comment's block carries its `comment at=` line. Null when the cache holds no
+// such issue or pull request.
 export async function printCached(
 	db: Database,
 	precinct: string,
 	kind: TextKind,
 	number: number,
-): Promise<string | null> {
+): Promise<Block[] | null> {
 	const row = db.query(BODY[kind]).get(precinct, number) as {
 		body: string;
 	} | null;
@@ -97,12 +98,15 @@ export async function printCached(
 		)
 		.all(precinct, kind, number) as CommentText[];
 	return cleaning(async () => {
-		const blocks = [fenced(kind, await cleanHostText(row.body))];
+		const blocks = [fencedBlock(kind, await cleanHostText(row.body))];
 		for (const c of comments)
 			blocks.push(
-				`comment at=${c.at}`,
-				fenced("comment", `${await header(c)}\n${await cleanHostText(c.body)}`),
+				fencedBlock(
+					"comment",
+					`${await header(c)}\n${await cleanHostText(c.body)}`,
+					`comment at=${c.at}`,
+				),
 			);
-		return blocks.join("\n");
+		return blocks;
 	});
 }

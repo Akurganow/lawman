@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { rmSync } from "node:fs";
 import * as db from "./db";
-import { inproc } from "./inproc";
+import { inproc, inprocAsync } from "./inproc";
 import {
 	BASE,
 	dbFile,
@@ -18,26 +18,30 @@ tempDb();
 beforeEach(() => seed((d) => precinct(d, "main")));
 
 const wake = (clock = BASE, role = "patrol") =>
-	inproc(clock, ["wake", "--role", role]);
+	inprocAsync(clock, ["wake", "--role", role]);
 const take = (clock = BASE, role = "patrol") =>
 	inproc(clock, ["dispatch", "take", "--role", role]);
 const idOf = () => rows("SELECT id FROM dispatches")[0]?.id;
 
 describe("wake in process", () => {
-	test("prints idle, then an untaken order with the check time", () => {
-		expect(wake()).toMatchObject({ code: 0, out: "idle\n" });
+	test("prints nothing, then an untaken order behind the check time", async () => {
+		expect(await wake()).toMatchObject({ code: 0, out: "" });
 		seed((d) => order(d, "main", "patrol"));
-		expect(wake().out).toBe(`order ${idOf()}\nat ${BASE}\n`);
+		const r = await wake();
+		expect(r.out).toStartWith(
+			`lawman input 1 role=patrol at=${BASE} part 1 of 1\n`,
+		);
+		expect(r.out).toContain(`\norder ${idOf()} main o/main - -\n`);
 	});
 
-	test("a taken order shows again only after the claim limit", () => {
+	test("a taken order shows again only after the claim limit", async () => {
 		seed((d) => order(d, "main", "patrol", { takenAt: BASE }));
-		expect(wake(later(24, -1)).out).toBe("idle\n");
-		expect(wake(later(24)).out).toBe("idle\n");
-		expect(wake(later(24, 1)).out).toMatch(/^order \d+\nat /);
+		expect((await wake(later(24, -1))).out).toBe("");
+		expect((await wake(later(24))).out).toBe("");
+		expect((await wake(later(24, 1))).out).toContain("\norder ");
 	});
 
-	test("agrees with dispatch take on every case, the boundary second included", () => {
+	test("agrees with dispatch take on every case, the boundary second included", async () => {
 		const cases: Record<string, (d: Database) => void> = {
 			none: () => {},
 			untaken: (d) => order(d, "main", "patrol"),
@@ -54,7 +58,7 @@ describe("wake in process", () => {
 					precinct(d, "main");
 					body(d);
 				});
-				const ready = wake(clock).out !== "idle\n";
+				const ready = (await wake(clock)).out !== "";
 				expect([name, clock, take(clock).out !== ""]).toEqual([
 					name,
 					clock,
@@ -64,18 +68,21 @@ describe("wake in process", () => {
 		}
 	});
 
-	test("records the check time of a role that has a row", () => {
+	test("records the check time of a role that has a row", async () => {
 		seed((d) =>
 			d.run("INSERT INTO roles (name, every_minutes) VALUES ('patrol', 5)"),
 		);
-		wake(later(1));
+		await wake(later(1));
 		expect(rows("SELECT checked_at FROM roles")).toEqual([
 			{ checked_at: later(1) },
 		]);
 	});
 
-	test("usage errors exit 1 with empty stdout", () => {
-		expect(inproc(BASE, ["wake"])).toMatchObject({ code: 1, out: "" });
+	test("usage errors exit 1 with empty stdout", async () => {
+		expect(await inprocAsync(BASE, ["wake"])).toMatchObject({
+			code: 1,
+			out: "",
+		});
 	});
 });
 

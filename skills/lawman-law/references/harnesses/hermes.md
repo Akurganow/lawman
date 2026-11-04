@@ -112,13 +112,20 @@ A scheduled run has no one to approve a command. The harness refuses a command i
 Refused, seen in scheduled runs:
 
 - a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
-- an interpreter started with `-c`: `python3 -c`.
+- an interpreter started with `-c`: `python3 -c`;
+- a recursive delete: `rm -rf`.
+
+A role removes a folder without a recursive delete. Each form below passed the harness's check function as a role sends it. Removing the files with `rm -f` and then the folder with `rmdir` was seen in scheduled runs.
+
+- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rmdir runs/<tick id>`.
+- A folder that holds only files, such as the folder of the law sync: `rm -f <folder>/*`, then `rmdir <folder>`.
 
 Refused, checked with the harness's check function and not seen in a scheduled run:
 
 - other shells started with `-c`: `sh -c`, `zsh -c`;
 - an interpreter started with `-e`: `node -e`, `bun -e`;
-- a heredoc fed to a shell or an interpreter: `bash <<`.
+- a heredoc fed to a shell or an interpreter: `bash <<`;
+- other recursive deletes: `rm -r`, `rm --recursive`.
 
 Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the Send body. The pipe passed when a role repeated a refused command without the wrapper.
 
@@ -251,7 +258,7 @@ Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown fil
 
 ### Editing a job
 
-`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. It prints a `Monitor:` line for a gated job (read in the harness code).
+`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. It prints a `Monitor:` line for a job with a monitor script (read in the harness code).
 
 ### Schedule forms and time zone
 
@@ -273,11 +280,34 @@ A job created paused has no stored slot, so `resume` sets its next future slot. 
 
 ### Run gate
 
-`--monitor-script <file>`. The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder (seen in a terminal, read in the harness code). The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. Unchanged output skips the session, so the `idle` output must be stable. The first run and any change start it. A change adds the new output to the role's prompt. A failing script is an error alert, not a skip. The script gets no job identity (read in the harness code). The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+This section describes the role entry. The assembly reads it by the name `Run gate`.
 
-The gate applies to manual runs too. A role with an order still runs at every check, because the journal's gate output carries the check time then (read in the journal code).
+The role entry is a file that runs `bin/journal wake --role <role>` before the session. A job runs it in one of two modes, and one file serves both. `--script <file>` puts its output into the prompt. `--monitor-script <file>` compares its output with the last run. `hermes cron create` and `hermes cron edit` take both, and one job may hold both (read in the harness code).
 
-The form of a role's gate file. Replace the placeholders:
+- The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder. An absolute path is refused at create, and at run the path must lie inside that folder (seen in a terminal, read in the harness code).
+- The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. The working folder is the job's `--workdir`, or else the folder of the file (read in the harness code).
+- Without work the journal prints nothing, and the output is the same at every check. In script mode an empty output skips the model and the delivery. In monitor mode an unchanged output skips the session. The first run and any change start it (read in the harness code).
+- With work the journal prints the first part of the role's input. Its first line carries the check time, so the output changes at every check, and monitor mode never skips a role with an order (read in the journal code).
+- Script mode cuts nothing. It puts the output into the prompt inside a block of three backticks, unescaped. Every line of the law in the input starts with `| `, so no line of it closes the block (read in the harness code, read in the journal code).
+- Monitor mode shows at most 8000 characters of the output, from its start, and at most 4000 characters of the change. A change adds the new output to the role's prompt (read in the harness code).
+- On success the standard error of the file is dropped. A non-zero exit, a timeout or a failed start gives the session a "Script Error" block, and the model runs (read in the harness code). The fallback is the role's: it runs the entry itself as its first call.
+- A script may run 3600 seconds by default. The variable `HERMES_CRON_SCRIPT_TIMEOUT` and the key `cron.script_timeout_seconds` change the limit. The entry reads only local files (read in the harness code).
+- The output of a script passes Hermes's secret masking before it reaches the prompt. The masking covers tokens with known prefixes, `KEY=value` pairs with secret-like names, JSON and YAML fields, authorization headers, private keys, passwords in connection strings, JWTs and phone numbers. A failed masking replaces the whole output with `[REDACTED - redaction failed]`, which carries no first line of the input (read in the harness code). Whether the masking changes a line of the law: not checked.
+- The assembled prompt, with the skills and the script output, passes a scan for injection phrases, and a match cancels the run. The patterns live in `tools/cronjob_prompt_scan.py` (read in the harness code). The journal's tests check that the local part of no role's input matches them.
+- The script gets no job identity, no `GH_TOKEN`, no `GITHUB_TOKEN` and no keys of the model providers. The entry runs no command, so it needs none of them (read in the harness code).
+- A manual run with `hermes cron run` runs the file too (read in the harness code).
+
+The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
+
+**The size of a part.** The terminal tool returns at most 50 000 characters of a command's output, the notice of a cut included. The key `tool_output.max_bytes` sets it. A longer output keeps 40 % from the start and 60 % from the end, with a line `[OUTPUT TRUNCATED …]` between them (read in the harness code). The entry that a role runs itself and the start of the tick come through the terminal. So the safe size of a part is 49 000, which leaves room for the first and the last line of each part:
+
+```
+input_chars: 49000
+```
+
+The results of one turn add up to at most 200 000 characters. Hermes replaces the rest with a preview (read in the harness code). So take one part per call.
+
+The form of a role's entry file. Replace the placeholders:
 
 ```
 mkdir -p <scripts directory>

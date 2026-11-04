@@ -196,7 +196,7 @@ type OpenAlarm = {
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 const alarmLine = (a: Candidate) => `ALARM ${a.kind} ${a.ref} ${a.detail}`;
 
-function reconcileAlarms(
+export function reconcileAlarms(
 	db: Database,
 	stamp: string,
 	repeat: boolean,

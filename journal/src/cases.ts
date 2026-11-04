@@ -183,35 +183,56 @@ const NO_LEAD = {
 	kind: "-",
 };
 
+type CaseStage = {
+	need: Need;
+	department: string;
+	state: string;
+	pull: string;
+	line: string;
+};
+
+// The stage of one cached issue. An issue missing from the cache fails with code 1.
+// The command's argument goes to the lookup as it came, as before.
+export function caseStage(
+	db: Database,
+	name: string,
+	asked: number | string,
+): CaseStage {
+	const issue = Number(asked);
+	const row = db
+		.query(
+			"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
+		)
+		.get(name, asked) as {
+		state: string;
+		answer: string | null;
+		answer_id: string | null;
+	} | null;
+	if (row === null)
+		throw new Fail(EXIT.USAGE, `unknown issue ${name} #${asked}`);
+	const markers = markersOf(db, name, issue);
+	const lead = leadFields(db, name, issue, markers);
+	const { need, clerk } = caseOf(
+		db,
+		name,
+		issue,
+		row.state,
+		markers,
+		row.answer,
+		lead !== null,
+	);
+	const l = lead ?? NO_LEAD;
+	return {
+		need,
+		department: String(l.department),
+		state: row.state,
+		pull: clerk.pull,
+		line: `need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch} kind=${l.kind} answer=${row.answer ?? "-"} answer_id=${row.answer_id ?? "-"}`,
+	};
+}
+
 export function caseCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(CASE_USAGE);
 	const [name, issue] = args as [string, string];
-	withDb((db) => {
-		const row = db
-			.query(
-				"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
-			)
-			.get(name, issue) as {
-			state: string;
-			answer: string | null;
-			answer_id: string | null;
-		} | null;
-		if (row === null)
-			throw new Fail(EXIT.USAGE, `unknown issue ${name} #${issue}`);
-		const markers = markersOf(db, name, Number(issue));
-		const lead = leadFields(db, name, Number(issue), markers);
-		const { need, clerk } = caseOf(
-			db,
-			name,
-			Number(issue),
-			row.state,
-			markers,
-			row.answer,
-			lead !== null,
-		);
-		const l = lead ?? NO_LEAD;
-		out(
-			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch} kind=${l.kind} answer=${row.answer ?? "-"} answer_id=${row.answer_id ?? "-"}`,
-		);
-	});
+	withDb((db) => out(caseStage(db, name, issue).line));
 }

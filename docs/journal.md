@@ -60,14 +60,14 @@ journal next --role <role> [--exclude <precinct>]…
 ### Orders and ticks
 
 - `dispatch`: `add` writes an order for a role. `take` claims the oldest takeable order of a role. A repeated open order exits 2.
-- `tick`: `start` opens a tick and prints its id. `end` closes it with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
+- `tick`: `start` opens a tick and prints its id. With `--order`, it takes that order and prints the tick's input, as [the role entry](#the-role-entry) says. `input` prints a part of an input. `end` closes a tick with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
 - `due`: prints the precinct and the number of the next case or pull request that a role is due on. It prints nothing when the role has an open order.
 - `rotation`: reads department names on stdin and prints each with its last visit and its cap, in rotation order.
-- `wake`: the run gate. It prints `idle`, or one `order <id>` line per takeable order and an `at <time>` line, so a role with work changes the output at every check. It also records the check.
+- `wake`: the role entry. It prints nothing when the role has no takeable order, and the first part of the role's input otherwise. It also records the check. See [the role entry](#the-role-entry).
 
 ```
 journal dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>>
-journal tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>
+journal tick <start --role <r> [--order <id>]|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>
 journal due --role <role> [--exclude <precinct>]…
 journal rotation <precinct> --role <role> (stdin: department names, one per line)
 journal wake --role <r>
@@ -248,13 +248,169 @@ The text inside the `error` fence passes the character layer of the cleaning. Ev
 
 The journal prints foreign text inside a fence of `~` characters. The fence line carries the kind as its info string, such as `~~~file`. The fence is longer than any run of `~` in the cleaned text, so no line inside closes it. The fence adds no change to the text, except that it drops one final line break. A tilde fence also sits safely inside a harness that wraps the output in backticks.
 
-The kinds so far are `issue`, `comment`, `pull`, `file`, `files` and `error`. Later kinds join as the journal prints more foreign text.
+The kinds so far are `issue`, `comment`, `pull`, `file`, `files`, `error`, `title`, `constitution`, `department` and `lint`. Later kinds join as the journal prints more foreign text.
 
 ### Texts in the cache
 
 The cache holds the texts of issues, pull requests and comments after the cleaning of `journal clean`. The output of `file` and `files` and the text of `error` are data, not Markdown: they pass the character layer, which removes hidden characters and masks secrets. A text is cleaned again each time it prints, so a text that an older cleaning stored prints clean.
 
 A printed issue or pull request is its body in an `issue` or `pull` fence, then each comment, by time and then by id. Each comment has a `comment at=<time>` line and a `comment` fence. The first line inside that fence is `id="<id>" author="<login>"`, written as JSON strings, or `author=null` when the host gave no author.
+
+## The role entry
+
+The role entry tells whether a role has work and gives the role what it reads at the start. It comes in two calls. The first reads only local files. The second, the start of the tick, runs the commands of the precinct and prints the case.
+
+### No work and work
+
+`journal wake --role <r>` records the check of the role. A role has work when it has an order it can take, by the same rule as `dispatch take`.
+
+- No work: the journal prints nothing and exits 0. The output is the same at every check, and a broken `config.yaml` does not change it.
+- Work: the journal prints the first part of the role group. The first line carries the check time, so the output changes at every check.
+- The duty desk always has work. Its group has no orders.
+
+The entry runs no command and touches no network. It writes only the check time of the role. A broken database exits non-zero and prints nothing.
+
+### The role group
+
+The role group is the local part of the input. Its blocks come in this order:
+
+1. The sections of the law that the role reads at the start. A line `law <path>` stands before the sections of each file. The path starts at `lawman/skills/lawman-law/references/`.
+2. The section `Silence` of the harness page. The key `harness` of `config.yaml` names the page. A line `harness <path>` stands before it.
+3. One line per order the role can take, oldest first, in the order `dispatch take` gives them.
+
+Every line of a law section and of the harness page prints behind `| `, and an empty line prints as `|`. After the prefix the text follows byte for byte. So no line of the group starts with a backtick, whatever the law holds. A line without the prefix is a line of the journal.
+
+A section is its heading and everything up to the next heading of the same or a higher level. The intro is everything before the first second-level heading. The sections of a file print in the order of the document. A Markdown parser finds the headings.
+
+| Role | Law |
+| :-- | :-- |
+| patrol | `LAW.md`, `tick.md` (common sections, Sync the tracker, Check the constitution, Resolve the department page, Alarm), `markers.md`, `departments.md` |
+| response-unit | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the tracker, Check the intake order, Check the constitution, Write a comment, Alarm), the section "The `id` value" of `markers.md` |
+| investigation | `LAW.md`, `tick.md` (common sections, Sync the tracker, Read the stage, Check the constitution, Write a comment, Alarm) |
+| prosecutor | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the tracker, Read the stage, Check the constitution, Write a comment, Close the issue, Alarm) |
+| defender, court | as the prosecutor, and Resolve the department page |
+| clerk | `LAW.md`, `tick.md` (common sections, Sync the tracker, Sync the pull requests, Read the stage, Check the decider, Write a comment, Close the issue, Alarm) |
+| spec-writer | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
+| executor | `LAW.md`, `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
+| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms and their repetition, and Tick outcomes of `LAW.md`, and Sync the law of `tick.md` |
+
+`LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick.
+
+A file, a section, `config.yaml` or the key `harness` that the journal cannot read stands as a self line in place of its block. `<harness>` stays as it is in that line when no harness is named. So a binary and a law of different releases never stop a role.
+
+### The start of the tick
+
+`journal tick start --role <r> --order <id>` runs these steps in order.
+
+1. The order must belong to the role, be open and be takeable. Otherwise the journal prints `order <id> untakeable` alone and starts no tick. Otherwise it starts the tick.
+2. It computes the alarms as `journal alarm` does without `--repeat`, and prints each `ALARM` line.
+3. It reads `trusted_login` from `config.yaml`.
+4. It runs the operation `identity` and compares the login with `trusted_login`, ignoring ASCII case.
+5. It takes the order in one transaction, after it checks again that the order is free. It records the precinct, the department and the order in the tick, and prints the order line.
+6. It checks the fields of the order. An issue role needs an issue number, the spec writer and the executor a pull request number. A patrol order has a department and no issue number.
+7. It runs `fetch`.
+8. It runs `issues` and `pulls` as the role needs them, with `trusted_login` as the author. They update the cache by the same path as `run`.
+9. When `fetch`, `issues` or `pulls` gave a self line, the start prints its lines and stops. The role does those steps itself and then runs `tick input <tick id>`.
+10. It reads the stage: `case` for the issue roles but the response unit, `intake` for the response unit and `pull` for the spec writer and the executor. The line prints as the command prints it.
+11. For the roles that read a constitution, it lists the files at the revision and reads `LAWMAN.md`. The check of `lint-page constitution` prints in a `lint` fence, the text in a `constitution` fence.
+12. For patrol, the defender and the court, it resolves the department page. Patrol takes the department from the order, the defender and the court from the stage. `-` means no page. The places are `.lawman/departments/<d>.md` of the precinct, `departments/<d>.md` of the installation and the page of the law, in that order. A failed check never falls through. The line `department <d> place=<1|2|3>` stands before the fences. The check prints in a `lint` fence, the page in a `department` fence.
+13. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field.
+14. The self lines come last.
+
+A failed or empty operation prints the lines of `run` and a self line, and the start goes on. Only a usage error and a broken database exit non-zero.
+
+### The outcomes the journal writes
+
+The journal ends the tick itself when the outcome follows from what it read. Before the order is taken, the tick ends without it, and the order stays open for the next start. After, the order closes with the same outcome in the same transaction.
+
+| Outcome | Report |
+| :-- | :-- |
+| `failed` | `config.yaml is missing`, `config.yaml has no trusted_login` (before the order is taken) |
+| `stopped-identity-changed` | `Host identity changed: <login>` (before the order is taken) |
+| `silent` | `No order.` when another run took the order first |
+| `failed` | `The order has no issue number`, `The order has no pull request number`, `The patrol order has an issue number or no department`, `The stage check failed` |
+| `silent` | `Order stale: <stage line>` |
+| `skipped-no-constitution` | `No constitution at <revision>` |
+| `skipped-contract-version`, `skipped-bad-constitution` | `Constitution check failed at <revision>` |
+| `stopped-bad-department` | `Department page check failed: <d>`, or `The department name is not safe` |
+
+The stale rules of the issue roles and the pull request roles are the rules of their skills. An order closes as stale only after the sync of the same start.
+
+An ended tick prints one part, `part 1 of 1`, whatever its size. Its last lines are `ended <outcome>` and `report <report>`. It prints no `title`, `constitution` or `department` fence and no case text. A constitution or department outcome prints only its `lint` fence. The role then only answers.
+
+### The lines of the input
+
+`<form>` is the version of the input's form, `1` in this release. A role tells the output of an older binary by it. The fields of a line are separated by one space.
+
+The frame of a part:
+
+- the first line of the part that `wake` prints: `lawman input <form> role=<role> at=<time> part 1 of <n>`;
+- the first line of a part of the role group that `tick input --role` prints: `lawman input <form> role=<role> part <k> of <n>`;
+- the first line of a part of the tick group: `lawman input <form> role=<role> tick=<tick id> part <k> of <n>`;
+- the last line of every part: `end part <k> of <n>`.
+
+The role group:
+
+- `law <path>`;
+- `| <line of the law or the harness page>`, and `|` for an empty line;
+- `harness <path>`;
+- `order <id> <precinct> <repository> <department|-> <issue or pull request number|->`.
+
+The tick group:
+
+- `order <id> <precinct> <repository> <department|-> <issue or pull request number|->`;
+- `order <id> untakeable`, without a frame, the only line of the output;
+- the `ALARM` lines as `journal alarm` prints them;
+- `login=<login>`, `revision=<revision>` and the sync counts as `journal run` prints them;
+- the stage line as `case`, `intake` or `pull` prints it;
+- `department <d> place=<1|2|3>`;
+- `comment at=<time>` as the print of the cache gives it;
+- `<operation> empty`, `<operation> failed reason=<reason>` and the `error` fence as `journal run` prints them;
+- `self <step>`;
+- `ended <outcome>`, then `report <report>`.
+
+### Self steps
+
+A line `self <step>` names a step that the journal could not do. The role does it itself. In the role group the line stands in place of its block. In the tick group the lines come last. The list stays open: a later release adds a step with each block it adds.
+
+| Step | What the role does |
+| :-- | :-- |
+| `identity` | item 5 of step 0 of its skill, the identity check |
+| `fetch` | the section "Fetch the precinct" of `tick.md` |
+| `issues` | the section "Sync the tracker" |
+| `pulls` | the section "Sync the pull requests" |
+| `stage` | the section "Read the stage", "Check the intake order" or "Read the pull stage" |
+| `constitution` | the section "Check the constitution" |
+| `department <d>` | the section "Resolve the department page" |
+| `department` | the same section, for a name outside its class, which the line leaves out |
+| `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
+| `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
+| `harness <path> <section>` | reads that section of the harness page |
+
+### Parts
+
+The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the key. The size counts Unicode characters of the content, fence lines included, each line with its line break. The first and the last line of a part do not count.
+
+- Each group splits on its own. A group within the size is one part.
+- A split falls between blocks. A block longer than the size splits by lines, a line longer than the size by characters. Each piece of a law line keeps the prefix. Each piece of a foreign text gets a fence of its own with the same kind. A `comment at=` line goes with the fence of its comment.
+- When the role group splits, its orders take the last part or parts. The parts of the law and the page then stay the same while the orders change, and the count changes only with the law folder. The role takes the order id from the last part. The duty desk has no orders.
+- A part without its last line was cut from the end by the harness.
+
+`journal tick input --role <r> --part <k>` builds the role group again and prints part `k`. The journal stores no role group. The content of a part stays the same while the law folder and the orders of that part stay the same.
+
+The journal stores the tick group when it builds it. `journal tick input <tick id> --part <k>` prints a stored part. `tick end` and an end by the journal clear the parts.
+
+The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution and the department page become self lines. It ends no tick and applies no stale rule.
+
+An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
+
+### What the input leaves out
+
+The input never prints:
+
+- the author and the labels of an issue, the state and the title of a pull request;
+- the files a role reads later in its work: `skills/clerk/references/jobs.md`, `skills/executor/references/work.md`, `skills/executor/references/gate.md`, `exhibits.md` and the license pages;
+- the tree of a precinct and the results of a search.
 
 ## The catalog check
 
@@ -344,6 +500,10 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [operations.ts](../journal/src/operations.ts): `commands`, `run`, the forms of the output and the reasons.
 - [fence.ts](../journal/src/fence.ts): the fence.
 - [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache and their print.
+- [input-roles.ts](../journal/src/input-roles.ts): the blocks of each role's input.
+- [input-parts.ts](../journal/src/input-parts.ts): the blocks, the parts and their frame.
+- [role-entry.ts](../journal/src/role-entry.ts): the role group.
+- [tick-start.ts](../journal/src/tick-start.ts): the start of a tick with an order and the tick group.
 - [law-sync.ts](../journal/src/law-sync.ts): the update command.
 - [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
 - [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.

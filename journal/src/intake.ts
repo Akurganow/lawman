@@ -58,24 +58,37 @@ const orderIsOpen = (db: Database, precinct: string) =>
 		)
 		.get(RESPONSE_UNIT, precinct) !== null;
 
+type IntakeStage = {
+	need: "intake" | "none";
+	state: string;
+	line: string;
+};
+
+// The intake need of one cached issue. An issue missing from the cache fails with code 1.
+export function intakeStage(
+	db: Database,
+	precinct: string,
+	issue: number,
+): IntakeStage {
+	const row = candidates(db, precinct, issue)[0];
+	if (row === undefined)
+		throw new Fail(EXIT.USAGE, `unknown issue ${precinct} #${issue}`);
+	const need = waits(db, precinct, row) ? "intake" : "none";
+	return { need, state: row.state, line: `need=${need} state=${row.state}` };
+}
+
 export function intakeCommand(args: string[]): void {
 	const { pos, opt } = parseArgs(args, 1, [], INTAKE_USAGE, ["issue"]);
 	const precinct = check("precinct", pos[0]);
 	const issue = opt.issue === undefined ? null : count(opt.issue, "issue", 1);
 	withDb((db) => {
-		const rows = candidates(db, precinct, issue);
 		if (issue === null) {
 			const next = orderIsOpen(db, precinct)
 				? undefined
-				: rows.find((r) => waits(db, precinct, r));
+				: candidates(db, precinct, null).find((r) => waits(db, precinct, r));
 			if (next !== undefined) out(next.issue);
 			return;
 		}
-		const row = rows[0];
-		if (row === undefined)
-			throw new Fail(EXIT.USAGE, `unknown issue ${precinct} #${issue}`);
-		out(
-			`need=${waits(db, precinct, row) ? "intake" : "none"} state=${row.state}`,
-		);
+		out(intakeStage(db, precinct, issue).line);
 	});
 }

@@ -1,22 +1,23 @@
 import { check, parseArgs } from "./args";
-import { now, out, withDb } from "./db";
+import { EXIT, now, withDb } from "./db";
 import { takeableOrders } from "./dispatch";
+import { DUTY_DESK } from "./input-roles";
 
-export function wake(args: string[]): void {
+// No work prints nothing and loads nothing, so the idle check stays the same
+// and fast. Work loads the parser inside this command only.
+export function wake(args: string[]): number | Promise<number> {
 	const { opt } = parseArgs(args, 0, ["role"], "wake --role <r>");
 	const roleName = check("role", opt.role);
 	const stamp = now();
-	// stdout is written only after every database step succeeded, so a failure never prints idle
+	// stdout is written only after every database step succeeded, so a failure prints nothing
 	const orders = withDb((db) => {
 		const orders = takeableOrders(db, roleName, stamp);
 		db.run("UPDATE roles SET checked_at = ? WHERE name = ?", [stamp, roleName]);
 		return orders;
 	});
-	if (orders.length === 0) {
-		out("idle");
-		return;
-	}
-	for (const o of orders) out(`order ${o.id}`);
-	// the time changes the output on every check, so a gate never skips a role that has work
-	out(`at ${stamp}`);
+	if (orders.length === 0 && roleName !== DUTY_DESK) return EXIT.OK;
+	// the time in the first line changes the output at every check, so a monitor never skips work
+	return import("./role-entry").then((m) =>
+		m.printWake(roleName, stamp, orders),
+	);
 }

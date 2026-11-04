@@ -99,4 +99,8 @@ export const MIGRATIONS: string[] = [
     body     TEXT NOT NULL,
     PRIMARY KEY (precinct, kind, number, id));
   `,
+	`
+  ALTER TABLE ticks ADD COLUMN dispatch INTEGER;
+  ALTER TABLE ticks ADD COLUMN parts TEXT;
+  `,
 ];

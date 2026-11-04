@@ -174,13 +174,13 @@ The duty desk runs first.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes the oldest open order of its role with `bin/journal dispatch take`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
+Each role then starts on its own clock. It takes the oldest open order of its role, with `bin/journal dispatch take` or with the order id of its input and `bin/journal tick start --order`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Two steps wait for a person: the vote on the spec and the review of the pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
-Every tick starts with the same checks. It syncs the law after a plugin update, then checks the journal schema, the law commit and its cleanliness, and the trusted login. A mismatch ends the tick with a `stopped-*` outcome.
+Every tick starts with the same checks. It syncs the law after a plugin update, then checks the journal schema, the law commit and its cleanliness, and the trusted login. A mismatch ends the tick with a `stopped-*` outcome. With `tick start --order`, the journal checks the trusted login and the alarms itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
@@ -190,15 +190,18 @@ The assembly creates one scheduled job per role. It offers three plans: every da
 
 The duty desk starts first. The other roles start 15 to 135 minutes later. Late stages run first, because they finish cases already started. Patrol runs last, because it starts new ones.
 
-### Run gates
+### The role entry
 
-A run gate skips a session that has nothing to do. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
+The role entry tells a harness whether a role has work. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
 
-- The journal prints `idle` when the role has no order it can take.
-- Otherwise it prints one `order <id>` line per takeable order and an `at <time>` line.
-- When the output matches the last run, the harness skips the session. Only `idle` can match, so a role with an order always runs.
+- With no order the role can take, the journal prints nothing. A harness that can skip the model on empty output skips the session.
+- With work, it prints the first part of the role's input: the law sections the role reads at the start, the harness section and the takeable orders. The first line carries the check time, so the output changes at every check.
 
-The first run of a gated role always starts a session. A gate check counts as activity for the `role-silent` alarm. The duty desk takes no order and never gets a gate. The assembly writes the gates. See [the journal](journal.md).
+The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
+
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case: the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the department page and the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+
+An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
 ## What reaches the developer
 
@@ -212,7 +215,7 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 | :-- | :-- |
 | `order-untaken` | An order stays open longer than the larger of 48 hours and the role's interval plus 24 hours. A taken order adds 24 hours. |
 | `tick-hung` | A tick has no end record 2 hours after its start. |
-| `role-silent` | A role that ended a tick before shows no tick start and no gate check for three intervals. |
+| `role-silent` | A role that ended a tick before shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
 | `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. |

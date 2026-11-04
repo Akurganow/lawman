@@ -30,7 +30,8 @@ export type Spec = {
 export const T = (hour: number) =>
 	`2026-10-14T${String(hour).padStart(2, "0")}:00:00Z`;
 
-export function put(specs: Record<number, Spec>, precinct = "main") {
+// the issues form that sync reads, for the given issues
+export function issuesJson(specs: Record<number, Spec>): string {
 	const data = Object.entries(specs).map(([n, s]) => ({
 		number: Number(n),
 		state: s.state ?? "OPEN",
@@ -50,10 +51,14 @@ export function put(specs: Record<number, Spec>, precinct = "main") {
 			}),
 		),
 	}));
+	return JSON.stringify(issuesForm(data, [TRUSTED]));
+}
+
+export function put(specs: Record<number, Spec>, precinct = "main") {
 	const r = call(
 		BASE,
 		["sync", precinct, "--author", TRUSTED],
-		JSON.stringify(issuesForm(data, [TRUSTED])),
+		issuesJson(specs),
 	);
 	expect(r.code).toBe(0);
 }
