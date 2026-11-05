@@ -2,28 +2,103 @@
 
 The journal is the memory of an installation. It is one program on Bun with SQLite. It keeps the precincts, the orders, the ticks, the alarms and a cache of each tracker, with the cleaned texts of its issues, pull requests and comments. Every role asks it what to do next and records what it did.
 
-The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool of its own. The only programs it starts are your commands in `configs/` and `shared/` beside its database. See [commands of the installation and the precincts](#commands-of-the-installation-and-the-precincts). Without a command, a role hands it host data on standard input, in the input forms that `journal form` prints.
+The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool of its own. The only programs it starts are your commands in `configs/` and `shared/` beside its database, and, at an update, the new binary of a release after the checks of [the update](#updates). See [commands of the installation and the precincts](#commands-of-the-installation-and-the-precincts). Without a command, a role hands it host data on standard input, in the input forms that `journal form` prints.
 
 ## Where it comes from
 
 The program is compiled to a binary per platform. A release tag builds four targets, signs the macOS binaries ad hoc, attests the artifacts and publishes checksums. The assets are named `journal-bun-<os>-<arch>`, with `x64` or `arm64` as the architecture. Beside each binary the release publishes its provenance file, `journal-bun-<os>-<arch>.sigstore.json`. The checksum file is `SHA256SUMS`.
 
-The assembly downloads the binary of the release that matches your plugin. It checks the checksum, moves the file to `bin/journal` and records its SHA-256 in `config.yaml`. See [configuration](configuration.md).
+At install the assembly downloads the binary of the release that matches your plugin. It checks the checksum, moves the file to `bin/journal` and records its SHA-256 in `config.yaml`. At an update the journal gets the new binary itself, as [Updates](#updates) says. See [configuration](configuration.md).
 
-The signature in the provenance file is checked when the host notes name a verifier. The verifier confirms that the release workflow of Lawman's repository signed the file and built it from the commit of the law folder. The assembly finds a Sigstore verifier with you at install.
+A verifier checks the signature in the provenance file. At an update that is your `verify` command in `shared/`. Without that command, the role uses the verifier that the host notes name. The verifier confirms that the release workflow of Lawman's repository signed the file and built it from the commit of the law folder. The assembly finds a Sigstore verifier with you at install.
 
-A declined verifier leaves only the checksum from the same release. That checksum proves no origin. You can turn the check on later. The assembly offers it at each start when it finds a verifier on this machine, and the menu item "Host" runs the part again.
+A declined verifier leaves only the checksum from the same release. That checksum proves no origin. An update accepts the checksum alone only when `shared/` has no `verify` command. A `verify` command always runs, whatever the host notes say. You can turn the check on later. The assembly offers it at each start when it finds a verifier on this machine, and the menu item "Host" runs the part again.
 
 The database file `journal.sqlite` sits in the installation directory, next to `bin/`. The binary applies its schema migrations when it opens the file. A database newer than the binary is refused with exit code 6.
 
 ## Updates
 
-You update the plugin with your harness. The law then moves ahead of the binary. The next tick of any role completes the update.
+You update the plugin with your harness. The law then moves ahead of the binary. The next tick of any role completes the update. The role runs `journal law-update <role>`, and the journal does the work. The journal gets the release files, checks the checksum itself, checks the signature with the verifier you chose and runs the new file.
 
-- The role compares the commit of the law folder with `law_commit` in `config.yaml`.
-- It downloads the journal asset, its provenance file and `SHA256SUMS` from the release of the tag that the commit carries.
-- It checks the checksum. It checks the signature too when the host notes name a verifier.
-- It runs the `law-sync` command of the new file.
+Each call of `law-update` is one pass over these steps. The pass ends at the first step that gives a line to print.
+
+1. It reads `law_commit` and `release_repo` from `config.yaml`. When the file or a key cannot be read, it prints `law current`.
+2. It gets the facts of the law folder: the revision, whether the folder holds a local change, and the release tag of the revision. Your `law-version` command gives them. Without that command, the role reads them and answers with options.
+3. It checks the revision and `law_commit` against 40 lowercase hexadecimal digits. When the two are equal, it prints `law current`.
+4. It checks `release_repo` against its class: `<owner>/<repo>`, with letters, digits, `.`, `_` and `-`, neither part `.` or `..`, and no `-` at the start. A local change stops the pass. So does a revision with no release tag. The tag must hold letters, digits, `.`, `_` and `-`, must not be `.` or `..` and must not start with `-`.
+5. It names the asset `journal-bun-<os>-<arch>` for the platform it runs on. The release builds `darwin` and `linux`, with `x64` or `arm64`. Another platform stops the pass.
+6. It gets the release files into the folder `runs/sync-<role>-<first seven characters of the revision>` of the installation. Your `release` command does it. Without that command, the role does it.
+7. It checks that the asset, its provenance file and `SHA256SUMS` are plain files. A link or a folder in their place counts as missing.
+8. It checks the checksum of the asset itself. `SHA256SUMS` needs exactly one line for the asset, with a hash of 64 lowercase hexadecimal digits.
+9. It checks the signature. Your `verify` command does it. Without that command, the role does it.
+10. It makes the asset executable and runs `<asset> law-sync --tag <tag> --commit <revision> --installation <installation folder>`. The new file swaps itself over `bin/journal`. The journal keeps the `ALARM contract-changed` lines and the line `synced <tag>` from its output and drops the rest.
+
+The command opens no database and writes no tick, because the tick does not exist yet. It writes nothing into the law folder. It changes neither `bin/journal` nor `config.yaml`: only the `law-sync` of the checked file does. It prints fixed lines and values that passed their classes. It never prints a word of the output of your commands. One exception: after the character layer, it prints the `ALARM contract-changed` lines and the first line of the error output of the new binary's `law-sync`.
+
+After a stop at step 6 or later, the journal removes the folder of the release. A failed file operation in these steps is a stop too, never exit 1: the folder cannot be removed or made, a release file cannot be read, or the asset cannot be made executable. After success the folder stays.
+
+### What `law-update` prints
+
+| Line | Meaning |
+| :-- | :-- |
+| `law current` | There is nothing to update. |
+| `self law-version` | The role reads the revision, the local change and the release tag of the law folder. |
+| `self release <repo> <tag> <folder> <asset>` | The role puts the asset, its provenance file and `SHA256SUMS` of that release into the folder, which exists. `<folder>` is a path relative to the installation folder, and `<asset>` is a file name. |
+| `self verify <asset> <provenance> <repo> <commit>` | The role checks the signature of the asset against the provenance file. `<asset>` and `<provenance>` are paths relative to the installation folder. The journal already checked the checksum. |
+| `ALARM …`, then `synced <tag>` | The update is done. |
+| `stop <token> <reason>` | The update stopped. |
+
+A stop is an answer and exits 0. A non-zero exit means the command itself failed. The role answers a stop with the token, a colon and the reason, and ends. The next tick tries again.
+
+The paths of the lines `self release` and `self verify` are relative to the installation folder, so no field holds a space. The commands `release` and `verify` still get absolute paths. After a `self` line the role does the step and calls the command again. Each call starts at the first step, so it carries every answer given so far. The command keeps no state between calls, except the folder of the release.
+
+```
+journal law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
+```
+
+| Option | Answers the line | Value |
+| :-- | :-- | :-- |
+| `--revision` | `self law-version` | The revision of the law folder, or `unreadable` when it cannot be read. |
+| `--state` | `self law-version` | `clean` or `changed`. It is required with a revision. |
+| `--tag` | `self law-version` | The release tag of the revision. Leave it out when the revision has none. |
+| `--release` | `self release` | `done`, `missing` when the release or a file is absent, or `failed`. |
+| `--verify` | `self verify` | `passed`, `failed`, `not-run`, `declined` or `unnamed`. |
+
+- An answer counts only while the file of its operation is absent. A `verify` command always runs, so `passed` or `declined` does not skip it.
+- With a `--release` answer while `release` has no file, or a `--verify` answer while `verify` has no file, the pass does not call `release` and does not build the folder. It checks the files that already lie in the folder, so the answer about the signature covers the bytes that run later.
+- `declined` takes the checksum alone. `unnamed` means the host notes name neither a verifier nor a refusal.
+- A usage error exits 1. These are usage errors: an unknown option, a repeated option, an option with no value, a word outside the list, `--state` or `--tag` without `--revision`, `--revision` with a revision but no `--state`, and `--revision unreadable` with `--state` or `--tag`. A revision or a tag outside its class is a stop, not a usage error.
+
+### The stops
+
+Every stop carries the token `stopped-law-drift`, except the local change, which carries `stopped-dirty-law`. The list of reasons stays open: a later release adds a reason with the path that mends it.
+
+A law folder with a local change at `law_commit` is no stop here: `law-update` prints `law current`, because the revision equals `law_commit`. The tick start then stops with `stopped-dirty-law`.
+
+| Reason | When | What you do |
+| :-- | :-- | :-- |
+| the law-version command failed | `shared/law-version` did not start, exited non-zero or printed outside its form | Check three places: the execute permission of the file, its exit code and its output form. See [the law-version file](#the-law-version-file). |
+| the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md | No `law-version` command exists, and the role could not read the revision of the law folder | Write the `law-version` file in `shared/`, as [the law-version file](#the-law-version-file) says. |
+| a value is not safe | The revision is empty or is not 40 lowercase hexadecimal digits, or `law_commit` is not, or `release_repo` is outside its class | Check the `revision=` line of the command, and `law_commit` and `release_repo` in `config.yaml`. |
+| the law folder has a local change | The folder holds a change that its release does not | Restore the law folder to its release, or update the plugin again with your harness. |
+| the law is not on a release | The revision carries no release tag | Move the plugin to a released version, or make the `law-version` command print the tag of the revision. |
+| the tag is not safe | The tag is outside its class | Use a release tag of letters, digits, `.`, `_` and `-`, which does not start with `-`. |
+| no binary for this platform | The release builds no journal for this system or architecture | Run the installation on `darwin` or `linux` with `x64` or `arm64`. |
+| binary not ready | The release, or its asset, provenance file or `SHA256SUMS`, is missing, or a file is a link or a folder, or the journal cannot read a release file. A `release` command that exits 2 says the same. | Wait until the release lists the binary, its provenance file and `SHA256SUMS`. If the stop repeats, check that the journal can read the files in the release folder. The next tick tries again. |
+| the release download failed | The `release` command did not start, or ended with a failure other than 2, or the journal cannot remove or make the release folder | Check the execute permission and the exit code of `shared/release`, the network, and that the journal can write the folder `runs/` of the installation. |
+| the checksum failed | The asset does not match `SHA256SUMS`, or the file has no line or several lines for the asset | Do not run the file. The next tick downloads it again. If the stop repeats, open an issue in Lawman's repository. |
+| the check could not run | The `verify` command did not start, or the role could not run the verifier | Check the execute permission of `shared/verify`, or install the verifier that the host notes name. |
+| the provenance check failed | The signature check did not confirm the file | Do not run the file. If the stop repeats, open an issue in Lawman's repository. |
+| the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal | Run the assembly and its part Host, then name a verifier or decline one. |
+| the new binary did not start | The asset did not start on this machine, or the journal cannot make it executable | Check that the machine matches the platform of the asset, and that the journal may change the mode of the files in the release folder. The installation stays as it was. |
+| the new binary did not confirm the update | The new file exited 0 and printed no `synced <tag>` line | `bin/journal` may already hold the new file. Open an issue in Lawman's repository. |
+| the first line of the new binary's error output, or the new binary failed | The new file refused the update, for example because the skills ask for a newer schema than it has | Read the reason. Before the swap `law-sync` only reads, so the installation stays as it was. |
+
+The start of every tick checks the law folder too, and it has one more reason. See [the check of the law folder](#the-check-of-the-law-folder).
+
+| Reason | When | What you do |
+| :-- | :-- | :-- |
+| the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update prints `law current` and cannot mend it: run the assembly. |
 
 `law-sync` renames the new binary over `bin/journal` and rewrites the sync keys of `config.yaml`. Before the swap it only reads, so a failure leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
 
@@ -37,12 +112,14 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 
 - `--version`: prints the version of the binary.
 - `probe`: opens the database, applies pending migrations, tries a write that it rolls back, and prints the version, the schema number and the journal mode. `--schema N` exits 6 when the binary is older than schema N.
-- `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
+- `law-sync`: the checked new binary runs it to swap itself over `bin/journal` and rewrite the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line. It does not touch the tracker cache, which `sync` writes.
+- `law-update`: makes one pass of the law update and prints one line from [the table](#what-law-update-prints). It runs the checks, and the `law-sync` of the checked file changes the binary and the keys. See [Updates](#updates).
 
 ```
-journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
+journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
+journal law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
 ```
 
 ### Precincts and roles
@@ -79,7 +156,7 @@ journal status
 
 ### The tracker cache
 
-- `sync`: replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. A cleaning library that fails gives exit 1 and leaves the cache as it was.
+- `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. A cleaning library that fails gives exit 1 and leaves the cache as it was.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
@@ -189,11 +266,11 @@ A command is an executable file named after its operation. No file means the ope
 - A missing file at a revision has no mark of its own. Whoever reads a file takes the list of `files` first.
 - `fetch` updates the local clone of the precinct. That is not a write to the host.
 
-The installation has the operations `release` and `verify`. Their forms come with the update of the binary.
+The installation has three operations: `release`, `verify` and `law-version`. Their files sit in `shared/`. The update of the binary uses them. [The operations of the installation](#the-operations-of-the-installation) give their forms.
 
 ### The commands
 
-- `commands`: prints `folder <folder>`, the folder the journal found, then one line per operation: `<operation> command` when the file is there, `<operation> empty` otherwise. Without a precinct it lists the operations of the installation, with one the operations of the precinct. The `empty` lines are the steps that the role does itself. A precinct with no folder in `configs/` has every operation empty.
+- `commands`: prints `folder <folder>`, the folder the journal found, then one line per operation: `<operation> command` when the file is there, `<operation> empty` otherwise. Without a precinct it lists the operations of the installation, in the order `release`, `verify`, `law-version`. With a precinct it lists the operations of the precinct. The `empty` lines are the steps that the role does itself. A precinct with no folder in `configs/` has every operation empty.
 - `run`: runs one operation of a precinct, as the role's entry runs it.
   - `issues` and `pulls` take `--author <login>`, and `issues` takes `--reset`, as `sync` does. They update the cache by the same path and print the same counts as `sync`.
   - `fetch` prints `revision=<revision>`.
@@ -209,6 +286,47 @@ A wrong number of arguments, an unknown operation or a precinct that the journal
 journal commands [<precinct>]
 journal run <precinct> <fetch|identity|files <revision>|file <revision> <path>|decider <issue|pull> <number>|issues --author <login> [--reset]|pulls --author <login>>
 ```
+
+### The operations of the installation
+
+The update runs these operations through `shared/`. Each runs as [How a command runs](#how-a-command-runs) says, with no time limit. The journal reads the exit code of each: a number, or none when a signal ended the file. It reads the output of `law-version` only. It prints the output of none of them.
+
+An operation with a file is ready, and the role does not do its step. A ready operation that fails stops the update. An operation without a file is a step that the role does itself.
+
+#### `release`
+
+- Arguments, in order: `release_repo`, the tag, the destination folder and the asset name.
+- The destination folder is `runs/sync-<role>-<first seven characters of the revision>` in the installation, as an absolute path. The journal removes an old folder of that name and creates it empty. It builds the path from a role and a revision that passed their classes.
+- The asset name is `journal-bun-<os>-<arch>` for the platform that the journal runs on.
+- Result: the folder holds three plain files of the release of that tag. They are the asset, `<asset>.sigstore.json` and `SHA256SUMS`.
+- Exit 0: done. Exit 2: the release or a file does not exist, which stops the update with "binary not ready". Any other exit, or an end by signal: a failure, which stops it with "the release download failed".
+- The journal passes no credential. The download needs no account on the host of the release.
+
+#### `verify`
+
+- Arguments, in order: the absolute path of the asset, the absolute path of its provenance file, `release_repo` and the commit. The commit is the revision of the law folder, the commit that the tag names. Both paths lie in the folder of the release.
+- Result: exit 0 only when the verifier confirmed three facts. The statement names the digest of the file itself. The release workflow of `release_repo` signed it. That workflow built the file from the commit it got. The verifier takes its root of trust from the signature system and never from the release.
+- Exit 0: confirmed. Any other exit, or an end by signal: not confirmed, which stops the update with "the provenance check failed". A file that does not start stops it with "the check could not run".
+
+#### The law-version file
+
+- The file is `law-version` in `shared/`. It must be executable. Put it there when the law folder has no history to read, for example when your harness puts the plugin there as plain files.
+- One argument: the absolute path of the law folder, which is `lawman` in the installation.
+- The command prints exactly three lines in this order, and each line ends in `\n` or `\r\n`:
+
+```
+revision=<revision>
+changed=<yes|no>
+tag=<tag>
+```
+
+- `revision` is the commit of the law folder, the same kind of value as `law_commit`: 40 lowercase hexadecimal digits.
+- `changed` is `yes` when the law folder holds a change that its release does not, and `no` otherwise.
+- `tag` is the release tag of the revision, the tag that names a release with assets. It is empty, as `tag=`, when the revision has no release tag. The word `none` is an ordinary tag.
+- The command exits 0.
+- The output is in form when it is valid UTF-8 and holds these three lines, in this order, with no other line. A value is any text on one line, and a value may be empty. The value of `changed` is `yes` or `no` only. A file that does not start, a non-zero exit, a signal or an output outside the form stops the update with "the law-version command failed".
+- A value in form still passes its class. A revision outside its class, an empty one included, stops the update with "a value is not safe". A tag outside its class stops it with "the tag is not safe". An empty tag means no tag. The journal judges nothing more about the tag. The step that gets the release judges it: with no release it says "binary not ready".
+- With the file in `shared/`, the update and the check at the start of a tick need no step of the role for the facts of the law folder. Without it, the role reads the revision and the state itself.
 
 ### The classes of the arguments
 
@@ -286,7 +404,7 @@ A section is its heading and everything up to the next heading of the same or a 
 | executor | `LAW.md`, `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
 | duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms and their repetition, and Tick outcomes of `LAW.md`, and the intro and the sections Sync the law, Sync the tracker and Sync the pull requests of `tick.md` |
 
-`LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick.
+`LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick. The section "Sync the law with an older journal" belongs to no group of a role. No input prints it. A role reads it from the file when it finds an older journal, as [the lines of the input](#the-lines-of-the-input) say.
 
 A file, a section, `config.yaml` or the key `harness` that the journal cannot read stands as a self line in place of its block. `<harness>` stays as it is in that line when no harness is named. So a binary and a law of different releases never stop a role.
 
@@ -297,18 +415,19 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 1. The order must belong to the role, be open and be takeable. Otherwise the journal prints `order <id> untakeable` alone and starts no tick. Otherwise it starts the tick.
 2. It computes the alarms and prints each `ALARM` line of a new alarm.
 3. It reads `trusted_login` from `config.yaml`.
-4. It runs the operation `identity` and compares the login with `trusted_login`, ignoring ASCII case.
-5. It takes the order in one transaction, after it checks again that the order is free. It records the precinct, the department and the order in the tick, and prints the order line.
-6. It checks the fields of the order. An issue role needs an issue number, the spec writer and the executor a pull request number. A patrol order has a department and no issue number.
-7. It runs `fetch`.
-8. It runs `issues` and `pulls` as the role needs them, with `trusted_login` as the author. They update the cache by the same path as `run`.
-9. When `fetch`, `issues` or `pulls` gave a self line, the start prints its lines and stops. The role does those steps itself and then runs `tick input <tick id>`.
-10. It reads the stage: `case` for the issue roles but the response unit, `intake` for the response unit and `pull` for the spec writer and the executor. The line prints as the command prints it.
-11. For the roles that read a constitution, it lists the files at the revision and reads `LAWMAN.md`. The check of `lint-page constitution` prints in a `lint` fence, the text in a `constitution` fence.
+4. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says.
+5. It runs the operation `identity` and compares the login with `trusted_login`, ignoring ASCII case.
+6. It takes the order in one transaction, after it checks again that the order is free. It records the precinct, the department and the order in the tick, and prints the order line.
+7. It checks the fields of the order. An issue role needs an issue number, the spec writer and the executor a pull request number. A patrol order has a department and no issue number.
+8. It runs `fetch`.
+9. It runs `issues` and `pulls` as the role needs them, with `trusted_login` as the author. They update the cache by the same path as `run`.
+10. When `fetch`, `issues` or `pulls` gave a self line, the start prints its lines and stops. The role does those steps itself and then runs `tick input <tick id>`.
+11. It reads the stage: `case` for the issue roles but the response unit, `intake` for the response unit and `pull` for the spec writer and the executor. The line prints as the command prints it.
+12. For the roles that read a constitution, it lists the files at the revision and reads `LAWMAN.md`. The check of `lint-page constitution` prints in a `lint` fence, the text in a `constitution` fence.
     For the roles that get precedents, it reads each direct `.md` file of `.lawman/precedents/` from the same list. It prints the line `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and the whole file in a `precedent` fence, by name. An empty or missing folder prints `precedents none`, and so does a folder where no file serves the role's department. A value outside its class prints `-`. A department list outside its class reads as all departments. The prosecutor, the defender, the court, the spec writer and the executor get all precedents. Investigation and the response unit get those of the case's department. Patrol gets those of the visit's department. A department `-` gets all precedents. The clerk gets none.
-12. For patrol, the defender and the court, it resolves the department page. Patrol takes the department from the order, the defender and the court from the stage. `-` means no page. The places are `.lawman/departments/<d>.md` of the precinct, `departments/<d>.md` of the installation and the page of the law, in that order. A failed check never falls through. The line `department <d> place=<1|2|3>` stands before the fences. The check prints in a `lint` fence, the page in a `department` fence.
-13. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field.
-14. The self lines come last.
+13. For patrol, the defender and the court, it resolves the department page. Patrol takes the department from the order, the defender and the court from the stage. `-` means no page. The places are `.lawman/departments/<d>.md` of the precinct, `departments/<d>.md` of the installation and the page of the law, in that order. A failed check never falls through. The line `department <d> place=<1|2|3>` stands before the fences. The check prints in a `lint` fence, the page in a `department` fence.
+14. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field.
+15. The self lines come last.
 
 A failed or empty operation prints the lines of `run` and a self line, and the start goes on. Only a usage error and a broken database exit non-zero.
 
@@ -318,7 +437,8 @@ The journal ends the tick itself when the outcome follows from what it read. Bef
 
 | Outcome | Report |
 | :-- | :-- |
-| `failed` | `config.yaml is missing`, `config.yaml has no trusted_login` (before the order is taken) |
+| `failed` | `config.yaml is missing`, `config.yaml has no trusted_login`, `config.yaml has no law_commit` (before the order is taken) |
+| `stopped-law-drift`, `stopped-dirty-law` | The reasons of [the check of the law folder](#the-check-of-the-law-folder) (before the order is taken) |
 | `stopped-identity-changed` | `Host identity changed: <login>` (before the order is taken) |
 | `silent` | `No order.` when another run took the order first |
 | `failed` | `The order has no issue number`, `The order has no pull request number`, `The patrol order has an issue number or no department`, `The stage check failed` |
@@ -331,6 +451,22 @@ The stale rules of the issue roles and the pull request roles are the rules of t
 
 An ended tick prints one part, `part 1 of 1`, whatever its size. Its last lines are `ended <outcome>` and `report <report>`. It prints no `title`, `constitution` or `department` fence and no case text. A constitution or department outcome prints only its `lint` fence. The role then only answers.
 
+### The check of the law folder
+
+The start of every tick checks the law folder against `law_commit` before it reads the host. A role does it before the identity check and before it takes the order. The duty desk does it before it visits a precinct.
+
+1. A `law_commit` that cannot be read ends the tick `failed`, with the report `config.yaml has no law_commit`.
+2. With a `law-version` command, the journal runs it. A command that fails ends the tick `stopped-law-drift` with the report `the law-version command failed`.
+3. The journal then judges the facts in this order. Each report is a fixed text without a value.
+   - A revision or a `law_commit` outside the 40 lowercase hexadecimal digits ends the tick `stopped-law-drift` with the report `a value is not safe`.
+   - A local change ends it `stopped-dirty-law` with the report `the law folder has a local change`.
+   - A revision that differs from `law_commit` ends it `stopped-law-drift` with the report `the law folder is not at law_commit`.
+4. Without the command, the start prints the line `self law-version` and goes on. The role reads the revision and the local change of the law folder itself, as soon as it has read its group. It compares the revision with `law_commit` in the same order of judgement. Its stop ends the tick and the order with the same outcome.
+
+The check ignores the tag. The journal writes the end of the tick itself. It takes no order for a stopped role, as for `stopped-identity-changed`. A stopped duty desk reads no host and writes no order.
+
+The journal records the stop of the duty desk as an ended tick, and the answer of the duty desk reaches you as any stop of the duty desk does. Three such stops in a row raise the alarm `tick-failing`.
+
 ### The duty desk tick
 
 `journal tick start --role duty-desk` starts the tick of the duty desk. It takes no order and no `--precinct`. The journal does the work of the tick, and the duty desk model answers with what the journal prints.
@@ -339,22 +475,23 @@ The start runs these steps in order.
 
 1. It writes the tick, computes the alarms and repeats the open alarms that nobody mentioned for a day. The `ALARM` lines print first.
 2. It reads `config.yaml`. A missing file or a missing `trusted_login` ends the tick `failed`.
-3. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
-4. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open, and nothing was written.
-5. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
-6. It closes the stale orders of those precincts. An order closes when nobody holds it, or its claim has run out, and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
-7. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get an order for every case or pull request that the cache shows as due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
-8. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers.
+3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says. A stop ends the tick here, before any precinct is read.
+4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
+5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open and has written no order. On the path of `self law-version` the start has already run the host sync of item 4, so the issue cache may hold what it read.
+6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
+7. It closes the stale orders of those precincts. An order closes when nobody holds it, or its claim has run out, and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
+8. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get an order for every case or pull request that the cache shows as due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
+9. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers.
 
 The output is one part, framed as the tick group. It holds the `ALARM` lines, the `order` lines of the orders written, `ended <outcome>` and the lines `report <line>`. A start that stopped on self lines holds the `ALARM` lines and the self lines.
 
-`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 5 to 8 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id>`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it.
+`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 6 to 9 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id>`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it. It trusts the duty desk on the law folder too, and checks nothing of it again.
 
 A duty desk tick that the model ends itself uses `tick end <tick id> --outcome <token>`, as the skill says.
 
 ### The lines of the input
 
-`<form>` is the version of the input's form, `1` in this release. A role tells the output of an older binary by it. The fields of a line are separated by one space.
+`<form>` is the version of the input's form, `1` in this release. A role tells the output of an older binary by it. A binary of an older release prints no line that starts with `lawman input`. Without work it prints the one line `idle`. With work it prints a line `order <id>` for each order and a last line `at <time>`. So an output that is not empty, and whose first line does not start with `lawman input`, comes from an older binary. The role then updates the journal by the section "Sync the law with an older journal" of `tick.md` and takes its input again. An empty output still means no work. The fields of a line are separated by one space.
 
 The frame of a part:
 
@@ -386,10 +523,13 @@ The tick group:
 
 ### Self steps
 
-A line `self <step>` names a step that the journal could not do. The role does it itself. In the role group the line stands in place of its block. In the tick group the lines come last. The list stays open: a later release adds a step with each block it adds.
+A line `self <step>` names a step that the journal could not do. The role does it itself. In the role group the line stands in place of its block. In the tick group the lines come last, and `self law-version` stands first among them. The list stays open: a later release adds a step with each block it adds.
+
+The line `self law-version` of the tick group is not the line that `law-update` prints. The first belongs to the check at the start of a tick, and its stop ends the tick. The second asks for the facts of an update, and the facts that differ from `law_commit` start the update, as [Updates](#updates) says.
 
 | Step | What the role does |
 | :-- | :-- |
+| `law-version` | the check of the law folder: reads the revision and the local change, and compares the revision with `law_commit` |
 | `identity` | item 5 of step 0 of its skill, the identity check |
 | `fetch` | the section "Fetch the precinct" of `tick.md` |
 | `issues` | the section "Sync the tracker" |
@@ -501,7 +641,7 @@ When no record can be shown, the journal prints `catalog none reason=<reason>`:
 | 7 | Body check rejection |
 | 8 | Page check rejection |
 
-Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
+`law-update` adds no code. A stop is an answer and exits 0, and a usage error exits 1. Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
 
 A role treats exit 2 as silence. Skills cite the other codes by number.
 
@@ -512,7 +652,7 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [form.ts](../journal/src/form.ts): the input forms and their examples.
 - [migrations.ts](../journal/src/migrations.ts): the schema.
 - [args.ts](../journal/src/args.ts): the classes of the arguments.
-- [launch.ts](../journal/src/launch.ts): the places of the commands and their start.
+- [launch.ts](../journal/src/launch.ts): the places of the commands and their start, and the three operations of the installation.
 - [operations.ts](../journal/src/operations.ts): `commands`, `run`, the forms of the output and the reasons.
 - [fence.ts](../journal/src/fence.ts): the fence.
 - [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache and their print.
@@ -520,7 +660,9 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [input-parts.ts](../journal/src/input-parts.ts): the blocks, the parts and their frame.
 - [role-entry.ts](../journal/src/role-entry.ts): the role group.
 - [tick-start.ts](../journal/src/tick-start.ts): the start of a tick with an order and the tick group.
-- [law-sync.ts](../journal/src/law-sync.ts): the update command.
+- [law-sync.ts](../journal/src/law-sync.ts): the command that the new binary runs to swap itself in.
+- [law-update.ts](../journal/src/law-update.ts): the pass of the law update and its stops.
+- [law-version.ts](../journal/src/law-version.ts): the form of the `law-version` output and the check of the law folder at the start of a tick.
 - [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
 - [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.
 - [catalog-entries.ts](../journal/src/catalog-entries.ts): the list form, the value classes and the `Source:` line.

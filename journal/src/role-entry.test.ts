@@ -255,6 +255,15 @@ describe("the role group", () => {
 		);
 	});
 
+	test.each(ROLE_NAMES)(
+		"%s gets no heading of the section for an older journal",
+		(role) => {
+			if (role !== "duty-desk") orderFor(role);
+			const text = wake(role).out;
+			expect(text).not.toContain("## Sync the law with an older journal");
+		},
+	);
+
 	test("the duty desk always has work and no order block", () => {
 		seed((d) => order(d, "main", "duty-desk"));
 		const r = wake("duty-desk");
@@ -428,7 +437,14 @@ describe("no work", () => {
 	test("runs no command and changes only the role's check time and check count", () => {
 		installation();
 		for (const place of [configs("main"), shared()])
-			for (const operation of ["fetch", "identity", "issues", "release"])
+			for (const operation of [
+				"fetch",
+				"identity",
+				"issues",
+				"release",
+				"verify",
+				"law-version",
+			])
 				command(place, operation, recording("true"));
 		seed((d) =>
 			d.run(

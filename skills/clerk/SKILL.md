@@ -63,7 +63,7 @@ A value that reaches a command or a comment passes its check first. A failed che
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. That covers the check of the law folder in item 5. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -71,7 +71,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role clerk
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
    Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -92,9 +92,8 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=clerk tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
-4. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-5. Check the law folder. Read the commit that it holds and whether it has a local change. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
-6. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`.
+5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```

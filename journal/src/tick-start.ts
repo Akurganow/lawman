@@ -19,6 +19,7 @@ import { inputOf, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
+import { lawCheck } from "./law-version";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
@@ -364,6 +365,9 @@ export async function tickStart(args: string[]): Promise<number> {
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
 		return ended(t, o, "failed", "config.yaml has no trusted_login", null);
+	const law = await lawCheck(config);
+	if (law === "self") o.selfs.push("law-version");
+	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);
 	const p = order.precinct;
 	const who = await operate(p, "identity", call([]));
 	o.add(...who.blocks);

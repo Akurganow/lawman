@@ -52,7 +52,7 @@ CI runs on every push and pull request, in six jobs.
 
 ## Release
 
-`main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag.
+`main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag. The tag comes from the plugin's clone, or from the installation's `law-version` command.
 
 Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version, before 1.0.0 too. A breaking change carries `!` after the type or scope, or a `BREAKING CHANGE` footer. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
 
@@ -77,7 +77,7 @@ Large work can gather on a working branch, and its pull requests merge into that
 - The beta tag starts the release workflow. It builds, tests and attests the same files as for a version tag and publishes them as a pre-release.
 - On a beta tag the workflow does not check `journal --version` against the tag, and it takes no notes from `CHANGELOG.md`.
 - A beta changes no file of the branch. The manifests keep the old version, so `journal --version` of a beta prints that version, and `CHANGELOG.md` gets no section.
-- Install the beta at the commit of its tag, then fetch the tag into the plugin's clone by hand. The install and the law sync need a release tag on that commit.
+- Install the beta at the commit of its tag, then fetch the tag into the plugin's clone by hand, or have the installation's `law-version` command report it. The install and the law sync need a release tag on that commit.
 - The merge of the working branch into `main` is the release. The bump counts from the last version tag, so the changelog entry lists every change since that release.
 
 ## Write law and skill text

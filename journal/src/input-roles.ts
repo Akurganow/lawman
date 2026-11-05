@@ -34,6 +34,7 @@ export const TICK_ORDER = [
 	INTRO,
 	"One end",
 	"Sync the law",
+	"Sync the law with an older journal",
 	"Working rules",
 	"Reading without a tree",
 	"Instructions and evidence",

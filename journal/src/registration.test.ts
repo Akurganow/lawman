@@ -25,6 +25,7 @@ describe("registration", () => {
 		"catalog",
 		"wake",
 		"law-sync",
+		"law-update",
 		"commands",
 		"run",
 	])("%s is a registered command", (name) => {
@@ -42,6 +43,7 @@ describe("registration", () => {
 			"catalog",
 			"wake",
 			"law-sync",
+			"law-update",
 			"commands",
 			"run",
 		])

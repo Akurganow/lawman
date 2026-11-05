@@ -48,7 +48,7 @@ A precinct's `LAWMAN.md` states what is true of that repository and of no other.
 
 ## Install
 
-Lawman runs inside an agent harness, on that harness's own schedule. You need three things. First, a way to reach the repository host, signed in as the one account every role uses. Second, access to github.com for Lawman's release. Third, a way to verify a Sigstore signature, or your choice to run unverified. The assembly skill finds each with you and sets up the rest.
+Lawman runs inside an agent harness, on that harness's own schedule. You need three things. First, a way to reach the repository host, signed in as the one account every role uses. Second, access to github.com for Lawman's release. Third, a way to verify a Sigstore signature, or your choice to run unverified. The assembly skill finds each with you and sets up the rest. After a plugin update, the journal updates itself with the same checksum and signature checks.
 
 ### Hermes Agent
 

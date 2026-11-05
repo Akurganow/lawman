@@ -13,7 +13,7 @@ import {
 	type Spec,
 	withLead,
 } from "./cases-fixture";
-import { installation, lines } from "./input-test-fixture";
+import { CONFIG, installation, lines } from "./input-test-fixture";
 import {
 	command,
 	configs,
@@ -108,7 +108,7 @@ export function syncBy(name: string, h: Host, clock = BASE, pulls = false) {
 	);
 }
 
-export const CONFIG = `harness: hermes\ntrusted_login: ${TRUSTED}\n`;
+export { CONFIG };
 
 // Precincts by weight, each with a host that has no work. The installation brings the law.
 export function setUp(

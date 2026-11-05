@@ -1,10 +1,29 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { basename, join } from "node:path";
 import { handed, human, put, type Spec, T } from "./cases-fixture";
 import { inprocAsync } from "./inproc";
-import { CONFIG, config, content, lines } from "./input-test-fixture";
-import { command, configs } from "./operations-test-fixture";
+import {
+	CONFIG,
+	config,
+	content,
+	LAW_COMMIT,
+	lawVersion,
+	lines,
+} from "./input-test-fixture";
+import {
+	command,
+	configs,
+	RECORDS,
+	recording,
+	shared,
+} from "./operations-test-fixture";
 import { SPEC } from "./pulls-fixture";
 import {
 	BASE,
@@ -443,6 +462,19 @@ describe("a stale order", () => {
 	});
 });
 
+const DRIFT_REPORT: [string, string] = [
+	"stopped-law-drift",
+	"the law folder is not at law_commit",
+];
+const DIRTY_REPORT: [string, string] = [
+	"stopped-dirty-law",
+	"the law folder has a local change",
+];
+const FAILED_REPORT: [string, string] = [
+	"stopped-law-drift",
+	"the law-version command failed",
+];
+
 type Ending = {
 	name: string;
 	role: string;
@@ -472,6 +504,72 @@ const ENDINGS: Ending[] = [
 		report: "config.yaml has no trusted_login",
 		taken: false,
 	},
+	{
+		name: "a config.yaml without law_commit",
+		role: "investigation",
+		order: { issue: 3 },
+		setup: () => config(`harness: hermes\ntrusted_login: ${TRUSTED}\n`),
+		outcome: "failed",
+		report: "config.yaml has no law_commit",
+		taken: false,
+	},
+	...(
+		[
+			[
+				"a law folder at another commit",
+				() => lawVersion("2".repeat(40)),
+				DRIFT_REPORT,
+			],
+			[
+				"a law folder with a local change",
+				() => lawVersion(LAW_COMMIT, "yes"),
+				DIRTY_REPORT,
+			],
+			[
+				"a law folder at another commit with a local change",
+				() => lawVersion("2".repeat(40), "yes"),
+				DIRTY_REPORT,
+			],
+			[
+				"a revision outside its class",
+				() => lawVersion("A".repeat(40)),
+				["stopped-law-drift", "a value is not safe"],
+			],
+			[
+				"a law_commit outside its class",
+				() => config(CONFIG.replace(LAW_COMMIT, "../x")),
+				["stopped-law-drift", "a value is not safe"],
+			],
+			[
+				"a law-version command that fails",
+				() => command(shared(), "law-version", "exit 1"),
+				FAILED_REPORT,
+			],
+			[
+				"a law-version command that does not start",
+				() => command(shared(), "law-version", "true", 0o644),
+				FAILED_REPORT,
+			],
+			[
+				"a law-version output outside the form",
+				() =>
+					command(
+						shared(),
+						"law-version",
+						`printf 'revision=${LAW_COMMIT}\\nchanged=maybe\\ntag=\\n'`,
+					),
+				FAILED_REPORT,
+			],
+		] as [string, () => void, [string, string]][]
+	).map(([name, setup, [outcome, report]]) => ({
+		name,
+		role: "investigation",
+		order: { issue: 3 },
+		setup,
+		outcome,
+		report,
+		taken: false,
+	})),
 	{
 		name: "another identity",
 		role: "investigation",
@@ -632,6 +730,7 @@ describe("an outcome the journal writes", () => {
 		}
 		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
 		config(CONFIG);
+		lawVersion();
 		CASES.investigation?.setup();
 		expect(start(e.role, 1, later(1)).out).toContain(
 			"\norder 1 main o/main - 3\n",
@@ -719,6 +818,75 @@ describe("an order the start cannot take", () => {
 			expect(skeleton(r.out)).not.toContain("~department");
 		},
 	);
+});
+
+describe("the law folder at the start", () => {
+	test("without a law-version command the role reads the facts: self law-version comes first", () => {
+		setUp();
+		rmSync(join(shared(), "law-version"));
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		const r = start("investigation");
+		const selfs = lines(r.out).filter((l) => l.startsWith("self "));
+		expect(selfs[0]).toBe("self law-version");
+		expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
+		expect(ticks()[0]).toMatchObject({ outcome: null });
+	});
+
+	test("wake, the start and tick input run law-version and nothing else of the installation", () => {
+		setUp();
+		for (const op of ["release", "verify"])
+			command(shared(), op, recording("true"));
+		command(
+			shared(),
+			"law-version",
+			recording(`printf 'revision=${LAW_COMMIT}\\nchanged=no\\ntag=\\n'`),
+		);
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		const records = () =>
+			existsSync(join(shared(), RECORDS))
+				? readFileSync(join(shared(), RECORDS), "utf8")
+						.trim()
+						.split("\n")
+						.map((p) => basename(p))
+				: [];
+		expect(call(BASE, ["wake", "--role", "investigation"]).out).toStartWith(
+			"lawman input ",
+		);
+		expect(records()).toEqual([]);
+		start("investigation");
+		expect(records()).toEqual(["law-version"]);
+		input("1");
+		expect(records()).toEqual(["law-version"]);
+	});
+
+	test.each([
+		["a drift", () => lawVersion("2".repeat(40))],
+		["a local change", () => lawVersion(LAW_COMMIT, "yes")],
+		["a failing law-version", () => command(shared(), "law-version", "exit 1")],
+	])("%s stops the start before any host operation runs", (_name, setup) => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		for (const op of ["identity", "fetch", "issues", "pulls", "files", "file"])
+			command(configs("main"), op, recording("true"));
+		setup();
+		expect(lines(start("investigation").out)).toContainEqual(
+			expect.stringMatching(/^ended stopped-/),
+		);
+		expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
+		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
+	});
+
+	test("a law folder at law_commit with no change starts as before", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		const r = start("investigation");
+		expect(r.out).not.toContain("law-version");
+		expect(r.out).toContain("\norder 1 main o/main - 3\n");
+	});
 });
 
 const OPERATIONS: [string, string, string][] = [

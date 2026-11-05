@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync, rmSync, writeFileSync } from "node:fs";
+import { basename, join } from "node:path";
 import { convicted, human, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
@@ -24,13 +24,20 @@ import {
 	without,
 } from "./duty-desk-fixture";
 import { inprocAsync } from "./inproc";
-import { lines } from "./input-test-fixture";
+import { LAW_COMMIT, lawVersion, lines } from "./input-test-fixture";
 import { intakeWaiting } from "./intake";
-import { command, configs, recording } from "./operations-test-fixture";
+import {
+	command,
+	configs,
+	RECORDS,
+	recording,
+	shared,
+} from "./operations-test-fixture";
 import {
 	BASE,
 	call,
 	dbFile,
+	dir,
 	issuesForm,
 	later,
 	order,
@@ -246,15 +253,28 @@ describe("the walk", () => {
 		expect(reportOf(r.out, "Coverage")).toContain("precincts: alpha, main");
 	});
 
-	test("the start runs no operation that writes: only the six reads start", () => {
+	test("the start runs no operation that writes: only the six reads and law-version start", () => {
 		setUp({ main: 1 });
 		hostOf("main", { ...WORK, record: true });
-		for (const op of ["decider", "release", "verify"])
+		for (const op of ["decider", "release", "verify"]) {
 			command(configs("main"), op, recording("true"));
+			command(shared(), op, recording("true"));
+		}
+		command(
+			shared(),
+			"law-version",
+			recording(`printf 'revision=${LAW_COMMIT}\\nchanged=no\\ntag=\\n'`),
+		);
 		startDesk();
 		expect(new Set(started("main"))).toEqual(
 			new Set(["identity", "issues", "pulls", "fetch", "files", "file"]),
 		);
+		expect(
+			readFileSync(join(shared(), RECORDS), "utf8")
+				.trim()
+				.split("\n")
+				.map((p) => basename(p)),
+		).toEqual(["law-version"]);
 	});
 
 	test("the host is read once per precinct per tick", () => {
@@ -508,6 +528,76 @@ describe("the failures of the start", () => {
 		expect(r.out).toContain(`report ${report}`);
 		expect(ticks()[0]).toMatchObject({ outcome: "failed", report });
 		expect(dispatches()).toEqual([]);
+	});
+
+	test.each([
+		[
+			"a law folder at another commit",
+			() => lawVersion("2".repeat(40)),
+			"stopped-law-drift",
+			"the law folder is not at law_commit",
+		],
+		[
+			"a law folder with a local change",
+			() => lawVersion(LAW_COMMIT, "yes"),
+			"stopped-dirty-law",
+			"the law folder has a local change",
+		],
+		[
+			"a law folder at another commit with a local change",
+			() => lawVersion("2".repeat(40), "yes"),
+			"stopped-dirty-law",
+			"the law folder has a local change",
+		],
+		[
+			"a revision outside its class",
+			() => lawVersion("x"),
+			"stopped-law-drift",
+			"a value is not safe",
+		],
+		[
+			"a law-version command that fails",
+			() => command(shared(), "law-version", "exit 1"),
+			"stopped-law-drift",
+			"the law-version command failed",
+		],
+		[
+			"a config.yaml without law_commit",
+			() =>
+				writeFileSync(join(dir, "config.yaml"), `trusted_login: ${TRUSTED}\n`),
+			"failed",
+			"config.yaml has no law_commit",
+		],
+	] as [string, () => void, string, string][])(
+		"%s ends the tick before the walk",
+		(_name, setup, outcome, report) => {
+			setUp({ main: 1 });
+			hostOf("main", { ...WORK, record: true });
+			setup();
+			const r = startDesk();
+			expect(lines(r.out)).toContain(`ended ${outcome}`);
+			expect(r.out).toContain(`report ${report}`);
+			expect(ticks()[0]).toMatchObject({ outcome, report });
+			expect(dispatches()).toEqual([]);
+			expect(started("main")).toEqual([]);
+		},
+	);
+
+	test("three law stops in a row raise tick-failing duty-desk/-", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		lawVersion("2".repeat(40));
+		for (const n of [0, 1, 2]) startDesk(later(n));
+		expect(startDesk(later(3)).out).toContain("ALARM tick-failing duty-desk/-");
+	});
+
+	test("without a law-version command the first self line is law-version, with no precinct", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		rmSync(join(shared(), "law-version"));
+		const selfs = lines(startDesk().out).filter((l) => l.startsWith("self "));
+		expect(selfs).toEqual(["self law-version"]);
+		expect(lines(proceed(1).out)).toContain("ended ordered");
 	});
 
 	test("an identity that differs stops the tick and writes no order", () => {

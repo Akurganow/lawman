@@ -51,7 +51,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **Text names the result and not the tool.** A user may run another version control system, host or harness. So law and role text says what must happen and what must not. Concrete commands live in the host notes and on harness pages.
 
-**The binary is verified before it runs.** Only this repository's CI builds the journal, and each release attests it and publishes checksums. A law sync checks the checksum, then the provenance with the verifier the user named. A user may decline a verifier, and then only the checksum remains. It proves no origin, and Lawman says so.
+**The binary is verified before it runs.** Only this repository's CI builds the journal, and each release attests it and publishes checksums. After a plugin update, the journal updates itself. It checks the checksum itself, then the provenance with the verifier the user chose. A user may decline a verifier, and then only the checksum remains. It proves no origin, and Lawman says so.
 
 ## Decisions and rejected alternatives
 

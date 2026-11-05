@@ -183,7 +183,7 @@ A role sees only orders that the duty desk already wrote. So a case moves one st
 
 ### Every tick
 
-Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. After it, the role checks the law commit and its cleanliness, for each tick. A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login, computes the alarms and checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 

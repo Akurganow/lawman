@@ -342,8 +342,8 @@ A slug is `[a-z0-9-]+`. These are the slugs of this release:
 - `skipped-contract-version`: a page declares a contract version the law does not support.
 - `skipped-bad-department`: the chosen department page is unavailable or fails the page check.
 - `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
-- `stopped-law-drift`: the law's commit differs from the one the installation recorded.
-- `stopped-dirty-law`: the law's clone has local changes.
+- `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or cannot be read.
+- `stopped-dirty-law`: the law folder has local changes.
 - `stopped-identity-changed`: the account the host reports for the tool in the host notes differs from the trusted login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.

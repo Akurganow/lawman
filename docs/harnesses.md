@@ -74,7 +74,7 @@ LICENSE
 
 - The installation folder holds `config.yaml`, `host.md`, `bin/journal`, `journal.sqlite`, the precinct clones and the runs. It sits outside the plugin folder.
 - Its entry `lawman` links to the folder of the installed plugin. The harness page gives the link form.
-- The journal binary sits in `bin/` of the installation. A release provides it, with a provenance file beside it. The assembly checks the checksum. It checks the signature in the provenance file when the host notes name a verifier. A declined verifier leaves only a checksum from the same release, which proves no origin.
+- The journal binary sits in `bin/` of the installation. A release provides it, with a provenance file beside it. The assembly checks the checksum at install, and the journal checks it at an update. The signature in the provenance file is checked with the verifier the user chose, which is a `verify` command or the verifier that the host notes name. A declined verifier leaves only a checksum from the same release, which proves no origin.
 
 ## The harnesses
 

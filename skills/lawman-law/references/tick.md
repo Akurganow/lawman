@@ -1,12 +1,12 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections "Sync the law", "Sync the tracker" and "Sync the pull requests". The file turns the rules of the law into steps. The skill keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections "Sync the law", "Sync the tracker" and "Sync the pull requests". It reads a fourth section, "Sync the law with an older journal", when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
-In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal.
+In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
 The input of a role comes in two groups. The role group holds the law that the role reads at the start, this file included, the silence form of the harness page and the orders that the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
-The tick group holds the results of these steps, as far as the role gets each: the alarms and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
+The tick group holds the results of these steps, as far as the role gets each: the alarms, the check of the law folder and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
 
 The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Go on as item 3 of the "End the tick" section says.
 
@@ -15,6 +15,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | Step | What the role does |
 | :-- | :-- |
 | `identity` | Ask the host which account the tool in the host notes acts as. A failed ask gives `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, gives `stopped-identity-changed`. |
+| `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
 | `fetch` | the section "Fetch the precinct" |
 | `issues` | the section "Sync the tracker" |
 | `pulls` | the section "Sync the pull requests" |
@@ -27,7 +28,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
 
-The duty desk has three self steps: `identity`, `issues` and `pulls`. Each of its self step lines names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
+The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-version`. The line `self law-version` names no precinct. Each other self step line of the duty desk names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
 
 - With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
@@ -50,9 +51,47 @@ Every started tick ends exactly once, at the last step of the skill. A failed st
 
 ## Sync the law
 
-Every role does this in step 0, before the tick starts. It completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips it.
+Every role does this in step 0, before the tick starts. It completes an installation after the plugin was updated. The journal does the sync. Run its command with your role name, and act on the lines it prints. The journal skips the update when the law is at the recorded commit.
 
-Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.
+```
+bin/journal law-update <role>
+```
+
+A line that starts with `self` ends the pass. Do that step and run the command again with every answer given so far. Give an answer as an option of the command. Pass only the options you have an answer for.
+
+```
+bin/journal law-update <role> --revision <revision> --state <state> --tag <tag> --release <answer> --verify <answer>
+```
+
+| Line | What the role does |
+| :-- | :-- |
+| `law current` | There is nothing to update. Go on. |
+| `self law-version` | Read the revision of the law folder, whether it has a local change, and the release tag of that revision. Answer `--revision <revision> --state clean` or `--state changed`, and add `--tag <tag>` when the revision has a release tag. A state that cannot be read counts as `changed`. When the revision cannot be read, answer `--revision unreadable` alone. |
+| `self release <repo> <tag> <folder> <asset>` | Put the asset, its provenance file `<asset>.sigstore.json` and the checksum file `SHA256SUMS` of the release of that tag into the folder. The folder is a path relative to the installation folder, and `<asset>` is a file name. The folder exists: never create it. Read step 3 of the section "Sync the law with an older journal" of `tick.md` yourself. Skip its creation of the folder. Answer `--release done`. When the release or a file does not exist, answer `--release missing`. Any other failure is `--release failed`. Give the result only as this option, never as a stop. |
+| `self verify <asset> <provenance> <repo> <commit>` | Check the signature of those files. `<asset>` and `<provenance>` are paths relative to the installation folder, and both files lie in the folder of `self release`, which exists: never create it. Read step 4 of the section "Sync the law with an older journal" of `tick.md` yourself. The journal has checked the checksum already. Give the result only as the option below, never as a stop. Answer `--verify passed` when the check reports success and `--verify failed` when it reports anything else. Answer `--verify not-run` when the check cannot run. Answer `--verify declined` when the host notes record that the user declined a verifier. Answer `--verify unnamed` when the notes are missing or name neither a verifier nor a refusal. |
+| `ALARM …`, then `synced <tag>` | The update is done. Keep every `ALARM` line for the answer. Your role group is stale: read it again. Apply the update list below. |
+| `stop <token> <reason>` | The sync stopped. Answer the token, a colon and the reason, and stop. A stop is answered and not recorded, because no tick exists yet. The journal has removed the release folder it built. The next tick tries again. |
+
+The line `self law-version` of this command is not the row `law-version` of the tick group. A revision that differs from `law_commit` is no stop here. Answer with the facts, and the update starts from them.
+
+A non-zero exit with none of these lines, a usage error included, is a failure of the command. Answer `journal unavailable: <stderr>` and stop.
+
+Never do these:
+
+- Write into the law folder.
+- Replace `bin/journal` or `config.yaml` by any means. The journal's sync does it, with a file that passed its checks.
+- Run any file other than the commands of the journal that this section names, the download tool that `self release` needs and the verifier that `self verify` needs.
+- Continue the tick after a stop.
+
+**The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
+
+The list has one entry, `licenses`. It applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
+
+## Sync the law with an older journal
+
+Do this section only when the first line of the output of your role entry does not start with `lawman input`. Its steps 3 and 4 also serve the rows `self release` and `self verify` of the section "Sync the law". Such a first line means that the journal is older than the law and has no command `law-update`. This section completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips this section.
+
+Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal. When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop: the token `stopped-law-drift` and the reason "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".
 
 Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
 
@@ -64,7 +103,7 @@ Otherwise do these steps in order. A step that fails ends the section with a sto
 4. Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier the host notes name, confirm three facts. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the notes name a verifier, a check that cannot run or that reports anything but success is a stop. Notes that are missing or name neither a verifier nor a refusal are a stop too. When the notes record that the user declined a verifier, skip the signature check. None of this needs an account on the release host.
 
    A failed checksum has the reason "the checksum failed". A signature check that reports anything but success has the reason "the provenance check failed". A check that cannot run has the reason "the check could not run". Missing notes have the reason "the host notes name neither a verifier nor a refusal". So do notes that name neither.
-5. Make the asset file executable and run it with `<path> law-sync --tag <tag> --commit <commit> --installation .`. `<path>` is the asset file in the folder of step 3. The file renames itself over `bin/journal`. Keep every `ALARM` line that it prints for the answer. The line `synced <tag>` confirms the sync. A non-zero exit is a stop, and its standard error is the reason.
+5. Make the asset file executable and run it with `<path> law-sync --tag <tag> --commit <commit> --installation .`. `<path>` is the asset file in the folder of step 3. The file renames itself over `bin/journal`. Keep every `ALARM` line that it prints for the answer. The line `synced <tag>` confirms the sync. A non-zero exit is a stop, and its standard error is the reason. After the line `synced <tag>`, keep the lines of the update list as the section "Sync the law" says. Then take your input again.
 
 The asset is named `journal-bun-<os>-<arch>`. `<os>` is the lower-case operating system name. `<arch>` is `x64` or `arm64`. The provenance file is named `journal-bun-<os>-<arch>.sigstore.json`. The checksum file is named `SHA256SUMS`.
 
@@ -76,10 +115,6 @@ Never do these:
 - Replace `bin/journal` or `config.yaml` by any means other than `law-sync`.
 - Run any file other than the asset that step 4 verified.
 - Continue the tick after a stop.
-
-**The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
-
-The list has one entry, `licenses`. It applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
 
 A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The next tick tries again.
 

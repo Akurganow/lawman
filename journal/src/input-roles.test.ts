@@ -52,6 +52,14 @@ describe("the role table", () => {
 		expect(sectionsOf(page, HARNESS_SECTIONS)).not.toContain(null);
 	});
 
+	test("the section for an older journal follows Sync the law and no role reads it", () => {
+		const at = TICK_ORDER.indexOf("Sync the law");
+		expect(TICK_ORDER[at + 1]).toBe("Sync the law with an older journal");
+		for (const role of ROLE_NAMES)
+			for (const [, wanted] of lawOf(role))
+				expect(wanted).not.toContain("Sync the law with an older journal");
+	});
+
 	test("the sections of tick.md stand in the order of the document", () => {
 		const headings = [...read("tick.md").matchAll(/^## (.+)$/gm)].map(
 			(m) => m[1] ?? "",
