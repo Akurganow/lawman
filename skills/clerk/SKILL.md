@@ -63,67 +63,61 @@ A value that reaches a command or a comment passes its check first. A failed che
 
 ## Tick
 
-Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. The tick starts in item 3 of step 0. A step that fails after that ends the tick as the "End the tick" section of `tick.md` says.
 
-### Step 0: guards
+### Step 0: the input and the order
 
-1. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+1. Take the input. Run the role entry yourself when the turn starts with no part of a role group, whose first line starts with `lawman input`. Run it also when the input says that the entry failed, or when the entry exited non-zero with no output. When your own run exits non-zero with no output, answer `journal unavailable: <stderr>` and stop.
+   ```
+   bin/journal wake --role clerk
+   ```
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop.
+
+   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   ```
+   bin/journal tick input --role clerk --part <k>
+   ```
+   A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
+2. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Take it again as item 1 says.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 4
+      bin/journal probe --schema 9
       ```
-2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
+3. Start the tick with the oldest order. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, oldest first. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
-   bin/journal tick start --role clerk
+   bin/journal tick start --role clerk --order <id>
    ```
-3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-4. Check the law folder. Read the commit that it holds and whether it has a local change. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, answer only the silence form and stop.
+   - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
+   - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=clerk tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
+   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Answer as item 3 of the "End the tick" section says, and stop.
+4. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
+5. Check the law folder. Read the commit that it holds and whether it has a local change. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+6. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
-   bin/journal alarm
+   bin/journal tick input <tick id> --part <k>
    ```
 
-### Step 1: take an order
+### Step 1: the tip
 
-Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+The `revision=` line gives the fetched commit. It is the tip, and `<ref>` is the tip.
 
-```
-bin/journal dispatch take --role clerk
-```
+### Step 2: the issue
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
+The tick group prints issue `<n>` with its comments. With a line `self issue <n>`, read it from the host instead, as the host notes record, with its comments, every page. A failed read gives `stopped-issue-read`.
 
-```
-bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
-No order.
-LAWMAN_<tick id>_0000000
-```
+### Step 3: the pull request
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
+When the stage names a pull request in `pull`, the tick group prints it with its comments. With a line `self pull <m>`, read it from the host instead, as the host notes record, with its comments, every page. A failed read gives `stopped-issue-read`.
 
-With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+### Step 4: the stage
 
-### Step 2: fetch the precinct
+The `case` line is the stage, as the "Read the stage" section says. Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 
-Run the "Fetch the precinct" section. The fetched commit is the tip, and `<ref>` is the tip.
+### Step 5: a stale order
 
-### Step 3: sync the tracker
-
-Run the "Sync the tracker" section.
-
-### Step 4: sync the pull requests
-
-Run the "Sync the pull requests" section.
-
-### Step 5: read the stage
-
-Run the "Read the stage" section.
-
-The order is stale unless `need` is `clerk`. `state` may be `OPEN` or `CLOSED`, and both are valid. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
-
-Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
+The journal ends a stale order itself. After a self step `fetch`, `issues`, `pulls` or `stage`, the order is stale unless `need` is `clerk`. `state` may be `OPEN` or `CLOSED`, and both are valid. End a stale order with `silent` and the report `Order stale: <the line>`.
 
 ### Step 6: choose the recipe
 
@@ -157,7 +151,7 @@ The outcome is the token below. After a failed step it is the token that the ste
 | **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
 | **kept** | `kept` |
 
-Run the "End the tick" section. The harness page names the silence form.
+Run the "End the tick" section.
 
 ## Comment format
 
@@ -228,4 +222,4 @@ Written: <comment, pull request and issue URLs, or the closures and reopenings w
 Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, any facts about evidence, the state of the clone>.
 ```
 
-When the order is empty or stale, the report is the one line of step 1 or step 5.
+When the order is stale, the report is the one line of step 5.

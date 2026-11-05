@@ -87,7 +87,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `final`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds a revision of the class `^(?!-)[A-Za-z0-9._/:+-]+$`: the analysed commit, or the pushed head for `ready`. A stage that hands the case on or closes it (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `final`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 

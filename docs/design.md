@@ -43,7 +43,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **The method lives once.** A department is one page and not an agent. So a narrow department costs one page, and a user can add one without asking the project.
 
-**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings add precedents as files in `.lawman/precedents/`, so a settled question stops at the early stages next time. Settings of the installation, such as the weight, stay outside it.
+**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings add precedents as files in `.lawman/precedents/`. A precedent is a question the court already decided, so the same dispute is not argued again in every case. It decides only whether a shape is a violation, and the facts of a new case are proved anew. Settings of the installation, such as the weight, stay outside it.
 
 **No set of labels per repository.** Creating the same labels in every repository is wasteful, so markers in comments record the process. The journal caches them and keeps the only record of orders and ticks. A constitution names the one label that tells a person an issue waits for them.
 
@@ -63,7 +63,7 @@ A developer who maintains many repositories wants the same review process on eac
 | How much a repository gets | Runs per day plus a work-in-progress limit | One weight | One number states its importance against the others, and it sets a share of duty desk slots |
 | What the reporter of an issue sees | Silence until the ruling | A comment, and one question when evidence is thin | The response unit needs enough to build a lead |
 | How a stage reacts to a gap | A stop that waits for a person | A return with one question, capped at three rounds | Stuck work needs attention, and a cap ends every case |
-| What a court can rule | Ten verdicts as first proposed | Conviction, acquittal and, for a requirement, referral | A doubt about a defect is an acquittal, so the court never returns a case. A precedent records a settled reason |
+| What a court can rule | Ten verdicts as first proposed | Conviction, acquittal and, for a requirement, referral | A doubt about a defect is an acquittal, so the court never returns a case. A precedent records a settled question |
 | Where process state lives | A shared set of labels, or a text journal | Markers on the host, and a SQLite journal behind one command | No setup per repository, and roles never write SQL |
 | Which departments a precinct runs | A list of attached shared departments in the constitution | Every shared page rotates, except `licenses`, which rotates only with a yes for the precinct, and a precinct adds its own | No reason was recorded |
 | How much a role runs | Ten roles that all run daily, which spend model usage fast | Every day, economy or custom plan, chosen at install | A role takes one case per run, so its days set the speed and the cost |

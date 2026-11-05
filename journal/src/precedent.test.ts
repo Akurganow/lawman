@@ -25,6 +25,7 @@ import {
 	lead,
 	mark,
 	precinct,
+	ROOT,
 	seed,
 	TRUSTED,
 	tempDb,
@@ -636,5 +637,37 @@ describe("oldLineToFile", () => {
 		symlinkSync(join(dir, "outside"), join(tree, ".lawman"));
 		expect(() => move({ kind: "protects" })).toThrow();
 		expect(readdirSync(join(dir, "outside"))).toEqual([]);
+	});
+});
+
+describe("precedent: the ruling example of the court skill", () => {
+	const COURT = join(ROOT, "skills", "court", "SKILL.md");
+	const OPEN = "A realistic ruling:\n\n````\n";
+
+	test("its Precedent section writes the expected file", async () => {
+		const skill = readFileSync(COURT, "utf8");
+		const start = skill.indexOf(OPEN) + OPEN.length;
+		const example = skill.slice(start, skill.indexOf("\n````", start));
+		expect(example).toContain("## Precedent");
+		await cache([example]);
+		const r = await record();
+		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
+		const name = "2026-10-16-help-names-unaccepted-option";
+		expect(r.out).toBe(`entry\t${name}\n`);
+		expect(readFileSync(file(name), "utf8")).toBe(
+			[
+				"---",
+				"kind: condemns",
+				"departments: ",
+				"  []",
+				"issue: 1",
+				"date: 2026-10-16",
+				`ruling: "${SOURCE}"`,
+				"---",
+				"",
+				"A help text that names an option the parser does not accept is a violation.",
+				"",
+			].join("\n"),
+		);
 	});
 });

@@ -90,7 +90,7 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 | `<name>`, `<d>` | `^[a-z][a-z0-9-]*$` |
 | `<utc>` | `^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$` |
 | `<id>` | `^[A-Za-z0-9_-]{1,64}$` |
-| `<sha>` | `^[0-9a-f]{7,40}$` |
+| `<sha>` | `^(?!-)[A-Za-z0-9._/:+-]+$` |
 | `<path>` | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
 
 ## Adding one
