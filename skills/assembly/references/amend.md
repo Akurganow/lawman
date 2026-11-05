@@ -9,7 +9,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 1. Note `contract_version` (it may be absent), `amended_law_commit`, `law_commit` and `journal_sha256` from `config.yaml`.
 2. Compute the SHA-256 of `bin/journal`. Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
 3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`. Read the `Contract version` line in `lawman/skills/lawman-law/references/departments.md`.
-4. Read `constitution.md` of the law at `amended_law_commit` and at `law_commit`. Compare the two texts. Show the developer the differences. When the law folder no longer holds `amended_law_commit`, the read fails. Stop, and tell the developer that the comparison base is missing.
+4. Read the current `constitution.md` of the law folder. Read the older text at `amended_law_commit` from the history of the law folder. Compare the two texts. Show the developer the differences. When the folder has no history, or its history lacks `amended_law_commit`, there is no older text. Show the developer the whole current text as changed. That is a path, not a stop.
 5. Ask in the question tool. Offer "Amend now" (recommended) and "Later".
 6. Label "Later" so that it says the next start enters amend again.
 7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
@@ -26,7 +26,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    2. Use the comparison of step 1 item 4 to see what the new contract version requires.
    3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`. A section that the new contract names and that the file holds as an unknown section is a collision. That section becomes the listed one and keeps its lines. Write no second heading.
    4. Make one row of the proposal for each section that the new contract added or changed. The Labels section is one: its questions come from the section "Pick the labels" in `references/precinct.md`. A file with no Labels heading gets one. The place is no rule.
-   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` at `amended_law_commit` and at `law_commit`. List only the files whose name ends in `.md`, because a folder beside a page is no page. The names present only at `law_commit` are the shared departments added since, except `licenses`. Write no line for `licenses`.
+   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` in the current folder and, from the history of the law folder, at `amended_law_commit`. List only the files whose name ends in `.md`, because a folder beside a page is no page. The names present only in the current folder are the shared departments added since, except `licenses`. Write no line for `licenses`. With no older list, every name is new, except `licenses`.
    6. For those departments only, make one row each, with its pair from the section "Departments" in `references/precinct.md`.
    7. Write the department lines that those pairs describe.
    8. Run the section "Lint the draft" of the add path.
