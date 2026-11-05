@@ -16,10 +16,10 @@ export type LawFacts = { revision: string; changed: boolean; tag: string };
 export type Stop = { outcome: string; report: string };
 
 export const lawFolder = () => join(commandFolder(), "lawman");
-export const hasLawVersion = () => hasCommand(installationPlace(), LAW_VERSION);
-
-// null when the file did not start, failed, or printed outside the form
-export async function lawVersion(): Promise<LawFacts | null> {
+// "absent" when the installation has no law-version file, null when the file
+// did not start, failed, or printed outside the form
+export async function lawVersion(): Promise<LawFacts | "absent" | null> {
+	if (!hasCommand(installationPlace(), LAW_VERSION)) return "absent";
 	const ran = await launch(installationPlace(), LAW_VERSION, [lawFolder()]);
 	if (ran === null || !ran.ok) return null;
 	let text: string;
@@ -41,8 +41,8 @@ export async function lawCheck(config: string): Promise<Stop | "self" | null> {
 	const commit = configValue(config, "law_commit");
 	if (commit === undefined)
 		return { outcome: "failed", report: "config.yaml has no law_commit" };
-	if (!hasLawVersion()) return "self";
 	const facts = await lawVersion();
+	if (facts === "absent") return "self";
 	if (facts === null) return { outcome: DRIFT, report: COMMAND_FAILED };
 	if (!COMMIT.test(facts.revision) || !COMMIT.test(commit))
 		return { outcome: DRIFT, report: UNSAFE };

@@ -17,8 +17,10 @@ export const CONFIG_COMMIT = "b".repeat(40);
 export const REPO = "owner/law-release";
 export const TAG = "v1.2.3";
 export const OLD_BINARY = "old journal\n";
-export const DRIFT = "stopped-law-drift";
-export const DIRTY = "stopped-dirty-law";
+
+import { DIRTY, DRIFT } from "./law-version";
+
+export { DIRTY, DRIFT };
 
 export const HERE = { os: process.platform, arch: process.arch };
 export const ASSET = assetName(HERE) ?? "journal-bun-linux-x64";

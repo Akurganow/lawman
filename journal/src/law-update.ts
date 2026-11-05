@@ -20,14 +20,13 @@ import {
 	DIRTY,
 	DIRTY_REASON,
 	DRIFT,
-	hasLawVersion,
 	type LawFacts,
 	lawVersion,
 	UNSAFE,
 } from "./law-version";
 
 const USAGE =
-	"law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]";
+	"law-update <role> [--revision <revision> --state clean|changed [--tag <tag>]|--revision unreadable] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]";
 const OPTIONS = ["revision", "state", "tag", "release", "verify"] as const;
 const WORDS: Partial<Record<(typeof OPTIONS)[number], string[]>> = {
 	state: ["clean", "changed"],
@@ -38,8 +37,8 @@ const UNREADABLE = "unreadable";
 const TAG = /^(?!-)(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
 const REPO =
 	/^(?!-)(?!(?:.*\/)?\.{1,2}(?:\/|$))[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
-const OS: Record<string, string> = { darwin: "darwin", linux: "linux" };
-const ARCH: Record<string, string> = { x64: "x64", arm64: "arm64" };
+const OS = ["darwin", "linux"];
+const ARCH = ["x64", "arm64"];
 const NOT_READY = "binary not ready";
 const DOWNLOAD_FAILED = "the release download failed";
 const CHECK_FAILED = "the provenance check failed";
@@ -68,11 +67,9 @@ class Stopped {
 
 // the asset of this platform, null when the release builds none for it
 export function assetName(p: Platform): string | null {
-	const os = OS[p.os];
-	const arch = ARCH[p.arch];
-	return os === undefined || arch === undefined
-		? null
-		: `journal-bun-${os}-${arch}`;
+	return OS.includes(p.os) && ARCH.includes(p.arch)
+		? `journal-bun-${p.os}-${p.arch}`
+		: null;
 }
 
 function parse(args: string[]): { role: string; opt: Options } {
@@ -89,11 +86,9 @@ function parse(args: string[]): { role: string; opt: Options } {
 
 // the facts of the law folder, or the line that asks the role for them
 async function facts(opt: Options): Promise<LawFacts | "self"> {
-	if (hasLawVersion()) {
-		const facts = await lawVersion();
-		if (facts === null) throw new Stopped(COMMAND_FAILED);
-		return facts;
-	}
+	const got = await lawVersion();
+	if (got === null) throw new Stopped(COMMAND_FAILED);
+	if (got !== "absent") return got;
 	if (opt.revision === undefined) return "self";
 	if (opt.revision === UNREADABLE) throw new Stopped(NO_FACTS);
 	return {
@@ -152,7 +147,7 @@ async function swap(
 	]);
 	if (ran === null) throw new Stopped("the new binary did not start");
 	if (!ran.ok) {
-		const first = decode(ran.stderr).split("\n")[0]?.replace(/\r$/, "") ?? "";
+		const first = decode(ran.stderr).split("\n")[0] ?? "";
 		const reason = ((await clean(first)) ?? "").trim();
 		throw new Stopped(reason === "" ? BINARY_FAILED : reason);
 	}
@@ -161,9 +156,11 @@ async function swap(
 		.map((line) => line.replace(/\r$/, ""));
 	if (!lines.includes(`synced ${tag}`))
 		throw new Stopped("the new binary did not confirm the update");
-	const alarms: string[] = [];
-	for (const line of lines.filter((l) => l.startsWith(`${ALARM} `)))
-		alarms.push((await clean(line)) ?? ALARM);
+	const alarms = await Promise.all(
+		lines
+			.filter((l) => l.startsWith(`${ALARM} `))
+			.map(async (l) => (await clean(l)) ?? ALARM),
+	);
 	return [...alarms, `synced ${tag}`];
 }
 
@@ -236,9 +233,9 @@ async function pass(
 	opt: Options,
 	platform: Platform,
 ): Promise<string[]> {
-	const config = readConfig();
-	const commit = configValue(config ?? "", "law_commit");
-	const repo = configValue(config ?? "", "release_repo");
+	const config = readConfig() ?? "";
+	const commit = configValue(config, "law_commit");
+	const repo = configValue(config, "release_repo");
 	if (commit === undefined || repo === undefined) return ["law current"];
 	const f = await facts(opt);
 	if (f === "self") return ["self law-version"];

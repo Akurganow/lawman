@@ -65,7 +65,7 @@ journal law-update <role> [--revision <revision>|unreadable [--state clean|chang
 | `--verify` | `self verify` | `passed`, `failed`, `not-run`, `declined` or `unnamed`. |
 
 - An answer counts only while the file of its operation is absent. A `verify` command always runs, so `passed` or `declined` does not skip it.
-- With `--release done` or `--verify`, the pass does not call `release` and does not build the folder. It checks the files that already lie in the folder, so the answer about the signature covers the bytes that run later.
+- With a `--release` answer while `release` has no file, or a `--verify` answer while `verify` has no file, the pass does not call `release` and does not build the folder. It checks the files that already lie in the folder, so the answer about the signature covers the bytes that run later.
 - `declined` takes the checksum alone. `unnamed` means the host notes name neither a verifier nor a refusal.
 - A usage error exits 1. These are usage errors: an unknown option, a repeated option, an option with no value, a word outside the list, `--state` or `--tag` without `--revision`, `--revision` with a revision but no `--state`, and `--revision unreadable` with `--state` or `--tag`. A revision or a tag outside its class is a stop, not a usage error.
 

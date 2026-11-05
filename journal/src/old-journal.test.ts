@@ -33,7 +33,7 @@ beforeEach(() => seed((d) => precinct(d, "main")));
 const SECTION = "Sync the law with an older journal";
 // The one sentence that tells a role the journal is older than the law.
 const OLD_SENTENCE =
-	'Input output whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.';
+	'Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.';
 
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 const fixture = (name: string) =>
@@ -101,7 +101,7 @@ describe("the older section holds the protections of the procedure of 0.23.1", (
 	const main = mainLines ?? [];
 	const text = old.join("\n");
 
-	// The protections 1 to 24 of the old "Sync the law", each with a phrase of its text.
+	// The protections of the old "Sync the law", each with a phrase of its text.
 	const PROTECTIONS: [number, string[]][] = [
 		[
 			1,

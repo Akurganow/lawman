@@ -43,7 +43,7 @@ A step before step 1 has no tick to end. Its stop or failure is answered, not re
 bin/journal wake --role duty-desk
 ```
 
-Input output whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
 Read the group to its last part. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again.
 

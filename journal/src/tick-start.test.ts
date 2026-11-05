@@ -1,6 +1,12 @@
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
-import { join } from "node:path";
+import {
+	existsSync,
+	mkdirSync,
+	readFileSync,
+	rmSync,
+	writeFileSync,
+} from "node:fs";
+import { basename, join } from "node:path";
 import { handed, human, put, type Spec, T } from "./cases-fixture";
 import { inprocAsync } from "./inproc";
 import {
@@ -11,7 +17,13 @@ import {
 	lawVersion,
 	lines,
 } from "./input-test-fixture";
-import { command, configs, shared } from "./operations-test-fixture";
+import {
+	command,
+	configs,
+	RECORDS,
+	recording,
+	shared,
+} from "./operations-test-fixture";
 import { SPEC } from "./pulls-fixture";
 import {
 	BASE,
@@ -819,6 +831,34 @@ describe("the law folder at the start", () => {
 		expect(selfs[0]).toBe("self law-version");
 		expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
 		expect(ticks()[0]).toMatchObject({ outcome: null });
+	});
+
+	test("wake, the start and tick input run law-version and nothing else of the installation", () => {
+		setUp();
+		for (const op of ["release", "verify"])
+			command(shared(), op, recording("true"));
+		command(
+			shared(),
+			"law-version",
+			recording(`printf 'revision=${LAW_COMMIT}\\nchanged=no\\ntag=\\n'`),
+		);
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		const records = () =>
+			existsSync(join(shared(), RECORDS))
+				? readFileSync(join(shared(), RECORDS), "utf8")
+						.trim()
+						.split("\n")
+						.map((p) => basename(p))
+				: [];
+		expect(call(BASE, ["wake", "--role", "investigation"]).out).toStartWith(
+			"lawman input ",
+		);
+		expect(records()).toEqual([]);
+		start("investigation");
+		expect(records()).toEqual(["law-version"]);
+		input("1");
+		expect(records()).toEqual(["law-version"]);
 	});
 
 	test("a law folder at law_commit with no change starts as before", () => {
