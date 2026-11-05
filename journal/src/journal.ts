@@ -1,21 +1,19 @@
 import pkg from "../package.json";
-import { alarm, status } from "./alarms";
+import { status } from "./alarms";
 import { pick } from "./args";
 import { caseCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { decider } from "./decider";
 import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
-import { dueCommand } from "./due";
 import { form } from "./form";
 import { intakeCommand } from "./intake";
 import { jev } from "./jev";
 import { lawSync } from "./law-sync";
 import { cap, last, leads, seen } from "./leads";
 import { lintPageCommand } from "./lint";
-import { next, precinct, role } from "./precincts";
+import { precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
-import { rotation } from "./rotation";
 import { wake } from "./wake";
 
 export { open } from "./db";
@@ -31,10 +29,8 @@ export const COMMANDS: Record<string, Handler> = {
 	probe,
 	precinct,
 	role,
-	next,
 	dispatch,
 	tick,
-	alarm,
 	status,
 	sync: async (args) => (await import("./sync")).sync(args),
 	commands: async (args) =>
@@ -44,9 +40,7 @@ export const COMMANDS: Record<string, Handler> = {
 	seen,
 	cap,
 	last,
-	rotation,
 	case: caseCommand,
-	due: dueCommand,
 	intake: intakeCommand,
 	"lint-body": async (args) =>
 		(await import("./lint-body")).lintBodyCommand(args),

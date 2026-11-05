@@ -168,7 +168,15 @@ function expected(role: string): Expected[] {
 					"## Tick outcomes",
 				],
 			},
-			{ head: "law tick.md", headings: ["## Sync the law"] },
+			{
+				head: "law tick.md",
+				headings: [
+					"# The tick",
+					"## Sync the law",
+					"## Sync the tracker",
+					"## Sync the pull requests",
+				],
+			},
 			harness,
 		];
 	const tick = TICK_HEADINGS.filter(
@@ -331,7 +339,7 @@ describe("parts of the role group", () => {
 
 	test("a part's content is the same at every call, and a new order changes no part of the law", async () => {
 		orderFor("court");
-		sized(3000);
+		config(`${CONFIG}input_chars: 3000\njobs: court=2\n`);
 		const before = await parts("court");
 		expect((await parts("court")).map(content)).toEqual(before.map(content));
 		seed((d) => order(d, "main", "court", { at: later(1), issue: 4 }));
@@ -417,7 +425,7 @@ describe("no work", () => {
 		expect(wake("court", later(2))).toMatchObject({ code: 0, out: "" });
 	});
 
-	test("runs no command and changes only the role's check time", () => {
+	test("runs no command and changes only the role's check time and check count", () => {
 		installation();
 		for (const place of [configs("main"), shared()])
 			for (const operation of ["fetch", "identity", "issues", "release"])
@@ -449,8 +457,8 @@ describe("no work", () => {
 			expect(existsSync(join(place, RECORDS))).toBe(false);
 		expect({ ...after, roles: [] }).toEqual({ ...before, roles: [] });
 		expect(after.roles).toEqual([
-			{ name: "court", every_minutes: 5, checked_at: later(1) },
-			{ name: "clerk", every_minutes: 5, checked_at: later(1) },
+			{ name: "court", every_minutes: 5, checked_at: later(1), checks: 1 },
+			{ name: "clerk", every_minutes: 5, checked_at: later(1), checks: 0 },
 		]);
 	});
 });

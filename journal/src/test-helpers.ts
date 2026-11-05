@@ -4,7 +4,8 @@ import { generateKeyPairSync } from "node:crypto";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import { open } from "./db";
+import { reconcileAlarms } from "./alarms";
+import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
 import { collectIssueMarkers, extractMarkers } from "./markers";
 
@@ -171,8 +172,22 @@ export const later = (hours: number, seconds = 0) =>
 		.replace(".000Z", "Z");
 export const call = (clock: string, args: string[], stdin = "") =>
 	cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock }, stdin);
-export const alarm = (clock: string, ...flags: string[]) =>
-	call(clock, ["alarm", ...flags]);
+// The alarms as the starts compute them, in this process: the journal has no alarm command.
+export function alarm(clock: string, ...flags: string[]) {
+	const saved = process.env.LAWMAN_DB;
+	process.env.LAWMAN_DB = dbFile;
+	const db = open(dbFile);
+	try {
+		const lines = inTransaction(db, () =>
+			reconcileAlarms(db, clock, flags.includes("--repeat")),
+		);
+		return { code: 0, out: lines.map((l) => `${l}\n`).join(""), err: "" };
+	} finally {
+		db.close();
+		if (saved === undefined) delete process.env.LAWMAN_DB;
+		else process.env.LAWMAN_DB = saved;
+	}
+}
 export const seed = (body: (db: Database) => void) => {
 	const db = open(dbFile);
 	body(db);

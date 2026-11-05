@@ -25,7 +25,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Tick
 
-Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. The tick starts in item 3 of step 0. A step that fails after that ends the tick as the "End the tick" section of `tick.md` says.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. That covers the check of the law folder in item 5. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -44,16 +44,16 @@ Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. The 
    1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role court --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 9
+      bin/journal probe --schema 10
       ```
-3. Start the tick with the oldest order. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, oldest first. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
+3. Start the tick with the oldest order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, oldest first. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
    bin/journal tick start --role court --order <id>
    ```
-   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, answer only the silence form and stop.
+   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, the session is over: give the answer.
    - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=court tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
-   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Answer as item 3 of the "End the tick" section says, and stop.
+   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 4. Read `law_commit`, `trusted_login`, `typesafe` and `typesafe_precincts` from `config.yaml`. Each is one `key: value` line. A missing file, or a missing `law_commit` or `trusted_login`, ends the tick with `failed`. A missing `typesafe` or `typesafe_precincts` does not.
    `typesafe` allows Jev only with the exact value `yes`. Any other value, or a missing key, reads as `no`.
 

@@ -5,7 +5,7 @@ import {
 	type HostText,
 	storeComments,
 } from "./cache-text";
-import { EXIT, Fail, inTransaction, isConstraint, withDb } from "./db";
+import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
@@ -238,7 +238,13 @@ export async function syncPulls(
 	const read = parsed.map((p, i) => ({ ...p, text: texts[i] as HostText }));
 	return withDb((db) => {
 		try {
-			inTransaction(db, () => replacePulls(db, name, read));
+			inTransaction(db, () => {
+				replacePulls(db, name, read);
+				db.run("UPDATE precincts SET pulls_synced_at = ? WHERE name = ?", [
+					now(),
+					name,
+				]);
+			});
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
 			throw reject("a pull request number repeats");

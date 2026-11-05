@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { handed, human, put } from "./cases-fixture";
+import { takeableOrders, takeOrder } from "./dispatch";
 import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
 	addPrecincts,
@@ -28,33 +29,44 @@ const alarmsOnce = (at: string, pattern: RegExp) => {
 
 describe("alarms and status", () => {
 	describe("alarm kinds", () => {
-		test("order-untaken fires after 48 hours and not before", () => {
+		test("an untaken order of any age raises nothing", () => {
 			seed((db) => {
 				precinct(db, "a");
 				order(db, "a", "patrol");
 			});
-			expect(alarm(later(48))).toMatchObject({ code: 0, out: "" });
-			expect(alarm(later(48, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
+			expect(alarm(later(48, 1))).toMatchObject({ code: 0, out: "" });
+			expect(alarm(later(24 * 30)).out).toBe("");
 		});
 
-		test("an order that was taken or closed does not alarm", () => {
+		test("a taken order fires 24 hours after the claim and not before", () => {
 			seed((db) => {
 				precinct(db, "a");
 				order(db, "a", "patrol", { takenAt: BASE });
+			});
+			expect(alarm(later(24))).toMatchObject({ code: 0, out: "" });
+			expect(alarm(later(24, 1)).out).toBe(
+				`ALARM order-untaken 1 a patrol taken ${BASE}\n`,
+			);
+		});
+
+		test("a closed order does not alarm", () => {
+			seed((db) => {
+				precinct(db, "a");
+				order(db, "a", "patrol", { takenAt: BASE, outcome: "silent" });
 				order(db, "a", "duty-desk", { outcome: "silent" });
 			});
 			expect(alarm(later(72)).out).toBe("");
 		});
 
-		test("a taken order whose claim expired alarms 48 hours after the claim TTL", () => {
+		test("an order taken through the take alarms 24 hours after the claim", () => {
 			seed((db) => precinct(db, "a"));
 			expect(
 				call(BASE, ["dispatch", "add", "--precinct", "a", "--role", "patrol"])
 					.code,
 			).toBe(0);
-			expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(0);
-			expect(alarm(later(72)).out).toBe("");
-			expect(alarm(later(72, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
+			seed((db) => expect(takeOrder(db, "patrol", 1, BASE)).toBe(true));
+			expect(alarm(later(24)).out).toBe("");
+			expect(alarm(later(24, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
 		});
 
 		test("tick-hung fires after 2 hours and not before", () => {
@@ -186,16 +198,16 @@ describe("alarms and status", () => {
 	});
 
 	describe("alarm lifecycle", () => {
-		const untaken = () =>
+		const claimed = () =>
 			seed((db) => {
 				precinct(db, "a");
-				order(db, "a", "patrol");
+				order(db, "a", "patrol", { takenAt: BASE });
 			});
 
 		test("a new alarm prints once and is silent without --repeat", () => {
-			untaken();
-			expect(alarm(later(49)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
-			expect(alarm(later(50)).out).toBe("");
+			claimed();
+			expect(alarm(later(25)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
+			expect(alarm(later(26)).out).toBe("");
 			expect(alarm(later(80)).out).toBe("");
 			expect(
 				rows(
@@ -205,43 +217,43 @@ describe("alarms and status", () => {
 				{
 					kind: "order-untaken",
 					ref: "1",
-					raised_at: later(49),
-					notified_at: later(49),
+					raised_at: later(25),
+					notified_at: later(25),
 					cleared_at: null,
 				},
 			]);
 		});
 
 		test("--repeat prints an open alarm only after 24 hours and renews the notice time", () => {
-			untaken();
-			alarm(later(49));
-			expect(alarm(later(72), "--repeat").out).toBe("");
-			expect(alarm(later(73), "--repeat").out).toBe("");
-			expect(alarm(later(73, 1), "--repeat").out).toMatch(
+			claimed();
+			alarm(later(25));
+			expect(alarm(later(48), "--repeat").out).toBe("");
+			expect(alarm(later(49), "--repeat").out).toBe("");
+			expect(alarm(later(49, 1), "--repeat").out).toMatch(
 				/^ALARM order-untaken 1 .+\n$/,
 			);
-			expect(alarm(later(73, 2), "--repeat").out).toBe("");
+			expect(alarm(later(49, 2), "--repeat").out).toBe("");
 			expect(rows("SELECT notified_at FROM alarms")).toEqual([
-				{ notified_at: later(73, 1) },
+				{ notified_at: later(49, 1) },
 			]);
 		});
 
 		test("--repeat prints a new alarm once, not twice", () => {
-			untaken();
-			expect(alarm(later(49), "--repeat").out.trim().split("\n")).toHaveLength(
+			claimed();
+			expect(alarm(later(25), "--repeat").out.trim().split("\n")).toHaveLength(
 				1,
 			);
 		});
 
 		test("the alarm clears when the condition ends and returns as new if it comes back", () => {
-			untaken();
-			alarm(later(49));
-			call(later(50), ["dispatch", "take", "--role", "patrol"]);
+			claimed();
+			alarm(later(25));
+			seed((db) => expect(takeOrder(db, "patrol", 1, later(50))).toBe(true));
 			expect(alarm(later(51), "--repeat").out).toBe("");
 			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
 				{ cleared_at: later(51) },
 			]);
-			seed((db) => db.run("UPDATE dispatches SET taken_at = NULL"));
+			seed((db) => db.run("UPDATE dispatches SET taken_at = ?", [BASE]));
 			expect(alarm(later(52)).out).toMatch(/^ALARM order-untaken 1 /);
 			expect(rows("SELECT cleared_at FROM alarms ORDER BY id")).toEqual([
 				{ cleared_at: later(51) },
@@ -249,20 +261,16 @@ describe("alarms and status", () => {
 			]);
 		});
 
-		test("alarm prints order-untaken when every precinct has an open order and next is empty", () => {
-			untaken();
-			expect(call(later(49), ["next", "--role", "patrol"]).out).toBe("");
-			expect(alarm(later(49)).out).toMatch(/^ALARM order-untaken 1 /);
+		test("an expired claim alarms while the order is takeable again", () => {
+			claimed();
+			seed((db) => {
+				expect(takeableOrders(db, "patrol", later(25))).toHaveLength(1);
+			});
+			expect(alarm(later(25)).out).toMatch(/^ALARM order-untaken 1 /);
 		});
 
-		test("bad arguments exit 1", () => {
-			for (const args of [
-				["alarm", "--bogus"],
-				["alarm", "--repeat", "x"],
-				["alarm", "x"],
-			]) {
-				expect([args, call(BASE, args).code]).toEqual([args, 1]);
-			}
+		test("the alarm command is a usage error", () => {
+			expect(call(BASE, ["alarm"]).code).toBe(1);
 		});
 	});
 
@@ -274,7 +282,8 @@ describe("alarms and status", () => {
 				db.run("UPDATE precincts SET synced_at = ? WHERE name = 'alpha'", [
 					BASE,
 				]);
-				order(db, "alpha", "patrol", { department: "billing" });
+				order(db, "alpha", "patrol", { department: "billing", takenAt: BASE });
+				order(db, "beta", "patrol", { at: later(1) });
 				tick(db, "patrol", BASE, later(0, 60), "filed", "alpha");
 				tick(db, "patrol", later(1), null, null);
 				tick(db, "duty-desk", later(1), later(1, 60), "ordered", "alpha");
@@ -302,10 +311,16 @@ describe("alarms and status", () => {
 			expect(r.code).toBe(0);
 			const lines = r.out.trim().split("\n");
 			expect(lines.filter((l) => l.startsWith("precinct "))).toEqual([]);
-			expect(lines.filter((l) => l.startsWith("order "))).toHaveLength(1);
+			expect(lines.filter((l) => l.startsWith("order "))).toHaveLength(2);
 			expect(lines).toContain(
-				`order 1 alpha patrol billing - since ${BASE} untaken`,
+				`order 1 alpha patrol billing - since ${BASE} taken ${BASE}`,
 			);
+			expect(lines).toContain(
+				`order 2 beta patrol - - since ${later(1)} untaken`,
+			);
+			expect(lines.filter((l) => l.startsWith("queue "))).toEqual([
+				`queue patrol 2 oldest ${BASE}`,
+			]);
 			expect(lines).toContain(`last-tick patrol running since ${later(1)}`);
 			expect(lines).toContain(`last-tick duty-desk ordered at ${later(1, 60)}`);
 			expect(

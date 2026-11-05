@@ -152,8 +152,9 @@ Each role applies them so:
 
 ## One tick, one case, exit
 
-- There is no daemon. The harness scheduler starts a role. The role does one unit of work and exits.
-- A role takes one unit of work per tick. For every role but the duty desk that is one order. The duty desk writes at most one order per role per tick.
+- There is no daemon. The harness scheduler starts a role. The role does its ticks and exits.
+- A role takes one unit of work per tick. For every role but the duty desk that is one order. A role session takes up to its number of ticks, one order per tick. The numbers live in `docs/configuration.md`.
+- The duty desk writes one order for every case, pull request, waiting issue and patrol visit that needs a role. The only bar is an open order on the same precinct, role and issue.
 - A stuck case is a record, not a process. Nothing waits, loops or sleeps for a case to unstick. The executor waits within its tick for the gate runs of its own push and for nothing else.
 - Roles never block each other. Each has its own schedule, its own model and its own interval.
 - Roles are linked by two records only: a marker on the tracker and an order row in the journal.
@@ -164,7 +165,7 @@ Each role applies them so:
 
 ## Alarms and their repetition
 
-An alarm is a condition the owner must see. Examples are an order that nobody takes, a tick that never ended, a role that stopped ticking, a role whose last three ticks on a precinct stopped, skipped or failed, a lead with a broken marker, and a pull request whose newest spec or finished work waits for a decider. The journal computes these alarms.
+An alarm is a condition the owner must see. Examples are a taken order that nobody finishes, a role that checks for work and never takes it, a tick that never ended, a role that stopped ticking, a role whose last three ticks on a precinct stopped, skipped or failed, a lead with a broken marker, and a pull request whose newest spec or finished work waits for a decider. The journal computes these alarms.
 
 - A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>` first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The same holds for a finding of the `licenses` department and for a match with the text of a source.
 - Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes nothing to the tracker. The line holds no value.
@@ -175,6 +176,8 @@ An alarm is a condition the owner must see. Examples are an order that nobody ta
 - An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers, with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. The journal computes the alarm. It prints once, repeats once a day and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
 - The court refers a requirement that it cannot decide to a decider. For each referral, it prints `ALARM referral <precinct>#<issue> <one line>` first in its reply, in the same tick. The line says in the court's words which part is undecided and quotes no text of the issue. The journal records nothing for it. Nothing repeats it. It has no cap.
+- `order-untaken` is for a taken order that stays open past the 24-hour claim. An order that nobody took raises nothing, whatever its age.
+- `no-progress` is for a role whose entry finds a takeable order and no take, N checks in a row. N is `progress_checks` in `config.yaml`, 3 by default. A take, or a check that finds no takeable order, starts the count again.
 - A new alarm is printed by the tick that found it. The journal then marks it as notified.
 - A repetition of an open alarm that has not been reminded within a day is the duty desk's alone.
 - No duplicates. A condition that disappears clears its alarm.
@@ -258,7 +261,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 The journal's cache is refreshed when a role syncs. Issues by bots (an author with `is_bot` set, or a login that starts with `app/`) and issues with no author do not enter the cache. The duty desk syncs every precinct with a weight above zero before it writes stage orders, so an order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
 
-The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The duty desk refreshes it right after the issue cache of the same precinct. A failed pull sync of one precinct skips the clerk, spec writer and executor orders of that precinct. It does not stop the tick.
+The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The duty desk refreshes it right after the issue cache of the same precinct. A failed pull request sync of one precinct removes the orders of every role on that precinct. It does not end the tick.
 
 ## The cap table
 
@@ -279,7 +282,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.
 - No department has an exception to the cap for leads. The alarm check at cap 0 is not one, and it files nothing.
-- A weight is a share of duty desk slots, not of leads. The duty desk skips a department at cap 0 unless its page has an `Alarm check:` paragraph. When every department of a precinct is skipped, it takes the next precinct.
+- A weight is a share of patrol visits, not of leads. Patrol takes its orders by weight. The duty desk skips a department at cap 0 unless its page has an `Alarm check:` paragraph. When every department of a precinct is skipped, the precinct gets no patrol order in that tick.
 
 ## The report
 

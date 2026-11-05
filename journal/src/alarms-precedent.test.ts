@@ -21,6 +21,7 @@ import {
 	later,
 	mark,
 	precinct,
+	alarm as reconciled,
 	rows,
 	SHA,
 	seed,
@@ -37,7 +38,7 @@ const line = (ref: string, detail = WAITS) =>
 	`ALARM decision-waiting ${ref} ${detail}\n`;
 const clerk = (stage: string, pull: number) =>
 	mark("clerk", stage, ` pull=${pull}`);
-const alarm = (clock: string) => inproc(clock, ["alarm"]).out;
+const alarm = (clock: string) => reconciled(clock).out;
 async function put(specs: Record<number, Spec>) {
 	const r = await inprocFed(
 		BASE,

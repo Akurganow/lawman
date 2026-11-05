@@ -46,11 +46,11 @@ Patrol uses the Read first files, the department page from any of its places and
 
 ## Tick
 
-Run steps 0 to 6 in order. Every started tick ends exactly once, at step 6. The tick starts in item 4 of step 0. A step that fails after that ends the tick as the "End the tick" section of `tick.md` says.
+Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. That covers the check of the law folder in item 6. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits behind older ones. Exit 2 means that the order exists: answer only the silence form that the harness page names, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
+1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits its turn. Exit 2 means that the order exists: answer only the silence form that the harness page names, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
@@ -69,16 +69,16 @@ Run steps 0 to 6 in order. Every started tick ends exactly once, at step 6. The 
    1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role patrol --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 9
+      bin/journal probe --schema 10
       ```
-4. Start the tick with the oldest order. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, oldest first. `<p>`, `<owner/repo>` and `<d>` are the precinct, the repository and the department of the order.
+4. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order of the visits, which is by weight. `<p>`, `<owner/repo>` and `<d>` are the precinct, the repository and the department of the order.
    ```
    bin/journal tick start --role patrol --order <id>
    ```
-   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, answer only the silence form and stop.
+   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, the session is over: give the answer.
    - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=patrol tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
-   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Answer as item 3 of the "End the tick" section says, and stop.
+   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 5. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
 6. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
 7. Read the tick group to its last part, as item 2 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.

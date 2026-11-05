@@ -16,8 +16,11 @@ tempDb();
 
 describe("ticks", () => {
 	describe("tick", () => {
-		const start = (role: string) =>
-			call(BASE, ["tick", "start", "--role", role]).out.trim();
+		// an open tick of the role without taking an order
+		const start = (role: string) => {
+			seed((db) => insertTick(db, role, BASE, null, null));
+			return String(rows("SELECT max(id) AS id FROM ticks")[0]?.id);
+		};
 		const addOrder = () =>
 			call(BASE, [
 				"dispatch",
@@ -28,12 +31,10 @@ describe("ticks", () => {
 				"patrol",
 			]).out.trim();
 
-		test("start prints the id and stores the clock time", () => {
+		test("start of a role other than the duty desk needs an order and writes no tick", () => {
 			const r = call(BASE, ["tick", "start", "--role", "patrol"]);
-			expect(r).toMatchObject({ code: 0, out: "1\n" });
-			expect(rows("SELECT role, started_at, ended_at FROM ticks")).toEqual([
-				{ role: "patrol", started_at: BASE, ended_at: null },
-			]);
+			expect(r).toMatchObject({ code: 1, out: "" });
+			expect(rows("SELECT * FROM ticks")).toEqual([]);
 		});
 
 		test("end stores outcome, precinct, department and the stdin report", () => {
@@ -182,7 +183,7 @@ describe("ticks", () => {
 	describe("tick list", () => {
 		const list = (...args: string[]) => call(BASE, ["tick", "list", ...args]);
 		const LIST_USAGE =
-			"tick <start --role <r> [--order <id>]|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
+			"tick <start --role <r> [--order <id>]|continue <id>|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
 		const ended = (
 			role: string,
 			startedAt: string,
@@ -238,7 +239,7 @@ describe("ticks", () => {
 			expect(list("--limit", "1").out).toBe(
 				`1\tpatrol\t-\t-\tsilent\t${BASE}\t${later(2)}\n`,
 			);
-			call(later(3), ["tick", "start", "--role", "patrol"]);
+			seed((db) => insertTick(db, "patrol", later(3), null, null));
 			expect(list("--limit", "1").out).toBe(
 				`2\tpatrol\t-\t-\trunning\t${later(3)}\t-\n`,
 			);

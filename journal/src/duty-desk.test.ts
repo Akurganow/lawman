@@ -1,0 +1,556 @@
+import { describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
+import { open } from "./db";
+import { dueEntries } from "./due";
+import {
+	DESK,
+	dispatches,
+	failing,
+	hostOf,
+	openOrders,
+	orderLines,
+	proceed,
+	reportOf,
+	setUp,
+	startDesk,
+	started,
+	syncBy,
+	ticks,
+	WORK,
+	without,
+} from "./duty-desk-fixture";
+import { inprocAsync } from "./inproc";
+import { lines } from "./input-test-fixture";
+import { intakeWaiting } from "./intake";
+import { command, configs, recording } from "./operations-test-fixture";
+import {
+	BASE,
+	call,
+	dbFile,
+	issuesForm,
+	later,
+	rows,
+	seed,
+	TRUSTED,
+	tempDb,
+} from "./test-helpers";
+
+tempDb();
+
+const CASE_ROLES = [
+	"investigation",
+	"prosecutor",
+	"defender",
+	"court",
+	"clerk",
+	"spec-writer",
+	"executor",
+];
+const key = (o: Record<string, unknown>) =>
+	`${o.precinct} ${o.role} ${o.issue ?? "-"}`;
+
+// the cache of a precinct as it is before the precinct has weight 0
+function idle(name: string) {
+	expect(syncBy(name, WORK).code).toBe(0);
+	expect(syncBy(name, WORK, BASE, true).code).toBe(0);
+	seed((d) => d.run("UPDATE precincts SET weight = 0 WHERE name = ?", [name]));
+}
+
+describe("the orders of the duty desk start", () => {
+	// The old chain gave one entry per call, so its whole output is every dueEntries entry of a role
+	// on a precinct that has weight; the cache is what the start synced.
+	test("the investigation, prosecutor, defender, court, clerk, spec-writer and executor orders are the old chain's entries", () => {
+		setUp({ main: 2, beta: 1, idle: 1 });
+		hostOf("main", WORK);
+		hostOf("beta", WORK);
+		idle("idle");
+		const r = startDesk();
+		expect(r.code).toBe(0);
+		const db = open(dbFile);
+		const eligible = new Set(["main", "beta"]);
+		const chain = CASE_ROLES.flatMap((role) =>
+			dueEntries(db, role)
+				.filter((e) => eligible.has(e.precinct))
+				.map((e) => key({ precinct: e.precinct, role, issue: e.number })),
+		);
+		db.close();
+		const written = openOrders()
+			.filter((o) => CASE_ROLES.includes(String(o.role)))
+			.map(key);
+		expect(written.sort()).toEqual(chain.sort());
+		for (const role of CASE_ROLES)
+			expect(chain.filter((k) => k.includes(` ${role} `)).length).toBe(2);
+	});
+
+	test("the patrol and response-unit orders are one per eligible precinct and waiting issue", () => {
+		setUp({ main: 2, beta: 1, idle: 1 });
+		hostOf("main", WORK);
+		hostOf("beta", WORK);
+		idle("idle");
+		startDesk();
+		const db = open(dbFile);
+		const waiting = ["beta", "main"].flatMap((p) =>
+			intakeWaiting(db, p).map((n) => `${p} response-unit ${n}`),
+		);
+		db.close();
+		expect(waiting.length).toBe(4);
+		const of = (role: string) => openOrders().filter((o) => o.role === role);
+		expect(of("response-unit").map(key).sort()).toEqual(waiting.sort());
+		expect(
+			of("patrol").map((o) => [o.precinct, o.department, o.issue]),
+		).toEqual([
+			["beta", "abstraction", null],
+			["main", "abstraction", null],
+		]);
+	});
+
+	test("a precinct of weight 0 gets no order of the spec-writer or the executor", () => {
+		setUp({ main: 1, idle: 1 });
+		hostOf("main", WORK);
+		idle("idle");
+		// the cache holds the pull requests of the idle precinct, so the absence of orders is the weight
+		expect(
+			rows("SELECT number FROM pulls WHERE precinct = 'idle'").length,
+		).toBe(3);
+		startDesk();
+		expect(openOrders().filter((o) => o.precinct === "idle")).toEqual([]);
+		expect(openOrders().filter((o) => o.role === "spec-writer").length).toBe(1);
+		expect(openOrders().filter((o) => o.role === "executor").length).toBe(1);
+	});
+
+	test("a repeat start writes no second order for the same precinct, role and issue", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		startDesk();
+		const first = dispatches().length;
+		const r = startDesk(later(0, 1));
+		expect(r.code).toBe(0);
+		expect(dispatches().length).toBe(first);
+		expect(orderLines(r.out)).toEqual([]);
+		expect(ticks().map((t) => t.outcome)).toEqual(["ordered", "silent"]);
+	});
+});
+
+describe("the walk", () => {
+	test("every precinct of weight above 0 is read, a precinct of weight 0 runs no operation and gets no order", () => {
+		setUp({ alpha: 1, main: 3, zero: 0 });
+		for (const p of ["alpha", "main", "zero"])
+			hostOf(p, { ...WORK, record: true });
+		const r = startDesk();
+		expect(r.code).toBe(0);
+		expect(started("zero")).toEqual([]);
+		for (const p of ["alpha", "main"])
+			expect(started(p).length).toBeGreaterThan(0);
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["alpha", "main"]),
+		);
+		expect(reportOf(r.out, "Coverage")).toContain("precincts: alpha, main");
+	});
+
+	test("the start runs no operation that writes: only the six reads start", () => {
+		setUp({ main: 1 });
+		hostOf("main", { ...WORK, record: true });
+		for (const op of ["decider", "release", "verify"])
+			command(configs("main"), op, recording("true"));
+		startDesk();
+		expect(new Set(started("main"))).toEqual(
+			new Set(["identity", "issues", "pulls", "fetch", "files", "file"]),
+		);
+	});
+
+	test("the host is read once per precinct per tick", () => {
+		setUp({ alpha: 1, main: 1 });
+		for (const p of ["alpha", "main"]) hostOf(p, { ...WORK, record: true });
+		startDesk();
+		for (const p of ["alpha", "main"]) {
+			const ops = started(p);
+			expect(ops.filter((o) => o === "fetch").length).toBe(1);
+			expect(ops.filter((o) => o === "identity").length).toBe(1);
+			expect(ops.filter((o) => o === "files").length).toBe(1);
+		}
+	});
+});
+
+describe("the sync", () => {
+	test("a failed tracker stops the tick and writes no order anywhere", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", WORK);
+		failing("main", "issues");
+		const r = startDesk();
+		expect(r.code).toBe(0);
+		expect(lines(r.out)).toContain("ended stopped-sync");
+		expect(r.out).toContain(
+			"Tracker sync failed at main: issues failed reason=exit",
+		);
+		expect(dispatches()).toEqual([]);
+		expect(ticks()[0]?.outcome).toBe("stopped-sync");
+	});
+
+	test("a tracker list at the limit stops the tick as stopped-sync-limit", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		const many = Array.from({ length: 1000 }, (_, i) => ({
+			number: i + 1,
+			state: "OPEN",
+			createdAt: "2026-10-14T09:00:00Z",
+			author: { login: TRUSTED },
+		}));
+		writeFileSync(
+			join(configs("main"), "issues.json"),
+			JSON.stringify(issuesForm(many, [TRUSTED])),
+		);
+		const r = startDesk();
+		expect(lines(r.out)).toContain("ended stopped-sync-limit");
+		expect(dispatches()).toEqual([]);
+	});
+
+	test("a failed pull request sync leaves that precinct without orders of any role, the others go on", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", WORK);
+		failing("alpha", "pulls");
+		const r = startDesk();
+		expect(r.code).toBe(0);
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["main"]),
+		);
+		expect(reportOf(r.out, "Blockers")).toBe(
+			"Blockers: alpha: pull request sync failed",
+		);
+		expect(reportOf(r.out, "Coverage")).toContain("precincts: main");
+		expect(lines(r.out)).toContain("ended ordered");
+	});
+
+	test("a pull request sync that failed closes no stale order of its precinct", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", WORK);
+		failing("alpha", "pulls");
+		seed((d) => {
+			for (const p of ["alpha", "main"])
+				d.run(
+					"INSERT INTO dispatches (at, precinct, role, issue) VALUES (?, ?, 'court', 3)",
+					[BASE, p],
+				);
+		});
+		startDesk();
+		const court = dispatches().filter(
+			(o) => o.role === "court" && o.issue === 3,
+		);
+		expect(court.map((o) => [o.precinct, o.outcome])).toEqual([
+			["alpha", null],
+			["main", "silent"],
+		]);
+	});
+
+	test("all pull request syncs failed: no precinct, no order, outcome silent", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		failing("main", "pulls");
+		const r = startDesk();
+		expect(lines(r.out)).toContain("ended silent");
+		expect(reportOf(r.out, "Coverage")).toContain("precincts: none");
+		expect(dispatches()).toEqual([]);
+	});
+});
+
+describe("the self steps", () => {
+	test("the start prints each with its precinct, stops without orders and reads no host for the tree", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", { ...WORK, record: true });
+		hostOf("main", { ...WORK, record: true });
+		without("main", "identity", "issues", "pulls");
+		const r = startDesk();
+		expect(r.code).toBe(0);
+		const out = lines(r.out);
+		expect(out.slice(1, -1)).toEqual([
+			"self identity main o/main",
+			"self issues main o/main",
+			"self pulls main o/main",
+		]);
+		expect(out[0]).toBe("lawman input 1 role=duty-desk tick=1 part 1 of 1");
+		expect(dispatches()).toEqual([]);
+		expect(ticks()[0]?.outcome).toBeNull();
+		for (const p of ["alpha", "main"])
+			expect(
+				started(p).filter((o) => ["fetch", "files", "file"].includes(o)),
+			).toEqual([]);
+	});
+
+	test("the continuation after the model synced writes the orders and reads the host once", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", { ...WORK, record: true });
+		hostOf("main", { ...WORK, record: true });
+		without("main", "issues", "pulls");
+		const first = startDesk();
+		expect(lines(first.out).slice(1, -1)).toEqual([
+			"self issues main o/main",
+			"self pulls main o/main",
+		]);
+		expect(started("main").filter((o) => o === "fetch")).toEqual([]);
+		expect(syncBy("main", WORK).code).toBe(0);
+		expect(syncBy("main", WORK, BASE, true).code).toBe(0);
+		const r = proceed(1);
+		expect(r.code).toBe(0);
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["alpha", "main"]),
+		);
+		expect(ticks()).toMatchObject([{ id: 1, outcome: "ordered" }]);
+		for (const p of ["alpha", "main"])
+			expect(started(p).filter((o) => o === "fetch").length).toBe(1);
+	});
+
+	test("a pull request sync the model left undone leaves that precinct without orders and without a stale close", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", WORK);
+		without("main", "issues", "pulls");
+		seed((d) =>
+			d.run(
+				"INSERT INTO dispatches (at, precinct, role, issue) VALUES (?, 'main', 'court', 3)",
+				[BASE],
+			),
+		);
+		startDesk();
+		expect(syncBy("main", WORK).code).toBe(0);
+		const r = proceed(1);
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(reportOf(r.out, "Blockers")).toBe(
+			"Blockers: main: pull request sync failed",
+		);
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["alpha", "main"]),
+		);
+		// the only order of main is the one that was there before the start
+		expect(openOrders().filter((o) => o.precinct === "main")).toEqual([
+			{ precinct: "main", role: "court", department: null, issue: 3 },
+		]);
+	});
+
+	test("a continuation whose tracker stamp is older than the tick start ends stopped-sync", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", WORK);
+		without("main", "issues", "pulls");
+		startDesk(later(1));
+		expect(syncBy("main", WORK, BASE).code).toBe(0);
+		expect(syncBy("main", WORK, BASE, true).code).toBe(0);
+		const r = proceed(1, later(1));
+		expect(lines(r.out)).toContain("ended stopped-sync");
+		expect(r.out).toContain("report Tracker not synced in this tick: main");
+		expect(dispatches()).toEqual([]);
+		expect(ticks()[0]?.outcome).toBe("stopped-sync");
+	});
+
+	test("a continuation of an ended tick fails, reads no host and writes no order", () => {
+		setUp({ main: 1 });
+		hostOf("main", { ...WORK, record: true });
+		startDesk();
+		const written = dispatches();
+		const before = started("main").length;
+		const r = proceed(1);
+		expect(r.code).toBe(1);
+		expect(r.err).toContain("no open tick with id 1");
+		expect(started("main").length).toBe(before);
+		expect(dispatches()).toEqual(written);
+		for (const id of ["9", "x"])
+			expect(call(BASE, ["tick", "continue", id]).code).toBe(1);
+	});
+
+	test("a continuation of an open tick of another role fails", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		seed((d) =>
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
+		);
+		const r = proceed(1);
+		expect(r.code).toBe(1);
+		expect(r.err).toContain("no open tick with id 1");
+		expect(dispatches()).toEqual([]);
+	});
+
+	test("the continuation prints no ALARM line, the start prints them", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		without("main", "issues", "pulls");
+		seed((d) =>
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
+		);
+		const first = startDesk(later(3));
+		expect(lines(first.out)).toContain(
+			`ALARM tick-hung 1 court started ${BASE}`,
+		);
+		seed((d) =>
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [BASE]),
+		);
+		syncBy("main", WORK, later(3));
+		syncBy("main", WORK, later(3), true);
+		const r = proceed(2, later(3));
+		expect(r.out).not.toContain("ALARM");
+		expect(lines(r.out)).toContain("ended ordered");
+	});
+});
+
+describe("the failures of the start", () => {
+	test.each([
+		["no config.yaml", null, "config.yaml is missing"],
+		[
+			"no trusted_login",
+			"harness: hermes\n",
+			"config.yaml has no trusted_login",
+		],
+	])("%s ends the tick failed", (_name, config, report) => {
+		setUp({ main: 1 }, config);
+		hostOf("main", WORK);
+		const r = startDesk();
+		expect(lines(r.out)).toContain("ended failed");
+		expect(r.out).toContain(`report ${report}`);
+		expect(ticks()[0]).toMatchObject({ outcome: "failed", report });
+		expect(dispatches()).toEqual([]);
+	});
+
+	test("an identity that differs stops the tick and writes no order", () => {
+		setUp({ alpha: 1, main: 1 });
+		hostOf("alpha", WORK);
+		hostOf("main", { ...WORK, login: "someone-else", record: true });
+		const r = startDesk();
+		expect(lines(r.out)).toContain("ended stopped-identity-changed");
+		expect(r.out).toContain("Host identity changed at main: someone-else");
+		expect(dispatches()).toEqual([]);
+		expect(started("main")).toEqual(["identity"]);
+	});
+
+	test("an identity that differs only in ASCII case is the trusted login", () => {
+		setUp({ main: 1 });
+		hostOf("main", { ...WORK, login: TRUSTED.toUpperCase() });
+		expect(lines(startDesk().out)).toContain("ended ordered");
+	});
+
+	const patrolOrResponse = (role: string) =>
+		role === "patrol" || role === "response-unit";
+
+	test.each([
+		[
+			"a fetch that fails",
+			() => failing("main", "fetch"),
+			"main: fetch failed reason=exit",
+		],
+		[
+			"a file listing that fails",
+			() => failing("main", "files"),
+			"main: files failed reason=exit",
+		],
+		[
+			"a tree without the constitution",
+			() => hostOf("main", { ...WORK, tree: { "README.md": "x" } }),
+			"main: skipped-no-constitution",
+		],
+		[
+			"a constitution that fails the check",
+			() =>
+				hostOf("main", {
+					...WORK,
+					tree: { "LAWMAN.md": "not a constitution" },
+				}),
+			"main: skipped-bad-constitution",
+		],
+	])(
+		"%s leaves that precinct without patrol and response-unit orders, the other roles get theirs",
+		(_name, break_, blocker) => {
+			setUp({ alpha: 1, main: 1 });
+			hostOf("alpha", WORK);
+			hostOf("main", WORK);
+			break_();
+			const r = startDesk();
+			expect(lines(r.out)).toContain("ended ordered");
+			const main = openOrders().filter((o) => o.precinct === "main");
+			expect(main.some((o) => patrolOrResponse(String(o.role)))).toBe(false);
+			expect(new Set(main.map((o) => o.role))).toEqual(new Set(CASE_ROLES));
+			expect(
+				openOrders().some((o) => o.precinct === "alpha" && o.role === "patrol"),
+			).toBe(true);
+			expect(reportOf(r.out, "Blockers")).toContain(blocker);
+		},
+	);
+
+	test("a constitution of another contract version is skipped with its own cause", () => {
+		setUp({ main: 1 });
+		const tree = { "LAWMAN.md": "---\ncontract_version: 99\n---\n\n# x\n" };
+		hostOf("main", { ...WORK, tree });
+		const r = startDesk();
+		expect(reportOf(r.out, "Blockers")).toContain(
+			"main: skipped-contract-version",
+		);
+	});
+});
+
+describe("the output of the start", () => {
+	test("alarms first, then the orders, then the end and the five report lines", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		seed((d) =>
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
+		);
+		const r = startDesk(later(3));
+		const out = lines(r.out);
+		expect(out[0]).toBe("lawman input 1 role=duty-desk tick=2 part 1 of 1");
+		expect(out.at(-1)).toBe("end part 1 of 1");
+		const body = out.slice(1, -1);
+		const shape = body.map((l) => l.split(" ")[0]);
+		expect(shape).toEqual([
+			"ALARM",
+			...openOrders().map(() => "order"),
+			"ended",
+			...Array(5).fill("report"),
+		]);
+		expect(
+			body.filter((l) => l.startsWith("report ")).map((l) => l.split(":")[0]),
+		).toEqual([
+			"report Coverage",
+			"report Candidates",
+			"report Filed",
+			"report Strongest rejected",
+			"report Blockers",
+		]);
+		expect(body[1]).toMatch(/^order \d+ main o\/main - 1$/);
+		expect(ticks()[1]?.report).toContain("Coverage: orders: ");
+	});
+
+	test("a start without a role or with another role is a usage error", () => {
+		setUp({ main: 1 });
+		expect(call(BASE, ["tick", "start", "--role", "clerk"]).code).toBe(1);
+		expect(call(BASE, ["tick", "start"]).code).toBe(1);
+		expect(ticks()).toEqual([]);
+		expect(rows("SELECT * FROM dispatches")).toEqual([]);
+	});
+});
+
+describe("the command forms in process", () => {
+	test("tick start --role duty-desk", async () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		const r = await inprocAsync(BASE, DESK);
+		expect(r.code).toBe(0);
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(openOrders().length).toBeGreaterThan(0);
+	});
+
+	test("tick continue <id>", async () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		without("main", "issues", "pulls");
+		const first = await inprocAsync(BASE, DESK);
+		expect(lines(first.out)).toContain("self issues main o/main");
+		syncBy("main", WORK);
+		syncBy("main", WORK, BASE, true);
+		const r = await inprocAsync(BASE, ["tick", "continue", "1"]);
+		expect(r.code).toBe(0);
+		expect(lines(r.out)).toContain("ended ordered");
+		const again = await inprocAsync(BASE, ["tick", "continue", "1"]);
+		expect(again.code).toBe(1);
+		expect(again.err).toContain("no open tick with id 1");
+	});
+});

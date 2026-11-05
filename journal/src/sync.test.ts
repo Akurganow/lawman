@@ -4,6 +4,7 @@ import { collectIssueMarkers } from "./markers";
 import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
+	alarm,
 	cli,
 	dbFile,
 	issueOf,
@@ -396,7 +397,7 @@ describe("sync", () => {
 			comments: [],
 		});
 		sync([...issues, bare(101, "OPEN"), bare(102, "CLOSED")]);
-		const r = run(["alarm"]);
+		const r = alarm(CREATED);
 		expect(r.out).toContain("ALARM broken-lead main#101");
 		expect(r.out).not.toContain("main#102");
 		expect(r.out).not.toContain("main#1 ");

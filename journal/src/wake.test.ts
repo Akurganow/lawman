@@ -3,6 +3,7 @@ import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { MIGRATIONS } from "./db";
+import { takeableOrders, takeOrder } from "./dispatch";
 import {
 	BASE,
 	call,
@@ -20,7 +21,10 @@ tempDb();
 const wake = (clock = BASE, role = "patrol") =>
 	call(clock, ["wake", "--role", role]);
 const take = (clock = BASE, role = "patrol") =>
-	call(clock, ["dispatch", "take", "--role", role]);
+	seed((db) => {
+		const first = takeableOrders(db, role, clock)[0];
+		if (first) takeOrder(db, role, first.id, clock);
+	});
 
 function seedOrders(body: (db: Database) => void): void {
 	seed((db) => {
@@ -52,7 +56,7 @@ describe("wake", () => {
 		const r = wake();
 		expect(r.out).toStartWith(`${head()}\n`);
 		expect(r.out).toEndWith(`order ${id} main o/main - -\nend part 1 of 1\n`);
-		expect(take().code).toBe(0);
+		take();
 		expect(wake().out).toBe("");
 	});
 
@@ -65,22 +69,33 @@ describe("wake", () => {
 
 	test("lists several orders oldest first and prints no precinct or issue text", () => {
 		seedOrders((db) => {
-			order(db, "main", "patrol", { at: later(2), issue: 3 });
-			order(db, "main", "patrol", {
+			order(db, "main", "clerk", { at: later(2), issue: 3 });
+			order(db, "main", "clerk", {
 				at: later(1),
 				issue: 4,
 				department: "core",
 			});
-			order(db, "main", "patrol", { at: later(1), issue: 5 });
+			order(db, "main", "clerk", { at: later(1), issue: 5 });
 		});
 		const ids = rows("SELECT id FROM dispatches ORDER BY issue").map(
 			(r) => r.id,
 		);
 		const [late, early, tie] = ids;
-		expect(ordersOf(wake(later(3)).out)).toEqual([
+		expect(ordersOf(wake(later(3), "clerk").out)).toEqual([
 			`order ${early} main o/main core 4`,
 			`order ${tie} main o/main - 5`,
 			`order ${late} main o/main - 3`,
+		]);
+	});
+
+	test("lists only the first orders of a role, as many as its jobs", () => {
+		seedOrders((db) => {
+			order(db, "main", "patrol", { at: later(1), issue: 4 });
+			order(db, "main", "patrol", { at: later(2), issue: 3 });
+		});
+		const id = rows("SELECT id FROM dispatches WHERE issue = 4")[0]?.id;
+		expect(ordersOf(wake(later(3)).out)).toEqual([
+			`order ${id} main o/main - 4`,
 		]);
 	});
 

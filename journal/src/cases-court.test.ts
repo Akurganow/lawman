@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	answer,
 	type Comment,
+	due,
 	expectNeed,
 	expectRoundKept,
 	fields,
@@ -130,7 +131,7 @@ describe("case: court stage", () => {
 		put({ 2: { ...withLead(caseMark()), state: "CLOSED" } });
 		put({ 3: { ...withLead(caseMark(), charge()), state: "CLOSED" } });
 		for (const role of ["investigation", "prosecutor", "defender"])
-			expect(call(BASE, ["due", "--role", role]).out).toBe("");
+			expect(due(role)).toBe("");
 	});
 
 	test("a court return leaves round and returned unchanged", () => {
@@ -138,19 +139,18 @@ describe("case: court stage", () => {
 	});
 
 	test("due for the court lists a defended, declined or refuted open case", () => {
-		const due = () => call(BASE, ["due", "--role", "court"]).out;
 		put({ 1: defended() });
-		expect(due()).toBe("main\t1\n");
+		expect(due("court")).toBe("main\t1\n");
 		put({ 2: withLead(caseMark(), decline()) });
-		expect(due()).toBe("main\t2\n");
+		expect(due("court")).toBe("main\t2\n");
 		put({ 3: withLead(caseMark(), charge(), refute()) });
-		expect(due()).toBe("main\t3\n");
+		expect(due("court")).toBe("main\t3\n");
 		put({
 			1: defended(conviction()),
 			2: defended(acquittal()),
 			3: { ...defended(), state: "CLOSED" },
 		});
-		expect(due()).toBe("");
+		expect(due("court")).toBe("");
 	});
 });
 

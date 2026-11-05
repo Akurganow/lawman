@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	due,
 	expectNeed,
 	need,
 	needOnly,
@@ -148,12 +149,6 @@ describe("case: failures", () => {
 });
 
 describe("due", () => {
-	const due = (role: string) => {
-		const r = call(BASE, ["due", "--role", role]);
-		expect(r.code).toBe(0);
-		return r.out;
-	};
-
 	test("an empty journal has nothing due", () => {
 		expect(due("investigation")).toBe("");
 		expect(due("prosecutor")).toBe("");
@@ -217,13 +212,13 @@ describe("due", () => {
 		expect(due("investigation")).toBe("");
 	});
 
-	test("an open order of the role silences the role only", () => {
+	test("an open order of the role does not silence the entry", () => {
 		put({
 			1: { body: [lead()] },
 			2: { body: [lead()], comments: [[T(10), caseMark()]] },
 		});
 		order("investigation", 1, T(8), true);
-		expect(due("investigation")).toBe("");
+		expect(due("investigation")).toBe("main\t1\n");
 		expect(due("prosecutor")).toBe("main\t2\n");
 	});
 
@@ -268,7 +263,8 @@ describe("due", () => {
 		expect(due("investigation")).toBe("main\t19\n");
 	});
 
-	test("a missing role exits 1", () => {
+	test("the due command is a usage error", () => {
 		expect(call(BASE, ["due"]).code).toBe(1);
+		expect(call(BASE, ["due", "--role", "investigation"]).code).toBe(1);
 	});
 });

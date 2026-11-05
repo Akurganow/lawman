@@ -1,5 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { open } from "./db";
+import { inTransaction, open } from "./db";
+import { takeableOrders, takeOrder } from "./dispatch";
 import {
 	addPrecincts,
 	BASE,
@@ -8,7 +9,7 @@ import {
 	env,
 	JOURNAL,
 	later,
-	run,
+	seed,
 	tempDb,
 } from "./test-helpers";
 
@@ -30,8 +31,20 @@ describe("dispatch", () => {
 			role,
 			...extra,
 		]);
-	const take = (clock = BASE, role = "patrol") =>
-		call(clock, ["dispatch", "take", "--role", role]);
+	// the first takeable order of the role, taken as the start does it, in the line the old take printed
+	const take = (clock = BASE, role = "patrol") => {
+		const db = open(dbFile);
+		try {
+			const o = takeableOrders(db, role, clock)[0];
+			if (o === undefined) return { out: "" };
+			inTransaction(db, () => takeOrder(db, role, o.id, clock));
+			return {
+				out: `${o.id}\t${o.precinct}\t${o.repo}\t${o.department ?? ""}\t${o.issue ?? ""}\n`,
+			};
+		} finally {
+			db.close();
+		}
+	};
 
 	test("add prints an integer id and a duplicate open order exits 2 with one stderr line", () => {
 		addPrecincts({ a: 1 });
@@ -118,43 +131,49 @@ describe("dispatch", () => {
 		expect(take().out).toBe(`${second}\tb\to/b\t\t\n`);
 	});
 
-	test("take prints nothing and exits 0 when no order is open for the role", () => {
+	test("take finds nothing when no order is open for the role", () => {
 		addPrecincts({ a: 1 });
-		expect(take()).toMatchObject({ code: 0, out: "" });
+		expect(take().out).toBe("");
 		add("a", "duty-desk");
-		expect(take()).toMatchObject({ code: 0, out: "" });
-		expect(take(BASE, "Bad").code).toBe(1);
+		expect(take().out).toBe("");
 	});
 
-	test("take returns the oldest open order first", () => {
+	test("take returns the oldest open order of a role first, patrol by credit and then by name", () => {
 		addPrecincts({ a: 1, b: 1 });
-		const older = add("b", "patrol", [], later(0)).out.trim();
-		const newer = add("a", "patrol", [], later(1)).out.trim();
-		expect(take(later(2)).out.split("\t")[0]).toBe(older);
-		expect(take(later(2)).out.split("\t")[0]).toBe(newer);
-		expect(take(later(2)).out).toBe("");
+		const older = add("b", "clerk", [], later(0)).out.trim();
+		const newer = add("a", "clerk", [], later(1)).out.trim();
+		expect(take(later(2), "clerk").out.split("\t")[0]).toBe(older);
+		expect(take(later(2), "clerk").out.split("\t")[0]).toBe(newer);
+		expect(take(later(2), "clerk").out).toBe("");
+		add("b", "patrol", [], later(0));
+		const first = add("a", "patrol", [], later(1)).out.trim();
+		expect(take(later(2)).out.split("\t")[0]).toBe(first);
 	});
 
 	test("two concurrent takes hand the single order to exactly one", async () => {
 		addPrecincts({ a: 1 });
 		add("a");
+		const script = `
+const { open, inTransaction } = await import("./src/db");
+const { takeOrder } = await import("./src/dispatch");
+const db = open();
+process.stdout.write(String(inTransaction(db, () => takeOrder(db, "patrol", 1, process.env.LAWMAN_NOW))));
+db.close();
+`;
 		const spawn = () =>
-			Bun.spawn(
-				["bun", "src/journal.ts", "dispatch", "take", "--role", "patrol"],
-				{
-					cwd: JOURNAL,
-					env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
-					stdout: "pipe",
-					stderr: "pipe",
-				},
-			);
+			Bun.spawn(["bun", "-e", script], {
+				cwd: JOURNAL,
+				env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
+				stdout: "pipe",
+				stderr: "pipe",
+			});
 		const procs = [spawn(), spawn()];
 		const codes = await Promise.all(procs.map((p) => p.exited));
 		const outs = await Promise.all(
 			procs.map((p) => new Response(p.stdout).text()),
 		);
 		expect(codes).toEqual([0, 0]);
-		expect(outs.filter((o) => o !== "")).toHaveLength(1);
+		expect(outs.sort()).toEqual(["false", "true"]);
 	});
 
 	test("a taken order is reclaimed only after 24 hours", () => {
@@ -181,12 +200,26 @@ describe("dispatch", () => {
 		db.close();
 	});
 
-	test("next skips a precinct with an open order and admits it again after tick end closes it", () => {
+	test("a taken order leaves the take list and a new one is admitted after tick end closes it", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
-		expect(run(["next", "--role", "patrol"]).out).toBe("");
-		const tick = call(BASE, ["tick", "start", "--role", "patrol"]).out.trim();
-		call(BASE, ["tick", "end", tick, "--outcome", "silent", "--dispatch", id]);
-		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
+		take();
+		expect(add("a").code).toBe(2);
+		seed((db) =>
+			db.run("INSERT INTO ticks (role, started_at) VALUES ('patrol', ?)", [
+				BASE,
+			]),
+		);
+		expect(
+			call(BASE, ["tick", "end", "1", "--outcome", "silent", "--dispatch", id])
+				.code,
+		).toBe(0);
+		const next = add("a").out.trim();
+		expect(take(later(1)).out.split("\t")[0]).toBe(next);
+	});
+
+	test("take, next and the other removed commands are usage errors", () => {
+		expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(1);
+		expect(call(BASE, ["next", "--role", "patrol"]).code).toBe(1);
 	});
 });

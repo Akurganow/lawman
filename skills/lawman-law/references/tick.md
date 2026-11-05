@@ -1,6 +1,6 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads only the section "Sync the law" of this file, in its item 0.1. The file turns the rules of the law into steps. The skill keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections "Sync the law", "Sync the tracker" and "Sync the pull requests". The file turns the rules of the law into steps. The skill keeps its own steps.
 
 In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal.
 
@@ -27,7 +27,9 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
 
-- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
+The duty desk has three self steps: `identity`, `issues` and `pulls`. Each of its self step lines names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
+
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
@@ -131,13 +133,13 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 
 ## Sync the pull requests
 
-The spec writer, the executor and the clerk only. Read every open pull request of `<owner/repo>` from the host, oldest first. Read also the logins that may write to the repository, access inherited from a group included. Send the pull request reply to the journal on standard input, unread, in the journal's pulls form. A command builds the object from that reply and the logins. Your own text never carries a pull request body into it. The host notes record how this machine does it. `bin/journal form pulls` prints the form.
+The spec writer, the executor, the clerk and the duty desk only. Read every open pull request of `<owner/repo>` from the host, oldest first. Read also the logins that may write to the repository, access inherited from a group included. Send the pull request reply to the journal on standard input, unread, in the journal's pulls form. A command builds the object from that reply and the logins. Your own text never carries a pull request body into it. The host notes record how this machine does it. `bin/journal form pulls` prints the form.
 
 ```
 bin/journal sync <p> --pulls --author <login>
 ```
 
-The output is one line with the count of pull requests stored. Exit 4 means the data did not fit the form and the cache is untouched. Exit 4 and any other failure give `stopped-sync`.
+The output is one line with the count of pull requests stored. Exit 4 means the data did not fit the form and the cache is untouched. Exit 4 and any other failure give `stopped-sync`. For the duty desk the failure does not end the tick: the precinct goes without orders.
 
 ## Read the stage
 

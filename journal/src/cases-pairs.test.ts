@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	cache,
 	closed,
+	due,
 	fields,
 	human,
 	need,
@@ -16,8 +17,6 @@ import {
 import {
 	acquittal,
 	addPrecincts,
-	BASE,
-	call,
 	caseMark,
 	charge,
 	conviction,
@@ -60,7 +59,7 @@ describe("case: the line of a clerk job", () => {
 			1: { ...ruled(acquittal), createdAt: T(8) },
 			2: { ...ruled(acquittal), createdAt: T(7) },
 		});
-		expect(call(BASE, ["due", "--role", "clerk"]).out).toBe("main\t2\n");
+		expect(due("clerk")).toBe("main\t2\n");
 	});
 
 	test("a closed conviction gives no job and no clerk", () => {

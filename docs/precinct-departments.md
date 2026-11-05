@@ -149,7 +149,7 @@ The checks catch little of this. `lint-page department` reads the frontmatter, t
 - [exhibits.md](../skills/lawman-law/references/exhibits.md): "Run a source" and "Source values".
 - [LAW.md](../skills/lawman-law/references/LAW.md): the evidence rules, the leak rule and the cap table.
 - [tick.md](../skills/lawman-law/references/tick.md): "Resolve the department page".
-- [duty desk](../skills/duty-desk/SKILL.md): steps 6 to 8 choose the department.
+- [duty desk](../journal/src/duty-desk.ts): the start of the duty desk tick chooses the department.
 - [precinct.md](../skills/assembly/references/precinct.md): "Add a department".
 - [lint.ts](../journal/src/lint.ts): the page check.
 - [lint-body.ts](../journal/src/lint-body.ts): the body check.

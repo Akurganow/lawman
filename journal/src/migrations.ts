@@ -103,4 +103,8 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE ticks ADD COLUMN dispatch INTEGER;
   ALTER TABLE ticks ADD COLUMN parts TEXT;
   `,
+	`
+  ALTER TABLE precincts ADD COLUMN pulls_synced_at TEXT;
+  ALTER TABLE roles ADD COLUMN checks INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

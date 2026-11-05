@@ -656,10 +656,15 @@ describe("an outcome the journal writes", () => {
 		setUp();
 		orderOf("investigation", { issue: 3 });
 		host({ issues: { 3: withLead("fixtures") } });
+		const thief = `const { open, inTransaction } = await import(${JSON.stringify(join(JOURNAL, "src", "db"))});
+const { takeOrder } = await import(${JSON.stringify(join(JOURNAL, "src", "dispatch"))});
+const db = open();
+inTransaction(db, () => takeOrder(db, "investigation", 1, process.env.LAWMAN_NOW));
+db.close();`;
 		command(
 			configs("main"),
 			"identity",
-			`${process.execPath} ${join(JOURNAL, "src", "journal.ts")} dispatch take --role investigation > /dev/null\necho ${TRUSTED}`,
+			`${process.execPath} -e '${thief}' > /dev/null\necho ${TRUSTED}`,
 		);
 		const r = start("investigation");
 		expect(lines(r.out).slice(-3)).toEqual([
@@ -878,6 +883,17 @@ describe("tick input usage", () => {
 				args,
 				1,
 			]);
+	});
+
+	test("tick start without an order is a usage error for every role but the duty desk", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		for (const role of ["investigation", "patrol", "clerk"])
+			expect(call(BASE, ["tick", "start", "--role", role])).toMatchObject({
+				code: 1,
+				out: "",
+			});
+		expect(ticks()).toEqual([]);
 	});
 
 	test("an input_chars outside the class exits 1 before a tick starts", () => {
