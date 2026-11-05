@@ -231,7 +231,7 @@ describe("the older section holds the protections of the procedure of 0.23.1", (
 
 	test("the section opens with the sign of an old journal and ends by taking the input again", () => {
 		expect(old[2]).toContain(
-			"Do this section only when the first line of your input output does not start with `lawman input`.",
+			"Do this section only when the first line of the output of your role entry does not start with `lawman input`.",
 		);
 		expect(text).toContain(
 			"A non-zero exit is a stop, and its standard error is the reason. After the line `synced <tag>`",

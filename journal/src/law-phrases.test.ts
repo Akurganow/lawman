@@ -48,7 +48,7 @@ const VERIFY_ROW = [
 	"Give the result only as the option below, never as a stop.",
 ];
 const OLDER_EXCEPTION =
-	'The rows `self release` and `self verify` of the section "Sync the law" also read its steps 3 and 4.';
+	'Its steps 3 and 4 also serve the rows `self release` and `self verify` of the section "Sync the law".';
 // Protections 20 to 23 of the sync, as the section "Sync the law" writes them.
 const SYNC_NEVER = [
 	"- Write into the law folder.",

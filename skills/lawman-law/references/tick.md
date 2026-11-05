@@ -89,7 +89,7 @@ The list has one entry, `licenses`. It applies when a precinct that `bin/journal
 
 ## Sync the law with an older journal
 
-Do this section only when the first line of your input output does not start with `lawman input`. The journal is older than the law then and has no command `law-update`. The rows `self release` and `self verify` of the section "Sync the law" also read its steps 3 and 4. It completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips it.
+Do this section only when the first line of the output of your role entry does not start with `lawman input`. Its steps 3 and 4 also serve the rows `self release` and `self verify` of the section "Sync the law". Such a first line means that the journal is older than the law and has no command `law-update`. This section completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips this section.
 
 Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.
 

@@ -869,7 +869,7 @@ describe("the law folder at the start", () => {
 		setUp();
 		orderOf("investigation", { issue: 3 });
 		CASES.investigation?.setup();
-		for (const op of ["identity", "fetch", "issues", "files", "file"])
+		for (const op of ["identity", "fetch", "issues", "pulls", "files", "file"])
 			command(configs("main"), op, recording("true"));
 		setup();
 		expect(lines(start("investigation").out)).toContainEqual(
