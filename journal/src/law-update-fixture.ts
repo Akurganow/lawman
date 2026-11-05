@@ -8,6 +8,7 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { assetName } from "./law-update";
+import { DIRTY, DRIFT } from "./law-version";
 import { command } from "./operations-test-fixture";
 import { dir } from "./test-helpers";
 
@@ -17,8 +18,6 @@ export const CONFIG_COMMIT = "b".repeat(40);
 export const REPO = "owner/law-release";
 export const TAG = "v1.2.3";
 export const OLD_BINARY = "old journal\n";
-
-import { DIRTY, DRIFT } from "./law-version";
 
 export { DIRTY, DRIFT };
 
