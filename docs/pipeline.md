@@ -16,7 +16,7 @@ This page summarises the law and links the files that bind each part. Where this
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
-| Court | An order on a defended case | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
+| Court | An order on a case after the parties: defended, refuted or declined | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
 | Clerk | An order for one job on an issue | A draft pull request, a hand-over comment, a close or a reopen, and a marker comment |
 | Spec writer | An order on a pull request that needs a spec | One `Spec` comment |
 | Executor | An order on a pull request with an approved spec | Pushed commits, a pull request ready for review and one `Executor` comment |
@@ -66,19 +66,19 @@ Investigation takes an order on an issue with a lead. It tests the lead against 
 
 ### Prosecutor
 
-The prosecutor takes an order on an issue with a case and decides. A charge carries `stage=charge` and leaves the issue open. A return puts one question to investigation and carries `stage=return`. A decline carries `stage=decline` and closes the issue with a closure class. The comment is headed `Decision`.
+The prosecutor takes an order on an issue with a case and decides. A charge carries `stage=charge` and leaves the issue open. A return puts one question to investigation and carries `stage=return`. A decline carries `stage=decline` and proposes a closure class. It closes nothing: the case goes to the court. The comment is headed `Decision`.
 
 For a defect, doubt that remains when no return is allowed is a decline. A requirement is charged unless an exhibit the prosecutor re-read refutes one of its three parts. The charge states every doubt in the sections `Need` and `Risk`. The parts are in [the court](#court).
 
 ### Defender
 
-The defender takes an order on a charged case and argues against the charge. A defence carries `stage=defence`. A return carries `stage=return`. A refute carries `stage=refute` and closes the issue with a closure class. The comment is headed `Defence`.
+The defender takes an order on a charged case and argues against the charge. A defence carries `stage=defence`. A return carries `stage=return`. A refute carries `stage=refute` and proposes a closure class. It closes nothing: the case goes to the court. The comment is headed `Defence`.
 
 For a requirement, the defender also answers the need in a `Need` section. It searches each place that the charge names as a risk, and says what the change exposes.
 
 ### Court
 
-The court takes an order on a defended case and rules in a `Ruling` comment. It rules once, and once more after each answer to a referral.
+The court takes an order on a case after the parties and rules in a `Ruling` comment. The case comes with a charge and a defence, with a charge and a refute, or with a decline. The court may convict on a declined case. It rules once, and once more after each answer to a referral.
 
 - A conviction carries `stage=conviction`, the commit `sha` and a priority. The issue stays open.
 - An acquittal carries `stage=acquittal` and closes the issue with a closure class.
@@ -125,7 +125,7 @@ The court refers a requirement that it cannot decide to a decider. A decider is 
 
 The issue stays open and no role works it until a decider answers. A decider answers in one of three ways. Each alone is enough.
 
-- **👍 on a comment of the court.** The court convicts, and the clerk then acts as for any conviction. The court acquits instead when a closure class holds. The requirement may already be met, a recorded reason may explain the code, or an exhibit may refute a part. The ruling says why.
+- **👍 on a comment of the court.** The court convicts, and the clerk then acts as for any conviction. The court acquits instead when a closure class holds. The requirement may already be met, a recorded reason may explain the code, or an exhibit may refute a part. A precedent is no recorded reason. It is evidence of the need. The ruling says why.
 - **👎 on a comment of the court.** The court acquits with the class `declined by the owner` and closes the issue as not planned.
 - **A comment of a decider.** The court rules again with the comment as evidence. It may convict, acquit or refer again.
 
@@ -175,13 +175,13 @@ The duty desk runs first.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes the oldest open order of its role, with `bin/journal dispatch take` or with the order id of its input and `bin/journal tick start --order`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
+Each role then starts on its own clock. It takes the oldest order of its input and starts the tick with `bin/journal tick start --order`. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
-Every tick starts with the same checks. It syncs the law after a plugin update, then checks the journal schema, the law commit and its cleanliness, and the trusted login. A mismatch ends the tick with a `stopped-*` outcome. With `tick start --order`, the journal checks the trusted login and the alarms itself.
+Every tick starts with the same checks. Before the start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. After it, the role checks the law commit and its cleanliness. A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 

@@ -23,7 +23,7 @@ A path that a lead, a case or a charge names is missing at `<ref>`. Follow it th
 1. Find the newest commit of `<ref>` that touched it, with its short hash and subject.
    No commit: no commit of `<ref>` touched the path, so it never existed in this history. The empty answer is the exhibit. Stop.
 2. List what that commit renamed, with the old path and the new path of each rename. Read the commit's parent hashes too.
-   A `<commit>` taken from a case reaches a tool only when it matches `^[0-9a-f]{7,40}$`. Otherwise run item 1.
+   A `<commit>` taken from a case reaches a tool only when it matches the revision class `^(?!-)[A-Za-z0-9._/:+-]+$`. Otherwise run item 1.
 3. A rename whose old path is `<path>` gives a new path. Do not use a new path outside `^[A-Za-z0-9._/-]+$`. It goes to Not established in a case, and to Blockers in every other role. Check whether the new path exists at `<ref>`.
    It exists: the path moved inside the precinct. Read the claim at the new path with the "Read numbered lines" section, and say so. It does not exist: the path is gone at `<ref>` too. Repeat from item 1 with the new path.
 4. No rename names `<path>`. If the commit has two parents, it is a merge. Say so, and treat the move as not established. Otherwise that commit removed the path. This does not prove that the file is gone. A rename with a heavy edit shows as a removal and an addition. The subject may name the new place.
@@ -34,9 +34,9 @@ The result is the commit with its subject, and the new path, the removal, or the
 
 A role reads this section when it runs a source command of a department page. Patrol does so when its search of the page needs one. Every other role does so when a case, a charge, a defence or a lead quotes the output of a command that stands under no Regression proof, or when a claim needs a read outside the clone. A role with neither does not open the page for a source command. The department contract defines a source command. The "Source values" table below also serves the `Source:` lines of a lead, which investigation reads.
 
-Find the source commands first. Only the page in the precinct's own `.lawman/departments/` counts. Read it at the tip of the precinct's default branch, because a reviewed merge made the page on the main branch trusted.
+Find the source commands first. Only the page in the precinct's own `.lawman/departments/` counts. Read it at the tip of the precinct's default branch, because the page counts for the reason that a reviewed merge put it on the main branch.
 
-1. Patrol uses the page it read in step 6 of its skill. Every other role resolves the page at place 1 of the "Resolve the department page" section of `tick.md`, with that tip as `<ref>`. It does so even when it has read the page at another commit. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
+1. The tick group gives the page to patrol, the defender and the court, with its place, at the fetched commit, the tip. They use that page, and only when its place is 1. Investigation and the prosecutor resolve the page at place 1 of the "Resolve the department page" section of `tick.md`, with that tip as `<ref>`. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
 2. A quoted command is a source command when it equals an item of the page with every placeholder replaced by a value of its class. Any other command, and its output, is a claim, not an exhibit.
 
 Then run it.
@@ -58,7 +58,7 @@ A value that comes from third-party text, from a lead or from a record enters a 
 | `<name>`, `<d>` | `^[a-z][a-z0-9-]*$` |
 | `<utc>` | `^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$` |
 | `<id>` | `^[A-Za-z0-9_-]{1,64}$` |
-| `<sha>` | `^[0-9a-f]{7,40}$` |
+| `<sha>` | `^(?!-)[A-Za-z0-9._/:+-]+$` |
 | `<path>` | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
 | `<source>` | `^[a-z][a-z0-9-]*$` |
 | `<ecosystem>` | `^[A-Za-z][A-Za-z0-9._:-]{0,31}$` |

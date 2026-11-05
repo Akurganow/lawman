@@ -75,7 +75,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 - **The assembly amends the license facts.** For an existing constitution, the assembly opens a pull request from the branch `lawman/licenses-sources`. It checks the file with `bin/journal lint-page constitution`. After the edit, the diff changes only the section `## Licenses`. A merge by you may narrow `sources` or change `use`, and the assembly asks no question about it.
 - **The court adds precedents.** A ruling may carry lines in its Precedent section: a new precedent, a refinement of one or the cancellation of one. The journal writes the files under `.lawman/precedents/`. The clerk opens a pull request with them. A taken name gets the next free one, so no precedent is lost. A precedent binds the roles only after you merge its pull request.
 
-A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.
+A precedent is no recorded reason and drops no finding. It is a question the court has already decided for your repository, so the same dispute is not argued again in every case. A protecting precedent says that a shape is not a violation, and a condemning one says that it is. The roles rely on it, and a role that needs a different outcome shows how the new case differs or asks to cancel the precedent. The facts of each new case are still proved by evidence.
 
 If a constitution fails the check for any other reason, the precinct's ticks end `skipped-bad-constitution`. A listed heading that is missing or stands twice is one such reason. Run the job "re-check a precinct" to see the reasons.
 

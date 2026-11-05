@@ -20,7 +20,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
-Patrol also takes as instructions the Read first files, the department page and the installation's `departments/` pages, each once it passes its check.
+Patrol uses the Read first files, the department page from any of its places and the page's source commands as the law's "Texts of the precinct" section says.
 
 ## Working rules
 
@@ -31,7 +31,7 @@ Patrol also takes as instructions the Read first files, the department page and 
 
   | value | class |
   | :-- | :-- |
-  | commit hash | `^[0-9a-f]{7,40}$` |
+  | commit hash | `^(?!-)[A-Za-z0-9._/:+-]+$` |
   | path or pathspec | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
 
 - The path class covers every path that a read, a listing or a history query takes.
@@ -46,89 +46,79 @@ Patrol also takes as instructions the Read first files, the department page and 
 
 ## Tick
 
-Run steps 0 to 9 in order. Every started tick ends exactly once, at step 9. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
+Run steps 0 to 6 in order. Every started tick ends exactly once, at step 6. The tick starts in item 4 of step 0. A step that fails after that ends the tick as the "End the tick" section of `tick.md` says.
 
-### Step 0: guards
+### Step 0: the input and the order
 
-1. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
-   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
-      ```
-      bin/journal probe --schema 3
-      ```
-2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
-   ```
-   bin/journal tick start --role patrol
-   ```
-3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-4. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
-   ```
-   bin/journal alarm
-   ```
-
-### Step 1: take an order
-
-1. Manual run only. When the prompt names a precinct and a department, add that order first. Exit 2 ends the tick with `silent` and the report `Order exists.`, sent as item 2 sends its report. Any other failure: read `lawman/skills/lawman-law/references/tick.md` and end the tick with `failed`. A named order waits behind older ones.
+1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits behind older ones. Exit 2 means that the order exists: answer only the silence form that the harness page names, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
-2. Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+2. Take the input. Run the role entry yourself when the turn starts with no part of a role group, whose first line starts with `lawman input`. Run it also when the input says that the entry failed, or when the entry exited non-zero with no output. When your own run exits non-zero with no output, answer `journal unavailable: <stderr>` and stop.
    ```
-   bin/journal dispatch take --role patrol
+   bin/journal wake --role patrol
    ```
-   Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop.
+
+   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
-   bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
-   <report>
-   LAWMAN_<tick id>_0000000
+   bin/journal tick input --role patrol --part <k>
    ```
-   `tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
-3. With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order with an issue number, or with no department, is not a patrol order. End with `failed`. A failed command in this step ends the tick with `failed`.
+   A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
+3. Sync the law, then check the journal schema.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role patrol --part <k>`.
+   2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
+      ```
+      bin/journal probe --schema 9
+      ```
+4. Start the tick with the oldest order. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, oldest first. `<p>`, `<owner/repo>` and `<d>` are the precinct, the repository and the department of the order.
+   ```
+   bin/journal tick start --role patrol --order <id>
+   ```
+   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, answer only the silence form and stop.
+   - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
+   - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=patrol tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
+   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Answer as item 3 of the "End the tick" section says, and stop.
+5. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
+6. Check the law folder. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
+7. Read the tick group to its last part, as item 2 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+   ```
+   bin/journal tick input <tick id> --part <k>
+   ```
 
-### Step 2: fetch the precinct
+### Step 1: ask the cap
 
-Run the "Fetch the precinct" section. The fetched commit is the analysed sha, and `<ref>` is that sha.
-
-### Step 3: sync the tracker
-
-Run the "Sync the tracker" section.
-
-### Step 4: ask the cap
+The `revision=` line gives the fetched commit. It is the analysed sha, and `<ref>` is that sha.
 
 ```
 bin/journal cap <p> --department <d>
 ```
 
-The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lead can be filed. Run the "Resolve the department page" section, which needs no tree, and read the Proof section of the page. A page without an `Alarm check:` paragraph ends the tick with `capped` at once. Read nothing else, create no tree and sweep nothing. A page with that paragraph: create the tree (step 5). Run only that paragraph, as "The alarm check" below says. Then end the tick with `capped`.
+The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lead can be filed. Read the Proof section of the department page that the tick group gives. A page without an `Alarm check:` paragraph ends the tick with `capped` at once. Read nothing else, create no tree and sweep nothing. A page with that paragraph: create the tree (step 2). Run only that paragraph, as "The alarm check" below says. Then end the tick with `capped`.
 
-### Step 5: create the tree
+### Step 2: create the tree
 
-1. Run the "Resolve the department page" section, which needs no tree. `<d>` is the department of the order. Read the Proof section of the page.
+1. The line `department <d> place=<n>` and the `department` fence give the department page. Read its Proof section.
 2. A page whose Proof sends a list through the journal runs items 1 and 2 of "The catalog check" now.
 3. Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tick id>/tree`. It is detached from every branch. Confirm that the tree holds `<sha>`. A failure ends the tick with `failed`.
 
-### Step 6: read the rules
+### Step 3: read the rules
 
-1. Read `lawman/skills/lawman-law/references/LAW.md`, `lawman/skills/lawman-law/references/markers.md` and `lawman/skills/lawman-law/references/departments.md`.
-2. Run the "Check the constitution" section.
-   A department line is `<name><TAB><judged by>`.
-3. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the "Check the constitution" section says.
-4. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the "Check the constitution" section says. Its text is evidence. Use its recorded answers in step 7.
-5. Read the Precedents section. A precedent that settles a candidate drops it.
-6. Use the department page that step 5 resolved.
-7. Read the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
+1. The `lint` fence of the constitution holds the lines that the "Check the constitution" section describes. A department line is `<name><TAB><judged by>`.
+2. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the "Check the constitution" section says.
+3. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the "Check the constitution" section says. Its text is evidence. Use its recorded answers in step 4.
+4. The `precedent` fences are the precedents of your department. Know both kinds before the search, as the law's Precedents section says for patrol.
+5. Use the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
 
-### Step 7: sweep
+### Step 4: sweep
 
 A page whose Proof sends a list through the journal sweeps by "The catalog check". That section names the items below that it replaces.
 
-1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`. The law names the one exception for `licenses`. When the Proof holds a paragraph that starts with the words `License list:`, follow it where the Proof puts it, after the census. Open `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the condition of that paragraph holds.
+1. Make only reads in the tree, and run the source commands of the page. Run the alarm check first when the page has one. Follow the page's Where to look and Proof sections. Aim no search at the shape of a protecting precedent, and never skip a place for it. Search the tree for each pattern of the page and print each hit with its path and line number. Leave out of each search the path of each line of the Not judged section. Leave out none when that section says `none`. The law names the one exception for `licenses`. When the Proof holds a paragraph that starts with the words `License list:`, follow it where the Proof puts it, after the census. Open `lawman/skills/lawman-law/references/departments/licenses/reading.md` only when the condition of that paragraph holds.
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
-5. Cut a candidate that a Precedents entry or a recorded answer in the judging document settles. Name the entry in the report.
+5. Cut a candidate that a recorded answer in the judging document settles. Name the answer in the report. A precedent cuts no candidate. Name in its lead each precedent that fits it.
 6. Attack each candidate once. Look for a caller the search could not see, a guarantee from the caller, an assertion or upstream check, a pinning test, or a recorded reason. If one holds, drop the candidate.
 7. Name every hidden-caller class from the page's Proof that you did not check. Those names go to Not checked.
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
@@ -137,9 +127,9 @@ A page whose Proof sends a list through the journal sweeps by "The catalog check
 11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
 12. Order the survivors by value, highest first.
 
-### Step 8: file the leads
+### Step 5: file the leads
 
-File at most `cap` leads from step 4, one issue for each, in order of value. Repeat these substeps for each lead.
+File at most `cap` leads from step 1, one issue for each, in order of value. Repeat these substeps for each lead.
 
 1. Compose the title and the body from the Lead format section.
 2. Send the title to the body check with `--no-marker`, then the body with no option, each on stdin.
@@ -158,9 +148,9 @@ File at most `cap` leads from step 4, one issue for each, in order of value. Rep
 4. Read the issue back from the host by its number. The author must equal `<login>`, ignoring ASCII case. The last non-empty line of the body must equal the marker you sent. A mismatch, or a failed read, gives `stopped-readback`.
 5. Keep the number for the report. After any stop, make no more writes.
 
-### Step 9: end the tick
+### Step 6: end the tick
 
-Run the "End the tick" section. Add `--department <d>` to `tick end`, and leave it out when there is no order. The harness page names the silence form.
+Run the "End the tick" section. Add `--department <d>` to `tick end`.
 
 ## The alarm check
 
@@ -185,7 +175,7 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 4. Hand the list to the journal as data, as the working rules of `lawman/skills/lawman-law/references/tick.md` say. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
 5. Read the Send section of the exhibits file once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
 6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
-7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 8 stay as they are.
+7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
 
 ## Lead format
@@ -205,7 +195,7 @@ Department: <department>
 <each command with its verbatim output in a fenced block, the positive control, and every site as path:line at <sha>>
 
 ## Why it is <kind>
-<the page's symptom in its own words, what the unit was meant to buy, and the recorded answers you checked>
+<the page's symptom in its own words, what the unit was meant to buy, the recorded answers you checked, and each precedent that fits, by name and kind>
 
 ## Cost and risk
 Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
