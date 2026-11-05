@@ -12,14 +12,15 @@ const PREFIX =
 	"In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal.";
 
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
-const [intro, evidence] = sectionsOf(tick, [
+// sectionsOf gives each section as its lines, so toContain matches a whole line
+const [introLines, evidenceLines] = sectionsOf(tick, [
 	INTRO,
 	"Instructions and evidence",
 ]);
 
 describe("law phrases", () => {
 	test("the fence phrase stands in the tick file's Instructions and evidence section", () => {
-		expect(evidence).toContain(FENCE);
+		expect(evidenceLines).toContain(FENCE);
 	});
 
 	test("the fence phrase stands in the duty desk skill", () => {
@@ -31,6 +32,6 @@ describe("law phrases", () => {
 	});
 
 	test("the prefix phrase stands in the intro of the tick file", () => {
-		expect(intro).toContain(PREFIX);
+		expect(introLines).toContain(PREFIX);
 	});
 });
