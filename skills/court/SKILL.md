@@ -95,8 +95,8 @@ A missing case, or a missing decision that the kind of the case needs, ends the 
 
 | Kind | Decisions | What the court weighs |
 | :-- | :-- | :-- |
-| defended | `charge`, `defence` | the charge against the defence |
-| refuted | `charge`, `refute` | the charge against the refute and its class |
+| defended | `charge`, `defence` | the `## Grounds` of the charge against the `## Defence` and the `## Holes in the charge` of the defence |
+| refuted | `charge`, `refute` | the `## Grounds` of the charge against the `## Holes in the charge` of the refute and the class that its `## Defence` names |
 | declined | `decline` | the claims of the case against the `## Decision` and the `## Grounds` of the decline |
 
 The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Do not read the line under the `## Cost and risk` heading of the lead carrier. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
@@ -123,9 +123,9 @@ When `answer` is `comment`, read the comment with the id `answer_id`. The tick g
 
 Decide one of two for a defect. Decide one of three for a requirement. The tick outcome equals the decision. The same rules hold for the three kinds of case.
 
-The grounds of the charge are its own grounds in a defended or a refuted case. In a declined case, they are the claims of the case's `## Claims checked` section marked `confirmed`. No other mark gives a ground. For a requirement in a declined case, judge fact, need and safety on the case and the decline, as on a charge.
+The grounds of the charge are the `## Grounds` of the charge in a defended or a refuted case. In a declined case, they are the claims of the case's `## Claims checked` section marked `confirmed`. No other mark gives a ground. For a requirement in a declined case, judge fact, need and safety on the case and the decline, as on a charge.
 
-- `conviction`: for a defect, every ground of the charge stands at `<sha>`. The court's own re-read or the record of the parties shows it. No recorded reason explains the shape. In a declined case, the class of the decline does not hold either. For a requirement, `answer` is not `down`, and fact, need and safety are all established, or `answer` is `up` and no closure class holds. A thumbs up settles every undecided part. The law's Evidence section defines the parts and their statuses, and lists the sources of a recorded reason. The issue stays open. Outcome `convicted`.
+- `conviction`: for a defect, every ground of the charge stands at `<sha>`. The court's own re-read or the record of the parties shows it. No recorded reason explains the shape. In a refuted case, the class that the refute's `## Defence` names does not hold either. In a declined case, the class of the decline does not hold either. For a requirement, `answer` is not `down`, and fact, need and safety are all established, or `answer` is `up` and no closure class holds. A thumbs up settles every undecided part. The law's Evidence section defines the parts and their statuses, and lists the sources of a recorded reason. The issue stays open. Outcome `convicted`.
 - `acquittal`: for a defect, every other case. For a requirement, a part is refuted, a closure class holds, or `answer` is `down`. Name exactly one class from the law's Closure classes subsection. `recorded reason` is shown by one of the law's sources that the court read in step 2 or step 4, or that a decision of a party quotes. `gone at <tip>` is shown by the court's own read at `<tip>`. `not confirmed` is the class otherwise, and for every doubt about a defect. For a requirement, it names a refuted part and never an undecided one. When `answer` is `down`, the class is `declined by the owner`, even when another class holds. Otherwise, when more than one class holds, name the first in the law's list. Outcome `acquitted`.
 - `referral`: for a requirement, `answer` is neither `up` nor `down`. No part is refuted, and at least one is undecided, as the law's Evidence section defines. Name each part with its status and its exhibits. The issue stays open. Outcome `referred`.
 
