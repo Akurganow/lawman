@@ -41,7 +41,7 @@ Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. The 
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Take it again as item 1 says.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role court --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 9
@@ -77,7 +77,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead`, `related`, `kind`, `answe
 
 ### Step 2: the rules
 
-1. The `lint` fence of the constitution holds the lines that the "Check the constitution" section describes. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
+1. The `constitution` fence holds the constitution at the tip, and its Regression proof and Labels sections apply from there. Its `lint` fence holds the lines that the "Check the constitution" section describes. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The "Check the constitution" section says what a department with no printed line means.
 2. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the "Check the constitution" section says. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
 3. The `precedent` fences are the precedents of the case. Apply them as the law's Precedents section says for the court. Keep the name of each `precedent <name>` line.
 4. The line `department <d> place=<n>` and the `department` fence give the department page of the case, at the tip. When `department` is `-`, there is no page. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, and only from a page at place 1, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
@@ -116,7 +116,7 @@ When `answer` is `comment`, read the comment with the id `answer_id`. The tick g
    - Re-read a claim of absence as the "Quote a claim of absence" section says.
 2. Read the history of each exhibit path that the court re-reads, up to `<sha>`: the short hash and the subject of each commit that touched it.
 3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case or a decision of a party only through the heredoc form.
-4. A command output quoted in the case or a decision of a party counts as an exhibit when the command stands verbatim under Regression proof of the constitution at `<sha>`, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that the law's Evidence section names is an exhibit too.
+4. A command output quoted in the case or a decision of a party counts as an exhibit when the command stands verbatim under Regression proof of the `constitution` fence, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that the law's Evidence section names is an exhibit too.
 5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 5: decide

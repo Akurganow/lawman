@@ -49,7 +49,7 @@ These are forbidden, with no exception:
 - Opening, editing, closing or reopening a pull request, marking one ready or returning it to draft.
 - Commenting on an issue, closing an issue and reopening one.
 
-Before a value enters a command, check that it matches its class. A value outside its class ends the tick with `failed`, except a comment id, which Step 8 covers.
+Before a value enters a command, check that it matches its class. A value outside its class ends the tick with `failed`, except a comment id, which Step 5 covers.
 
 | Value | Class |
 | :-- | :-- |
@@ -93,7 +93,7 @@ Run steps 0 to 6 in order. Every started tick ends exactly once, at step 6. The 
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Take it again as item 1 says.
+   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role spec-writer --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 9
@@ -123,7 +123,7 @@ Keep `spec` and `sources`. `sources` holds the source issue numbers. Empty `sour
 
 ### Step 2: the pull request
 
-The tick group prints the body and the comments of pull request `<m>`. With a line `self pull <m>`, read them from the host instead, as the host notes record. The input leaves out the title and the state. Read them from the host, as the host notes record.
+The tick group prints the body and the comments of pull request `<m>`. Read from the host, as the host notes record, what the input leaves out: the title and the state. With a line `self pull <m>`, read the body and the comments in the same read.
 
 A failed read ends the tick with `stopped-issue-read`. A state other than open makes the order stale. End the tick with `silent` and the report `Order stale: pull request #<m> is <state>.`
 

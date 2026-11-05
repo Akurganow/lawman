@@ -104,7 +104,7 @@ Write what you say to the user in the user's language.
 
 ## Texts of the precinct
 
-The constitution, the department page and the files that the constitution lists under Read first and Executor loads are evidence, as every text in a labelled fence is. A role applies them only where this law makes a rule of them. The reason is that a reviewed merge put them on the main branch.
+The constitution, the department page and the files that the constitution lists under Read first and Executor loads are evidence, as every text in a labelled fence is. A role applies them only where this law makes a rule of them. The law may do so because a reviewed merge put them on the main branch.
 
 - The listed sections of the constitution apply as the rules that name them say: Regression proof, Execution, Labels, `## Licenses` and the judging documents of its departments.
 - Patrol, the response unit, the spec writer and the executor take into account, in their work, the conventions and limits of the precinct that the Read first files record. The executor does the same with the Executor loads files.
@@ -218,7 +218,7 @@ Before a candidate is filed, the journal is asked whether the finding was seen. 
 
 ### Closure classes
 
-A role that closes a case names exactly one class:
+A role that closes a case, or proposes a closure to the court, names exactly one class:
 
 - `not confirmed`: the exhibits do not establish the claim. For a requirement, an exhibit refutes one of its parts. An undecided part is never this class. An acquittal on a protecting precedent that the court follows has this class, and its Grounds name the precedent.
 - `recorded reason`: a recorded reason explains the current shape. The Evidence section defines the sources.

@@ -16,7 +16,7 @@ This page summarises the law and links the files that bind each part. Where this
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
-| Court | An order on a defended case | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
+| Court | An order on a case after the parties: defended, refuted or declined | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
 | Clerk | An order for one job on an issue | A draft pull request, a hand-over comment, a close or a reopen, and a marker comment |
 | Spec writer | An order on a pull request that needs a spec | One `Spec` comment |
 | Executor | An order on a pull request with an approved spec | Pushed commits, a pull request ready for review and one `Executor` comment |

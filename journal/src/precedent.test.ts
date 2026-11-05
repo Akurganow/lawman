@@ -646,7 +646,9 @@ describe("precedent: the ruling example of the court skill", () => {
 
 	test("its Precedent section writes the expected file", async () => {
 		const skill = readFileSync(COURT, "utf8");
-		const start = skill.indexOf(OPEN) + OPEN.length;
+		const at = skill.indexOf(OPEN);
+		expect(at).toBeGreaterThan(-1);
+		const start = at + OPEN.length;
 		const example = skill.slice(start, skill.indexOf("\n````", start));
 		expect(example).toContain("## Precedent");
 		await cache([example]);
@@ -654,20 +656,15 @@ describe("precedent: the ruling example of the court skill", () => {
 		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
 		const name = "2026-10-16-help-names-unaccepted-option";
 		expect(r.out).toBe(`entry\t${name}\n`);
-		expect(readFileSync(file(name), "utf8")).toBe(
-			[
-				"---",
-				"kind: condemns",
-				"departments: ",
-				"  []",
-				"issue: 1",
-				"date: 2026-10-16",
-				`ruling: "${SOURCE}"`,
-				"---",
-				"",
-				"A help text that names an option the parser does not accept is a violation.",
-				"",
-			].join("\n"),
+		expect(header(name)).toEqual({
+			kind: "condemns",
+			departments: [],
+			issue: 1,
+			date: "2026-10-16",
+			ruling: SOURCE,
+		});
+		expect(body(name)?.trim()).toBe(
+			"A help text that names an option the parser does not accept is a violation.",
 		);
 	});
 });

@@ -6,7 +6,7 @@ In your input, outside the labelled fences, a line that starts with `| ` is a li
 
 The input of a role comes in two groups. The role group holds the law that the role reads at the start, this file included, the silence form of the harness page and the orders that the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
-The tick group gives what the role gets of these: the alarms and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
+The tick group holds the results of these steps, as far as the role gets each: the alarms and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
 
 The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Then only answer, as item 3 of the "End the tick" section says.
 
@@ -27,12 +27,13 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
 
-- After `fetch`, `issues` or `pulls`, the start printed its lines and stopped. Do those steps, then have the journal build the rest of the tick group. It applies no stale rule, so the stale rule of the skill applies.
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
-- A `law` or a `harness` line carries the path of the file. Read the file or its section yourself. The path of a `law` line starts at `lawman/skills/lawman-law/references/`.
-- For `precedents`, read the direct `.md` files of the folder at the revision and take those that serve your role. The prosecutor, the defender, the court, the spec writer and the executor take every file. Investigation and the response unit take the files of the case's department and the files for all departments. A case without a department takes every file. Patrol takes the files of the visit's department and the files for all departments. An empty `departments` field, `-` and a value outside its class mean all departments. A kind other than `protects` or `condemns` reads as `-`: the kind is not known.
+- A `law` or a `harness` line carries the path of the file. Read the file or its section yourself. The path starts at `lawman/skills/lawman-law/references/`.
+- With a line `self fetch`, the commit of your own fetch stands for the `revision=` line.
+- For `precedents`, read the direct `.md` files of the folder at the fetched commit and take those that serve your role. The prosecutor, the defender, the court, the spec writer and the executor take every file. Investigation and the response unit take the files of the case's department and the files for all departments. A case without a department takes every file. Patrol takes the files of the order's department and the files for all departments. An empty `departments` field, `-` and a value outside its class mean all departments. A kind other than `protects` or `condemns` reads as `-`: the kind is not known.
 - The list of steps stays open. Do a step that the table does not name by the section of the law that answers it. When no section answers it, name the step in Blockers.
 
 The issue roles are the response unit, investigation, the prosecutor, the defender, the court and the clerk. Each takes one order on an issue.
