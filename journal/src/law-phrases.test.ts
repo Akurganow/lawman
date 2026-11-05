@@ -34,11 +34,26 @@ const READ_RELEASE =
 	'Read step 3 of the section "Sync the law with an older journal" of `tick.md` yourself.';
 const READ_VERIFY =
 	'Read step 4 of the section "Sync the law with an older journal" of `tick.md` yourself.';
+// What the two rows tell the role about the folder, the paths and the result.
+const RELEASE_ROW = [
+	"its provenance file `<asset>.sigstore.json` and the checksum file `SHA256SUMS`",
+	"The folder is a path relative to the installation folder, and `<asset>` is a file name.",
+	"The folder exists: never create it.",
+	"Skip its creation of the folder.",
+	"Give the result only as this option, never as a stop.",
+];
+const VERIFY_ROW = [
+	"`<asset>` and `<provenance>` are paths relative to the installation folder",
+	"which exists: never create it.",
+	"Give the result only as the option below, never as a stop.",
+];
+const OLDER_EXCEPTION =
+	'The rows `self release` and `self verify` of the section "Sync the law" also read its steps 3 and 4.';
 // Protections 20 to 23 of the sync, as the section "Sync the law" writes them.
 const SYNC_NEVER = [
 	"- Write into the law folder.",
 	"- Replace `bin/journal` or `config.yaml` by any means. The journal's sync does it, with a file that passed its checks.",
-	"- Run any file other than the commands of the journal that this section names.",
+	"- Run any file other than the commands of the journal that this section names, the download tool that `self release` needs and the verifier that `self verify` needs.",
 	"- Continue the tick after a stop.",
 ];
 const DESK_PULLS =
@@ -102,6 +117,19 @@ describe("law phrases", () => {
 		const text = (syncLines ?? []).join("\n");
 		expect(text).toContain(READ_RELEASE);
 		expect(text).toContain(READ_VERIFY);
+	});
+
+	test("the rows release and verify name the files, the relative paths and the result as an option", () => {
+		const rows = syncLines ?? [];
+		const release = rows.find((l) => l.startsWith("| `self release "));
+		const verify = rows.find((l) => l.startsWith("| `self verify "));
+		for (const phrase of RELEASE_ROW) expect(release).toContain(phrase);
+		for (const phrase of VERIFY_ROW) expect(verify).toContain(phrase);
+	});
+
+	test("the older section names the rows that also read its steps 3 and 4", () => {
+		const [older] = sectionsOf(tick, ["Sync the law with an older journal"]);
+		expect((older ?? []).join("\n")).toContain(OLDER_EXCEPTION);
 	});
 
 	test("Sync the law runs the command of the journal and ends a stop with the answer", () => {

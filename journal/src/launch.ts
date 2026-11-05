@@ -11,10 +11,11 @@ export const PRECINCT_OPERATIONS = [
 	"file",
 	"files",
 ] as const;
+export const LAW_VERSION = "law-version";
 export const INSTALLATION_OPERATIONS = [
 	"release",
 	"verify",
-	"law-version",
+	LAW_VERSION,
 ] as const;
 
 // the folder of the database, so a throwaway database brings its own commands

@@ -367,7 +367,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		return ended(t, o, "failed", "config.yaml has no trusted_login", null);
 	const law = await lawCheck(config);
 	if (law === "self") o.selfs.push("law-version");
-	else if (law !== null) return ended(t, o, law.outcome, law.report, null);
+	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);
 	const p = order.precinct;
 	const who = await operate(p, "identity", call([]));
 	o.add(...who.blocks);

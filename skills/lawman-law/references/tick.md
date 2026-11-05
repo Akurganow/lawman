@@ -67,8 +67,8 @@ bin/journal law-update <role> --revision <revision> --state <state> --tag <tag> 
 | :-- | :-- |
 | `law current` | There is nothing to update. Go on. |
 | `self law-version` | Read the revision of the law folder, whether it has a local change, and the release tag of that revision. Answer `--revision <revision> --state clean` or `--state changed`, and add `--tag <tag>` when the revision has a release tag. A state that cannot be read counts as `changed`. When the revision cannot be read, answer `--revision unreadable` alone. |
-| `self release <repo> <tag> <folder> <asset>` | Put the asset, its provenance file and the checksum file of the release of that tag into the folder, which exists. Read step 3 of the section "Sync the law with an older journal" of `tick.md` yourself. Answer `--release done`. When the release or a file does not exist, answer `--release missing`. Any other failure is `--release failed`. |
-| `self verify <asset> <provenance> <repo> <commit>` | Check the signature of those files. Read step 4 of the section "Sync the law with an older journal" of `tick.md` yourself. The journal has checked the checksum already. Answer `--verify passed` when the check reports success and `--verify failed` when it reports anything else. Answer `--verify not-run` when the check cannot run. Answer `--verify declined` when the host notes record that the user declined a verifier. Answer `--verify unnamed` when the notes are missing or name neither a verifier nor a refusal. |
+| `self release <repo> <tag> <folder> <asset>` | Put the asset, its provenance file `<asset>.sigstore.json` and the checksum file `SHA256SUMS` of the release of that tag into the folder. The folder is a path relative to the installation folder, and `<asset>` is a file name. The folder exists: never create it. Read step 3 of the section "Sync the law with an older journal" of `tick.md` yourself. Skip its creation of the folder. Answer `--release done`. When the release or a file does not exist, answer `--release missing`. Any other failure is `--release failed`. Give the result only as this option, never as a stop. |
+| `self verify <asset> <provenance> <repo> <commit>` | Check the signature of those files. `<asset>` and `<provenance>` are paths relative to the installation folder, and both files lie in the folder of `self release`, which exists: never create it. Read step 4 of the section "Sync the law with an older journal" of `tick.md` yourself. The journal has checked the checksum already. Give the result only as the option below, never as a stop. Answer `--verify passed` when the check reports success and `--verify failed` when it reports anything else. Answer `--verify not-run` when the check cannot run. Answer `--verify declined` when the host notes record that the user declined a verifier. Answer `--verify unnamed` when the notes are missing or name neither a verifier nor a refusal. |
 | `ALARM …`, then `synced <tag>` | The update is done. Keep every `ALARM` line for the answer. Your role group is stale: read it again. Apply the update list below. |
 | `stop <token> <reason>` | The sync stopped. Answer the token, a colon and the reason, and stop. A stop is answered and not recorded, because no tick exists yet. The journal has removed the release folder it built. The next tick tries again. |
 
@@ -80,7 +80,7 @@ Never do these:
 
 - Write into the law folder.
 - Replace `bin/journal` or `config.yaml` by any means. The journal's sync does it, with a file that passed its checks.
-- Run any file other than the commands of the journal that this section names.
+- Run any file other than the commands of the journal that this section names, the download tool that `self release` needs and the verifier that `self verify` needs.
 - Continue the tick after a stop.
 
 **The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
@@ -89,7 +89,7 @@ The list has one entry, `licenses`. It applies when a precinct that `bin/journal
 
 ## Sync the law with an older journal
 
-Do this section only when the first line of your input output does not start with `lawman input`. The journal is older than the law then and has no command `law-update`. It completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips it.
+Do this section only when the first line of your input output does not start with `lawman input`. The journal is older than the law then and has no command `law-update`. The rows `self release` and `self verify` of the section "Sync the law" also read its steps 3 and 4. It completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips it.
 
 Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.
 

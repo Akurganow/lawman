@@ -1,4 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
+import * as fs from "node:fs";
 import {
 	appendFileSync,
 	existsSync,
@@ -10,7 +11,7 @@ import {
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import * as clean from "./clean";
 import { EXIT } from "./db";
 import { capturedAsync, inprocAsync, type Result } from "./inproc";
@@ -90,8 +91,10 @@ const verifyCall = () =>
 	`verify ${assetPath()} ${provenancePath()} ${REPO} ${REVISION}`;
 const syncCall = () =>
 	`law-sync --tag ${TAG} --commit ${REVISION} --installation ${dir}`;
+// the self lines name the paths from the installation folder
+const fromInstallation = (path: string) => relative(dir, path);
 const selfVerify = () =>
-	`self verify ${assetPath()} ${provenancePath()} ${REPO} ${REVISION}\n`;
+	`self verify ${fromInstallation(assetPath())} ${fromInstallation(provenancePath())} ${REPO} ${REVISION}\n`;
 const synced = `synced ${TAG}\n`;
 
 // the role's part: a release folder that holds the files of the release
@@ -546,7 +549,7 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expect(existsSync(runsFolder())).toBe(false);
 		expect(await run()).toEqual({
 			code: EXIT.OK,
-			out: `self release ${REPO} ${TAG} ${releaseFolder()} ${ASSET}\n`,
+			out: `self release ${REPO} ${TAG} ${fromInstallation(releaseFolder())} ${ASSET}\n`,
 			err: "",
 		});
 		expect(readdirSync(releaseFolder())).toEqual([]);
@@ -749,6 +752,65 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 			expect(r.out).toBe("");
 		},
 	);
+});
+
+describe("law-update: file operations that fail", () => {
+	test("a release folder the journal cannot make stops with the release download failed", async () => {
+		ready();
+		writeFileSync(runsFolder(), "a file where the folder goes\n");
+		expectStop(await run(), "the release download failed");
+		expect(calls("release")).toEqual([]);
+	});
+
+	test("an asset the journal cannot make executable stops, and the folder is gone", async () => {
+		ready();
+		const chmod = spyOn(fs, "chmodSync").mockImplementation(() => {
+			throw new Error("EPERM");
+		});
+		try {
+			expectStop(await run(), "the new binary did not start");
+		} finally {
+			chmod.mockRestore();
+		}
+	});
+});
+
+describe("law-update: an installation path with a space", () => {
+	test("the self lines name the paths from the installation folder, so each field stays one word", async () => {
+		const place = join(dir, "with space");
+		mkdirSync(place);
+		writeFileSync(join(place, "config.yaml"), config());
+		const facts = answer(REVISION);
+		const pass = (...args: string[]) =>
+			capturedAsync(BASE, () => {
+				process.env.LAWMAN_DB = join(place, "journal.sqlite");
+				return lawUpdate([ROLE, ...facts, ...args]);
+			});
+		const release = await pass();
+		const fields = release.out.trimEnd().split(" ");
+		expect(fields).toEqual([
+			"self",
+			"release",
+			REPO,
+			TAG,
+			join("runs", `sync-${ROLE}-${REVISION.slice(0, 7)}`),
+			ASSET,
+		]);
+		const { hash } = publish();
+		const folder = join(place, fields[4] ?? "");
+		for (const name of readdirSync(upstream()))
+			writeFileSync(join(folder, name), readFileSync(join(upstream(), name)));
+		expect(hash).toHaveLength(64);
+		const verify = await pass("--release", "done");
+		expect(verify.out.trimEnd().split(" ")).toEqual([
+			"self",
+			"verify",
+			join(fields[4] ?? "", ASSET),
+			join(fields[4] ?? "", `${ASSET}.sigstore.json`),
+			REPO,
+			REVISION,
+		]);
+	});
 });
 
 describe("law-update: the exits of release", () => {

@@ -861,6 +861,24 @@ describe("the law folder at the start", () => {
 		expect(records()).toEqual(["law-version"]);
 	});
 
+	test.each([
+		["a drift", () => lawVersion("2".repeat(40))],
+		["a local change", () => lawVersion(LAW_COMMIT, "yes")],
+		["a failing law-version", () => command(shared(), "law-version", "exit 1")],
+	])("%s stops the start before any host operation runs", (_name, setup) => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		for (const op of ["identity", "fetch", "issues", "files", "file"])
+			command(configs("main"), op, recording("true"));
+		setup();
+		expect(lines(start("investigation").out)).toContainEqual(
+			expect.stringMatching(/^ended stopped-/),
+		);
+		expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
+		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
+	});
+
 	test("a law folder at law_commit with no change starts as before", () => {
 		setUp();
 		orderOf("investigation", { issue: 3 });

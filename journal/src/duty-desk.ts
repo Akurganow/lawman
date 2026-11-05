@@ -376,7 +376,7 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 	if (login === undefined || !fits("login", login))
 		return ended(t, alarms, "failed", "config.yaml has no trusted_login");
 	const law = await lawCheck(config);
-	if (law !== null && law !== "self")
+	if (law !== "current" && law !== "self")
 		return ended(t, alarms, law.outcome, law.report);
 	const selfs: string[] = law === "self" ? ["self law-version"] : [];
 	for (const p of weighted()) {

@@ -44,6 +44,7 @@ const DOWNLOAD_FAILED = "the release download failed";
 const CHECK_FAILED = "the provenance check failed";
 const CHECK_NOT_RUN = "the check could not run";
 const BINARY_FAILED = "the new binary failed";
+const DID_NOT_START = "the new binary did not start";
 const ALARM = "ALARM contract-changed";
 // exit 2 of the release command: the release or one of its files is missing
 const MISSING = 2;
@@ -80,14 +81,16 @@ function parse(args: string[]): { role: string; opt: Options } {
 	}
 	const facts = opt.state !== undefined || opt.tag !== undefined;
 	const named = opt.revision !== undefined && opt.revision !== UNREADABLE;
-	if (named ? opt.state === undefined : facts) throw usage(USAGE);
+	// a named revision needs its state; no revision, or an unreadable one, takes no facts
+	if (named && opt.state === undefined) throw usage(USAGE);
+	if (!named && facts) throw usage(USAGE);
 	return { role: check("role", pos[0]), opt };
 }
 
 // the facts of the law folder, or the line that asks the role for them
 async function facts(opt: Options): Promise<LawFacts | "self"> {
 	const got = await lawVersion();
-	if (got === null) throw new Stopped(COMMAND_FAILED);
+	if (got === "failed") throw new Stopped(COMMAND_FAILED);
 	if (got !== "absent") return got;
 	if (opt.revision === undefined) return "self";
 	if (opt.revision === UNREADABLE) throw new Stopped(NO_FACTS);
@@ -107,13 +110,23 @@ function regular(path: string): boolean {
 	}
 }
 
+// a release file the journal cannot read is a release that is not ready
+function read(path: string): Buffer {
+	try {
+		return readFileSync(path);
+	} catch {
+		throw new Stopped(NOT_READY);
+	}
+}
+
 function checksum(asset: string, path: string, sums: string): void {
-	const rows = readFileSync(sums, "utf8")
+	const rows = read(sums)
+		.toString("utf8")
 		.split("\n")
 		.map((line) => line.replace(/\r$/, "").match(/^([^ ]*) +(.*)$/))
 		.filter((m) => m !== null && m[2]?.replace(/^\*/, "") === asset);
 	const hash = rows.length === 1 ? rows[0]?.[1] : undefined;
-	const actual = createHash("sha256").update(readFileSync(path)).digest("hex");
+	const actual = createHash("sha256").update(read(path)).digest("hex");
 	if (hash === undefined || !/^[0-9a-f]{64}$/.test(hash) || hash !== actual)
 		throw new Stopped("the checksum failed");
 }
@@ -135,7 +148,11 @@ async function swap(
 	tag: string,
 	revision: string,
 ) {
-	chmodSync(join(folder, asset), 0o755);
+	try {
+		chmodSync(join(folder, asset), 0o755);
+	} catch {
+		throw new Stopped(DID_NOT_START);
+	}
 	const ran = await launch(folder, asset, [
 		"law-sync",
 		"--tag",
@@ -145,7 +162,7 @@ async function swap(
 		"--installation",
 		commandFolder(),
 	]);
-	if (ran === null) throw new Stopped("the new binary did not start");
+	if (ran === null) throw new Stopped(DID_NOT_START);
 	if (!ran.ok) {
 		const first = decode(ran.stderr).split("\n")[0] ?? "";
 		const reason = ((await clean(first)) ?? "").trim();
@@ -164,7 +181,26 @@ async function swap(
 	return [...alarms, `synced ${tag}`];
 }
 
-// Steps 9 to 12: the release files, their checks and the swap, or the step the role does
+// a folder the journal cannot remove or make is a release it cannot download
+function rebuild(folder: string): void {
+	try {
+		rmSync(folder, { recursive: true, force: true });
+		mkdirSync(folder, { recursive: true });
+	} catch {
+		throw new Stopped(DOWNLOAD_FAILED);
+	}
+}
+
+function remove(folder: string): void {
+	try {
+		rmSync(folder, { recursive: true, force: true });
+	} catch {
+		// the next pass that builds the folder removes it again
+	}
+}
+
+// Gets the release files, checks the checksum and the signature, and runs the
+// new binary; or prints the self step the role does instead.
 async function update(
 	role: string,
 	opt: Options,
@@ -175,28 +211,28 @@ async function update(
 	const shared = installationPlace();
 	const hasRelease = hasCommand(shared, "release");
 	const hasVerify = hasCommand(shared, "verify");
-	const folder = join(
-		commandFolder(),
-		"runs",
-		`sync-${role}-${f.revision.slice(0, 7)}`,
-	);
+	// the self lines name the paths from the installation folder, so no field holds a space
+	const name = join("runs", `sync-${role}-${f.revision.slice(0, 7)}`);
+	const folder = join(commandFolder(), name);
 	const assetPath = join(folder, asset);
 	const provenance = `${assetPath}.sigstore.json`;
+	// an answer counts only while its operation has no file
+	const releaseAnswered = !hasRelease && opt.release !== undefined;
+	const verifyAnswered = !hasVerify && opt.verify !== undefined;
 	try {
-		const answered =
-			(!hasRelease && opt.release !== undefined) ||
-			(!hasVerify && opt.verify !== undefined);
-		if (answered) {
-			if (!hasRelease && opt.release === "missing")
+		// A pass with an answer builds nothing: it checks the files already in the
+		// folder, so the answer about the signature covers the bytes that run.
+		if (releaseAnswered || verifyAnswered) {
+			if (releaseAnswered && opt.release === "missing")
 				throw new Stopped(NOT_READY);
-			if (!hasRelease && opt.release === "failed")
+			if (releaseAnswered && opt.release === "failed")
 				throw new Stopped(DOWNLOAD_FAILED);
 			if (!existsSync(folder)) throw new Stopped(NOT_READY);
 		} else {
-			rmSync(folder, { recursive: true, force: true });
-			mkdirSync(folder, { recursive: true });
+			rebuild(folder);
+			// the folder stays for the role, and the pass with its answer checks it
 			if (!hasRelease)
-				return [`self release ${repo} ${f.tag} ${folder} ${asset}`];
+				return [`self release ${repo} ${f.tag} ${name} ${asset}`];
 			const ran = await launch(shared, "release", [repo, f.tag, folder, asset]);
 			if (ran === null) throw new Stopped(DOWNLOAD_FAILED);
 			if (ran.code === MISSING) throw new Stopped(NOT_READY);
@@ -215,15 +251,18 @@ async function update(
 			]);
 			if (ran === null) throw new Stopped(CHECK_NOT_RUN);
 			if (!ran.ok) throw new Stopped(CHECK_FAILED);
-		} else if (opt.verify === undefined)
-			return [`self verify ${assetPath} ${provenance} ${repo} ${f.revision}`];
-		else {
+		} else if (opt.verify === undefined) {
+			const files = join(name, asset);
+			return [
+				`self verify ${files} ${files}.sigstore.json ${repo} ${f.revision}`,
+			];
+		} else {
 			const stop = VERIFY_STOPS[opt.verify];
 			if (stop !== undefined) throw new Stopped(stop);
 		}
 		return await swap(folder, asset, f.tag, f.revision);
 	} catch (e) {
-		if (e instanceof Stopped) rmSync(folder, { recursive: true, force: true });
+		remove(folder);
 		throw e;
 	}
 }

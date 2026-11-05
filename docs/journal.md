@@ -33,9 +33,9 @@ Each call of `law-update` is one pass over these steps. The pass ends at the fir
 9. It checks the signature. Your `verify` command does it. Without that command, the role does it.
 10. It makes the asset executable and runs `<asset> law-sync --tag <tag> --commit <revision> --installation <installation folder>`. The new file swaps itself over `bin/journal`. The journal keeps the `ALARM contract-changed` lines and the line `synced <tag>` from its output and drops the rest.
 
-The command opens no database and writes no tick, because the tick does not exist yet. It writes nothing into the law folder. It changes neither `bin/journal` nor `config.yaml`: only the `law-sync` of the checked file does. It prints only fixed lines and values that passed their classes. It never prints a word of the output of your commands.
+The command opens no database and writes no tick, because the tick does not exist yet. It writes nothing into the law folder. It changes neither `bin/journal` nor `config.yaml`: only the `law-sync` of the checked file does. It prints fixed lines and values that passed their classes. It never prints a word of the output of your commands. One exception: after the character layer, it prints the `ALARM contract-changed` lines and the first line of the error output of the new binary's `law-sync`.
 
-After a stop at step 6 or later, the journal removes the folder of the release. After success the folder stays.
+After a stop at step 6 or later, the journal removes the folder of the release. A failed file operation in these steps is a stop too, never exit 1: the folder cannot be removed or made, a release file cannot be read, or the asset cannot be made executable. After success the folder stays.
 
 ### What `law-update` prints
 
@@ -43,14 +43,14 @@ After a stop at step 6 or later, the journal removes the folder of the release. 
 | :-- | :-- |
 | `law current` | There is nothing to update. |
 | `self law-version` | The role reads the revision, the local change and the release tag of the law folder. |
-| `self release <repo> <tag> <folder> <asset>` | The role puts the asset, its provenance file and `SHA256SUMS` of that release into the folder. |
-| `self verify <asset> <provenance> <repo> <commit>` | The role checks the signature of the asset against the provenance file. The journal already checked the checksum. |
+| `self release <repo> <tag> <folder> <asset>` | The role puts the asset, its provenance file and `SHA256SUMS` of that release into the folder, which exists. `<folder>` is a path relative to the installation folder, and `<asset>` is a file name. |
+| `self verify <asset> <provenance> <repo> <commit>` | The role checks the signature of the asset against the provenance file. `<asset>` and `<provenance>` are paths relative to the installation folder. The journal already checked the checksum. |
 | `ALARM …`, then `synced <tag>` | The update is done. |
 | `stop <token> <reason>` | The update stopped. |
 
 A stop is an answer and exits 0. A non-zero exit means the command itself failed. The role answers a stop with the token, a colon and the reason, and ends. The next tick tries again.
 
-After a `self` line the role does the step and calls the command again. Each call starts at the first step, so it carries every answer given so far. The command keeps no state between calls, except the folder of the release.
+The paths of the lines `self release` and `self verify` are relative to the installation folder, so no field holds a space. The commands `release` and `verify` still get absolute paths. After a `self` line the role does the step and calls the command again. Each call starts at the first step, so it carries every answer given so far. The command keeps no state between calls, except the folder of the release.
 
 ```
 journal law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
@@ -73,6 +73,8 @@ journal law-update <role> [--revision <revision>|unreadable [--state clean|chang
 
 Every stop carries the token `stopped-law-drift`, except the local change, which carries `stopped-dirty-law`. The list of reasons stays open: a later release adds a reason with the path that mends it.
 
+A law folder with a local change at `law_commit` is no stop here: `law-update` prints `law current`, because the revision equals `law_commit`. The tick start then stops with `stopped-dirty-law`.
+
 | Reason | When | What you do |
 | :-- | :-- | :-- |
 | the law-version command failed | `shared/law-version` did not start, exited non-zero or printed outside its form | Check three places: the execute permission of the file, its exit code and its output form. See [the law-version file](#the-law-version-file). |
@@ -82,21 +84,21 @@ Every stop carries the token `stopped-law-drift`, except the local change, which
 | the law is not on a release | The revision carries no release tag | Move the plugin to a released version, or make the `law-version` command print the tag of the revision. |
 | the tag is not safe | The tag is outside its class | Use a release tag of letters, digits, `.`, `_` and `-`, which does not start with `-`. |
 | no binary for this platform | The release builds no journal for this system or architecture | Run the installation on `darwin` or `linux` with `x64` or `arm64`. |
-| binary not ready | The release, or its asset, provenance file or `SHA256SUMS`, is missing, or a file is a link or a folder. A `release` command that exits 2 says the same. | Wait until the release lists the binary, its provenance file and `SHA256SUMS`. The next tick tries again. |
-| the release download failed | The `release` command did not start, or ended with a failure other than 2 | Check the execute permission and the exit code of `shared/release`, and the network. |
+| binary not ready | The release, or its asset, provenance file or `SHA256SUMS`, is missing, or a file is a link or a folder, or the journal cannot read a release file. A `release` command that exits 2 says the same. | Wait until the release lists the binary, its provenance file and `SHA256SUMS`. If the stop repeats, check that the journal can read the files in the release folder. The next tick tries again. |
+| the release download failed | The `release` command did not start, or ended with a failure other than 2, or the journal cannot remove or make the release folder | Check the execute permission and the exit code of `shared/release`, the network, and that the journal can write the folder `runs/` of the installation. |
 | the checksum failed | The asset does not match `SHA256SUMS`, or the file has no line or several lines for the asset | Do not run the file. The next tick downloads it again. If the stop repeats, open an issue in Lawman's repository. |
 | the check could not run | The `verify` command did not start, or the role could not run the verifier | Check the execute permission of `shared/verify`, or install the verifier that the host notes name. |
 | the provenance check failed | The signature check did not confirm the file | Do not run the file. If the stop repeats, open an issue in Lawman's repository. |
 | the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal | Run the assembly and its part Host, then name a verifier or decline one. |
-| the new binary did not start | The asset did not start on this machine | Check that the machine matches the platform of the asset. The installation stays as it was. |
-| the new binary did not confirm the update | The new file exited 0 and printed no `synced <tag>` line | The installation stays as it was. Open an issue in Lawman's repository. |
+| the new binary did not start | The asset did not start on this machine, or the journal cannot make it executable | Check that the machine matches the platform of the asset, and that the journal may change the mode of the files in the release folder. The installation stays as it was. |
+| the new binary did not confirm the update | The new file exited 0 and printed no `synced <tag>` line | `bin/journal` may already hold the new file. Open an issue in Lawman's repository. |
 | the first line of the new binary's error output, or the new binary failed | The new file refused the update, for example because the skills ask for a newer schema than it has | Read the reason. Before the swap `law-sync` only reads, so the installation stays as it was. |
 
 The start of every tick checks the law folder too, and it has one more reason. See [the check of the law folder](#the-check-of-the-law-folder).
 
 | Reason | When | What you do |
 | :-- | :-- | :-- |
-| the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. |
+| the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update prints `law current` and cannot mend it: run the assembly. |
 
 `law-sync` renames the new binary over `bin/journal` and rewrites the sync keys of `config.yaml`. Before the swap it only reads, so a failure leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
 
@@ -475,7 +477,7 @@ The start runs these steps in order.
 2. It reads `config.yaml`. A missing file or a missing `trusted_login` ends the tick `failed`.
 3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says. A stop ends the tick here, before any precinct is read.
 4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
-5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open, and nothing was written.
+5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open and has written no order. On the path of `self law-version` the start has already run the host sync of item 4, so the issue cache may hold what it read.
 6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
 7. It closes the stale orders of those precincts. An order closes when nobody holds it, or its claim has run out, and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
 8. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get an order for every case or pull request that the cache shows as due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
