@@ -26,17 +26,12 @@ export const jobsLine = () =>
 // and the first readable pair of a role wins
 export function jobsOf(value: string | undefined, role: string): number {
 	const fallback = Object.hasOwn(JOBS, role) ? (JOBS[role] ?? 1) : 1;
-	if (value === undefined || value === "none") return fallback;
+	if (value === undefined || value === "none" || !Object.hasOwn(JOBS, role))
+		return fallback;
 	for (const pair of value.split(/\s+/)) {
 		const at = pair.indexOf("=");
 		const n = pair.slice(at + 1);
-		if (
-			at > 0 &&
-			pair.slice(0, at) === role &&
-			Object.hasOwn(JOBS, role) &&
-			COUNT.test(n)
-		)
-			return Number(n);
+		if (at > 0 && pair.slice(0, at) === role && COUNT.test(n)) return Number(n);
 	}
 	return fallback;
 }

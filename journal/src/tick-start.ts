@@ -310,6 +310,9 @@ async function precedentBlocks(
 	else if (shown === 0) o.line("precedents none");
 }
 
+// the place of the law clone in the "Resolve the department page" section
+export const LAW_CLONE_PLACE = 3;
+
 // the places of the "Resolve the department page" section, in its order
 export function installationPage(d: string): Page | null {
 	const places = [

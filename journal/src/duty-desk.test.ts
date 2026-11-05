@@ -1,12 +1,15 @@
+import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
+import { convicted, human, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
 	DESK,
 	dispatches,
 	failing,
+	type Host,
 	hostOf,
 	openOrders,
 	orderLines,
@@ -30,6 +33,7 @@ import {
 	dbFile,
 	issuesForm,
 	later,
+	order,
 	rows,
 	seed,
 	TRUSTED,
@@ -50,6 +54,22 @@ const CASE_ROLES = [
 const key = (o: Record<string, unknown>) =>
 	`${o.precinct} ${o.role} ${o.issue ?? "-"}`;
 
+// What WORK gives each of main and beta, sorted: a case at each stage of the funnel (issues 1 to 4),
+// the human issue 5 that pull request 9 closes (the clerk), the pull request 7 without a spec and 8 with a vote-won one.
+const PINNED = ["main", "beta"]
+	.flatMap((p) =>
+		[
+			"investigation 1",
+			"prosecutor 2",
+			"defender 3",
+			"court 4",
+			"clerk 5",
+			"spec-writer 7",
+			"executor 8",
+		].map((k) => `${p} ${k}`),
+	)
+	.sort();
+
 // the cache of a precinct as it is before the precinct has weight 0
 function idle(name: string) {
 	expect(syncBy(name, WORK).code).toBe(0);
@@ -58,9 +78,10 @@ function idle(name: string) {
 }
 
 describe("the orders of the duty desk start", () => {
-	// The old chain gave one entry per call, so its whole output is every dueEntries entry of a role
-	// on a precinct that has weight; the cache is what the start synced.
-	test("the investigation, prosecutor, defender, court, clerk, spec-writer and executor orders are the old chain's entries", () => {
+	// The orders of a case role are every dueEntries entry of the role on a precinct that has weight;
+	// the cache is what the start synced. The keys are pinned from the fixture, so the check
+	// does not compare the function only with itself.
+	test("orders are every entry each case role is due on", () => {
 		setUp({ main: 2, beta: 1, idle: 1 });
 		hostOf("main", WORK);
 		hostOf("beta", WORK);
@@ -79,6 +100,7 @@ describe("the orders of the duty desk start", () => {
 			.filter((o) => CASE_ROLES.includes(String(o.role)))
 			.map(key);
 		expect(written.sort()).toEqual(chain.sort());
+		expect(written.sort()).toEqual(PINNED);
 		for (const role of CASE_ROLES)
 			expect(chain.filter((k) => k.includes(` ${role} `)).length).toBe(2);
 	});
@@ -129,6 +151,82 @@ describe("the orders of the duty desk start", () => {
 		expect(dispatches().length).toBe(first);
 		expect(orderLines(r.out)).toEqual([]);
 		expect(ticks().map((t) => t.outcome)).toEqual(["ordered", "silent"]);
+	});
+});
+
+// The orders of one tick share one `at`, so their ids carry the order they were written in.
+describe("the write order", () => {
+	// the list the start reads, taken from the cache the start will sync again
+	function listed<T>(h: Host, read: (db: Database) => T): T {
+		expect(syncBy("main", h).code).toBe(0);
+		expect(syncBy("main", h, BASE, true).code).toBe(0);
+		const db = open(dbFile);
+		try {
+			return read(db);
+		} finally {
+			db.close();
+		}
+	}
+	const issuesOf = (role: string) =>
+		dispatches()
+			.filter((o) => o.role === role && o.outcome === null)
+			.map((o) => o.issue);
+
+	test("the clerk orders follow dueEntries: priority, then the oldest last order", () => {
+		const h: Host = {
+			issues: {
+				1: convicted("P2"),
+				2: convicted("P0"),
+				3: convicted("P2"),
+				4: convicted("P1"),
+				5: convicted("P2"),
+			},
+		};
+		setUp({ main: 1 });
+		hostOf("main", h);
+		// 5 was ordered before 3, so inside P2 the issue 1 (never ordered) goes first, then 5, then 3
+		seed((d) => {
+			order(d, "main", "clerk", {
+				issue: 3,
+				at: "2026-04-03T00:00:00Z",
+				outcome: "ok",
+			});
+			order(d, "main", "clerk", {
+				issue: 5,
+				at: "2026-04-02T00:00:00Z",
+				outcome: "ok",
+			});
+		});
+		const due = listed(h, (db) => dueEntries(db, "clerk").map((e) => e.number));
+		expect(due).toEqual([2, 4, 1, 5, 3]);
+		expect(due).not.toEqual([...due].sort((a, b) => a - b));
+		startDesk();
+		expect(issuesOf("clerk")).toEqual(due);
+	});
+
+	test("the response-unit orders follow intakeWaiting: the oldest last order first, then the age of the issue", () => {
+		const waiting = (hour: number) => ({
+			...human("OPEN"),
+			createdAt: T(hour),
+		});
+		const h: Host = {
+			issues: { 1: waiting(12), 2: waiting(8), 3: waiting(7) },
+		};
+		setUp({ main: 1 });
+		hostOf("main", h);
+		// the issue 3 is the oldest but was ordered already, so it goes last
+		seed((d) =>
+			order(d, "main", "response-unit", {
+				issue: 3,
+				at: "2026-04-02T00:00:00Z",
+				outcome: "ok",
+			}),
+		);
+		const due = listed(h, (db) => intakeWaiting(db, "main"));
+		expect(due).toEqual([2, 1, 3]);
+		expect(due).not.toEqual([...due].sort((a, b) => a - b));
+		startDesk();
+		expect(issuesOf("response-unit")).toEqual(due);
 	});
 });
 

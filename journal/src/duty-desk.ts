@@ -13,7 +13,7 @@ import {
 	out,
 	withDb,
 } from "./db";
-import { type Taken, takeableOrders } from "./dispatch";
+import { PATROL, type Taken, takeableOrders } from "./dispatch";
 import { dueEntries } from "./due";
 import { orderLine, REFERENCES, readConfig } from "./input-files";
 import { framed } from "./input-parts";
@@ -26,16 +26,20 @@ import { asciiLower, stripCr } from "./markers";
 import { type Operated, operate } from "./operations";
 import { rotationOrder } from "./rotation";
 import { JOBS } from "./settings";
-import { installationPage, type Page, stageFor } from "./tick-start";
+import {
+	installationPage,
+	LAW_CLONE_PLACE,
+	type Page,
+	stageFor,
+} from "./tick-start";
 
 const START_USAGE =
 	"tick start --role <r> --order <id>|tick start --role duty-desk";
 const CONTINUE_USAGE = "tick continue <id>";
 const CONSTITUTION = "LAWMAN.md";
 const LICENSES = "licenses";
-const PATROL = "patrol";
 const RESPONSE_UNIT = "response-unit";
-// the roles whose orders come from the cases and the pull requests, in the old order of the steps
+// the roles whose orders come from the cases and the pull requests
 const CASE_ROLES = [
 	"investigation",
 	"prosecutor",
@@ -176,14 +180,15 @@ async function departmentPage(
 async function chooseDepartment(
 	p: string,
 	reading: Reading,
+	shared: string[],
 	config: string | null,
 	blockers: string[],
 ): Promise<string | null> {
-	const names = [...sharedPages(), ...reading.lines].filter((d) => {
+	const all = [...shared, ...reading.lines];
+	for (const d of all)
 		if (!fits("department", d))
 			blockers.push(`${p}: a department name outside its class`);
-		return fits("department", d);
-	});
+	const names = all.filter((d) => fits("department", d));
 	const turns = withDb((db) => rotationOrder(db, p, PATROL, names));
 	let capped = false;
 	for (const { department: d, cap } of turns) {
@@ -195,7 +200,8 @@ async function chooseDepartment(
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped
-		const consented = d !== LICENSES || page.place !== 3 || consents(config, p);
+		const consented =
+			d !== LICENSES || page.place !== LAW_CLONE_PLACE || consents(config, p);
 		if (consented && (cap > 0 || lint.alarmCheck)) return d;
 		capped = true;
 	}
@@ -294,6 +300,7 @@ async function finish(
 	const precincts = weighted();
 	const blockers: string[] = [];
 	const visits = new Map<string, Visit>();
+	const shared = sharedPages();
 	for (const p of precincts) {
 		const synced =
 			(p.synced_at ?? "") >= t.started &&
@@ -306,7 +313,7 @@ async function finish(
 		const department =
 			reading === null || openPatrolOrder(p.name)
 				? null
-				: await chooseDepartment(p.name, reading, config, blockers);
+				: await chooseDepartment(p.name, reading, shared, config, blockers);
 		visits.set(p.name, { reading, department });
 	}
 	const stamp = now();

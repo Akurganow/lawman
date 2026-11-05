@@ -8,7 +8,7 @@ The input of a role comes in two groups. The role group holds the law that the r
 
 The tick group holds the results of these steps, as far as the role gets each: the alarms and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
 
-The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Then only answer, as item 3 of the "End the tick" section says.
+The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Go on as item 3 of the "End the tick" section says.
 
 **Self steps.** A line `self <step>` names a step that the journal could not do. Do it yourself and go on with the tick. Do the self steps of the tick group right after you read the group, before any other work and any write to the host. A self step takes the fetched commit as `<ref>`, as the journal does.
 
@@ -263,14 +263,14 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
-3. Answer. Print every `ALARM` line verbatim first. Then print every line of the update list that the tick kept. Then:
+3. Answer once per session, after its last tick. A session runs up to the role's number of ticks, one per order of its group. Print every `ALARM` line of every tick verbatim first. Then print every line of the update list that the session kept. Then:
    - For `failed`, add the report.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form alone. The journal holds the report. The `Silence` section of the role group gives the form. Without that section, the harness page names it.
 
 ## Alarm
 
-Issue roles and patrol. Print an alarm first in the answer of the same tick. The line names a path and a line, never a value. Alarms have no cap.
+Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap.
 
 - An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.

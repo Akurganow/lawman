@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { rmSync, writeFileSync } from "node:fs";
+import { readdirSync, rmSync, writeFileSync } from "node:fs";
 import { human } from "./cases-fixture";
 import {
 	dispatches,
@@ -11,9 +11,9 @@ import {
 	ticks,
 	WORK,
 } from "./duty-desk-fixture";
-import { lines, references } from "./input-test-fixture";
+import { CONFIG, lines, references } from "./input-test-fixture";
 import { BASE, later, order, seed, tempDb } from "./test-helpers";
-import { CONSTITUTION } from "./tick-start-test-fixture";
+import { CONSTITUTION, departmentPage } from "./tick-start-test-fixture";
 
 tempDb();
 
@@ -72,6 +72,59 @@ describe("the patrol department", () => {
 		seed((d) => order(d, "main", "patrol", { department: "claims" }));
 		startDesk();
 		expect(patrolOn("main").map((o) => o.department)).toEqual(["claims"]);
+	});
+});
+
+describe("the consent to the licenses department", () => {
+	// Only the shared page of licenses can win: the other shared pages are removed from the installation,
+	// and the constitution names no department, so the precinct's own pages are not candidates either.
+	const NO_DEPARTMENTS = CONSTITUTION.replace(
+		/## Departments\n\n(- .*\n)+/,
+		"## Departments\n\nnone\n",
+	);
+	const licensesOnly = (config = "") => {
+		setUp({ main: 1 }, `${CONFIG}${config}`);
+		for (const f of readdirSync(references("departments")))
+			if (f !== "licenses.md" && f.endsWith(".md"))
+				rmSync(references("departments", f));
+	};
+	const TREE = { "LAWMAN.md": NO_DEPARTMENTS };
+
+	test("without the consent the page counts as capped: no patrol order and no Blockers entry", () => {
+		expect(NO_DEPARTMENTS).not.toContain("abstraction");
+		licensesOnly();
+		hostOf("main", { ...WORK, tree: TREE });
+		const r = startDesk();
+		expect(patrolOn("main")).toEqual([]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test("license_precincts: main=yes gives a patrol order of the licenses department", () => {
+		licensesOnly("license_precincts: other=yes main=yes\n");
+		hostOf("main", { ...WORK, tree: TREE });
+		const r = startDesk();
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["licenses"]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test("a consent for another precinct gives nothing", () => {
+		licensesOnly("license_precincts: other=yes\n");
+		hostOf("main", { ...WORK, tree: TREE });
+		startDesk();
+		expect(patrolOn("main")).toEqual([]);
+	});
+
+	test("the precinct's own licenses page needs no consent", () => {
+		licensesOnly();
+		hostOf("main", {
+			...WORK,
+			tree: {
+				...TREE,
+				".lawman/departments/licenses.md": departmentPage("licenses"),
+			},
+		});
+		startDesk();
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["licenses"]);
 	});
 });
 

@@ -11,7 +11,7 @@ const PULL_ROLES = [SPEC_WRITER, EXECUTOR];
 // the clerk also works closed issues and issues that never had a lead
 const ALL_ISSUES = "FROM issues i WHERE true";
 
-export type Entry = { precinct: string; number: number; priority: string };
+type Entry = { precinct: string; number: number; priority: string };
 type IssueRow = {
 	precinct: string;
 	issue: number;

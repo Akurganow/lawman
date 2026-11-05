@@ -12,13 +12,11 @@ export function wake(args: string[]): number | Promise<number> {
 	// stdout is written only after every database step succeeded, so a failure prints nothing
 	const orders = withDb((db) => {
 		const orders = takeableOrders(db, roleName, stamp);
-		db.run("UPDATE roles SET checked_at = ? WHERE name = ?", [stamp, roleName]);
 		// a check that finds an order counts toward no-progress, one that finds none starts again
-		if (roleName !== DUTY_DESK)
-			db.run(
-				"UPDATE roles SET checks = CASE WHEN ? THEN checks + 1 ELSE 0 END WHERE name = ?",
-				[orders.length > 0, roleName],
-			);
+		db.run(
+			"UPDATE roles SET checked_at = ?, checks = CASE WHEN ? THEN checks ELSE CASE WHEN ? THEN checks + 1 ELSE 0 END END WHERE name = ?",
+			[stamp, roleName === DUTY_DESK, orders.length > 0, roleName],
+		);
 		return orders;
 	});
 	if (orders.length === 0 && roleName !== DUTY_DESK) return EXIT.OK;

@@ -9,8 +9,8 @@ tempDb();
 const WHOLE = "input_chars: 1000000\n";
 const WEIGHTS = { a: 4, b: 3, c: 2 };
 
-function setUp(weights: Record<string, number>) {
-	installation(`${CONFIG}${WHOLE}`);
+function setUp(weights: Record<string, number>, more = "") {
+	installation(`${CONFIG}${WHOLE}${more}`);
 	seed((d) => {
 		for (const [name, weight] of Object.entries(weights))
 			d.run("INSERT INTO precincts (name, repo, weight) VALUES (?, ?, ?)", [
@@ -96,6 +96,32 @@ describe("patrol takes by weight", () => {
 			{ name: "a", credit: 4 - 9 },
 			{ name: "b", credit: 3 },
 			{ name: "c", credit: 2 },
+		]);
+	});
+});
+
+describe("patrol takes by credit plus weight", () => {
+	// the names run against the weights, so neither the name nor the order id nor the credit alone gives the list
+	test("the wake lists the precinct with the larger credit plus weight first, and its take moves the credit", () => {
+		setUp({ a: 1, z: 4 }, "jobs: patrol=2\n");
+		seed((d) => {
+			order(d, "a", "patrol", { department: "claims" });
+			order(d, "z", "patrol", { department: "claims" });
+		});
+		expect(rows("SELECT name, credit FROM precincts ORDER BY name")).toEqual([
+			{ name: "a", credit: 0 },
+			{ name: "z", credit: 0 },
+		]);
+		const woke = call(BASE, ["wake", "--role", "patrol"]);
+		expect(orderLines(woke.out).map((l) => l.split(" ").slice(1, 3))).toEqual([
+			["2", "z"],
+			["1", "a"],
+		]);
+		const r = call(BASE, ["tick", "start", "--role", "patrol", "--order", "2"]);
+		expect(r.code).toBe(0);
+		expect(rows("SELECT name, credit FROM precincts ORDER BY name")).toEqual([
+			{ name: "a", credit: 1 },
+			{ name: "z", credit: 4 - 5 },
 		]);
 	});
 });

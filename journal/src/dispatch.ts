@@ -16,7 +16,7 @@ import { creditVisit } from "./precincts";
 
 const DISPATCH_USAGE =
 	"dispatch add --precinct <p> --role <r> [--department <d>] [--issue <n>]";
-const PATROL = "patrol";
+export const PATROL = "patrol";
 
 function dispatchAdd(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["precinct", "role"], DISPATCH_USAGE, [
@@ -74,8 +74,8 @@ export function takeableOrders(
 		.all(roleName, stale) as Taken[];
 }
 
-// Inside the caller's transaction. A patrol take moves the credit as the old
-// `next` did: every admitted precinct gains its weight, the taken one loses the sum.
+// Inside the caller's transaction. A patrol take moves the credit: every
+// admitted precinct gains its weight, the taken one loses the sum.
 export function takeOrder(
 	db: Database,
 	roleName: string,
