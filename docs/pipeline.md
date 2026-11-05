@@ -10,7 +10,7 @@ This page summarises the law and links the files that bind each part. Where this
 
 | Role | Takes | Leaves |
 | :-- | :-- | :-- |
-| Duty desk | The journal and the synced trackers of every precinct with a weight above zero | At most one order per role. No issue and no comment. |
+| Duty desk | The journal and the synced trackers of every precinct with a weight above zero | One order for every case, pull request, waiting issue and patrol visit that needs a role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
 | Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. No label and no alarm |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
@@ -21,13 +21,13 @@ This page summarises the law and links the files that bind each part. Where this
 | Spec writer | An order on a pull request that needs a spec | One `Spec` comment |
 | Executor | An order on a pull request with an approved spec | Pushed commits, a pull request ready for review and one `Executor` comment |
 
-The duty desk, the clerk, the spec writer and the executor are not stages of the funnel. Every role does one unit of work per tick and exits.
+The duty desk, the clerk, the spec writer and the executor are not stages of the funnel. Every tick does one unit of work. A session of a role runs up to the role's number of jobs in ticks, one order each, and exits. See [configuration](configuration.md#jobs-and-progress-checks).
 
 ## Each role in short
 
 ### Duty desk
 
-The duty desk runs its own tick. It computes the alarms, syncs the tracker and the pull requests of each precinct with a weight above zero, and writes orders. It writes at most one order per role per tick. It files nothing and comments on nothing. It leaves no marker.
+The duty desk runs its own tick, and the journal does the work of it. The journal computes the alarms and checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero, reads each precinct, closes stale orders and writes the orders. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose pull request sync failed gets no orders for any role. The duty desk files nothing and comments on nothing. It leaves no marker.
 
 ### Patrol
 
@@ -167,21 +167,23 @@ No daemon runs. The harness scheduler starts a role, the role does one unit of w
 
 The duty desk runs first.
 
-- It computes the alarms.
-- It syncs each precinct with a weight above zero.
-- It asks the journal what investigation, the prosecutor, the defender, the court and the clerk are due.
-- It asks the same for the spec writer and the executor.
-- It picks one precinct by weight and one department by rotation, and writes the patrol order. See [departments](departments.md).
+- The journal computes the alarms.
+- It checks the identity and syncs the tracker and the pull requests of each precinct with a weight above zero. A step that it cannot do comes back as a self step. The duty desk does it, then calls `bin/journal tick continue <id>` and not a second start.
+- A failed tracker sync stops the tick. A failed pull request sync leaves that precinct without orders.
+- For every other precinct it writes an order for each case or pull request that a role is due on.
+- It writes an order for each issue that waits for the response unit.
+- It writes one patrol order for each precinct whose department it can choose, by rotation and cap. See [departments](departments.md).
+- It closes the stale orders of the precincts it read.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes the oldest order of its input and starts the tick with `bin/journal tick start --order`. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
+Each role then starts on its own clock. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. The oldest order comes first. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
-Every tick starts with the same checks. Before the start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. After it, the role checks the law commit and its cleanliness. A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. After it, the role checks the law commit and its cleanliness, for each tick. A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
@@ -196,7 +198,7 @@ The duty desk starts first. The other roles start 15 to 135 minutes later. Late 
 The role entry tells a harness whether a role has work. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
 
 - With no order the role can take, the journal prints nothing. A harness that can skip the model on empty output skips the session.
-- With work, it prints the first part of the role's input: the law sections the role reads at the start, the harness section and the takeable orders. The first line carries the check time, so the output changes at every check.
+- With work, it prints the first part of the role's input. That holds the law sections the role reads at the start, the harness section and the orders it can take, up to its number of jobs. The first line carries the check time, so the output changes at every check.
 
 The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
 
@@ -210,11 +212,12 @@ Silence is the default. A tick that succeeds, skips or stops answers only the si
 
 ### Alarms
 
-The journal computes the first six alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
+The journal computes the first seven alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
 
 | Alarm | Raised when |
 | :-- | :-- |
-| `order-untaken` | An order stays open longer than the larger of 48 hours and the role's interval plus 24 hours. A taken order adds 24 hours. |
+| `order-untaken` | A taken order stays open past the 24-hour claim. An order that nobody took raises nothing, whatever its age. |
+| `no-progress` | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
 | `tick-hung` | A tick has no end record 2 hours after its start. |
 | `role-silent` | A role that ended a tick before shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
@@ -237,7 +240,7 @@ A tick that ends `skipped-*` means the precinct or the department cannot be work
 
 ### Reports
 
-The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders. It ends with the last tick of each role, the open alarms and the lead counts.
 
 ## What the maintainer does
 

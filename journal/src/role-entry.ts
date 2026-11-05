@@ -14,6 +14,7 @@ import { DUTY_DESK, HARNESS_SECTIONS, inputOf, lawOf } from "./input-roles";
 import { commandFolder } from "./launch";
 import { sectionsOf } from "./law-sections";
 import { configValue } from "./law-sync";
+import { jobsOf } from "./settings";
 
 const UNNAMED_HARNESS = "<harness>";
 
@@ -58,8 +59,12 @@ export function roleParts(
 		...lawOf(role).flatMap(([path, wanted]) => fileBlocks("law", path, wanted)),
 		...harnessBlocks(config),
 	];
+	// the role takes up to its number of orders per session, so the group lists that many
+	const jobs = jobsOf(configValue(config ?? "", "jobs"), role);
 	const listed: Block[] =
-		role === DUTY_DESK ? [] : orders.map((o) => ({ line: orderLine(o) }));
+		role === DUTY_DESK
+			? []
+			: orders.slice(0, jobs).map((o) => ({ line: orderLine(o) }));
 	const whole = pack([...law, ...listed], size);
 	if (whole.length === 1 || listed.length === 0) return whole;
 	return [...pack(law, size), ...pack(listed, size)];

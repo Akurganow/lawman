@@ -9,6 +9,7 @@ import {
 	later,
 	order,
 	precinct,
+	alarm as reconciled,
 	seed,
 	tempDb,
 	tick,
@@ -19,7 +20,7 @@ import {
 tempDb();
 
 const alarm = (clock: string, ...flags: string[]) =>
-	inproc(clock, ["alarm", ...flags]).out;
+	reconciled(clock, ...flags).out;
 const role = (
 	db: Parameters<Parameters<typeof seed>[0]>[0],
 	minutes: number,
@@ -31,47 +32,47 @@ const role = (
 	);
 
 describe("order-untaken in process", () => {
-	test("fires 48 hours after the order and not before", () => {
+	test("an untaken order of any age raises nothing", () => {
 		seed((db) => {
 			precinct(db, "a");
 			order(db, "a", "patrol");
 		});
-		expect(alarm(later(48))).toBe("");
-		expect(alarm(later(48, 1))).toMatch(/^ALARM order-untaken 1 a patrol /);
+		expect(alarm(later(48, 1))).toBe("");
+		expect(alarm(later(24 * 30))).toBe("");
 	});
 
-	test("a long role interval raises the limit", () => {
+	test("a taken order fires 24 hours after the claim and not before, with the claim in the detail", () => {
 		seed((db) => {
 			precinct(db, "a");
 			role(db, 5760);
-			order(db, "a", "patrol");
+			order(db, "a", "patrol", { takenAt: BASE });
 		});
-		expect(alarm(later(120))).toBe("");
-		expect(alarm(later(120, 1))).toMatch(/^ALARM order-untaken /);
+		expect(alarm(later(24))).toBe("");
+		expect(alarm(later(24, 1))).toBe(
+			`ALARM order-untaken 1 a patrol taken ${BASE}\n`,
+		);
 	});
 
-	test("a taken order adds the claim limit and a closed one never fires", () => {
+	test("a closed order never fires", () => {
 		seed((db) => {
 			precinct(db, "a");
-			order(db, "a", "patrol", { takenAt: BASE });
-			order(db, "a", "judge", { outcome: "silent" });
+			order(db, "a", "judge", { takenAt: BASE, outcome: "silent" });
 		});
 		expect(alarm(later(72))).toBe("");
-		expect(alarm(later(72, 1))).toMatch(/^ALARM order-untaken 1 /);
 	});
 
 	test("--repeat prints an open alarm again after a day only", () => {
 		seed((db) => {
 			precinct(db, "a");
-			order(db, "a", "patrol");
+			order(db, "a", "patrol", { takenAt: BASE });
 		});
-		alarm(later(49));
-		expect(alarm(later(72), "--repeat")).toBe("");
-		expect(alarm(later(73, 1), "--repeat")).toMatch(/^ALARM order-untaken 1 /);
+		alarm(later(25));
+		expect(alarm(later(48), "--repeat")).toBe("");
+		expect(alarm(later(49, 1), "--repeat")).toMatch(/^ALARM order-untaken 1 /);
 	});
 
-	test("a bad flag is a usage error", () => {
-		expect(inproc(BASE, ["alarm", "--bogus"]).code).toBe(1);
+	test("the alarm command is a usage error", () => {
+		expect(inproc(BASE, ["alarm"]).code).toBe(1);
 	});
 });
 

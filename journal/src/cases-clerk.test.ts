@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	closed,
+	due,
 	expectNeed,
 	expectRoundKept,
 	need,
@@ -12,8 +13,6 @@ import {
 import {
 	acquittal,
 	addPrecincts,
-	BASE,
-	call,
 	caseMark,
 	charge,
 	conviction,
@@ -85,15 +84,14 @@ describe("case: clerk stage", () => {
 	});
 
 	test("due for the clerk lists open convictions and unanswered acquittals", () => {
-		const due = () => call(BASE, ["due", "--role", "clerk"]).out;
 		put({ 1: ruled(conviction) });
-		expect(due()).toBe("main\t1\n");
+		expect(due("clerk")).toBe("main\t1\n");
 		put({
 			1: ruled(acquittal, noEntry()),
 			2: closed(ruled(acquittal)),
 		});
-		expect(due()).toBe("main\t2\n");
+		expect(due("clerk")).toBe("main\t2\n");
 		put({ 2: closed(ruled(acquittal, noEntry())) });
-		expect(due()).toBe("");
+		expect(due("clerk")).toBe("");
 	});
 });

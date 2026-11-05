@@ -106,7 +106,7 @@ Why: the model sets the quality and the cost of every run.
 4. In the menu, put the choice "Keep as is" first, and move the recommendation to it.
 5. Take a new start time or one role's days as a typed edit of the proposal.
 
-Why: a role takes one case per run, so its days set the speed and the cost.
+Why: a run takes up to its role's number of jobs (`jobs` in `config.yaml`, see `docs/configuration.md`), so its days set the speed and the cost.
 
 **Never.**
 

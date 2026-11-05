@@ -12,6 +12,7 @@ import {
 import { join, resolve } from "node:path";
 import { parseArgs, usage } from "./args";
 import { EXIT, Fail, out, requireSchema } from "./db";
+import { jobsLine, PROGRESS_CHECKS } from "./settings";
 
 const USAGE = "law-sync --tag <tag> --commit <commit> --installation <folder>";
 const TAG = /^[A-Za-z0-9._-]+$/;
@@ -49,6 +50,8 @@ const DEFAULTS: Default[] = [
 			configValue(config, "typesafe") === "yes" ? TYPESAFE_ENVIRONMENT : ABSENT,
 	],
 	["amended_law_commit", (config) => configValue(config, "law_commit") ?? ""],
+	["jobs", jobsLine],
+	["progress_checks", () => String(PROGRESS_CHECKS)],
 ];
 
 function rewriteConfig(config: string, release: Release): string {

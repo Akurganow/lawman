@@ -220,7 +220,10 @@ const DUTY_DESK_LAW: Read[] = [
 			"Tick outcomes",
 		],
 	],
-	["tick.md", ["Sync the law"]],
+	[
+		"tick.md",
+		[INTRO, "Sync the law", "Sync the tracker", "Sync the pull requests"],
+	],
 ];
 
 export const lawOf = (role: string): Read[] =>

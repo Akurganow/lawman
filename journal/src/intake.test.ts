@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { T } from "./cases-fixture";
-import { Fail } from "./db";
-import { intakeCommand } from "./intake";
+import { Fail, open } from "./db";
+import { intakeCommand, intakeWaiting } from "./intake";
 import {
 	addPrecincts,
 	cli,
@@ -50,6 +50,16 @@ const intake = (...args: string[]) => {
 	return { code, out: written.join("").trim() };
 };
 
+// the issue that waits for intake first, as the duty desk orders it first
+const waiting = () => {
+	const db = open(dbFile);
+	try {
+		return intakeWaiting(db, "main")[0]?.toString() ?? "";
+	} finally {
+		db.close();
+	}
+};
+
 type IssueSpec = { state?: string; createdAt?: string; repliedAt?: string };
 
 const addIssue = (n: number, s: IssueSpec = {}) =>
@@ -92,31 +102,31 @@ const unitOrder = (n?: number, f: Parameters<typeof order>[3] = {}) =>
 
 describe("intake", () => {
 	test("prints nothing when no issue is cached", () => {
-		expect(intake()).toEqual({ code: 0, out: "" });
+		expect(waiting()).toBe("");
 	});
 
 	test("an open issue without markers waits", () => {
 		addIssue(5);
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 
 	test("a closed issue does not wait", () => {
 		addIssue(5, { state: "CLOSED" });
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 	});
 
 	test("an issue with a pair marker is skipped, with or without a pull request", () => {
 		addIssue(5);
 		addIssue(6);
 		addMarker(5, "handed", T(10), "clerk", undefined, PAIR);
-		expect(intake().out).toBe("6");
+		expect(waiting()).toBe("6");
 		expect(intake("--issue", "5").out).toBe("need=none state=OPEN");
 	});
 
 	test("a pair marker with a bad pull does not skip the issue", () => {
 		addIssue(5);
 		addMarker(5, "handed", T(10), "clerk", undefined, { ...PAIR, pull: "07" });
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 
 	test.each([
@@ -125,19 +135,19 @@ describe("intake", () => {
 	])("%s does not wait", (_name, role) => {
 		addIssue(5);
 		addMarker(5, "lead", T(9), role);
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 	});
 
 	test("an out marker never waits, even after a reply", () => {
 		addIssue(5, { repliedAt: T(20) });
 		addMarker(5, "out", T(10));
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 	});
 
 	test("an await without a reply does not wait", () => {
 		addIssue(5);
 		addMarker(5, "await", T(10));
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 	});
 
 	test.each([
@@ -147,38 +157,38 @@ describe("intake", () => {
 	])("%s", (_name, repliedAt, out) => {
 		addIssue(5, { repliedAt: T(repliedAt) });
 		addMarker(5, "await", T(10));
-		expect(intake().out).toBe(out);
+		expect(waiting()).toBe(out);
 	});
 
 	test("the carrier time decides, not the at field", () => {
 		addIssue(5, { repliedAt: T(11) });
 		addMarker(5, "await", T(12), UNIT, T(10));
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 		addIssue(6, { repliedAt: T(11) });
 		addMarker(6, "await", T(10), UNIT, T(12));
-		expect(intake().out).toBe("6");
+		expect(waiting()).toBe("6");
 	});
 
 	test("only the newest response-unit marker counts", () => {
 		addIssue(5, { repliedAt: T(11) });
 		addMarker(5, "await", T(10));
 		addMarker(5, "out", T(12));
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("");
 	});
 
 	test("markers of other roles are ignored", () => {
 		addIssue(5);
 		addMarker(5, "case", T(10), "investigation");
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 
 	test.each([
 		["on this precinct", 5],
 		["without an issue", undefined],
-	])("an open response-unit order %s blocks", (_name, issue) => {
+	])("an open response-unit order %s does not block", (_name, issue) => {
 		addIssue(5);
 		unitOrder(issue);
-		expect(intake().out).toBe("");
+		expect(waiting()).toBe("5");
 	});
 
 	test("an open response-unit order on another precinct does not block", () => {
@@ -187,19 +197,19 @@ describe("intake", () => {
 			precinct(db, "other");
 			order(db, "other", UNIT, { issue: 5 });
 		});
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 
 	test("a closed response-unit order does not block", () => {
 		addIssue(5);
 		unitOrder(5, { outcome: "asked" });
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 
 	test("an open order of another role does not block", () => {
 		addIssue(5);
 		seed((db) => order(db, "main", "court", { issue: 5 }));
-		expect(intake().out).toBe("5");
+		expect(waiting()).toBe("5");
 	});
 });
 
@@ -226,19 +236,19 @@ describe("intake order", () => {
 		addIssue(2, { createdAt: T(2) });
 		for (const [n, at] of orders)
 			unitOrder(n, { at: T(at), outcome: "failed" });
-		expect(intake().out).toBe("2");
+		expect(waiting()).toBe("2");
 	});
 
 	test("ties go by creation time", () => {
 		addIssue(1, { createdAt: T(5) });
 		addIssue(2, { createdAt: T(4) });
-		expect(intake().out).toBe("2");
+		expect(waiting()).toBe("2");
 	});
 
 	test("equal creation times go by number", () => {
 		addIssue(2, { createdAt: T(4) });
 		addIssue(1, { createdAt: T(4) });
-		expect(intake().out).toBe("1");
+		expect(waiting()).toBe("1");
 	});
 
 	test("the order of another precinct does not shift the rotation", () => {
@@ -248,7 +258,7 @@ describe("intake order", () => {
 			precinct(db, "other");
 			order(db, "other", UNIT, { issue: 1, outcome: "failed" });
 		});
-		expect(intake().out).toBe("1");
+		expect(waiting()).toBe("1");
 	});
 });
 
@@ -284,8 +294,9 @@ describe("intake --issue", () => {
 		expect(r.out).toBe("");
 	});
 
-	test("exits 1 on a bad usage", () => {
+	test("exits 1 on a bad usage, also without --issue", () => {
 		expect(() => intakeCommand([])).toThrow("usage: journal intake");
+		expect(() => intakeCommand(["main"])).toThrow("usage: journal intake");
 		expect(intake("--issue", "x").code).toBe(1);
 	});
 });
@@ -293,7 +304,8 @@ describe("intake --issue", () => {
 describe("intake through the command line", () => {
 	test("the dispatcher runs the command", () => {
 		addIssue(5);
-		const r = cli(["intake", "main"], { LAWMAN_DB: dbFile });
-		expect(r).toMatchObject({ code: 0, out: "5\n" });
+		const r = cli(["intake", "main", "--issue", "5"], { LAWMAN_DB: dbFile });
+		expect(r).toMatchObject({ code: 0, out: "need=intake state=OPEN\n" });
+		expect(cli(["intake", "main"], { LAWMAN_DB: dbFile }).code).toBe(1);
 	});
 });

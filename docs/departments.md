@@ -65,25 +65,25 @@ A department name resolves in this order. The first hit wins.
 
 Pages are never merged. A page found at an earlier place hides the later ones, even when it is incomplete. A precinct's own page is trusted because a reviewed merge put it on the main branch.
 
-The name is checked against `[a-z][a-z0-9-]*` before any path is built. The duty desk runs `bin/journal lint-page department --name <name>` on the resolved page. A page that fails is skipped for that tick and named in Blockers. The check names each missing, repeated or unknown heading. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
+The name is checked against `[a-z][a-z0-9-]*` before any path is built. The start of the duty desk tick checks the resolved page as `bin/journal lint-page department --name <name>` does. A page that fails is skipped for that tick and named in Blockers. The check names each missing, repeated or unknown heading. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
 
 ## The rotation
 
 A department is in a precinct's rotation when its name meets one of two tests. A page with that name lies in Lawman's `departments/`, or a line of the precinct's Departments section names it. The name `licenses` also needs the whole token `<precinct>=yes` in `license_precincts` when it resolves to the Lawman page. The duty desk never lists a page in the installation or in the precinct that neither test admits.
 
-The duty desk picks the department for each patrol order.
+The journal picks the department for each patrol order when the duty desk starts its tick.
 
-- It picks the precinct by weight.
-- It lists the departments of the precinct: the shared page names plus the names on the constitution's Departments lines.
-- It sorts them with `bin/journal rotation`. A department never visited comes first. Then the oldest visit comes first.
+- It lists the departments of each precinct: the shared page names plus the names on the constitution's Departments lines.
+- It sorts them. A department never visited comes first. Then the oldest visit comes first.
 - It walks the list from the top and resolves each page.
 - It takes the first department whose page passes and whose cap is above zero.
+- It writes one patrol order for each precinct that has no open patrol order.
 
-A department at cap 0 is skipped, unless its page has an `Alarm check:` paragraph. A bad page goes into the blockers of the tick. When every department of a precinct is skipped, the duty desk takes the next precinct.
+A department at cap 0 is skipped, unless its page has an `Alarm check:` paragraph. A bad page goes into the blockers of the tick. When every department of a precinct is skipped, that precinct gets no patrol order in that tick.
 
 The cap depends on the open leads of the department on the precinct. Up to 2 open leads allow 3 filings per tick. With 3 or 4 the cap is 1. With 5 or more it is 0. The cap is a ceiling and not a target.
 
-A weight is a share of duty desk slots and not of leads. The assembly sets the weight. See [constitution](constitution.md).
+A weight is a share of patrol visits and not of leads. Patrol takes its orders by weight. While each has an open patrol order, a precinct of weight 4 gets four visits for each visit of a precinct of weight 1. The assembly sets the weight. See [constitution](constitution.md).
 
 ## Judged by
 
@@ -122,6 +122,6 @@ The assembly also proposes the judging documents of the shared departments when 
 
 - [departments.md](../skills/lawman-law/references/departments.md): the contract.
 - [departments/](../skills/lawman-law/references/departments): the shared pages.
-- [duty desk](../skills/duty-desk/SKILL.md): steps 3 to 9 choose the department.
+- [duty desk](../journal/src/duty-desk.ts): the start of the duty desk tick chooses the department.
 - [precinct.md](../skills/assembly/references/precinct.md): the assembly's "Add a department" job.
 - [LAW.md](../skills/lawman-law/references/LAW.md): the cap table.

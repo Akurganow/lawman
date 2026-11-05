@@ -4,60 +4,61 @@ import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
 import {
 	CLAIM_TTL_MS,
 	HOUR_MS,
-	inTransaction,
 	isoSeconds,
 	LEAD_ORIGIN_FROM,
 	LEAD_PREFIX,
 	MINUTE_MS,
-	now,
 	out,
 	withDb,
 } from "./db";
+import { readConfig } from "./input-files";
+import { configValue } from "./law-sync";
 import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
+import { progressChecks } from "./settings";
 
-const ORDER_UNTAKEN_MS = 48 * HOUR_MS;
-const ORDER_INTERVAL_GRACE_MS = 24 * HOUR_MS;
 const TICK_HUNG_MS = 2 * HOUR_MS;
 const ROLE_SILENT_INTERVALS = 3;
 const TICK_FAILING_RUN = 3;
 const ALARM_REPEAT_MS = 24 * HOUR_MS;
+const NO_PROGRESS = "checks found a takeable order and the role took none";
 
 type Candidate = { kind: string; ref: string; detail: string };
 function ageMs(nowMs: number, since: string): number {
 	return nowMs - Date.parse(since);
 }
 
+// an order that nobody took is a queue, not a failure; a claim that expired is
 function orderUntaken(db: Database, nowMs: number): Candidate[] {
-	const open = db
+	const taken = db
 		.query(
-			`SELECT d.id, d.precinct, d.role, d.at, d.taken_at, r.every_minutes
-       FROM dispatches d LEFT JOIN roles r ON r.name = d.role
-       WHERE d.outcome IS NULL`,
+			"SELECT id, precinct, role, taken_at FROM dispatches WHERE outcome IS NULL AND taken_at IS NOT NULL",
 		)
 		.all() as {
 		id: number;
 		precinct: string;
 		role: string;
-		at: string;
-		taken_at: string | null;
-		every_minutes: number | null;
+		taken_at: string;
 	}[];
-	const limit = (o: {
-		taken_at: string | null;
-		every_minutes: number | null;
-	}) =>
-		Math.max(
-			ORDER_UNTAKEN_MS,
-			(o.every_minutes ?? 0) * MINUTE_MS + ORDER_INTERVAL_GRACE_MS,
-		) + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
-	return open
-		.filter((o) => ageMs(nowMs, o.taken_at ?? o.at) > limit(o))
+	return taken
+		.filter((o) => ageMs(nowMs, o.taken_at) > CLAIM_TTL_MS)
 		.map((o) => ({
 			kind: "order-untaken",
 			ref: String(o.id),
-			detail: `${o.precinct} ${o.role} ordered ${o.at}`,
+			detail: `${o.precinct} ${o.role} taken ${o.taken_at}`,
 		}));
+}
+
+function noProgress(db: Database): Candidate[] {
+	const n = progressChecks(configValue(readConfig() ?? "", "progress_checks"));
+	const stuck = db
+		.query("SELECT name FROM roles WHERE checks >= ? ORDER BY name")
+		.all(n) as { name: string }[];
+	return stuck.map((r) => ({
+		kind: "no-progress",
+		ref: r.name,
+		detail: NO_PROGRESS,
+	}));
 }
 
 function tickHung(db: Database, nowMs: number): Candidate[] {
@@ -210,6 +211,7 @@ function precedentWaiting(db: Database): Waiting[] {
 
 const DETECTORS = [
 	orderUntaken,
+	noProgress,
 	tickHung,
 	roleSilent,
 	tickFailing,
@@ -266,19 +268,6 @@ export function reconcileAlarms(
 	return lines;
 }
 
-export function alarm(args: string[]): void {
-	const text = "alarm [--repeat]";
-	if (args.length > 1 || (args.length === 1 && args[0] !== "--repeat"))
-		throw usage(text);
-	const stamp = now();
-	withDb((db) => {
-		for (const line of inTransaction(db, () =>
-			reconcileAlarms(db, stamp, args.length === 1),
-		))
-			out(line);
-	});
-}
-
 function statusOrders(db: Database): string[] {
 	const rows = db
 		.query(
@@ -297,6 +286,15 @@ function statusOrders(db: Database): string[] {
 		(r) =>
 			`order ${r.id} ${r.precinct} ${r.role} ${r.department ?? "-"} ${r.issue ?? "-"} since ${r.at} ${r.taken_at ? `taken ${r.taken_at}` : "untaken"}`,
 	);
+}
+
+function statusQueue(db: Database): string[] {
+	const rows = db
+		.query(
+			"SELECT role, count(*) AS n, min(at) AS oldest FROM dispatches WHERE outcome IS NULL GROUP BY role ORDER BY role",
+		)
+		.all() as { role: string; n: number; oldest: string }[];
+	return rows.map((r) => `queue ${r.role} ${r.n} oldest ${r.oldest}`);
 }
 
 function statusTicks(db: Database): string[] {
@@ -353,7 +351,13 @@ function statusLeads(db: Database): string[] {
 export function status(args: string[]): void {
 	if (args.length > 0) throw usage("status");
 	withDb((db) => {
-		const sections = [statusOrders, statusTicks, statusAlarms, statusLeads];
+		const sections = [
+			statusOrders,
+			statusQueue,
+			statusTicks,
+			statusAlarms,
+			statusLeads,
+		];
 		for (const section of sections) for (const line of section(db)) out(line);
 	});
 }

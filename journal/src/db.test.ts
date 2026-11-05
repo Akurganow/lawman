@@ -187,7 +187,7 @@ describe("open", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT * FROM roles").all()).toEqual([
-			{ name: "patrol", every_minutes: 30, checked_at: null },
+			{ name: "patrol", every_minutes: 30, checked_at: null, checks: 0 },
 		]);
 		db.close();
 	});
@@ -252,6 +252,8 @@ describe("open", () => {
 			issues: { body: "" },
 			pulls: { body: "" },
 			ticks: { dispatch: null, parts: null },
+			precincts: { pulls_synced_at: null },
+			roles: { checks: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {
 			expect(list).toHaveLength(1);
@@ -289,19 +291,49 @@ describe("migration 9", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(9);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
+		const added: Record<string, object> = {
+			ticks: { dispatch: null, parts: null },
+			precincts: { pulls_synced_at: null },
+			roles: { checks: 0 },
+		};
 		for (const [table, list] of Object.entries(before)) {
 			expect(list.length).toBeGreaterThan(0);
 			expect(db.query(`SELECT * FROM ${table}`).all()).toEqual(
-				table === "ticks"
-					? list.map((row) => ({
-							...(row as object),
-							dispatch: null,
-							parts: null,
-						}))
-					: list,
+				list.map((row) => ({ ...(row as object), ...added[table] })),
 			);
 		}
+		db.close();
+	});
+});
+
+describe("migration 10", () => {
+	test("keeps every row of a schema 9 database and adds no pull sync time and no checks", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 9)) old.run(sql);
+		old.run("PRAGMA user_version = 9");
+		old.run(
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
+		);
+		old.run(
+			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(10);
+		expect(db.query("SELECT * FROM precincts").all()).toEqual([
+			{
+				name: "p",
+				repo: "o/p",
+				weight: 2,
+				credit: 1,
+				synced_at: "t",
+				pulls_synced_at: null,
+			},
+		]);
+		expect(db.query("SELECT * FROM roles").all()).toEqual([
+			{ name: "patrol", every_minutes: 30, checked_at: "t", checks: 0 },
+		]);
 		db.close();
 	});
 });
@@ -322,6 +354,7 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "9"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "7"]).code).toBe(0);
@@ -329,7 +362,7 @@ describe("probe", () => {
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "10"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "11"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

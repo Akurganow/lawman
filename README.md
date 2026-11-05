@@ -10,7 +10,7 @@ A repository under patrol is a precinct. It carries one file, `LAWMAN.md`, its c
 
 ### The pipeline
 
-Each role is an Agent Skill. The scheduler starts a role. The role takes one order, does one job and exits. A duty desk writes the orders. Patrol, and a response unit for issues a human filed, produce leads. Any ticket that a human writes enters as a defect or a requirement. Each later stage costs more per case and sees fewer cases.
+Each role is an Agent Skill. The scheduler starts a role. The role takes a few orders, does one job for each and exits. A duty desk writes the orders. Patrol, and a response unit for issues a human filed, produce leads. Any ticket that a human writes enters as a defect or a requirement. Each later stage costs more per case and sees fewer cases.
 
 [Roles and stages](docs/pipeline.md)
 

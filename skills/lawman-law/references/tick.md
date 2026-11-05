@@ -1,6 +1,6 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads only the section "Sync the law" of this file, in its item 0.1. The file turns the rules of the law into steps. The skill keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections "Sync the law", "Sync the tracker" and "Sync the pull requests". The file turns the rules of the law into steps. The skill keeps its own steps.
 
 In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal.
 
@@ -8,7 +8,7 @@ The input of a role comes in two groups. The role group holds the law that the r
 
 The tick group holds the results of these steps, as far as the role gets each: the alarms and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Never do them again, and never read those texts from the host. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
 
-The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Then only answer, as item 3 of the "End the tick" section says.
+The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Go on as item 3 of the "End the tick" section says.
 
 **Self steps.** A line `self <step>` names a step that the journal could not do. Do it yourself and go on with the tick. Do the self steps of the tick group right after you read the group, before any other work and any write to the host. A self step takes the fetched commit as `<ref>`, as the journal does.
 
@@ -27,7 +27,9 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
 
-- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
+The duty desk has three self steps: `identity`, `issues` and `pulls`. Each of its self step lines names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
+
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
@@ -131,13 +133,13 @@ The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped
 
 ## Sync the pull requests
 
-The spec writer, the executor and the clerk only. Read every open pull request of `<owner/repo>` from the host, oldest first. Read also the logins that may write to the repository, access inherited from a group included. Send the pull request reply to the journal on standard input, unread, in the journal's pulls form. A command builds the object from that reply and the logins. Your own text never carries a pull request body into it. The host notes record how this machine does it. `bin/journal form pulls` prints the form.
+The spec writer, the executor, the clerk and the duty desk only. Read every open pull request of `<owner/repo>` from the host, oldest first. Read also the logins that may write to the repository, access inherited from a group included. Send the pull request reply to the journal on standard input, unread, in the journal's pulls form. A command builds the object from that reply and the logins. Your own text never carries a pull request body into it. The host notes record how this machine does it. `bin/journal form pulls` prints the form.
 
 ```
 bin/journal sync <p> --pulls --author <login>
 ```
 
-The output is one line with the count of pull requests stored. Exit 4 means the data did not fit the form and the cache is untouched. Exit 4 and any other failure give `stopped-sync`.
+The output is one line with the count of pull requests stored. Exit 4 means the data did not fit the form and the cache is untouched. Exit 4 and any other failure give `stopped-sync`. For the duty desk the failure does not end the tick: the precinct goes without orders.
 
 ## Read the stage
 
@@ -261,14 +263,14 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    <delimiter>
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
-3. Answer. Print every `ALARM` line verbatim first. Then print every line of the update list that the tick kept. Then:
+3. Answer once per session, after its last tick. A session runs up to the role's number of ticks, one per order of its group. Print every `ALARM` line of every tick verbatim first. Then print every line of the update list that the session kept. Then:
    - For `failed`, add the report.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form alone. The journal holds the report. The `Silence` section of the role group gives the form. Without that section, the harness page names it.
 
 ## Alarm
 
-Issue roles and patrol. Print an alarm first in the answer of the same tick. The line names a path and a line, never a value. Alarms have no cap.
+Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap.
 
 - An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.

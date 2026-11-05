@@ -1,10 +1,12 @@
 import { expect } from "bun:test";
-import { inproc } from "./inproc";
+import { open } from "./db";
+import { dueEntries } from "./due";
 import {
 	BASE,
 	call,
 	caseMark,
 	charge,
+	dbFile,
 	defence,
 	issuesForm,
 	lead,
@@ -142,23 +144,16 @@ export function expectRoundKept(spec: Spec) {
 	]);
 }
 
-export function dueOut(
-	run: (args: string[]) => { code: number; out: string },
-	role: string,
-	exclude: string[],
-): string {
-	const r = run([
-		"due",
-		"--role",
-		role,
-		...exclude.flatMap((p) => ["--exclude", p]),
-	]);
-	expect(r.code).toBe(0);
-	return r.out;
+// The first case or pull request the role is due on, as the duty desk would order it first.
+export function due(role: string): string {
+	const db = open(dbFile);
+	try {
+		const first = dueEntries(db, role)[0];
+		return first === undefined ? "" : `${first.precinct}\t${first.number}\n`;
+	} finally {
+		db.close();
+	}
 }
-
-export const dueIn = (role: string, ...exclude: string[]) =>
-	dueOut((args) => inproc(BASE, args), role, exclude);
 
 export const order = (role: string, issue: number, at: string, open = false) =>
 	seed((db) =>

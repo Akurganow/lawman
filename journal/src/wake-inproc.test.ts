@@ -1,8 +1,10 @@
 import type { Database } from "bun:sqlite";
-import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
-import * as db from "./db";
+import { inTransaction, open } from "./db";
+import { takeableOrders, takeOrder } from "./dispatch";
 import { inproc, inprocAsync } from "./inproc";
+import { rotationOrder } from "./rotation";
 import {
 	BASE,
 	dbFile,
@@ -19,8 +21,20 @@ beforeEach(() => seed((d) => precinct(d, "main")));
 
 const wake = (clock = BASE, role = "patrol") =>
 	inprocAsync(clock, ["wake", "--role", role]);
-const take = (clock = BASE, role = "patrol") =>
-	inproc(clock, ["dispatch", "take", "--role", role]);
+// the first takeable order, taken as the start does it, in the line the old take printed
+const take = (clock = BASE, role = "patrol") => {
+	const d = open(dbFile);
+	try {
+		const o = takeableOrders(d, role, clock)[0];
+		if (o === undefined) return { out: "" };
+		inTransaction(d, () => takeOrder(d, role, o.id, clock));
+		return {
+			out: `${o.id}\t${o.precinct}\t${o.repo}\t${o.department ?? ""}\t${o.issue ?? ""}\n`,
+		};
+	} finally {
+		d.close();
+	}
+};
 const idOf = () => rows("SELECT id FROM dispatches")[0]?.id;
 
 describe("wake in process", () => {
@@ -41,7 +55,7 @@ describe("wake in process", () => {
 		expect((await wake(later(24, 1))).out).toContain("\norder ");
 	});
 
-	test("agrees with dispatch take on every case, the boundary second included", async () => {
+	test("agrees with the take on every case, the boundary second included", async () => {
 		const cases: Record<string, (d: Database) => void> = {
 			none: () => {},
 			untaken: (d) => order(d, "main", "patrol"),
@@ -86,7 +100,7 @@ describe("wake in process", () => {
 	});
 });
 
-describe("dispatch take in process", () => {
+describe("the take in process", () => {
 	test("takes the oldest open order and prints its fields", () => {
 		seed((d) => {
 			order(d, "main", "patrol", { at: later(1), issue: 4 });
@@ -120,12 +134,16 @@ describe("dispatch take in process", () => {
 
 describe("rotation in process", () => {
 	const rotation = (names: string[]) => {
-		const stdin = spyOn(db, "readStdin").mockReturnValue(
-			names.map((n) => `${n}\n`).join(""),
-		);
-		const r = inproc(BASE, ["rotation", "main", "--role", "patrol"]);
-		stdin.mockRestore();
-		return r;
+		const d = open(dbFile);
+		try {
+			return {
+				out: rotationOrder(d, "main", "patrol", names)
+					.map((t) => `${t.department}\t${t.at ?? "-"}\t${t.cap}\n`)
+					.join(""),
+			};
+		} finally {
+			d.close();
+		}
 	};
 	const lead = (n: number, department: string) =>
 		seed((d) =>
@@ -160,33 +178,14 @@ describe("rotation in process", () => {
 			"cap=1 open=3\n",
 		);
 	});
-
-	test("a department name outside the class exits 1", () => {
-		expect(rotation(["Bad"])).toMatchObject({ code: 1, out: "" });
-	});
 });
 
-describe("next --exclude in process", () => {
-	const next = (...excluded: string[]) =>
-		inproc(BASE, [
-			"next",
-			"--role",
-			"patrol",
-			...excluded.flatMap((name) => ["--exclude", name]),
-		]).out;
-
-	test("excluded precincts are skipped", () => {
-		seed((d) => precinct(d, "side"));
-		expect(next("main")).toBe("side\to/side\n");
-		expect(next("main", "side")).toBe("");
-	});
-
-	test("a bad or missing value exits 1", () => {
-		expect(inproc(BASE, ["next", "--role", "patrol", "--exclude"]).code).toBe(
-			1,
-		);
-		expect(
-			inproc(BASE, ["next", "--role", "patrol", "--exclude", "Bad"]).code,
-		).toBe(1);
+describe("removed commands in process", () => {
+	test.each<string[]>([
+		["next", "--role", "patrol"],
+		["rotation", "main", "--role", "patrol"],
+		["dispatch", "take", "--role", "patrol"],
+	])("%s is a usage error", (...args) => {
+		expect(inproc(BASE, args)).toMatchObject({ code: 1, out: "" });
 	});
 });

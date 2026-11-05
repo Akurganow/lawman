@@ -40,7 +40,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-sync`: swaps in the new binary and rewrites the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line.
 
 ```
-journal <--version|probe|precinct|role|next|dispatch|tick|alarm|status|sync|leads|seen|cap|last|rotation|case|due|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
+journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|commands|run> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 ```
@@ -49,37 +49,31 @@ journal law-sync --tag <tag> --commit <commit> --installation <folder>
 
 - `precinct`: adds a precinct with a weight, sets a weight, or lists precincts with repository, weight, credit and last sync. A repository path may have more than two segments, such as `group/sub/project` or `owner/.github`.
 - `role set`: records how often a role runs, in minutes. The alarms use the interval.
-- `next`: chooses the next precinct for a role by weight and prints its name and repository.
 
 ```
 journal precinct <add <name> --repo <owner/repo> --weight <n>|set <name> --weight <n>|list>
 journal role set <role> --every <minutes>
-journal next --role <role> [--exclude <precinct>]…
 ```
 
 ### Orders and ticks
 
-- `dispatch`: `add` writes an order for a role. `take` claims the oldest takeable order of a role. A repeated open order exits 2.
-- `tick`: `start` opens a tick and prints its id. With `--order`, it takes that order and prints the tick's input, as [the role entry](#the-role-entry) says. `input` prints a part of an input. `end` closes a tick with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
-- `due`: prints the precinct and the number of the next case or pull request that a role is due on. It prints nothing when the role has an open order.
-- `rotation`: reads department names on stdin and prints each with its last visit and its cap, in rotation order.
-- `wake`: the role entry. It prints nothing when the role has no takeable order, and the first part of the role's input otherwise. It also records the check. See [the role entry](#the-role-entry).
+- `dispatch`: `add` writes an order for a role by hand. A repeated open order exits 2. The duty desk writes the other orders.
+- `tick`: `start` opens a tick. With `--order`, it takes that order and prints the tick's input, as [the role entry](#the-role-entry) says. With `--role duty-desk` and no order, it starts the tick of the duty desk, as [the duty desk](#the-duty-desk-tick) says. Another role without `--order` exits 1. `continue` carries on an open tick of the duty desk. `input` prints a part of an input. `end` closes a tick with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
+- `wake`: the role entry. It prints nothing when the role has no takeable order, and the first part of the role's input otherwise. It also records the check, which counts toward the alarm `no-progress`. See [the role entry](#the-role-entry).
 
 ```
-journal dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>>
-journal tick <start --role <r> [--order <id>]|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>
-journal due --role <role> [--exclude <precinct>]…
-journal rotation <precinct> --role <role> (stdin: department names, one per line)
+journal dispatch add --precinct <p> --role <r> [--department <d>] [--issue <n>]
+journal tick <start --role <r> --order <id>|start --role duty-desk|continue <id>|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>
 journal wake --role <r>
 ```
 
 ### Alarms and status
 
-- `alarm`: computes the alarms and prints an `ALARM` line for each new one. `--repeat` adds the open alarms that nobody mentioned for a day. Only the duty desk passes it.
-- `status`: prints the open orders, the last tick of each role, the open alarms and the lead counts.
+- `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name, then the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
+
+No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk adds the open alarms that nobody mentioned for a day.
 
 ```
-journal alarm [--repeat]
 journal status
 ```
 
@@ -91,7 +85,7 @@ journal status
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
 - `last`: prints the last visit of a role to each department of a precinct.
 - `case`: prints the stage of an issue, with the next role, the round, the returns, the commit, the clerk's job and the pull request. It ends with three fields. `kind=` is `requirement`, `defect` or `-`. `answer=` is `up`, `down`, `comment` or `-`. `answer_id=` is the id of the decider's comment for a `comment` answer. A requirement is a lead of the response unit whose id ends in `required`. The answer counts only while the newest court marker is a referral.
-- `intake`: names the next human-written issue that waits for the response unit. With `--issue` it prints `need=` and `state=` for one issue.
+- `intake`: prints `need=` and `state=` for one issue.
 - `pull`: prints the stage of a pull request, with the next role, the spec vote, the executor's work state, the sources and the priority.
 - `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
 - `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. Each comment carries `id`, and `approvedBy` and `rejectedBy` for the comments of the trusted login on open issues. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
@@ -103,7 +97,7 @@ journal seen <precinct> --id <path::symbol::kind>
 journal cap <precinct> --department <d>
 journal last <precinct> --role <role>
 journal case <precinct> <issue>
-journal intake <precinct> [--issue <n>]
+journal intake <precinct> --issue <n>
 journal pull <precinct> <pull request>
 journal decider < response.json
 journal form <issues|pulls|decider|catalog>
@@ -260,11 +254,11 @@ The role entry tells whether a role has work and gives the role what it reads at
 
 ### No work and work
 
-`journal wake --role <r>` records the check of the role. A role has work when it has an order it can take, by the same rule as `dispatch take`.
+`journal wake --role <r>` records the check of the role. A role has work when it has an order it can take. A taken order can be taken again when its claim of 24 hours has run out. An order of patrol on a precinct with weight 0 cannot be taken. The check also counts toward the alarm `no-progress`. A check that finds an order it can take adds one. A check that finds none starts the count again. `tick input --role <r> --part <k>` counts nothing.
 
 - No work: the journal prints nothing and exits 0. The output is the same at every check, and a broken `config.yaml` does not change it.
 - Work: the journal prints the first part of the role group. The first line carries the check time, so the output changes at every check.
-- The duty desk always has work. Its group has no orders.
+- The duty desk always has work. Its group has no orders, and its check counts toward no alarm.
 
 The entry runs no command and touches no network. It writes only the check time of the role. A broken database exits non-zero and prints nothing.
 
@@ -274,7 +268,7 @@ The role group is the local part of the input. Its blocks come in this order:
 
 1. The sections of the law that the role reads at the start. A line `law <path>` stands before the sections of each file. The path starts at `lawman/skills/lawman-law/references/`.
 2. The section `Silence` of the harness page. The key `harness` of `config.yaml` names the page. A line `harness <path>` stands before it.
-3. One line per order the role can take, oldest first, in the order `dispatch take` gives them.
+3. One line per order the role can take, up to the number of jobs of the role (`jobs` in `config.yaml`, see [configuration](configuration.md#jobs-and-progress-checks)). The oldest order comes first. Patrol lists its orders by weight: the precinct that the credit picks first, then by credit plus weight, then by name. Taking a patrol order moves the credit. Each precinct with an order that can be taken gains its weight, and the precinct taken loses the sum.
 
 Every line of a law section and of the harness page prints behind `| `, and an empty line prints as `|`. After the prefix the text follows byte for byte. So no line of the group starts with a backtick, whatever the law holds. A line without the prefix is a line of the journal.
 
@@ -290,7 +284,7 @@ A section is its heading and everything up to the next heading of the same or a 
 | clerk | `LAW.md`, `tick.md` (common sections, Sync the tracker, Sync the pull requests, Read the stage, Check the decider, Write a comment, Close the issue, Alarm) |
 | spec-writer | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
 | executor | `LAW.md`, `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
-| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms and their repetition, and Tick outcomes of `LAW.md`, and Sync the law of `tick.md` |
+| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms and their repetition, and Tick outcomes of `LAW.md`, and the intro and the sections Sync the law, Sync the tracker and Sync the pull requests of `tick.md` |
 
 `LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick.
 
@@ -298,10 +292,10 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 
 ### The start of the tick
 
-`journal tick start --role <r> --order <id>` runs these steps in order.
+`journal tick start --role <r> --order <id>` runs these steps in order. A start of another role than the duty desk with no `--order` is a usage error and exits 1.
 
 1. The order must belong to the role, be open and be takeable. Otherwise the journal prints `order <id> untakeable` alone and starts no tick. Otherwise it starts the tick.
-2. It computes the alarms as `journal alarm` does without `--repeat`, and prints each `ALARM` line.
+2. It computes the alarms and prints each `ALARM` line of a new alarm.
 3. It reads `trusted_login` from `config.yaml`.
 4. It runs the operation `identity` and compares the login with `trusted_login`, ignoring ASCII case.
 5. It takes the order in one transaction, after it checks again that the order is free. It records the precinct, the department and the order in the tick, and prints the order line.
@@ -337,6 +331,27 @@ The stale rules of the issue roles and the pull request roles are the rules of t
 
 An ended tick prints one part, `part 1 of 1`, whatever its size. Its last lines are `ended <outcome>` and `report <report>`. It prints no `title`, `constitution` or `department` fence and no case text. A constitution or department outcome prints only its `lint` fence. The role then only answers.
 
+### The duty desk tick
+
+`journal tick start --role duty-desk` starts the tick of the duty desk. It takes no order and no `--precinct`. The journal does the work of the tick, and the duty desk model answers with what the journal prints.
+
+The start runs these steps in order.
+
+1. It writes the tick, computes the alarms and repeats the open alarms that nobody mentioned for a day. The `ALARM` lines print first.
+2. It reads `config.yaml`. A missing file or a missing `trusted_login` ends the tick `failed`.
+3. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
+4. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open, and nothing was written.
+5. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
+6. It closes the stale orders of those precincts. An order closes when nobody holds it, or its claim has run out, and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
+7. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get an order for every case or pull request that the cache shows as due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
+8. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers.
+
+The output is one part, framed as the tick group. It holds the `ALARM` lines, the `order` lines of the orders written, `ended <outcome>` and the lines `report <line>`. A start that stopped on self lines holds the `ALARM` lines and the self lines.
+
+`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 5 to 8 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id>`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it.
+
+A duty desk tick that the model ends itself uses `tick end <tick id> --outcome <token>`, as the skill says.
+
 ### The lines of the input
 
 `<form>` is the version of the input's form, `1` in this release. A role tells the output of an older binary by it. The fields of a line are separated by one space.
@@ -359,7 +374,7 @@ The tick group:
 
 - `order <id> <precinct> <repository> <department|-> <issue or pull request number|->`;
 - `order <id> untakeable`, without a frame, the only line of the output;
-- the `ALARM` lines as `journal alarm` prints them;
+- the `ALARM` lines of the new alarms;
 - `login=<login>`, `revision=<revision>` and the sync counts as `journal run` prints them;
 - the stage line as `case`, `intake` or `pull` prints it;
 - `department <d> place=<1|2|3>`;

@@ -6,7 +6,7 @@ import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, inTransaction, now, open, out, withDb } from "./db";
-import { type Taken, takeableOrders } from "./dispatch";
+import { type Taken, takeableOrders, takeOrder } from "./dispatch";
 import {
 	inputChars,
 	orderLine,
@@ -46,7 +46,12 @@ const SYNC_STEPS = ["fetch", "issues", "pulls"];
 type Stage = StageFields & { department: string; pull: string; line: string };
 type Tick = { id: number; role: string };
 
-function stageFor(db: Database, input: RoleInput, o: Taken): Stage | null {
+// the stage of an order from the cache, null when the cache cannot give it
+export function stageFor(
+	db: Database,
+	input: RoleInput,
+	o: Taken,
+): Stage | null {
 	const n = o.issue ?? 0;
 	try {
 		if (input.stage === "case") return caseStage(db, o.precinct, n);
@@ -215,7 +220,7 @@ function fieldsFailure(input: RoleInput, order: Taken): string | null {
 const listed = (files: string, path: string) =>
 	files.split("\n").map(stripCr).includes(path);
 
-type Page = { text: string; place: number };
+export type Page = { text: string; place: number };
 
 // The lint lines go in a fence of their own. Null when the cleaning failed.
 async function lintedPage(
@@ -305,8 +310,11 @@ async function precedentBlocks(
 	else if (shown === 0) o.line("precedents none");
 }
 
+// the place of the law clone in the "Resolve the department page" section
+export const LAW_CLONE_PLACE = 3;
+
 // the places of the "Resolve the department page" section, in its order
-function installationPage(d: string): Page | null {
+export function installationPage(d: string): Page | null {
 	const places = [
 		join(commandFolder(), "departments", `${d}.md`),
 		join(commandFolder(), REFERENCES, "departments", `${d}.md`),
@@ -373,9 +381,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	}
 	const taken = withDb((db) =>
 		inTransaction(db, () => {
-			if (!takeableOrders(db, role, stamp).some((x) => x.id === id))
-				return false;
-			db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [stamp, id]);
+			if (!takeOrder(db, role, id, stamp)) return false;
 			db.run(
 				"UPDATE ticks SET precinct = ?, department = ?, dispatch = ? WHERE id = ?",
 				[p, order.department, id, t.id],

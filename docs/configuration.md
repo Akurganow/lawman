@@ -58,7 +58,7 @@ amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 
 Every value above is a placeholder. `hermes` is the name of the one shipped harness page. The order follows the assembly skill.
 
-One more key is optional. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. A value that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
+Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The assembly does not require them. Until the assembly asks for them, in a later release, only `law-sync` writes `jobs` and `progress_checks`. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. A value that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -75,14 +75,41 @@ One more key is optional. `input_chars` sets the size of one part of a role's in
 | `catalog` | `yes` or `no`. Whether the patrol may check the dependencies of a precinct against the OSV catalog. An absent key reads as no. | The assembly at install, or when it asks the missing answer |
 | `catalog_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the patrol may send the precinct's packages. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
 | `license_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the `licenses` department is in the rotation and may read a license source. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
+| `jobs` | The number of orders a session of each role takes, as `<role>=<n>` pairs. See [Jobs and progress checks](#jobs-and-progress-checks). | `law-sync` as a default |
+| `progress_checks` | How many checks in a row may find a takeable order and take none before `no-progress` rises. | `law-sync` as a default |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
 
+## Jobs and progress checks
+
+The key `jobs` sets how many orders a session of a role takes, one tick for each order. Its value is a list of `<role>=<n>` pairs separated by spaces. The role entry lists at most that many orders, and the role runs one tick for each.
+
+| Role | Jobs |
+| :-- | :-- |
+| patrol | 1 |
+| response-unit | 2 |
+| investigation | 1 |
+| prosecutor | 1 |
+| defender | 1 |
+| court | 1 |
+| clerk | 3 |
+| spec-writer | 1 |
+| executor | 1 |
+
+- The journal reads only the nine roles of the shared tick. The duty desk has no number, because it covers every precinct with a weight above zero.
+- A pair that names another role is not read.
+- A number is a whole number above zero, with no sign and no leading zero. A pair outside that form is not read.
+- When a role has several readable pairs, the first one wins.
+- The value `none`, a missing key and a role with no readable pair give the default of the table.
+- The journal reads the key at every role entry, so a change acts at once.
+
+The key `progress_checks` is a whole number above zero. The alarm `no-progress` rises when that many checks of a role entry in a row find a takeable order and no take. A take, or a check that finds no takeable order, starts the count again. A value outside the form reads as 3, which is the default. See [the pipeline](pipeline.md#alarms).
+
 ## Who writes it
 
-The assembly writes the file at install. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops.
+The assembly writes the file at install. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires neither `jobs` nor `progress_checks`.
 
-After a plugin update, the next tick of any role completes the update. The role downloads the journal of the new release and verifies it. Then it runs the `law-sync` command of that file. The command writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key` and `amended_law_commit`. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
+After a plugin update, the next tick of any role completes the update. The role downloads the journal of the new release and verifies it. Then it runs the `law-sync` command of that file. The command writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key`, `amended_law_commit`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 
@@ -149,7 +176,8 @@ Ticks read the keys they need.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
-- The role's input reads `harness` and `input_chars` when the role has work, and `trusted_login` at the start of a tick with an order. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
+- The alarms read `progress_checks` every time the journal computes them.
+- The role's input reads `jobs`, `harness` and `input_chars` when the role has work, and `trusted_login` at the start of a tick with an order. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
 
 See [the pipeline](pipeline.md) for the checks that open every tick.
 

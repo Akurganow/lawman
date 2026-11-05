@@ -60,13 +60,13 @@ A developer who maintains many repositories wants the same review process on eac
 | Who dispatches work | Cloud and local dispatchers with two lists | One duty desk per installation | One dispatcher serves every added repository |
 | What describes a repository | A passport with team size, budget and popularity | A constitution with what the roles must know | Team size and popularity do not matter to the roles |
 | Where the contest happens | Accuser and defender inside the prosecution | A one-sided prosecutor as a filter, and a contest before the court | Prosecution is one-sided and a cheap filter |
-| How much a repository gets | Runs per day plus a work-in-progress limit | One weight | One number states its importance against the others, and it sets a share of duty desk slots |
+| How much a repository gets | Runs per day plus a work-in-progress limit | One weight | One number states its importance against the others, and it sets a share of patrol visits |
 | What the reporter of an issue sees | Silence until the ruling | A comment, and one question when evidence is thin | The response unit needs enough to build a lead |
 | How a stage reacts to a gap | A stop that waits for a person | A return with one question, capped at three rounds | Stuck work needs attention, and a cap ends every case |
 | What a court can rule | Ten verdicts as first proposed | Conviction, acquittal and, for a requirement, referral | A doubt about a defect is an acquittal, so the court never returns a case. A precedent records a settled question |
 | Where process state lives | A shared set of labels, or a text journal | Markers on the host, and a SQLite journal behind one command | No setup per repository, and roles never write SQL |
 | Which departments a precinct runs | A list of attached shared departments in the constitution | Every shared page rotates, except `licenses`, which rotates only with a yes for the precinct, and a precinct adds its own | No reason was recorded |
-| How much a role runs | Ten roles that all run daily, which spend model usage fast | Every day, economy or custom plan, chosen at install | A role takes one case per run, so its days set the speed and the cost |
+| How much a role runs | Ten roles that all run daily, which spend model usage fast | Every day, economy or custom plan, chosen at install | A run takes up to the role's number of jobs, so its days set the speed and the cost |
 | How Lawman installs | Agent plugins alone | An Agent Plugins package that also keeps its law, journal binary and assembly | The harness updates it with its own commands, and the binary is still verified |
 | Where the binaries live | A second repository | This repository | A second repository is not needed |
 | How a repository is reached | Guiding the user through tokens, or scripts that call the host | The tools already signed in on the machine | Scripts must not reach the host, and Lawman records only where a credential lives |
