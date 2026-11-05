@@ -24,9 +24,9 @@ describe("case: defender stage", () => {
 		["a charge with no defender marker needs the defender", [], "defender"],
 		["a defence after the charge needs the court", [defence()], "court"],
 		[
-			"a refute after the charge on an open issue needs nobody",
+			"a refute after the charge on an open issue needs the court",
 			[refute()],
-			"none",
+			"court",
 		],
 		[
 			"a defender return to the investigation needs the investigation",
@@ -79,11 +79,11 @@ describe("case: defender stage", () => {
 		expect(needOnly(1)).toBe("need=defender");
 	});
 
-	test("a decline with an older defender marker needs nobody", () => {
+	test("a decline with an older defender marker needs the court", () => {
 		put({
 			1: withLead(defence(), caseMark(), decline()),
 		});
-		expect(needOnly(1)).toBe("need=none");
+		expect(needOnly(1)).toBe("need=court");
 	});
 
 	test("a closed issue needs nobody with defender markers present", () => {

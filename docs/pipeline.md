@@ -102,9 +102,10 @@ The clerk takes an order for one job on an issue. The journal names the job. The
 - It takes up an open pull request of the trusted login.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
-- It records a precedent.
+- It records a precedent: the journal writes the precedent files of a ruling, and the clerk opens a pull request with them for you to merge.
+- It records your decision on that pull request.
 
-After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry` and `no-entry`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
+After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
 
 ### Spec writer
 
@@ -176,7 +177,7 @@ The response unit gets an order when a human-written issue still waits for a lea
 
 Each role then starts on its own clock. It takes the oldest open order of its role, with `bin/journal dispatch take` or with the order id of its input and `bin/journal tick start --order`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
 
-A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Two steps wait for a person: the vote on the spec and the review of the pull request. The journal raises the alarm `decision-waiting` for each of them.
+A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
@@ -218,7 +219,7 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 | `role-silent` | A role that ended a tick before shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
-| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. |
+| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
 | `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
 | `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | Patrol finds a live secret in the tree or the history. |
@@ -226,7 +227,7 @@ The journal computes the first six alarms below. The `case` and `sweep` alarms n
 
 The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 
-The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
 
 ### Failures and stops
 

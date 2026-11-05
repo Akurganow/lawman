@@ -51,6 +51,19 @@ const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
 
 type Funnel = { need: Exclude<Need, "clerk">; ruling?: CaseMarker };
 
+function courtAfter(
+	markers: CaseMarker[],
+	after: CaseMarker,
+	answered: boolean,
+): Funnel {
+	const r = newestOf(markers, "court");
+	if (r === undefined || r.ord < after.ord) return { need: "court" };
+	if (r.stage === "referral") return { need: answered ? "court" : "none" };
+	const ruled = r.stage === "conviction" || r.stage === "acquittal";
+	return { need: "none", ...(ruled ? { ruling: r } : {}) };
+}
+
+// a decline or a refute hands the case to the court, which alone writes the precedent
 function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 	const c = newestOf(markers, "investigation", "case");
 	if (c === undefined) return { need: "investigation" };
@@ -58,16 +71,13 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 	if (p !== undefined && p.ord > c.ord && backToInvestigation(p))
 		return { need: "investigation" };
 	if (p === undefined || p.ord < c.ord) return { need: "prosecutor" };
+	if (p.stage === "decline") return courtAfter(markers, p, answered);
 	if (p.stage !== "charge") return { need: "none" };
 	const d = newestOf(markers, "defender");
 	if (d === undefined || d.ord < p.ord) return { need: "defender" };
 	if (backToInvestigation(d)) return { need: "investigation" };
-	if (d.stage !== "defence") return { need: "none" };
-	const r = newestOf(markers, "court");
-	if (r === undefined || r.ord < d.ord) return { need: "court" };
-	if (r.stage === "referral") return { need: answered ? "court" : "none" };
-	const ruled = r.stage === "conviction" || r.stage === "acquittal";
-	return { need: "none", ...(ruled ? { ruling: r } : {}) };
+	if (d.stage !== "defence" && d.stage !== "refute") return { need: "none" };
+	return courtAfter(markers, d, answered);
 }
 
 export type CaseView = { need: Need; clerk: ClerkCase };

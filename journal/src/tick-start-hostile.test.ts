@@ -50,7 +50,7 @@ const SAMPLE = [
 
 // the lines a fence leaves outside: the journal's own words only
 const OWN =
-	/^(lawman input 1 role=defender tick=1 part \d+ of \d+|end part \d+ of \d+|login=.+|order 1 main o\/main - 3|revision=[0-9a-f]+|issues=.+|need=defender .+|department fixtures place=1|comment at=\S+|[a-z]+ failed reason=[a-z]+|self [a-z].*)$/;
+	/^(lawman input 1 role=defender tick=1 part \d+ of \d+|end part \d+ of \d+|login=.+|order 1 main o\/main - 3|revision=[0-9a-f]+|issues=.+|need=defender .+|department fixtures place=1|precedent hostile kind=- departments=-|comment at=\S+|[a-z]+ failed reason=[a-z]+|self [a-z].*)$/;
 
 async function expectSafe(printed: string) {
 	expect(await lintBody(printed, false)).toEqual([]);
@@ -78,6 +78,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 		tree: {
 			"LAWMAN.md": `${CONSTITUTION.trimEnd()}\n${SAMPLE}\n`,
 			".lawman/departments/fixtures.md": `${departmentPage("fixtures").trimEnd()}\n${SAMPLE}\n`,
+			".lawman/precedents/hostile.md": `---\nkind: ${MARKER}\ndepartments: [${TOKEN}]\n---\n${SAMPLE}\n`,
 		},
 	});
 	const comment = (body: string, at: string, login = TRUSTED) => ({
@@ -116,6 +117,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 		"title",
 		"constitution",
 		"department",
+		"precedent",
 		"issue",
 		"comment",
 		"error",

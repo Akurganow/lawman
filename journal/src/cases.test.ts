@@ -40,9 +40,9 @@ describe("case: stage", () => {
 			"defender",
 		],
 		[
-			"a decline after the case ends the work",
+			"a decline after the case needs the court",
 			withLead(caseMark(), decline()),
-			"none",
+			"court",
 		],
 		[
 			"a return to the investigation needs the investigation",
@@ -171,7 +171,7 @@ describe("due", () => {
 		expect(due("investigation")).toBe("");
 	});
 
-	test("a charge leaves nothing due for the earlier roles, a decline nothing at all", () => {
+	test("a charge leaves nothing due for the earlier roles, nor does a decline", () => {
 		put({
 			1: withLead(caseMark(), charge()),
 			2: withLead(caseMark(), decline()),

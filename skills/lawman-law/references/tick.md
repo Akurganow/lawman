@@ -111,11 +111,11 @@ Issue roles other than the response unit only.
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED> lead=<body|comment> related=<list> priority=<P0|P1|P2|P3> job=<state|reopen-issue|adopt|settle|open|precedent|-> action=<close-pull|reopen|open|kept|-> pull=<m|-> sources=<a,b|-> branch=<lawman/execute-<n>-<k>|-> kind=<requirement|defect|-> answer=<up|down|comment|-> answer_id=<id|->`. Exit 1 gives `failed`. The skill says when the order is stale.
+The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED> lead=<body|comment> related=<list> priority=<P0|P1|P2|P3> job=<state|reopen-issue|adopt|settle|open|precedent|decision|-> action=<close-pull|reopen|open|kept|-> pull=<m|-> sources=<a,b|-> branch=<lawman/execute-<n>-<k>|lawman/precedent-<n>-<k>|-> kind=<requirement|defect|-> answer=<up|down|comment|-> answer_id=<id|->`. Exit 1 gives `failed`. The skill says when the order is stale.
 
 For an issue without a lead, the output is `need=clerk` or `need=none`, with `-` in the lead fields, and the exit is 0.
 
-`action=` is what the clerk does when the decider check says `yes` for `job=state`. With `no`, the action is always `kept`. `pull=` is a pull request number. `sources=` lists issue numbers, ascending, separated by commas and without `#`. The skill says what to do for each `job`.
+`action=` is what the clerk does when the decider check says `yes` for `job=state`. With `no`, the action is always `kept`. `pull=` is a pull request number. `sources=` lists issue numbers, ascending, separated by commas and without `#`. `job=precedent` gives `pull=-`, `sources=-` and a `lawman/precedent-<n>-<k>` branch. `job=decision` gives the precedent pull request in `pull=`, `sources=-` and `branch=-`. The skill says what to do for each `job`.
 
 `lead=` says where the lead origin sits. `related=` lists the other issues of the precinct, in any state, whose lead has the same path and symbol. The numbers ascend, are separated by commas and carry no `#`. With none, it is `-`. A lead whose path and symbol are both `-` names no place, so it relates to nothing. Related issues are evidence for the case, never a reason to close it. `kind=` says whether the lead is a requirement or a defect. `answer=` says how a decider answered the newest referral. `answer_id=` names the comment that carries the answer when `answer=comment`. Both are `-` when no referral waits.
 

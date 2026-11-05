@@ -11,7 +11,6 @@ export const CONSTITUTION_HEADINGS = [
 	"Execution",
 	"Executor loads",
 	"Labels",
-	"Precedents",
 ];
 export const DEPARTMENT_HEADINGS = [
 	"Mission",
@@ -33,7 +32,7 @@ const PAGE_HEADINGS: Record<PageKind, string[]> = {
 	department: DEPARTMENT_HEADINGS,
 };
 const PAGE_VERSION: Record<PageKind, string> = {
-	constitution: "3",
+	constitution: "4",
 	department: "1",
 };
 const isPageKind = (kind: string): kind is PageKind =>

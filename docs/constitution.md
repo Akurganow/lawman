@@ -8,7 +8,7 @@ The contract is [constitution.md](../skills/lawman-law/references/constitution.m
 
 ## What it must contain
 
-The file starts with frontmatter that holds `contract_version: 3`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come nine `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
+The file starts with frontmatter that holds `contract_version: 4`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come eight `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
 
 | Section | Holds | Read by |
 | :-- | :-- | :-- |
@@ -20,7 +20,8 @@ The file starts with frontmatter that holds `contract_version: 3`. Next comes th
 | Execution | Where a role may run the tree's code, and which toolchain the tree expects. | Investigation, executor |
 | Executor loads | Skills and rules of the repository that the executor loads before it changes code. | Executor |
 | Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Court |
-| Precedents | Settled questions, one per line: `- <YYYY-MM-DD> #<n>: <ruling>`. | Patrol, response unit, investigation, prosecutor, defender, court, spec writer |
+
+Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin.
 
 A path is relative to the repository root. It holds no `..` segment and has no leading slash. A role reads a referenced file only at the analysed commit.
 
@@ -30,7 +31,7 @@ You may add your own `##` section to `LAWMAN.md`: among the listed sections, bef
 
 The check rejects a file in which a listed heading is missing or stands twice. The order of the sections does not matter. The check does not read an unknown section. `bin/journal lint-page constitution` prints each one as a line that starts with `#`, and the assembly shows it to you.
 
-The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 3. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
+The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 4. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
 
 ## What it must not hold
 
@@ -46,7 +47,7 @@ Four per-precinct settings live outside the constitution for this reason. The we
 The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`. You review it. The assembly merges it only when you explicitly ask it to.
 
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
-- It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the nine headings.
+- It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the eight headings.
 - It fills each section except Departments and Labels with paths and short facts.
 - It asks which label tells a person that an issue waits for them, and which other labels matter. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
 - It writes `none` where nothing applies.
@@ -72,7 +73,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 
   Version 3 also touches the owner-attention label. When its line carries exactly the old purpose, the amendment replaces it with the new one. The proposal then shows a row that sets the new description of the label on the host. The write follows the pull request, after your approval. Any other purpose text stays your words.
 - **The assembly amends the license facts.** For an existing constitution, the assembly opens a pull request from the branch `lawman/licenses-sources`. It checks the file with `bin/journal lint-page constitution`. After the edit, the diff changes only the section `## Licenses`. A merge by you may narrow `sources` or change `use`, and the assembly asks no question about it.
-- **The court adds precedents.** A ruling may carry one line in its Precedent section. The clerk assigns the number, adds the link to the ruling comment and opens a pull request. The number is one more than the highest in the section, and the first is 1. Numbers never repeat. A precedent binds the roles only after you merge its pull request.
+- **The court adds precedents.** A ruling may carry lines in its Precedent section: a new precedent, a refinement of one or the cancellation of one. The journal writes the files under `.lawman/precedents/`. The clerk opens a pull request with them. A taken name gets the next free one, so no precedent is lost. A precedent binds the roles only after you merge its pull request.
 
 A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.
 

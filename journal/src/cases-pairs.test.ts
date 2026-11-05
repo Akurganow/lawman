@@ -10,11 +10,14 @@ import {
 	put,
 	ruled,
 	type Spec,
+	T,
 	withLead,
 } from "./cases-fixture";
 import {
 	acquittal,
 	addPrecincts,
+	BASE,
+	call,
 	caseMark,
 	charge,
 	conviction,
@@ -49,7 +52,15 @@ describe("case: the line of a clerk job", () => {
 
 	test("an unanswered acquittal prints the precedent job", () => {
 		put({ 1: ruled(acquittal) });
-		expect(jobOf(1)).toBe("precedent - - - -");
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+	});
+
+	test("of two open precedent cases of one priority the older goes first", () => {
+		put({
+			1: { ...ruled(acquittal), createdAt: T(8) },
+			2: { ...ruled(acquittal), createdAt: T(7) },
+		});
+		expect(call(BASE, ["due", "--role", "clerk"]).out).toBe("main\t2\n");
 	});
 
 	test("a closed conviction gives no job and no clerk", () => {

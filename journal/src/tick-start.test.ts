@@ -82,6 +82,7 @@ const CASES: Record<string, Case> = {
 			"department fixtures place=1",
 			"~lint",
 			"~department",
+			"precedents none",
 		],
 	},
 	"response-unit": {
@@ -94,6 +95,7 @@ const CASES: Record<string, Case> = {
 			"issues",
 			"need=intake",
 			...CONSTITUTION_FENCES,
+			"precedents none",
 			...ISSUE_TEXT,
 		],
 	},
@@ -107,6 +109,7 @@ const CASES: Record<string, Case> = {
 			"issues",
 			"need=investigation",
 			...CONSTITUTION_FENCES,
+			"precedents none",
 			...ISSUE_TEXT,
 		],
 	},
@@ -120,6 +123,7 @@ const CASES: Record<string, Case> = {
 			"issues",
 			"need=prosecutor",
 			...CONSTITUTION_FENCES,
+			"precedents none",
 			...ISSUE_TEXT,
 			"comment at=2026-10-14T10:00:00Z",
 			"~comment",
@@ -145,6 +149,7 @@ const CASES: Record<string, Case> = {
 			"department fixtures place=2",
 			"~lint",
 			"~department",
+			"precedents none",
 			...ISSUE_TEXT,
 			"comment at=2026-10-14T10:00:00Z",
 			"~comment",
@@ -168,6 +173,7 @@ const CASES: Record<string, Case> = {
 			"department logic place=3",
 			"~lint",
 			"~department",
+			"precedents none",
 			...ISSUE_TEXT,
 			...[10, 11, 12].flatMap((h) => [`comment at=${T(h)}`, "~comment"]),
 		],
@@ -203,6 +209,7 @@ const CASES: Record<string, Case> = {
 			"pulls",
 			"need=spec-writer",
 			...CONSTITUTION_FENCES,
+			"precedents none",
 			"~pull",
 		],
 	},
@@ -219,6 +226,7 @@ const CASES: Record<string, Case> = {
 			"pulls",
 			"need=executor",
 			...CONSTITUTION_FENCES,
+			"precedents none",
 			"~pull",
 			"comment at=2026-10-14T09:00:00Z",
 			"~comment",
@@ -427,6 +435,7 @@ describe("a stale order", () => {
 			"comment at=2026-10-14T10:00:00Z",
 			"~comment",
 			"self constitution",
+			"self precedents .lawman/precedents/",
 			END,
 		]);
 		expect(orders()[0]?.outcome).toBeNull();
@@ -536,8 +545,8 @@ const ENDINGS: Ending[] = [
 				issues: { 3: withLead("fixtures") },
 				tree: {
 					"LAWMAN.md": CONSTITUTION.replace(
+						"contract_version: 4",
 						"contract_version: 3",
-						"contract_version: 2",
 					),
 				},
 			}),
@@ -734,7 +743,7 @@ describe("an operation that is empty or fails", () => {
 					expect(own).toContain(`${operation} failed reason=exit`);
 					expect(r.out).toContain("\n~~~error\nbroken\n~~~\n");
 				} else expect(own).toContain(`${operation} empty`);
-				expect(own.at(-2)).toBe(`self ${step}`);
+				expect(own).toContain(`self ${step}`);
 				rmSync(dir, { recursive: true, force: true });
 				mkdirSync(dir);
 			}
@@ -768,6 +777,7 @@ describe("an operation that is empty or fails", () => {
 			"~comment",
 			"self constitution",
 			"self department fixtures",
+			"self precedents .lawman/precedents/",
 			END,
 		]);
 		expect(input("1", "--part", "1").out).toBe(again.out);
@@ -784,9 +794,10 @@ describe("an operation that is empty or fails", () => {
 		);
 		rmSync(join(configs("main"), "files"));
 		const r = start("patrol");
-		expect(lines(r.out).slice(-3)).toEqual([
+		expect(lines(r.out).slice(-4)).toEqual([
 			"self constitution",
 			"self department fixtures",
+			"self precedents .lawman/precedents/",
 			END,
 		]);
 		expect(r.out).not.toContain("place=");
@@ -821,9 +832,10 @@ describe("a department outside its class in tick input", () => {
 		expect(lines(start("patrol").out).slice(-2)).toEqual(["self fetch", END]);
 		const r = input("1");
 		expect(r.code).toBe(0);
-		expect(lines(r.out).slice(-3)).toEqual([
+		expect(lines(r.out).slice(-4)).toEqual([
 			"self constitution",
 			"self department",
+			"self precedents .lawman/precedents/",
 			END,
 		]);
 		expect(r.out).not.toContain("Bad");

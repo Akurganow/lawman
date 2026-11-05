@@ -22,6 +22,8 @@ export type RoleInput = {
 	stale?: (s: StageFields) => boolean;
 	constitution: boolean;
 	department: "order" | "stage" | null;
+	// whose department picks the precedents: all of them, the order's, the stage's, or none
+	precedents: "all" | "order" | "stage" | null;
 	texts: TextKind[];
 };
 
@@ -103,6 +105,7 @@ const ISSUE_ROLE: Shared = {
 	stage: "case",
 	constitution: true,
 	department: null,
+	precedents: "all",
 	texts: ["issue"],
 };
 const PULL_ROLE: Shared = {
@@ -111,6 +114,7 @@ const PULL_ROLE: Shared = {
 	stage: "pull",
 	constitution: true,
 	department: null,
+	precedents: "all",
 	texts: ["pull"],
 };
 
@@ -133,6 +137,7 @@ export const ROLES: Record<string, RoleInput> = {
 		stage: null,
 		constitution: true,
 		department: "order",
+		precedents: "order",
 		texts: [],
 	},
 	"response-unit": {
@@ -150,11 +155,13 @@ export const ROLES: Record<string, RoleInput> = {
 		),
 		stage: "intake",
 		stale: either((s) => s.need === "none", closed),
+		precedents: "stage",
 	},
 	investigation: {
 		...ISSUE_ROLE,
 		law: law(CASE_STEPS),
 		stale: either(needNot("investigation"), closed),
+		precedents: "stage",
 	},
 	prosecutor: {
 		...ISSUE_ROLE,
@@ -187,6 +194,7 @@ export const ROLES: Record<string, RoleInput> = {
 		sync: ["issues", "pulls"],
 		stale: needNot("clerk"),
 		constitution: false,
+		precedents: null,
 		texts: ["issue", "pull"],
 	},
 	"spec-writer": {

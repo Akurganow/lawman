@@ -174,21 +174,21 @@ export function defineCases(runner: Runner): void {
 
 	describe("contract", () => {
 		test("reads the frontmatter value, not the example below it", () => {
-			lay(root, { contract: "3" });
+			lay(root, { contract: "4" });
 			expect(synced("tick1").out).toBe(SYNCED);
 		});
 
 		test("a different value prints the alarm first and keeps the value", () => {
 			lay(root, {
-				config: CONFIG.replace("contract_version: 3", "contract_version: 1"),
+				config: CONFIG.replace("contract_version: 4", "contract_version: 3"),
 			});
-			expect(synced("tick1").out).toBe(`${alarmLine("3", "1")}${SYNCED}`);
-			expect(configOf(root)).toContain("contract_version: 1\n");
+			expect(synced("tick1").out).toBe(`${alarmLine("4", "3")}${SYNCED}`);
+			expect(configOf(root)).toContain("contract_version: 3\n");
 		});
 
 		test("an absent key prints the alarm with none, is not written and repeats", () => {
-			lay(root, { config: CONFIG.replace("contract_version: 3\n", "") });
-			const expected = `${alarmLine("3", "none")}${SYNCED}`;
+			lay(root, { config: CONFIG.replace("contract_version: 4\n", "") });
+			const expected = `${alarmLine("4", "none")}${SYNCED}`;
 			expect(synced("tick1").out).toBe(expected);
 			expect(configOf(root)).not.toContain("contract_version");
 			expect(synced("tick2").out).toBe(expected);

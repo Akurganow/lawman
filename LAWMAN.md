@@ -1,5 +1,5 @@
 ---
-contract_version: 3
+contract_version: 4
 ---
 
 # Constitution of Akurganow/lawman
@@ -45,10 +45,6 @@ contract_version: 3
 ## Labels
 
 - `needs-human` (owner attention): Lawman cannot decide this issue alone. A person decides on it.
-
-## Precedents
-
-none
 
 ## Licenses
 

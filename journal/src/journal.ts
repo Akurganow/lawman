@@ -13,7 +13,6 @@ import { jev } from "./jev";
 import { lawSync } from "./law-sync";
 import { cap, last, leads, seen } from "./leads";
 import { lintPageCommand } from "./lint";
-import { precedentCommand, precedentMergeCommand } from "./precedent";
 import { next, precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
 import { rotation } from "./rotation";
@@ -53,8 +52,8 @@ export const COMMANDS: Record<string, Handler> = {
 		(await import("./lint-body")).lintBodyCommand(args),
 	"lint-page": lintPageCommand,
 	"department-line": departmentLineCommand,
-	precedent: precedentCommand,
-	"precedent-merge": precedentMergeCommand,
+	precedent: async (args) =>
+		(await import("./precedent")).precedentCommand(args),
 	pull: pullCommand,
 	handoff: async (args) => (await import("./handoff")).handoffCommand(args),
 	clean: async (args) => (await import("./clean-command")).cleanCommand(args),

@@ -21,6 +21,7 @@ import {
 	caseMark,
 	charge,
 	conviction,
+	decline,
 	defence,
 	lead,
 	mark,
@@ -41,6 +42,31 @@ describe("case: court stage", () => {
 	test.each([
 		["a defence after the charge needs the court", defended(), "court"],
 		[
+			"an acquittal after a decline needs the clerk",
+			withLead(caseMark(), decline(), acquittal()),
+			"clerk",
+		],
+		[
+			"a conviction after a refute needs the clerk",
+			withLead(caseMark(), charge(), refute(), conviction()),
+			"clerk",
+		],
+		[
+			"a court marker older than the decline does not count",
+			withLead(caseMark(), acquittal(), decline()),
+			"court",
+		],
+		[
+			"a declined closed issue needs nobody",
+			{ ...withLead(caseMark(), decline()), state: "CLOSED" },
+			"none",
+		],
+		[
+			"a refuted closed issue needs nobody",
+			{ ...withLead(caseMark(), charge(), refute()), state: "CLOSED" },
+			"none",
+		],
+		[
 			"a conviction after the defence needs the clerk",
 			defended(conviction()),
 			"clerk",
@@ -51,9 +77,9 @@ describe("case: court stage", () => {
 			"clerk",
 		],
 		[
-			"a refute instead of a defence needs nobody",
+			"a refute instead of a defence needs the court",
 			withLead(caseMark(), charge(), refute()),
-			"none",
+			"court",
 		],
 		[
 			"a defender return instead of a defence needs the investigation",
@@ -111,10 +137,14 @@ describe("case: court stage", () => {
 		expectRoundKept(defended(returnTo("investigation", 1, "court")));
 	});
 
-	test("due for the court lists only a defended open case", () => {
+	test("due for the court lists a defended, declined or refuted open case", () => {
 		const due = () => call(BASE, ["due", "--role", "court"]).out;
 		put({ 1: defended() });
 		expect(due()).toBe("main\t1\n");
+		put({ 2: withLead(caseMark(), decline()) });
+		expect(due()).toBe("main\t2\n");
+		put({ 3: withLead(caseMark(), charge(), refute()) });
+		expect(due()).toBe("main\t3\n");
 		put({
 			1: defended(conviction()),
 			2: defended(acquittal()),

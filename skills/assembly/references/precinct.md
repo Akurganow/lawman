@@ -43,9 +43,9 @@ Ask in the question tool.
 Run this section only when `LAWMAN.md` is absent. The draft stays in the clone until the decision.
 
 21. Create the branch `lawman/constitution` in the clone, and switch to it.
-22. Read the constitution contract in `lawman/skills/lawman-law/references/constitution.md` for its shape and its nine headings.
-23. Write `precincts/<precinct name>/LAWMAN.md` with frontmatter `contract_version: 3` and the title `# Constitution of <owner>/<repo>`.
-24. Add the nine `##` headings: Read first, Departments, Fence, Regression proof, Not judged, Execution, Executor loads, Labels, Precedents. The order is the usual one and no rule.
+22. Read the constitution contract in `lawman/skills/lawman-law/references/constitution.md` for its shape and its eight headings.
+23. Write `precincts/<precinct name>/LAWMAN.md` with frontmatter `contract_version: 4` and the title `# Constitution of <owner>/<repo>`.
+24. Add the eight `##` headings: Read first, Departments, Fence, Regression proof, Not judged, Execution, Executor loads, Labels. The order is the usual one and no rule.
 25. Fill each section except `Departments` and `Labels` with paths and short facts, and write `none` where nothing applies. Fill `Labels` as the section "Pick the labels" says. Items 26 and 27 do not apply to `Labels`.
 26. Note the files each drafted line came from.
 27. Check that each path exists at `HEAD`, and drop a line whose path is missing, showing the reason.
@@ -95,7 +95,7 @@ The rows for an absent constitution:
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Access: the account's access level on the repository (found).
-- Constitution: the draft as a table, one row for each of its nine sections. Show each line with the file it came from (recommended).
+- Constitution: the draft as a table, one row for each of its eight sections. Show each line with the file it came from (recommended).
 - Departments: each shared department with its first sentence, and the judging document matched to it, or none, with the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).

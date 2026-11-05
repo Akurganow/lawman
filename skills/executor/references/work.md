@@ -22,14 +22,7 @@ Run it when the pull request does not merge cleanly.
 1. Take the message from the commit rules of the Read first and Executor loads files. Send it to the body check with `--no-marker` on stdin. Exit 7 ends the tick with `stopped-lint`, and the merge does not run. Merge the default branch into the tree with the message the check printed. A conflict is no failure. A merge with no conflict commits itself. Its content is the reviewed default branch, so check only its message with the "Leak check" recipe. A match there ends the tick with `failed` and nothing is pushed. Otherwise push it, as the "Commit and push" recipe says, and skip the rest of this recipe.
 2. List the conflicted paths of the tree.
 3. Resolve each conflicted path other than `LAWMAN.md` yourself. Stage it by name.
-4. When `LAWMAN.md` is conflicted, let the journal resolve it. Write its three versions to files in the run directory, not in the tree. Base is the common ancestor. Ours is the branch's version. Theirs is the default branch's version.
-   ```
-   bin/journal precedent-merge --base runs/<tick id>/base.md --ours runs/<tick id>/ours.md --theirs runs/<tick id>/theirs.md --out runs/<tick id>/merged.md
-   ```
-   - A version that cannot be read, or any other `LAWMAN.md` state, is no merge. Abort the merge and end the tick with `skipped-merge-conflict`.
-   - `unresolved<TAB><reason>`: abort the merge and end the tick with `skipped-merge-conflict`. Blockers names the reason.
-   - `merged<TAB>#<old>->#<new>[,...]`: replace `LAWMAN.md` in the tree with `merged.md` and stage it. Keep the pairs for `## Change`. Never count the numbers yourself.
-   - A non-zero exit of `precedent-merge`: abort the merge and end the tick with `failed`.
+4. When `LAWMAN.md` is conflicted, abort the merge and end the tick with `skipped-merge-conflict`.
 5. Run the "Leak check" recipe on the resolved paths only, the ones step 2 listed, and on the message. The rest of the staged merge is the reviewed default branch. Finish the merge with a commit and the message that item 1 printed. Open no editor. Push it, as the "Commit and push" recipe says.
 
 ## Leak check

@@ -22,17 +22,21 @@ import { configValue } from "./law-sync";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
+import { departmentsField, headerOf, serves } from "./precedent-file";
 import { pullLine, stageOf } from "./pull-stage";
 
 const TICK_INPUT_USAGE = "tick input (<id> [--part <k>]|--role <r> --part <k>)";
 const START_USAGE = "tick start --role <r> --order <id>";
 const NONE = "-";
 const CONSTITUTION = "LAWMAN.md";
+const PRECEDENTS = ".lawman/precedents/";
+const SELF_PRECEDENTS = `precedents ${PRECEDENTS}`;
 // an ended tick prints no foreign text, only the lines that explain the end
 const CASE_TEXTS = [
 	"title",
 	"constitution",
 	"department",
+	"precedent",
 	"issue",
 	"pull",
 	"comment",
@@ -230,12 +234,76 @@ async function lintedPage(
 	return { passed, reasons: lint.reasons };
 }
 
-const departmentOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
-	input.department === "order"
+// the department of the order or of the stage, `-` for any other source
+const departmentFrom = (
+	source: string | null,
+	order: Taken,
+	stage: Stage | null,
+) =>
+	source === "order"
 		? (order.department ?? NONE)
-		: input.department === "stage"
+		: source === "stage"
 			? (stage?.department ?? NONE)
 			: NONE;
+
+const departmentOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
+	departmentFrom(input.department, order, stage);
+
+const precedentsOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
+	input.precedents === null
+		? null
+		: departmentFrom(input.precedents, order, stage);
+
+// Each direct file of the folder, by name, when it serves the department. A file
+// the journal cannot read leaves one self line, so the role reads the folder itself.
+async function precedentBlocks(
+	o: Output,
+	p: string,
+	revision: string,
+	files: string | null,
+	department: string,
+): Promise<void> {
+	if (files === null) {
+		o.selfs.push(SELF_PRECEDENTS);
+		return;
+	}
+	const names = files
+		.split("\n")
+		.map(stripCr)
+		.filter((f) => f.startsWith(PRECEDENTS) && f.endsWith(".md"))
+		.map((f) => f.slice(PRECEDENTS.length, -".md".length))
+		.filter((name) => !name.includes("/"))
+		.sort();
+	let missed = false;
+	let shown = 0;
+	for (const name of names) {
+		const path = `${PRECEDENTS}${name}.md`;
+		if (!fits("precedent", name) || !fits("path", path)) {
+			missed = true;
+			continue;
+		}
+		const file = await operate(p, "file", call([revision, path]));
+		if (file.text === null) {
+			o.add(...file.blocks);
+			missed = true;
+			continue;
+		}
+		const header = headerOf(file.text);
+		if (!serves(header.departments, department)) continue;
+		const text = await characters(file.text);
+		if (text === null) {
+			missed = true;
+			continue;
+		}
+		o.line(
+			`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
+		);
+		o.add(fencedBlock("precedent", text));
+		shown++;
+	}
+	if (missed) o.selfs.push(SELF_PRECEDENTS);
+	else if (shown === 0) o.line("precedents none");
+}
 
 // the places of the "Resolve the department page" section, in its order
 function installationPage(d: string): Page | null {
@@ -420,6 +488,8 @@ export async function tickStart(args: string[]): Promise<number> {
 				id,
 			);
 	}
+	const pd = precedentsOf(input, order, stage);
+	if (pd !== null) await precedentBlocks(o, p, revision, files, pd);
 	const texts = await withDbAsync((db) =>
 		caseTexts(db, p, textsOf(input, order, stage)),
 	);
@@ -487,6 +557,7 @@ export async function tickInput(args: string[]): Promise<number> {
 	// a name outside its class stays out of the output, the role's own check refuses it
 	if (d !== NONE)
 		o.selfs.push(fits("department", d) ? `department ${d}` : "department");
+	if (input.precedents !== null) o.selfs.push(SELF_PRECEDENTS);
 	const texts = await withDbAsync((db) =>
 		caseTexts(db, order.precinct, textsOf(input, order, stage)),
 	);

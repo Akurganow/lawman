@@ -87,7 +87,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `final`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 
@@ -106,16 +106,18 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
 | `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
-| `clerk` | `entry` | the comment after it opens a precedent pull request | none |
-| `clerk` | `no-entry` | the comment when the ruling holds no valid precedent line | none |
+| `clerk` | `entry` | the comment after it opens a precedent pull request | `pull` |
+| `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
+| `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
-| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair | `pull`, `issue` |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair; a `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
 | `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 | `executor` | `ready` | the `Executor` comment on a pull request | `sha` |
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
 - `entry` and `no-entry` now follow an acquittal only.
+- `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
@@ -126,6 +128,34 @@ Each marker is the last line of the issue body or comment that its role writes.
 - The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.
 
 A stage not defined here is parsed and kept.
+
+## Precedent
+
+The section `## Precedent` of a court ruling holds its precedent lines. A ruling is a comment with a `conviction` or an `acquittal` marker. No other role writes the section.
+
+- The journal reads every `## Precedent` section of the ruling, in order. A body runs to the next heading of level 2 or higher.
+- A fenced block hides a heading. A marker line and an HTML comment belong to no body.
+- A list item is one line. A paragraph with one line is one line. Any other non-empty node is a line that fits no form.
+- The line `none` means the ruling adds no precedent. `None`, `none.` and any other word fit no form.
+
+| Line | Result |
+| :-- | :-- |
+| `new <gist>: <rule>` | a new precedent |
+| `refine <name>: <rule>` | the rule text of an existing precedent changes |
+| `cancel <name>` | an existing precedent is deleted |
+
+- `<gist>` matches `[a-z0-9]+(-[a-z0-9]+)*`. `<name>` matches `[A-Za-z0-9][A-Za-z0-9._-]*`. `<rule>` is non-empty text to the end of the line.
+- A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
+- The journal writes the files. The writer never numbers, names or copies a rule into a file.
+
+Example:
+
+```
+## Precedent
+
+- new empty-test-double-conformances: An empty conformance of a test double to a protocol is not dead code.
+- cancel 2026-09-02-unused-parameter-in-callbacks
+```
 
 ## Examples
 
@@ -176,11 +206,13 @@ Valid. `E12` is a conviction, `E13` an acquittal.
 <!-- lawman: role=court stage=acquittal at=2026-10-16T10:30:00Z -->
 ```
 
-Valid. `E14` is an entry, `E15` a no-entry.
+Valid. `E14` is an entry, `E15` a no-entry, `E20` a final, `E21` a kept without `issue`.
 
 ```
-<!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=entry pull=7 at=2026-10-16T10:45:00Z -->
 <!-- lawman: role=clerk stage=no-entry at=2026-10-16T11:00:00Z -->
+<!-- lawman: role=clerk stage=final pull=7 at=2026-10-16T11:30:00Z -->
+<!-- lawman: role=clerk stage=kept pull=7 at=2026-10-16T11:45:00Z -->
 ```
 
 Valid. `E16` is a response-unit lead, `E17` an await, `E18` an out.
