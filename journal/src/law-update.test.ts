@@ -2,6 +2,7 @@ import { describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
 import {
 	appendFileSync,
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	readdirSync,
@@ -20,6 +21,7 @@ import { assetName, lawUpdate } from "./law-update";
 import {
 	ASSET,
 	allCommands,
+	assetLog,
 	assetRuns,
 	binaryText,
 	CONFIG_COMMIT,
@@ -236,6 +238,21 @@ describe("law-update: the fixture verifier (a fixture, it proves no real verifie
 		verifyCommand(fixtureVerifier());
 		expectStop(await run(), "the provenance check failed");
 		expect(calls("verify")).toEqual([verifyCall()]);
+	});
+
+	test("an asset that is already executable gives the provenance check failed", async () => {
+		ready();
+		chmodSync(join(upstream(), ASSET), 0o755);
+		verifyCommand(fixtureVerifier());
+		expectStop(await run(), "the provenance check failed");
+	});
+
+	test("an asset that already ran gives the provenance check failed", async () => {
+		ready();
+		writeFileSync(assetLog(), "an earlier run\n");
+		verifyCommand(fixtureVerifier());
+		expectStop(await run(), "the provenance check failed", { ran: true });
+		expect(assetRuns()).toEqual(["an earlier run"]);
 	});
 });
 

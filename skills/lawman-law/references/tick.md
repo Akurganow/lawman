@@ -91,7 +91,7 @@ The list has one entry, `licenses`. It applies when a precinct that `bin/journal
 
 Do this section only when the first line of the output of your role entry does not start with `lawman input`. Its steps 3 and 4 also serve the rows `self release` and `self verify` of the section "Sync the law". Such a first line means that the journal is older than the law and has no command `law-update`. This section completes an installation after the plugin was updated. A tick that finds the law at the recorded commit skips this section.
 
-Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.
+Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal. When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop: the token `stopped-law-drift` and the reason "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".
 
 Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
 

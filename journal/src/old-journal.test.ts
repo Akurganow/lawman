@@ -106,7 +106,8 @@ describe("the older section holds the protections of the procedure of 0.23.1", (
 		[
 			1,
 			[
-				"Skip the rest of this section when the two commits are equal, or when the file or a key cannot be read.",
+				"Skip the rest of this section when the two commits are equal.",
+				'When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop: the token `stopped-law-drift` and the reason "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".',
 			],
 		],
 		[2, ["Check the commit against `[0-9a-f]{40}`."]],

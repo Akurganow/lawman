@@ -29,7 +29,7 @@ export const stop = (reason: string, token = DRIFT) =>
 
 const shared = () => join(dir, "shared");
 const logFile = () => join(dir, "calls.log");
-const assetLog = () => join(dir, "asset.log");
+export const assetLog = () => join(dir, "asset.log");
 const quoted = (path: string) => `'${path}'`;
 
 export const upstream = () => join(dir, "upstream");
@@ -138,7 +138,7 @@ export const statement = (c: Claim) =>
 // A fixture check: it compares the claim lying at the provenance place with
 // the digest of the file and with the repository and commit it was given.
 // No real signing method stands behind it.
-export const fixtureVerifier = () => `${fixtureCheck()}
+export const fixtureVerifier = () => `${fixtureCheck()} || exit 1
 if command -v sha256sum >/dev/null 2>&1; then d=$(sha256sum "$1"); else d=$(shasum -a 256 "$1"); fi
 d=\${d%% *}
 grep -qx "digest=$d" "$2" && grep -qx "signer=$3" "$2" && grep -qx "commit=$4" "$2"`;
