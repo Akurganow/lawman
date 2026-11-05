@@ -1,9 +1,10 @@
 import { describe, expect, test } from "bun:test";
 import { readdirSync, rmSync, writeFileSync } from "node:fs";
-import { human } from "./cases-fixture";
+import { human, type Spec } from "./cases-fixture";
 import {
 	dispatches,
 	hostOf,
+	leadIn,
 	openOrders,
 	reportOf,
 	setUp,
@@ -50,6 +51,9 @@ describe("the patrol department", () => {
 		);
 		expect(reportOf(r.out, "Blockers")).toContain(
 			"main: department abstraction has no page",
+		);
+		expect(reportOf(r.out, "Blockers")).toContain(
+			"shared department pages: the listing failed",
 		);
 		expect(openOrders().some((o) => o.role === "court")).toBe(true);
 	});
@@ -196,5 +200,89 @@ describe("the stale orders", () => {
 		seed((d) => order(d, "main", "patrol", { department: "claims" }));
 		startDesk();
 		expect(dispatches()[0]).toMatchObject({ role: "patrol", outcome: null });
+	});
+});
+
+describe("the walk of the patrol departments", () => {
+	// Two departments of the precinct's own pages and no shared page, so the walk sees only these.
+	const TWO = CONSTITUTION.replace(
+		/## Departments\n\n(- .*\n)+/,
+		"## Departments\n\n- alpha: judged by none\n- beta: judged by none\n- gamma: judged by none\n",
+	);
+	const ALARM_CHECK = (name: string) =>
+		departmentPage(name).replace(
+			"## Proof\n",
+			"## Proof\nAlarm check: look once.\n\n",
+		);
+	// five open leads cap a department at 0
+	const capped = (...departments: string[]) =>
+		Object.fromEntries(
+			departments.flatMap((d, k) =>
+				[1, 2, 3, 4, 5].map((i): [number, Spec] => [
+					100 + 10 * k + i,
+					{ body: [leadIn(d)] },
+				]),
+			),
+		);
+	const walk = (
+		issues: Record<number, Spec>,
+		pages: Record<string, string> = {},
+		visits: [department: string, at: string][] = [],
+	) => {
+		setUp({ main: 1 });
+		for (const [department, at] of visits)
+			seed((d) =>
+				order(d, "main", "patrol", { department, at, outcome: "filed" }),
+			);
+		for (const f of readdirSync(references("departments")))
+			if (f.endsWith(".md")) rmSync(references("departments", f));
+		hostOf("main", {
+			issues,
+			tree: {
+				"LAWMAN.md": TWO,
+				".lawman/departments/alpha.md": departmentPage("alpha"),
+				".lawman/departments/beta.md": departmentPage("beta"),
+				".lawman/departments/gamma.md": departmentPage("gamma"),
+				...pages,
+			},
+		});
+		return startDesk();
+	};
+
+	test("a department at cap 0 with an alarm check takes the visit", () => {
+		const r = walk(capped("alpha"), {
+			".lawman/departments/alpha.md": ALARM_CHECK("alpha"),
+		});
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["alpha"]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test("a department at cap 0 without an alarm check is skipped silently", () => {
+		const r = walk(capped("alpha"));
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["beta"]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test("every department at cap 0 gives no patrol order and no Blockers entry", () => {
+		const r = walk(capped("alpha", "beta", "gamma"));
+		expect(patrolOn("main")).toEqual([]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test("the rotation takes a department never visited first, then the oldest visit", () => {
+		walk({}, {}, [
+			["alpha", later(-2)],
+			["beta", later(-3)],
+		]);
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["gamma"]);
+	});
+
+	test("with every department visited, the oldest visit comes first", () => {
+		walk({}, {}, [
+			["alpha", later(-2)],
+			["beta", later(-4)],
+			["gamma", later(-3)],
+		]);
+		expect(patrolOn("main").map((o) => o.department)).toEqual(["beta"]);
 	});
 });

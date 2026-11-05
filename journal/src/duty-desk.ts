@@ -98,8 +98,8 @@ function ended(
 	return print(t, [...alarms, `ended ${outcome}`, `report ${report}`]);
 }
 
-// The shared department pages of the law, by file name.
-function sharedPages(): string[] {
+// The shared department pages of the law, by file name. A failed listing leaves none and says so.
+function sharedPages(blockers: string[]): string[] {
 	try {
 		return readdirSync(join(commandFolder(), REFERENCES, "departments"), {
 			withFileTypes: true,
@@ -108,6 +108,7 @@ function sharedPages(): string[] {
 			.map((e) => e.name.slice(0, -".md".length))
 			.sort();
 	} catch {
+		blockers.push("shared department pages: the listing failed");
 		return [];
 	}
 }
@@ -300,7 +301,7 @@ async function finish(
 	const precincts = weighted();
 	const blockers: string[] = [];
 	const visits = new Map<string, Visit>();
-	const shared = sharedPages();
+	const shared = sharedPages(blockers);
 	for (const p of precincts) {
 		const synced =
 			(p.synced_at ?? "") >= t.started &&

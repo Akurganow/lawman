@@ -652,3 +652,41 @@ describe("the command forms in process", () => {
 		expect(again.err).toContain("no open tick with id 1");
 	});
 });
+
+describe("the repetition of an open alarm", () => {
+	// a tick that hangs since five hours, whose alarm the owner last heard two days ago
+	const HUNG = `ALARM tick-hung 1 clerk started ${later(-5)}`;
+	const hungAlarm = () =>
+		seed((d) => {
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [
+				later(-5),
+			]);
+			d.run(
+				"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('tick-hung', '1', ?, ?, ?)",
+				[`clerk started ${later(-5)}`, later(-48), later(-48)],
+			);
+		});
+
+	test("the duty desk start repeats an alarm not mentioned for a day", () => {
+		setUp({ main: 1 });
+		hungAlarm();
+		expect(lines(startDesk().out)).toContain(HUNG);
+	});
+
+	test("a role start does not repeat it", () => {
+		setUp({ main: 1 });
+		hungAlarm();
+		seed((d) => order(d, "main", "investigation", { issue: 1 }));
+		const r = call(BASE, [
+			"tick",
+			"start",
+			"--role",
+			"investigation",
+			"--order",
+			"1",
+		]);
+		expect(r.code).toBe(0);
+		expect(r.out).toContain("role=investigation tick=");
+		expect(lines(r.out)).not.toContain(HUNG);
+	});
+});

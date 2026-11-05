@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { inproc } from "./inproc";
 import { lines } from "./input-test-fixture";
 import {
 	BASE,
@@ -40,5 +41,20 @@ describe("status queue lines", () => {
 			order(d, "main", "court", { issue: 9, outcome: "silent" });
 		});
 		expect(call(BASE, ["status"]).out).not.toContain("queue");
+	});
+
+	test("in process, status prints the queue line and intake needs --issue", () => {
+		seed((d) => {
+			precinct(d, "main");
+			order(d, "main", "clerk", { issue: 1, at: BASE });
+		});
+		expect(lines(inproc(BASE, ["status"]).out)).toContain(
+			`queue clerk 1 oldest ${BASE}`,
+		);
+		const intake = inproc(BASE, ["intake", "main"]);
+		expect(intake.code).toBe(1);
+		expect(intake.err).toContain(
+			"usage: journal intake <precinct> --issue <n>",
+		);
 	});
 });
