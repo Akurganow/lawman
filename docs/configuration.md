@@ -15,7 +15,7 @@ The file holds plain `key: value` lines. There is one line per key and no nestin
 The journal looks for `configs/` and `shared/` in the folder of its database, which is the installation directory.
 
 - `configs/<precinct>/` holds the commands of one precinct and the files they need.
-- `shared/` holds the commands of the installation and the files they need.
+- `shared/` holds the commands of the installation and the files they need. The installation has three: `release`, `verify` and `law-version`. The update of the journal uses them. See [the operations of the installation](journal.md#the-operations-of-the-installation).
 
 A command reads only and never writes to the host. The assembly writes each command with your consent. An operation without a command is a step that the role does itself. See [the commands](journal.md#commands-of-the-installation-and-the-precincts).
 
@@ -30,7 +30,7 @@ A command reads only and never writes to the host. The assembly writes each comm
 - The host, the tool that reaches it, the account the host reports for that tool and the place where its credential lives.
 - How the host keeps issues and their templates, and anything particular to this host.
 - The action record: for each host action that the role skills name, how this machine does it with the chosen tool. That includes handing host data to the journal in its forms. `journal form` prints them.
-- The verifier of Lawman's release, or the record that you declined one.
+- The verifier of Lawman's release, or the record that you declined one. An update uses it only when `shared/` has no `verify` command.
 - The section `## Dependency reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the catalog check. The words say which dependencies to check, where they are listed and by what way they are read, or `none` when the precinct lists no dependencies. You and the assembly agree the line when the precinct joins or when the assembly asks for the missing answer. The way never runs code of the precinct or a tool that the precinct configures. The patrol reads the line and checks only what it names. A precinct that said yes and has no line gets no check. Rewriting the notes in part Host keeps every line of this section.
 - The section `## License reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the license question. Nested lines under it hold the blocks of the agreed license sources, which the assembly copies word for word from the file of each row. You see the whole entry before the assembly writes it. The entry says, for each ecosystem of the precinct, whether its lock records the license and which sources are agreed, in order. It also keeps the rows you refused. It holds `none` when nothing is agreed. Rewriting the notes in part Host keeps every line of this section too.
 
@@ -109,11 +109,11 @@ The key `progress_checks` is a whole number above zero. The alarm `no-progress` 
 
 The assembly writes the file at install. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires neither `jobs` nor `progress_checks`.
 
-After a plugin update, the next tick of any role completes the update. The role downloads the journal of the new release and verifies it. Then it runs the `law-sync` command of that file. The command writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key`, `amended_law_commit`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
+After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key`, `amended_law_commit`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 
-The assembly writes `contract_version` and `amended_law_commit` again when it amends the precinct constitutions. If the new law carries another constitution contract version, `law-sync` prints an `ALARM contract-changed` line. Run the assembly to amend. See [constitution](constitution.md).
+The assembly writes `contract_version` and `amended_law_commit` again when it amends the precinct constitutions. If the new law carries another constitution contract version, `law-sync` prints an `ALARM contract-changed` line, and `law-update` passes it on. Run the assembly to amend. See [constitution](constitution.md).
 
 The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, it asks whether the court may send its brief about a conviction in that precinct to `api.typesafe.ai`. It writes the pair `<precinct>=<answer>` and replaces any earlier pair of that name.
 
@@ -170,7 +170,8 @@ The rows, each with the file that says what it receives:
 
 Ticks read the keys they need.
 
-- Every role reads `law_commit` and `trusted_login`. A role stops with `stopped-law-drift` when the law folder holds another commit. It stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
+- The start of every tick reads `law_commit` and `trusted_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
+- The update reads `law_commit` and `release_repo`.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The patrol reads `catalog`, `catalog_precincts` and the precinct's line under `## Dependency reading` in `host.md`. The check runs only when `catalog` is exactly `yes`, the precinct pair is `yes` and the line names a way. Otherwise the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
