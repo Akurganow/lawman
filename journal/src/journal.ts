@@ -57,6 +57,7 @@ export const COMMANDS: Record<string, Handler> = {
 	catalog: async (args) => (await import("./catalog")).catalog(args),
 	wake,
 	"law-sync": lawSync,
+	"law-update": async (args) => (await import("./law-update")).lawUpdate(args),
 };
 
 function failed(e: unknown): number {

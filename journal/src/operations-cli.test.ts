@@ -21,7 +21,7 @@ describe("commands and run as programs", () => {
 		const r = journal(["commands"]);
 		expect(r).toEqual({
 			code: 0,
-			out: `folder ${dir}\nrelease empty\nverify empty\n`,
+			out: `folder ${dir}\nrelease empty\nverify empty\nlaw-version empty\n`,
 			err: "",
 		});
 	});

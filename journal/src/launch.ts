@@ -11,7 +11,11 @@ export const PRECINCT_OPERATIONS = [
 	"file",
 	"files",
 ] as const;
-export const INSTALLATION_OPERATIONS = ["release", "verify"] as const;
+export const INSTALLATION_OPERATIONS = [
+	"release",
+	"verify",
+	"law-version",
+] as const;
 
 // the folder of the database, so a throwaway database brings its own commands
 export const commandFolder = () => resolve(dirname(dbPath()));
@@ -28,7 +32,13 @@ export function hasCommand(place: string, operation: string): boolean {
 	}
 }
 
-export type Ran = { ok: boolean; stdout: Uint8Array; stderr: Uint8Array };
+// code is null when a signal ended the file
+export type Ran = {
+	ok: boolean;
+	code: number | null;
+	stdout: Uint8Array;
+	stderr: Uint8Array;
+};
 
 function start(place: string, operation: string, args: string[]) {
 	try {
@@ -60,6 +70,7 @@ export async function launch(
 	]);
 	return {
 		ok: child.exitCode === 0 && child.signalCode === null,
+		code: child.signalCode === null ? child.exitCode : null,
 		stdout,
 		stderr,
 	};

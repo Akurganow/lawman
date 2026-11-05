@@ -259,7 +259,7 @@ describe("commands", () => {
 	test("without a precinct it lists the operations of the installation", async () => {
 		command(shared(), "verify", "true");
 		expect((await inprocAsync(BASE, ["commands"])).out).toBe(
-			`folder ${dir}\nrelease empty\nverify command\n`,
+			`folder ${dir}\nrelease empty\nverify command\nlaw-version empty\n`,
 		);
 	});
 

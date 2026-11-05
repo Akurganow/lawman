@@ -21,6 +21,7 @@ import { DUTY_DESK, ROLES } from "./input-roles";
 import { intakeWaiting } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
+import { lawCheck } from "./law-version";
 import { lintPage } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { type Operated, operate } from "./operations";
@@ -374,7 +375,10 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
 		return ended(t, alarms, "failed", "config.yaml has no trusted_login");
-	const selfs: string[] = [];
+	const law = await lawCheck(config);
+	if (law !== null && law !== "self")
+		return ended(t, alarms, law.outcome, law.report);
+	const selfs: string[] = law === "self" ? ["self law-version"] : [];
 	for (const p of weighted()) {
 		const step = (name: string) =>
 			selfs.push(`self ${name} ${p.name} ${p.repo}`);
