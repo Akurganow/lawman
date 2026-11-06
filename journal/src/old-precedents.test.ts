@@ -214,6 +214,11 @@ describe("old-precedent check", () => {
 			{ 2: ruled(mark("executor", "acquittal")) },
 			"no-ruling",
 		],
+		[
+			"a court stage named like an object member",
+			{ 2: ruled(mark("court", "constructor")) },
+			"no-ruling",
+		],
 	])("%s gives ask", async (_, specs, reason) => {
 		expect((await check(form(specs), "1:2")).out).toBe(
 			`line 1 ask reason=${reason}\n`,

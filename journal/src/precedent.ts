@@ -1,5 +1,6 @@
 import type { Database } from "bun:sqlite";
 import {
+	chmodSync,
 	lstatSync,
 	mkdirSync,
 	readFileSync,
@@ -789,23 +790,36 @@ export function oldLineToFile(o: OldLine): string {
 	const made = [lawman, join(lawman, "precedents")].filter(
 		(dir) => entryKind(dir) === "absent",
 	);
-	// "wx" refuses a name that exists, a planted link included
+	// A leftover of a crashed move is removed, a link as a link. "wx" then
+	// refuses any name that came back, so nothing is written through a link.
 	const temp = join(o.tree, `.${CONSTITUTION}.move`);
+	const kind = entryKind(temp);
+	if (kind === "dir") throw unsafe(temp);
+	if (kind !== "absent") unlinkSync(temp);
+	const mode = lstatSync(path).mode & 0o7777;
 	let wrote = false;
 	try {
 		folder.commit();
 		writeFileSync(temp, page, { flag: "wx" });
 		wrote = true;
+		chmodSync(temp, mode);
 		renameSync(temp, path);
 	} catch (e) {
-		try {
-			if (wrote) unlinkSync(temp);
-			folder.set(name, null);
-			folder.commit();
-			for (const dir of made.reverse()) rmdirSync(dir);
-		} catch {
-			// the first error is the one to report; the rule still stands in the page
-		}
+		// each step runs whatever the others do; the first error is the one to report
+		const undo = [
+			() => wrote && unlinkSync(temp),
+			() => {
+				folder.set(name, null);
+				folder.commit();
+			},
+			...made.reverse().map((dir) => () => rmdirSync(dir)),
+		];
+		for (const step of undo)
+			try {
+				step();
+			} catch {
+				// the rule still stands in the page
+			}
 		throw e;
 	}
 	return name;

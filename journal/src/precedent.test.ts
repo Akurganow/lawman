@@ -620,31 +620,57 @@ describe("oldLineToFile", () => {
 		expect(readFileSync(page(), "utf8")).toBe(PAGE);
 	});
 
-	test("a failed rollback still reports the first error", () => {
+	test("a failed unlink of the temporary page still takes the file away", () => {
 		const rename = spyOn(fs, "renameSync").mockImplementation(() => {
 			throw new Error("first");
 		});
-		const unlink = spyOn(fs, "unlinkSync").mockImplementation(() => {
-			throw new Error("second");
-		});
+		const unlink = fs.unlinkSync;
+		const spy = spyOn(fs, "unlinkSync").mockImplementation(((
+			path: fs.PathLike,
+		) => {
+			if (String(path).endsWith(".LAWMAN.md.move")) throw new Error("second");
+			return unlink(path);
+		}) as typeof fs.unlinkSync);
 		try {
 			expect(() => move()).toThrow("first");
 		} finally {
 			rename.mockRestore();
-			unlink.mockRestore();
+			spy.mockRestore();
 		}
+		expect(names()).toEqual([]);
+		expect(existsSync(join(tree, ".lawman"))).toBe(false);
 		expect(readFileSync(page(), "utf8")).toBe(PAGE);
 	});
 
-	test("a link at the place of the temporary page is refused and kept", () => {
-		const outside = join(dir, "outside.md");
-		writeFileSync(outside, "kept\n");
-		symlinkSync(outside, join(tree, ".LAWMAN.md.move"));
-		expect(() => move()).toThrow();
-		expect(readFileSync(outside, "utf8")).toBe("kept\n");
-		expect(names()).toEqual([]);
-		expect(readFileSync(page(), "utf8")).toBe(PAGE);
+	test("the page keeps its mode", () => {
+		fs.chmodSync(page(), 0o600);
+		move();
+		expect(fs.statSync(page()).mode & 0o777).toBe(0o600);
 	});
+
+	test("a leftover temporary page does not block the move", () => {
+		writeFileSync(join(tree, ".LAWMAN.md.move"), "left over\n");
+		expect(move()).toBe("2026-09-02-callbacks");
+		expect(readFileSync(page(), "utf8")).not.toContain("#1:");
+		expect(existsSync(join(tree, ".LAWMAN.md.move"))).toBe(false);
+	});
+
+	test.each([
+		["a link to a file", true],
+		["a dangling link", false],
+	])(
+		"%s at the place of the temporary page is removed, never written through",
+		(_, target) => {
+			const outside = join(dir, "outside.md");
+			if (target) writeFileSync(outside, "kept\n");
+			symlinkSync(outside, join(tree, ".LAWMAN.md.move"));
+			expect(move()).toBe("2026-09-02-callbacks");
+			if (target) expect(readFileSync(outside, "utf8")).toBe("kept\n");
+			else expect(existsSync(outside)).toBe(false);
+			expect(lstatSync(page()).isFile()).toBe(true);
+			expect(readFileSync(page(), "utf8")).not.toContain("#1:");
+		},
+	);
 
 	test("a page that is not UTF-8 is refused and keeps its bytes", () => {
 		const bytes = Buffer.concat([Buffer.from(PAGE), Buffer.from([0xe9, 0x0a])]);
