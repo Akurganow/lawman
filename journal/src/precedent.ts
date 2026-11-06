@@ -63,7 +63,7 @@ const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
 const OLD_SOURCE = /^(.+) \((\S+)\)$/;
 // a Map, so a stage named like an object member gives no kind
-const KIND_OF = new Map([
+export const KIND_OF = new Map([
 	["conviction", "condemns"],
 	["acquittal", "protects"],
 ]);
@@ -371,7 +371,7 @@ function rulingText(
 	return ruling.body;
 }
 
-function trustedLogin(): string {
+export function trustedLogin(): string {
 	const login = configValue(readConfig() ?? "", "trusted_login");
 	if (login === undefined || !fits("login", login))
 		throw new Fail(EXIT.USAGE, "config.yaml has no trusted_login");
@@ -676,16 +676,126 @@ export async function precedentCommand(args: string[]): Promise<number> {
 	return EXIT.OK;
 }
 
+// One item of an old Precedents section with its place in the page. A
+// numbered line of the old form carries its date, number, rule and link.
+export type OldItem = {
+	position: number;
+	start: number;
+	end: number;
+	text: string;
+	line?: {
+		date: string;
+		number: number;
+		rest: string;
+		rule: string;
+		link?: string;
+	};
+};
+
+function oldLine(text: string): OldItem["line"] {
+	const [, date, number, rest] = text.match(OLD_LINE) ?? [];
+	if (date === undefined || number === undefined || rest === undefined)
+		return undefined;
+	const [, rule = rest, link] = rest.match(OLD_SOURCE) ?? [];
+	return {
+		date,
+		number: Number(number),
+		rest,
+		rule,
+		...(link === undefined ? {} : { link }),
+	};
+}
+
+// every item of the old sections except `none`, numbered from 1 in page order
+export function oldItems(page: string): OldItem[] {
+	const nodes = sectionNodes(page, OLD_SECTION).flat();
+	const parts = nodes.flatMap((node) =>
+		node.type === "list"
+			? node.children.map((li) => ({
+					node: li,
+					item: itemsOf(page, [{ ...node, children: [li] }]),
+				}))
+			: [{ node, item: itemsOf(page, [node]) }],
+	);
+	return parts
+		.flatMap(({ node, item }) =>
+			item.map((i) => ({
+				...i,
+				start: node.position?.start.offset ?? 0,
+				end: node.position?.end.offset ?? 0,
+			})),
+		)
+		.filter((i) => i.text !== NONE)
+		.map((i, k) => {
+			const line = i.bad || i.text.includes("\n") ? undefined : oldLine(i.text);
+			return {
+				position: k + 1,
+				start: i.start,
+				end: i.end,
+				text: i.text,
+				...(line === undefined ? {} : { line }),
+			};
+		});
+}
+
+// The page without the item's lines. A section left with no item reads `none`.
+function withoutItem(page: string, item: OldItem): string {
+	const from = page.lastIndexOf("\n", item.start - 1) + 1;
+	const next = page.indexOf("\n", item.end);
+	const to = next < 0 ? page.length : next + 1;
+	const ending = page.slice(from, to).endsWith("\r\n") ? "\r\n" : "\n";
+	const cut = page.slice(0, from) + page.slice(to);
+	if (oldItems(cut).length > 0) return cut;
+	return `${page.slice(0, from)}${NONE}${next < 0 ? "" : ending}${page.slice(to)}`;
+}
+
 export type OldLine = {
-	page: string;
+	tree: string;
 	number: number;
 	gist: string;
-	login: string;
-	comment?: { body: string; author: string | null };
-	kind?: string;
-	tree: string;
+	kind: string;
 };
-export type Moved = { result: "ask" } | { result: "entry"; name: string };
+
+// One numbered line of an old Precedents section becomes a file, and the line
+// leaves LAWMAN.md of the tree. Both stand, or neither does.
+export function oldLineToFile(o: OldLine): string {
+	if (!GIST.test(o.gist))
+		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
+	if (!PRECEDENT_KINDS.includes(o.kind))
+		throw new Fail(EXIT.USAGE, `invalid kind: ${JSON.stringify(o.kind)}`);
+	const read = treeFile(o.tree, [CONSTITUTION]);
+	if (read.kind !== "page") throw unsafe(join(o.tree, CONSTITUTION));
+	const found = oldItems(read.text).filter((i) => i.line?.number === o.number);
+	const [item] = found;
+	if (item?.line === undefined || found.length > 1)
+		throw new Fail(EXIT.USAGE, `no single precedent line #${o.number}`);
+	const { date, rest, rule, link } = item.line;
+	const ruling = link === undefined ? undefined : linkOf(link);
+	const folder = new Folder(o.tree);
+	const name = folder.free(`${date}-${o.gist}`);
+	folder.set(
+		name,
+		buildPrecedent(
+			{
+				kind: o.kind,
+				departments: [],
+				date,
+				...(ruling === undefined ? {} : { ruling }),
+			},
+			ruling === undefined ? rest : rule,
+		),
+	);
+	const page = withoutItem(read.text, item);
+	folder.commit();
+	try {
+		writeFileSync(join(o.tree, CONSTITUTION), page);
+	} catch (e) {
+		folder.set(name, null);
+		folder.commit();
+		throw e;
+	}
+	return name;
+}
 
 const linkOf = (value: string) => {
 	try {
@@ -694,43 +804,3 @@ const linkOf = (value: string) => {
 		return undefined;
 	}
 };
-
-// One numbered line of an old Precedents section becomes a file. Without a
-// counted court ruling marker and without a kind from the user, the user is asked.
-export function oldLineToFile(o: OldLine): Moved {
-	if (!GIST.test(o.gist))
-		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
-	const line = sectionNodes(o.page, OLD_SECTION)
-		.flatMap((nodes) => itemsOf(o.page, nodes))
-		.map((i) => i.text.match(OLD_LINE))
-		.find((m) => m !== null && Number(m[2]) === o.number);
-	const [, date, , rest] = line ?? [];
-	if (date === undefined || rest === undefined)
-		throw new Fail(EXIT.USAGE, `no precedent line #${o.number}`);
-	const marker =
-		o.comment && markerAtEnd(o.comment.body, o.comment.author, o.login);
-	const kind =
-		(marker?.role === "court" ? KIND_OF.get(marker.stage) : undefined) ??
-		(o.kind !== undefined && PRECEDENT_KINDS.includes(o.kind)
-			? o.kind
-			: undefined);
-	if (kind === undefined) return { result: "ask" };
-	const [, rule = rest, link] = rest.match(OLD_SOURCE) ?? [];
-	const ruling = link === undefined ? undefined : linkOf(link);
-	const folder = new Folder(o.tree);
-	const name = folder.free(`${date}-${o.gist}`);
-	folder.set(
-		name,
-		buildPrecedent(
-			{
-				kind,
-				departments: [],
-				date,
-				...(ruling === undefined ? {} : { ruling }),
-			},
-			ruling === undefined ? rest : rule,
-		),
-	);
-	folder.commit();
-	return { result: "entry", name };
-}

@@ -265,6 +265,16 @@ describe("law-update: declining the signature", () => {
 		expect(assetRuns()).toEqual([syncCall()]);
 	});
 
+	// the pass the assembly runs to prove a refusal: no answer about the signature
+	test("a changed asset with the real sums and no verify file gives the checksum failed", async () => {
+		lay();
+		versionCommand();
+		releaseCommand(`printf x >> "$3/$4"`);
+		publish();
+		expectStop(await run(), "the checksum failed");
+		expect(existsSync(join(dir, "shared", "verify"))).toBe(false);
+	});
+
 	test("a declined signature with a wrong sum gives the checksum failed", async () => {
 		noVerify();
 		await run();

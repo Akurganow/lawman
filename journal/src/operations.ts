@@ -17,7 +17,7 @@ import { syncPulls } from "./pulls";
 import { syncIssues } from "./sync";
 
 export type Operation = (typeof PRECINCT_OPERATIONS)[number];
-type Reason = "argument" | "start" | "exit" | "form" | "clean";
+export type Reason = "argument" | "start" | "exit" | "form" | "clean";
 type Slot = "revision" | "path" | "number" | "word";
 export type Call = { args: string[]; author: string; reset: boolean };
 
@@ -36,7 +36,7 @@ const SLOTS: Record<Operation, Slot[]> = {
 	files: ["revision"],
 };
 
-class Refused {
+export class Refused {
 	constructor(
 		readonly reason: Reason,
 		readonly code: number,
@@ -46,7 +46,7 @@ class Refused {
 
 const formRefused = (why: string) => new Refused("form", EXIT.SYNC_INPUT, why);
 
-function registered(name: string): void {
+export function registered(name: string): void {
 	withDb((db) => {
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
@@ -113,7 +113,11 @@ const READERS: Record<
 		renderAll([fencedBlock("files", await characters(text))]),
 };
 
-async function output(place: string, operation: Operation, args: string[]) {
+export async function output(
+	place: string,
+	operation: Operation,
+	args: string[],
+) {
 	const ran = await launch(place, operation, args);
 	if (ran === null) throw new Refused("start", EXIT.COMMAND);
 	if (!ran.ok)
@@ -147,7 +151,7 @@ async function read(
 }
 
 // the error fence holds the command's own words, so they pass the character layer
-async function refusal(operation: Operation, refused: Refused) {
+export async function refusal(operation: string, refused: Refused) {
 	let { reason, code, detail } = refused;
 	try {
 		detail = await cleanCharacters(detail);

@@ -34,8 +34,8 @@ const WORDS: Partial<Record<(typeof OPTIONS)[number], string[]>> = {
 	verify: ["passed", "failed", "not-run", "declined", "unnamed"],
 };
 const UNREADABLE = "unreadable";
-const TAG = /^(?!-)(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
-const REPO =
+export const TAG = /^(?!-)(?!\.{1,2}$)[A-Za-z0-9._-]+$/;
+export const REPO =
 	/^(?!-)(?!(?:.*\/)?\.{1,2}(?:\/|$))[A-Za-z0-9._-]+\/[A-Za-z0-9._-]+$/;
 const OS = ["darwin", "linux"];
 const ARCH = ["x64", "arm64"];

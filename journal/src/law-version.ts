@@ -14,13 +14,13 @@ export const DIRTY = "stopped-dirty-law";
 export const UNSAFE = "a value is not safe";
 export const DIRTY_REASON = "the law folder has a local change";
 export const COMMAND_FAILED = "the law-version command failed";
-const FORM =
+export const FORM =
 	/^revision=([^\r\n]*)\r?\nchanged=(yes|no)\r?\ntag=([^\r\n]*)\r?\n$/;
 
 export type LawFacts = { revision: string; changed: boolean; tag: string };
 type Stop = { outcome: string; report: string };
 
-const lawFolder = () => join(commandFolder(), "lawman");
+export const lawFolder = () => join(commandFolder(), "lawman");
 
 // "failed" when the file did not start, exited non-zero, or printed outside the form
 export async function lawVersion(): Promise<LawFacts | "absent" | "failed"> {

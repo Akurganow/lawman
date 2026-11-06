@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
 import {
 	existsSync,
@@ -526,25 +526,19 @@ describe("oldLineToFile", () => {
 		"- 2026-09-03 #2: A rule with no link.",
 		"",
 	].join("\n");
+	const page = () => join(tree, "LAWMAN.md");
 	const move = (o: Partial<Parameters<typeof oldLineToFile>[0]> = {}) =>
 		oldLineToFile({
-			page: PAGE,
 			number: 1,
 			gist: "callbacks",
-			login: TRUSTED,
+			kind: "condemns",
 			tree,
 			...o,
 		});
-	const comment = (author: string | null, marker = CONVICTION) => ({
-		body: `Ruling.\n\n${marker}\n`,
-		author,
-	});
+	beforeEach(() => writeFileSync(page(), PAGE));
 
-	test("the kind comes from the counted ruling marker", () => {
-		expect(move({ comment: comment(TRUSTED.toUpperCase()) })).toEqual({
-			result: "entry",
-			name: "2026-09-02-callbacks",
-		});
+	test("the line becomes a file with its date, kind and ruling", () => {
+		expect(move()).toBe("2026-09-02-callbacks");
 		expect(header("2026-09-02-callbacks")).toEqual({
 			kind: "condemns",
 			departments: [],
@@ -554,36 +548,15 @@ describe("oldLineToFile", () => {
 		expect(body("2026-09-02-callbacks")?.trim()).toBe(
 			"An unused callback parameter is not dead.",
 		);
+		expect(readFileSync(page(), "utf8")).toBe(
+			PAGE.replace(/- 2026-09-02 #1:.*\n/, ""),
+		);
 	});
 
-	test.each([
-		["another author", "someone"],
-		["an empty author", ""],
-		["no author", null],
-	])("a comment of %s gives no kind, so the user is asked", (_, author) => {
-		expect(move({ comment: comment(author) })).toEqual({ result: "ask" });
-		expect(names()).toEqual([]);
-	});
-
-	test.each([
-		["another role", mark("executor", "acquittal")],
-		["a stage named like an object member", mark("court", "constructor")],
-	])("a marker of %s gives no kind", (_, marker) => {
-		expect(move({ comment: comment(TRUSTED, marker) })).toEqual({
-			result: "ask",
-		});
-	});
-
-	test("a marker that is not the last line gives no kind", () => {
-		const c = { body: `${CONVICTION}\nmore`, author: TRUSTED };
-		expect(move({ comment: c })).toEqual({ result: "ask" });
-	});
-
-	test("without a comment the kind from the user writes the file", () => {
-		expect(move({ number: 2, gist: "no-link", kind: "protects" })).toEqual({
-			result: "entry",
-			name: "2026-09-03-no-link",
-		});
+	test("a line with no link keeps its whole text and has no ruling", () => {
+		expect(move({ number: 2, gist: "no-link", kind: "protects" })).toBe(
+			"2026-09-03-no-link",
+		);
 		expect(header("2026-09-03-no-link")).toEqual({
 			kind: "protects",
 			departments: [],
@@ -594,24 +567,61 @@ describe("oldLineToFile", () => {
 
 	test("a taken name gets the next number", () => {
 		put("2026-09-02-callbacks", "x\n");
-		expect(move({ kind: "protects" })).toEqual({
-			result: "entry",
-			name: "2026-09-02-callbacks-2",
-		});
+		expect(move()).toBe("2026-09-02-callbacks-2");
 	});
 
 	test.each([
-		["a missing line", { number: 9, kind: "protects" }],
-		["a gist outside its class", { gist: "Bad Gist", kind: "protects" }],
-	])("%s fails", (_, o) => {
+		["a missing line", { number: 9 }],
+		["a gist outside its class", { gist: "Bad Gist" }],
+		["a kind outside its class", { kind: "conviction" }],
+	])("%s fails and writes nothing", (_, o) => {
 		expect(() => move(o)).toThrow();
+		expect(names()).toEqual([]);
+		expect(readFileSync(page(), "utf8")).toBe(PAGE);
 	});
 
-	test("a linked folder fails and writes nothing", () => {
-		mkdirSync(join(dir, "outside"));
-		symlinkSync(join(dir, "outside"), join(tree, ".lawman"));
-		expect(() => move({ kind: "protects" })).toThrow();
-		expect(readdirSync(join(dir, "outside"))).toEqual([]);
+	test("a number that stands twice fails", () => {
+		writeFileSync(page(), PAGE.replace("#2:", "#1:"));
+		expect(() => move()).toThrow();
+		expect(names()).toEqual([]);
+	});
+
+	test.each([".lawman", ".lawman/precedents", "LAWMAN.md"])(
+		"a link at %s fails and writes nothing",
+		(at) => {
+			const outside = join(dir, "outside");
+			mkdirSync(outside);
+			if (at === "LAWMAN.md") {
+				writeFileSync(join(outside, "LAWMAN.md"), PAGE);
+				fs.rmSync(page());
+				symlinkSync(join(outside, "LAWMAN.md"), page());
+			} else {
+				if (at !== ".lawman") mkdirSync(join(tree, ".lawman"));
+				symlinkSync(outside, join(tree, at));
+			}
+			expect(() => move()).toThrow();
+			expect(readdirSync(outside).filter((f) => f !== "LAWMAN.md")).toEqual([]);
+			if (at === "LAWMAN.md")
+				expect(readFileSync(join(outside, "LAWMAN.md"), "utf8")).toBe(PAGE);
+		},
+	);
+
+	test("a page that cannot be written leaves no file", () => {
+		const write = fs.writeFileSync;
+		const spy = spyOn(fs, "writeFileSync").mockImplementation(((
+			path: fs.PathOrFileDescriptor,
+			...rest: unknown[]
+		) => {
+			if (path === page()) throw new Error("read-only");
+			return (write as (...a: unknown[]) => void)(path, ...rest);
+		}) as typeof fs.writeFileSync);
+		try {
+			expect(() => move()).toThrow("read-only");
+		} finally {
+			spy.mockRestore();
+		}
+		expect(names()).toEqual([]);
+		expect(readFileSync(page(), "utf8")).toBe(PAGE);
 	});
 });
 
