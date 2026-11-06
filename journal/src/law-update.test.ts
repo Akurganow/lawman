@@ -273,6 +273,9 @@ describe("law-update: declining the signature", () => {
 		publish();
 		expectStop(await run(), "the checksum failed");
 		expect(existsSync(join(dir, "shared", "verify"))).toBe(false);
+		expect(assetRuns()).toEqual([]);
+		expect(binaryText()).toBe(OLD_BINARY);
+		expect(configText()).toBe(config());
 	});
 
 	test("a declined signature with a wrong sum gives the checksum failed", async () => {
@@ -1028,9 +1031,15 @@ describe("law-update: the source", () => {
 		},
 	);
 
+	// the proof of a command calls the same functions, so it cannot drift from the update
 	test("law-update.ts runs the three operations and the binary through launch", () => {
 		const text = source("law-update.ts");
 		expect(text).toContain('from "./launch"');
-		expect(text.match(/\blaunch\(/g)?.length).toBeGreaterThanOrEqual(3);
+		for (const call of [/\blaunch\(/, /\brunRelease\(/, /\brunVerify\(/])
+			expect(text).toMatch(call);
+		expect(source("law-version.ts")).toMatch(/\brunLawVersion\(/);
+		expect(
+			source("launch.ts").match(/\blaunch\(installationPlace\(\)/g),
+		).toHaveLength(3);
 	});
 });

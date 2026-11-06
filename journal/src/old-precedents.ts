@@ -21,10 +21,22 @@ const USAGE =
 	"old-precedent list|old-precedent added --base <file> --head <file>|old-precedent check <precinct> <line>[:<issue>]...|old-precedent move <precinct> --tree <folder> --line <n> --gist <gist> [--issue <n>] [--kind protects|condemns]";
 const PAIR = /^([1-9][0-9]*)(?::([1-9][0-9]*))?$/;
 
-type Ask = { ask: string };
-type Form = IssuesInput | Ask;
+// why a line gets a question instead of a kind; a refused run of the issues
+// command is no such answer, it prints as the refusal of that command
+const WHY = [
+	"no-issue",
+	"absent",
+	"repeated",
+	"no-ruling",
+	"mixed",
+	"form",
+	"ceiling",
+] as const;
+type Why = (typeof WHY)[number];
+type Verdict = { kind: string } | { why: Why };
+type Issues = { issues: IssuesInput } | { why: Why } | { refused: Refused };
 
-const ask = (reason: string): Ask => ({ ask: reason });
+const NO_ISSUE: Verdict = { why: "no-issue" };
 
 // the rule is the owner's or the court's text, so it prints in a fence
 async function itemBlocks(items: OldItem[]): Promise<Block[]> {
@@ -66,15 +78,18 @@ const readPage = (path: string) => {
 	}
 };
 
-// the items the head page holds and the page at the merge base does not
+// The numbered lines of the head page whose number the page at the merge base
+// lacks. An edited line keeps its number, and a free note is no old line.
 function added(base: string, head: string): OldItem[] {
-	const before = new Set(oldItems(base).map((i) => i.text));
-	return oldItems(head).filter((i) => !before.has(i.text));
+	const before = new Set(oldItems(base).map((i) => i.line?.number));
+	return oldItems(head).filter(
+		(i) => i.line !== undefined && !before.has(i.line.number),
+	);
 }
 
 // The issues form, read without the cache: the precinct's command gives it,
 // or standard input when the precinct has none.
-async function issuesForm(precinct: string): Promise<Form | Refused> {
+async function issuesForm(precinct: string): Promise<Issues> {
 	const place = precinctPlace(precinct);
 	let text: string;
 	try {
@@ -82,32 +97,36 @@ async function issuesForm(precinct: string): Promise<Form | Refused> {
 			? await output(place, "issues", [])
 			: readStdin();
 	} catch (e) {
-		if (e instanceof Refused) return e.reason === "form" ? ask("form") : e;
-		throw e;
+		if (!(e instanceof Refused)) throw e;
+		return e.reason === "form" ? { why: "form" } : { refused: e };
 	}
 	try {
-		return readIssues(text);
+		return { issues: readIssues(text) };
 	} catch (e) {
 		if (!(e instanceof Fail)) throw e;
-		return ask(e.code === EXIT.SYNC_LIMIT ? "ceiling" : "form");
+		return { why: e.code === EXIT.SYNC_LIMIT ? "ceiling" : "form" };
 	}
 }
 
 // One kind only when every counted court ruling on the issue gives it.
-export function kindOf(form: Form, issue: number, login: string): string | Ask {
-	if ("ask" in form) return form;
-	const found = form.issues.filter((i) => i.number === issue);
+function judged(
+	read: Exclude<Issues, { refused: Refused }>,
+	issue: number,
+	login: string,
+): Verdict {
+	if ("why" in read) return read;
+	const found = read.issues.issues.filter((i) => i.number === issue);
 	const [one] = found;
-	if (one === undefined) return ask("absent");
-	if (found.length > 1) return ask("repeated");
+	if (one === undefined) return { why: "absent" };
+	if (found.length > 1) return { why: "repeated" };
 	const kinds = new Set(
 		collectIssueMarkers(one, login)
 			.markers.filter((m) => m.marker.role === "court")
 			.flatMap((m) => KIND_OF.get(m.marker.stage) ?? []),
 	);
 	const [kind] = kinds;
-	if (kind === undefined) return ask("no-ruling");
-	return kinds.size > 1 ? ask("mixed") : kind;
+	if (kind === undefined) return { why: "no-ruling" };
+	return kinds.size > 1 ? { why: "mixed" } : { kind };
 }
 
 async function failed(refused: Refused): Promise<number> {
@@ -115,6 +134,11 @@ async function failed(refused: Refused): Promise<number> {
 	out(renderAll(blocks));
 	return code;
 }
+
+const verdictLine = (line: number, v: Verdict) =>
+	"kind" in v
+		? `line ${line} kind=${v.kind}`
+		: `line ${line} ask reason=${v.why}`;
 
 async function checkCommand(args: string[]): Promise<number> {
 	const [precinct, ...rest] = args;
@@ -129,22 +153,21 @@ async function checkCommand(args: string[]): Promise<number> {
 	});
 	registered(check("precinct", precinct));
 	const login = trustedLogin();
-	// the form is read only when a line names an issue
-	const form = pairs.some((p) => p.issue !== null)
-		? await issuesForm(precinct)
-		: null;
-	if (form instanceof Refused) return failed(form);
-	for (const { line, issue } of pairs) {
-		const kind =
-			issue === null || form === null
-				? ask("no-issue")
-				: kindOf(form, issue, login);
-		out(
-			typeof kind === "string"
-				? `line ${line} kind=${kind}`
-				: `line ${line} ask reason=${kind.ask}`,
-		);
+	// the form is read once, and only when a line names an issue
+	let read: Issues | undefined;
+	const verdicts: Verdict[] = [];
+	for (const { issue } of pairs) {
+		if (issue === null) {
+			verdicts.push(NO_ISSUE);
+			continue;
+		}
+		read ??= await issuesForm(precinct);
+		if ("refused" in read) return failed(read.refused);
+		verdicts.push(judged(read, issue, login));
 	}
+	pairs.forEach(({ line }, i) => {
+		out(verdictLine(line, verdicts[i] ?? NO_ISSUE));
+	});
 	return EXIT.OK;
 }
 
@@ -161,23 +184,24 @@ async function moveCommand(args: string[]): Promise<number> {
 		throw usage(USAGE);
 	registered(precinct);
 	const login = trustedLogin();
-	let kind: string | Ask = ask("no-issue");
+	let verdict = NO_ISSUE;
 	if (issue !== null) {
-		const form = await issuesForm(precinct);
-		if (form instanceof Refused) return failed(form);
-		kind = kindOf(form, issue, login);
+		const read = await issuesForm(precinct);
+		if ("refused" in read) return failed(read.refused);
+		verdict = judged(read, issue, login);
 	}
 	// the user's kind counts only where the rulings give none
-	const chosen = typeof kind === "string" ? kind : opt.kind;
-	if (chosen === undefined) {
-		out(`ask reason=${typeof kind === "string" ? "" : kind.ask}`);
+	const chosen: Verdict =
+		"why" in verdict && opt.kind !== undefined ? { kind: opt.kind } : verdict;
+	if ("why" in chosen) {
+		out(`ask reason=${chosen.why}`);
 		return EXIT.OK;
 	}
 	const name = oldLineToFile({
 		tree: opt.tree,
 		number: line,
 		gist: opt.gist,
-		kind: chosen,
+		kind: chosen.kind,
 	});
 	out(`entry ${name}`);
 	return EXIT.OK;

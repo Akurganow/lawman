@@ -3,7 +3,6 @@ import {
 	chmodSync,
 	existsSync,
 	lstatSync,
-	mkdirSync,
 	readFileSync,
 	rmSync,
 } from "node:fs";
@@ -12,7 +11,15 @@ import { check, parseArgs, usage } from "./args";
 import { cleanCharacters } from "./clean";
 import { EXIT, out } from "./db";
 import { readConfig } from "./input-files";
-import { commandFolder, hasCommand, installationPlace, launch } from "./launch";
+import {
+	commandFolder,
+	freshFolder,
+	hasCommand,
+	installationPlace,
+	launch,
+	runRelease,
+	runVerify,
+} from "./launch";
 import { configValue } from "./law-sync";
 import {
 	COMMAND_FAILED,
@@ -23,6 +30,7 @@ import {
 	type LawFacts,
 	lawVersion,
 	UNSAFE,
+	UNSAFE_TAG,
 } from "./law-version";
 
 const USAGE =
@@ -183,12 +191,7 @@ async function swap(
 
 // a folder the journal cannot remove or make is a release it cannot download
 function rebuild(folder: string): void {
-	try {
-		rmSync(folder, { recursive: true, force: true });
-		mkdirSync(folder, { recursive: true });
-	} catch {
-		throw new Stopped(DOWNLOAD_FAILED);
-	}
+	if (!freshFolder(folder)) throw new Stopped(DOWNLOAD_FAILED);
 }
 
 function remove(folder: string): void {
@@ -233,7 +236,7 @@ async function update(
 			// the folder stays for the role, and the pass with its answer checks it
 			if (!hasRelease)
 				return [`self release ${repo} ${f.tag} ${name} ${asset}`];
-			const ran = await launch(shared, "release", [repo, f.tag, folder, asset]);
+			const ran = await runRelease(repo, f.tag, folder, asset);
 			if (ran === null) throw new Stopped(DOWNLOAD_FAILED);
 			if (ran.code === MISSING) throw new Stopped(NOT_READY);
 			if (!ran.ok) throw new Stopped(DOWNLOAD_FAILED);
@@ -243,12 +246,7 @@ async function update(
 			throw new Stopped(NOT_READY);
 		checksum(asset, assetPath, sums);
 		if (hasVerify) {
-			const ran = await launch(shared, "verify", [
-				assetPath,
-				provenance,
-				repo,
-				f.revision,
-			]);
+			const ran = await runVerify(assetPath, provenance, repo, f.revision);
 			if (ran === null) throw new Stopped(CHECK_NOT_RUN);
 			if (!ran.ok) throw new Stopped(CHECK_FAILED);
 		} else if (opt.verify === undefined) {
@@ -284,7 +282,7 @@ async function pass(
 	if (!REPO.test(repo)) throw new Stopped(UNSAFE);
 	if (f.changed) throw new Stopped(DIRTY_REASON, DIRTY);
 	if (f.tag === "") throw new Stopped("the law is not on a release");
-	if (!TAG.test(f.tag)) throw new Stopped("the tag is not safe");
+	if (!TAG.test(f.tag)) throw new Stopped(UNSAFE_TAG);
 	const asset = assetName(platform);
 	if (asset === null) throw new Stopped("no binary for this platform");
 	return update(role, opt, f, repo, asset);

@@ -3,6 +3,8 @@ import {
 	lstatSync,
 	mkdirSync,
 	readFileSync,
+	renameSync,
+	rmdirSync,
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
@@ -21,6 +23,7 @@ import {
 } from "./department-page";
 import { readConfig } from "./input-files";
 import { jevNone, replyOf } from "./jev";
+import { utf8 } from "./launch";
 import { sectionNodes, sectionWords, sliceOf } from "./law-sections";
 import { configValue } from "./law-sync";
 import { lintPage } from "./lint";
@@ -683,27 +686,20 @@ export type OldItem = {
 	start: number;
 	end: number;
 	text: string;
-	line?: {
-		date: string;
-		number: number;
-		rest: string;
-		rule: string;
-		link?: string;
-	};
+	line?: { date: string; number: number; rule: string; link?: string };
 };
 
 function oldLine(text: string): OldItem["line"] {
 	const [, date, number, rest] = text.match(OLD_LINE) ?? [];
 	if (date === undefined || number === undefined || rest === undefined)
 		return undefined;
-	const [, rule = rest, link] = rest.match(OLD_SOURCE) ?? [];
-	return {
-		date,
-		number: Number(number),
-		rest,
-		rule,
-		...(link === undefined ? {} : { link }),
-	};
+	// a tail in parentheses is a link only when it passes the link class;
+	// otherwise it stays part of the rule, the same in the list and in the file
+	const [, rule, tail] = rest.match(OLD_SOURCE) ?? [];
+	const link = tail === undefined ? undefined : linkOf(tail);
+	return link === undefined || rule === undefined
+		? { date, number: Number(number), rule: rest }
+		: { date, number: Number(number), rule, link };
 }
 
 // every item of the old sections except `none`, numbered from 1 in page order
@@ -757,20 +753,23 @@ export type OldLine = {
 };
 
 // One numbered line of an old Precedents section becomes a file, and the line
-// leaves LAWMAN.md of the tree. Both stand, or neither does.
+// leaves LAWMAN.md of the tree. Both stand, or neither does: the page changes by
+// one rename, and a failed rename takes the file and the folders it made away.
 export function oldLineToFile(o: OldLine): string {
 	if (!GIST.test(o.gist))
 		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
 	if (!PRECEDENT_KINDS.includes(o.kind))
 		throw new Fail(EXIT.USAGE, `invalid kind: ${JSON.stringify(o.kind)}`);
-	const read = treeFile(o.tree, [CONSTITUTION]);
-	if (read.kind !== "page") throw unsafe(join(o.tree, CONSTITUTION));
-	const found = oldItems(read.text).filter((i) => i.line?.number === o.number);
+	const path = join(o.tree, CONSTITUTION);
+	if (treeFile(o.tree, [CONSTITUTION]).kind !== "page") throw unsafe(path);
+	const text = utf8(readFileSync(path));
+	if (text === null)
+		throw new Fail(EXIT.USAGE, `${CONSTITUTION} is not UTF-8, nothing written`);
+	const found = oldItems(text).filter((i) => i.line?.number === o.number);
 	const [item] = found;
 	if (item?.line === undefined || found.length > 1)
 		throw new Fail(EXIT.USAGE, `no single precedent line #${o.number}`);
-	const { date, rest, rule, link } = item.line;
-	const ruling = link === undefined ? undefined : linkOf(link);
+	const { date, rule, link } = item.line;
 	const folder = new Folder(o.tree);
 	const name = folder.free(`${date}-${o.gist}`);
 	folder.set(
@@ -780,18 +779,33 @@ export function oldLineToFile(o: OldLine): string {
 				kind: o.kind,
 				departments: [],
 				date,
-				...(ruling === undefined ? {} : { ruling }),
+				...(link === undefined ? {} : { ruling: link }),
 			},
-			ruling === undefined ? rest : rule,
+			rule,
 		),
 	);
-	const page = withoutItem(read.text, item);
-	folder.commit();
+	const page = withoutItem(text, item);
+	const lawman = join(o.tree, ".lawman");
+	const made = [lawman, join(lawman, "precedents")].filter(
+		(dir) => entryKind(dir) === "absent",
+	);
+	// "wx" refuses a name that exists, a planted link included
+	const temp = join(o.tree, `.${CONSTITUTION}.move`);
+	let wrote = false;
 	try {
-		writeFileSync(join(o.tree, CONSTITUTION), page);
-	} catch (e) {
-		folder.set(name, null);
 		folder.commit();
+		writeFileSync(temp, page, { flag: "wx" });
+		wrote = true;
+		renameSync(temp, path);
+	} catch (e) {
+		try {
+			if (wrote) unlinkSync(temp);
+			folder.set(name, null);
+			folder.commit();
+			for (const dir of made.reverse()) rmdirSync(dir);
+		} catch {
+			// the first error is the one to report; the rule still stands in the page
+		}
 		throw e;
 	}
 	return name;

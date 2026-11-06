@@ -606,22 +606,69 @@ describe("oldLineToFile", () => {
 		},
 	);
 
-	test("a page that cannot be written leaves no file", () => {
-		const write = fs.writeFileSync;
-		const spy = spyOn(fs, "writeFileSync").mockImplementation(((
-			path: fs.PathOrFileDescriptor,
-			...rest: unknown[]
-		) => {
-			if (path === page()) throw new Error("read-only");
-			return (write as (...a: unknown[]) => void)(path, ...rest);
-		}) as typeof fs.writeFileSync);
+	test("a page that cannot be renamed leaves no file, no folder and the old page", () => {
+		const spy = spyOn(fs, "renameSync").mockImplementation(() => {
+			throw new Error("read-only");
+		});
 		try {
 			expect(() => move()).toThrow("read-only");
 		} finally {
 			spy.mockRestore();
 		}
+		expect(existsSync(join(tree, ".lawman"))).toBe(false);
+		expect(readdirSync(tree)).toEqual(["LAWMAN.md"]);
+		expect(readFileSync(page(), "utf8")).toBe(PAGE);
+	});
+
+	test("a failed rollback still reports the first error", () => {
+		const rename = spyOn(fs, "renameSync").mockImplementation(() => {
+			throw new Error("first");
+		});
+		const unlink = spyOn(fs, "unlinkSync").mockImplementation(() => {
+			throw new Error("second");
+		});
+		try {
+			expect(() => move()).toThrow("first");
+		} finally {
+			rename.mockRestore();
+			unlink.mockRestore();
+		}
+		expect(readFileSync(page(), "utf8")).toBe(PAGE);
+	});
+
+	test("a link at the place of the temporary page is refused and kept", () => {
+		const outside = join(dir, "outside.md");
+		writeFileSync(outside, "kept\n");
+		symlinkSync(outside, join(tree, ".LAWMAN.md.move"));
+		expect(() => move()).toThrow();
+		expect(readFileSync(outside, "utf8")).toBe("kept\n");
 		expect(names()).toEqual([]);
 		expect(readFileSync(page(), "utf8")).toBe(PAGE);
+	});
+
+	test("a page that is not UTF-8 is refused and keeps its bytes", () => {
+		const bytes = Buffer.concat([Buffer.from(PAGE), Buffer.from([0xe9, 0x0a])]);
+		writeFileSync(page(), bytes);
+		expect(() => move()).toThrow("not UTF-8");
+		expect(readFileSync(page())).toEqual(bytes);
+		expect(names()).toEqual([]);
+	});
+
+	test("a tail in parentheses that is no link stays in the rule", () => {
+		writeFileSync(
+			page(),
+			PAGE.replace(
+				"- 2026-09-03 #2: A rule with no link.",
+				"- 2026-09-03 #2: Never use bar (important)",
+			),
+		);
+		expect(move({ number: 2, gist: "bar" })).toBe("2026-09-03-bar");
+		expect(header("2026-09-03-bar")).toEqual({
+			kind: "condemns",
+			departments: [],
+			date: "2026-09-03",
+		});
+		expect(body("2026-09-03-bar")?.trim()).toBe("Never use bar (important)");
 	});
 });
 

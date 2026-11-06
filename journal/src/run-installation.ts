@@ -1,35 +1,40 @@
-import { lstatSync, mkdirSync, rmSync } from "node:fs";
+import { lstatSync } from "node:fs";
 import { join } from "node:path";
 import { fits, usage } from "./args";
 import { EXIT, Fail, out } from "./db";
 import { renderAll } from "./input-parts";
 import {
 	commandFolder,
+	freshFolder,
 	hasCommand,
 	INSTALLATION_OPERATIONS,
 	installationPlace,
 	LAW_VERSION,
-	launch,
+	runLawVersion,
+	runRelease,
+	runVerify,
 } from "./launch";
 import { assetName, REPO, TAG } from "./law-update";
-import { COMMAND_FAILED, COMMIT, FORM, lawFolder, UNSAFE } from "./law-version";
-import { Refused, refusal } from "./operations";
+import {
+	COMMAND_FAILED,
+	COMMIT,
+	readFacts,
+	UNSAFE,
+	UNSAFE_TAG,
+} from "./law-version";
+import { Refused, ranOutput, refusal } from "./operations";
 
 type Installation = (typeof INSTALLATION_OPERATIONS)[number];
 type Platform = { os: string; arch: string };
 
 const USAGE =
 	"run-installation <release <repo> <tag>|verify <asset> <provenance> <repo> <commit>|law-version>";
-const ARITY: Record<Installation, number> = {
-	release: 2,
-	verify: 4,
-	[LAW_VERSION]: 0,
-};
 // the journal builds this folder for every run of release, as law-update builds its own
 export const RELEASE_FOLDER = "runs/installation-release";
 
-class Stop {
-	constructor(readonly reason: string) {}
+// a stop of law-version: exit 5 here, where law-update answers with exit 0
+class FactsStop {
+	constructor(readonly text: string) {}
 }
 
 const isInstallation = (name: string | undefined): name is Installation =>
@@ -54,52 +59,24 @@ function inRuns(path: string): boolean {
 	return true;
 }
 
+// the classes of each argument; their number is the number of arguments
 const CLASSES: Record<Installation, ((value: string) => boolean)[]> = {
 	release: [(v) => REPO.test(v), (v) => TAG.test(v)],
 	verify: [inRuns, inRuns, (v) => REPO.test(v), (v) => COMMIT.test(v)],
 	[LAW_VERSION]: [],
 };
 
-function rebuild(folder: string): void {
-	try {
-		rmSync(folder, { recursive: true, force: true });
-		mkdirSync(folder, { recursive: true });
-	} catch {
-		throw new Fail(EXIT.COMMAND, `cannot make the folder ${RELEASE_FOLDER}`);
-	}
-}
-
-// the three facts, each in its class, or the stop the tick start would give
-function facts(text: string): string[] {
-	const m = text.match(FORM);
-	if (m === null) throw new Stop(COMMAND_FAILED);
-	const [revision = "", changed = "", tag = ""] = m.slice(1);
-	if (!COMMIT.test(revision)) throw new Stop(UNSAFE);
-	if (tag !== "" && !TAG.test(tag)) throw new Stop("the tag is not safe");
-	return [`revision=${revision}`, `changed=${changed}`, `tag=${tag}`];
-}
-
-// the standard output of a run that ended with exit 0
-async function started(place: string, operation: string, args: string[]) {
-	const ran = await launch(place, operation, args);
-	if (ran === null) throw new Refused("start", EXIT.COMMAND);
-	if (!ran.ok)
-		throw new Refused(
-			"exit",
-			EXIT.COMMAND,
-			new TextDecoder().decode(ran.stderr),
-		);
-	return ran.stdout;
-}
-
-function decoded(bytes: Uint8Array): string {
-	try {
-		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
-			bytes,
-		);
-	} catch {
-		throw new Stop(COMMAND_FAILED);
-	}
+// Every class failure prints, since here no law_commit is compared first.
+function factLines(stdout: Uint8Array): string[] {
+	const f = readFacts(stdout);
+	if (f === null) throw new FactsStop(COMMAND_FAILED);
+	if (!COMMIT.test(f.revision)) throw new FactsStop(UNSAFE);
+	if (f.tag !== "" && !TAG.test(f.tag)) throw new FactsStop(UNSAFE_TAG);
+	return [
+		`revision=${f.revision}`,
+		`changed=${f.changed ? "yes" : "no"}`,
+		`tag=${f.tag}`,
+	];
 }
 
 async function ran(
@@ -107,27 +84,26 @@ async function ran(
 	args: string[],
 	platform: Platform,
 ): Promise<string[]> {
-	const place = installationPlace();
+	const root = commandFolder();
 	if (operation === "release") {
+		const [repo = "", tag = ""] = args;
 		const asset = assetName(platform);
 		if (asset === null)
 			throw new Fail(EXIT.COMMAND, "no binary for this platform");
-		const folder = join(commandFolder(), RELEASE_FOLDER);
-		rebuild(folder);
-		await started(place, operation, [...args, folder, asset]);
+		const folder = join(root, RELEASE_FOLDER);
+		if (!freshFolder(folder))
+			throw new Fail(EXIT.COMMAND, `cannot make the folder ${RELEASE_FOLDER}`);
+		ranOutput(await runRelease(repo, tag, folder, asset));
 		return [`release done folder=${RELEASE_FOLDER} asset=${asset}`];
 	}
 	if (operation === "verify") {
-		const [asset = "", provenance = "", ...rest] = args;
-		const root = commandFolder();
-		await started(place, operation, [
-			join(root, asset),
-			join(root, provenance),
-			...rest,
-		]);
+		const [asset = "", provenance = "", repo = "", commit = ""] = args;
+		ranOutput(
+			await runVerify(join(root, asset), join(root, provenance), repo, commit),
+		);
 		return ["verify passed"];
 	}
-	return facts(decoded(await started(place, operation, [lawFolder()])));
+	return factLines(ranOutput(await runLawVersion()));
 }
 
 // One operation of the installation through the journal, as the update runs it.
@@ -137,7 +113,7 @@ export async function runInstallationCommand(
 	platform: Platform = { os: process.platform, arch: process.arch },
 ): Promise<number> {
 	const [operation, ...rest] = args;
-	if (!isInstallation(operation) || rest.length !== ARITY[operation])
+	if (!isInstallation(operation) || rest.length !== CLASSES[operation].length)
 		throw usage(USAGE);
 	try {
 		if (!CLASSES[operation].every((fit, i) => fit(rest[i] ?? "")))
@@ -149,8 +125,8 @@ export async function runInstallationCommand(
 		for (const line of await ran(operation, rest, platform)) out(line);
 		return EXIT.OK;
 	} catch (e) {
-		if (e instanceof Stop) {
-			out(`${operation} stop ${e.reason}`);
+		if (e instanceof FactsStop) {
+			out(`${operation} stop ${e.text}`);
 			return EXIT.COMMAND;
 		}
 		if (!(e instanceof Refused)) throw e;

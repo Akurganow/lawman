@@ -12,6 +12,8 @@ import {
 	launch,
 	PRECINCT_OPERATIONS,
 	precinctPlace,
+	type Ran,
+	utf8,
 } from "./launch";
 import { syncPulls } from "./pulls";
 import { syncIssues } from "./sync";
@@ -113,12 +115,8 @@ const READERS: Record<
 		renderAll([fencedBlock("files", await characters(text))]),
 };
 
-export async function output(
-	place: string,
-	operation: Operation,
-	args: string[],
-) {
-	const ran = await launch(place, operation, args);
+// the standard output of a file that ran and exited 0
+export function ranOutput(ran: Ran | null): Uint8Array {
 	if (ran === null) throw new Refused("start", EXIT.COMMAND);
 	if (!ran.ok)
 		throw new Refused(
@@ -126,13 +124,17 @@ export async function output(
 			EXIT.COMMAND,
 			new TextDecoder().decode(ran.stderr),
 		);
-	try {
-		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
-			ran.stdout,
-		);
-	} catch {
-		throw formRefused("the output is not UTF-8");
-	}
+	return ran.stdout;
+}
+
+export async function output(
+	place: string,
+	operation: Operation,
+	args: string[],
+) {
+	const text = utf8(ranOutput(await launch(place, operation, args)));
+	if (text === null) throw formRefused("the output is not UTF-8");
+	return text;
 }
 
 async function read(

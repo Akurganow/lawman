@@ -11,7 +11,9 @@ import {
 	acquittal,
 	addPrecincts,
 	BASE,
+	cli,
 	conviction,
+	dbFile,
 	dir,
 	mark,
 	rows,
@@ -107,6 +109,13 @@ describe("old-precedent list", () => {
 		);
 	});
 
+	test("a tail in parentheses that is no link stays in the rule", async () => {
+		const text = page("- 2026-09-02 #1: Never use bar (important)");
+		expect((await inprocFed(BASE, ["old-precedent", "list"], text)).out).toBe(
+			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nNever use bar (important)\n~~~\n",
+		);
+	});
+
 	test("a page with no old line prints none", async () => {
 		expect(
 			(await inprocFed(BASE, ["old-precedent", "list"], page("none"))).out,
@@ -161,10 +170,21 @@ describe("old-precedent added", () => {
 		);
 	});
 
-	// the default branch already moved the lines, the merge base still holds them
+	// the default branch moved line 1 after the pull request branched off
 	test("a pull request that is stale after the move gets no moved line", async () => {
+		const tip = page("none");
 		const base = page("- 2026-09-02 #1: First.");
-		const head = page("- 2026-09-02 #1: First.");
+		const head = page("- 2026-09-02 #1: First.", "- 2026-09-04 #2: Second.");
+		expect((await added(base, head)).out).toBe(
+			"line 2 date=2026-09-04 link=no position=2\n~~~rule\nSecond.\n~~~\n",
+		);
+		// against the tip the moved line would count again
+		expect((await added(tip, head)).out).toContain("line 1 ");
+	});
+
+	test("an edited old line and a free note are not added old lines", async () => {
+		const base = page("- 2026-09-02 #1: First rule.");
+		const head = page("- 2026-09-02 #1: First rules.", "- a new free note");
 		expect((await added(base, head)).out).toBe("none\n");
 	});
 });
@@ -356,5 +376,55 @@ describe("old-precedent move", () => {
 		const r = await move("", "--line", "9", "--kind", "protects");
 		expect(r.code).toBe(EXIT.USAGE);
 		expect(lawman()).toBe(PAGE);
+	});
+});
+
+describe("old-precedent as a program", () => {
+	test("list reads the page on stdin and exits 0", () => {
+		expect(cli(["old-precedent", "list"], { LAWMAN_DB: dbFile }, PAGE)).toEqual(
+			{
+				code: 0,
+				out: [
+					"line 1 date=2026-09-02 link=yes position=1",
+					"~~~rule",
+					"An unused callback parameter is not dead.",
+					"~~~",
+					"line 2 date=2026-09-03 link=no position=2",
+					"~~~rule",
+					"A rule of the owner.",
+					"~~~",
+					"",
+				].join("\n"),
+				err: "",
+			},
+		);
+	});
+
+	test("move with the user's kind writes the file and the page", () => {
+		const r = cli(
+			[
+				"old-precedent",
+				"move",
+				"main",
+				"--tree",
+				tree,
+				"--gist",
+				"owner",
+				"--line",
+				"2",
+				"--kind",
+				"protects",
+			],
+			{ LAWMAN_DB: dbFile },
+			"",
+		);
+		expect(r).toEqual({ code: 0, out: "entry 2026-09-03-owner\n", err: "" });
+		expect(lawman()).not.toContain("#2:");
+	});
+
+	test("a wrong call is a usage error with exit 1", () => {
+		const r = cli(["old-precedent", "check"], { LAWMAN_DB: dbFile });
+		expect(r.code).toBe(1);
+		expect(r.err).toContain("usage: journal old-precedent");
 	});
 });

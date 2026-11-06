@@ -32,6 +32,7 @@ describe("registration", () => {
 		"commands",
 		"run",
 		"run-installation",
+		"old-precedent",
 	])("%s is a registered command", (name) => {
 		expect(Object.keys(COMMANDS)).toContain(name);
 	});
@@ -60,6 +61,7 @@ describe("registration", () => {
 			"commands",
 			"run",
 			"run-installation",
+			"old-precedent",
 		])
 			expect(err).toContain(name);
 	});
