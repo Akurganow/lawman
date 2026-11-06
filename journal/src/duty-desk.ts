@@ -1,8 +1,7 @@
 import type { Database } from "bun:sqlite";
-import { readdirSync } from "node:fs";
-import { join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
+import { consents, licensesAllowed } from "./consent";
 import {
 	CLAIM_TTL_MS,
 	EXIT,
@@ -13,13 +12,18 @@ import {
 	out,
 	withDb,
 } from "./db";
+import {
+	departmentNames,
+	departmentPage,
+	listSharedPages,
+	type PageRead,
+} from "./department-page";
 import { PATROL, type Taken, takeableOrders } from "./dispatch";
 import { dueEntries } from "./due";
-import { orderLine, REFERENCES, readConfig } from "./input-files";
+import { orderLine, readConfig } from "./input-files";
 import { framed } from "./input-parts";
 import { DUTY_DESK, ROLES } from "./input-roles";
 import { intakeWaiting } from "./intake";
-import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
 import { lintPage } from "./lint";
@@ -27,18 +31,12 @@ import { asciiLower, stripCr } from "./markers";
 import { type Operated, operate } from "./operations";
 import { rotationOrder } from "./rotation";
 import { JOBS } from "./settings";
-import {
-	installationPage,
-	LAW_CLONE_PLACE,
-	type Page,
-	stageFor,
-} from "./tick-start";
+import { stageFor } from "./tick-start";
 
 const START_USAGE =
 	"tick start --role <r> --order <id>|tick start --role duty-desk";
 const CONTINUE_USAGE = "tick continue <id>";
 const CONSTITUTION = "LAWMAN.md";
-const LICENSES = "licenses";
 const RESPONSE_UNIT = "response-unit";
 // the roles whose orders come from the cases and the pull requests
 const CASE_ROLES = [
@@ -99,25 +97,15 @@ function ended(
 	return print(t, [...alarms, `ended ${outcome}`, `report ${report}`]);
 }
 
-// The shared department pages of the law, by file name. A failed listing leaves none and says so.
+// The shared department pages of the law. A failed listing leaves none and says so.
 function sharedPages(blockers: string[]): string[] {
 	try {
-		return readdirSync(join(commandFolder(), REFERENCES, "departments"), {
-			withFileTypes: true,
-		})
-			.filter((e) => e.isFile() && e.name.endsWith(".md"))
-			.map((e) => e.name.slice(0, -".md".length))
-			.sort();
+		return listSharedPages();
 	} catch {
 		blockers.push("shared department pages: the listing failed");
 		return [];
 	}
 }
-
-const consents = (config: string | null, precinct: string) =>
-	(configValue(config ?? "", "license_precincts") ?? "")
-		.split(/\s+/)
-		.includes(`${precinct}=yes`);
 
 // The fetch and the constitution of one precinct. Null, with the cause in Blockers, when either fails.
 async function readPrecinct(
@@ -159,24 +147,16 @@ async function readPrecinct(
 	};
 }
 
-// the places of the "Resolve the department page" section, in its order
-async function departmentPage(
-	p: string,
-	reading: Reading,
-	d: string,
-	blockers: string[],
-): Promise<Page | null> {
-	const own = `.lawman/departments/${d}.md`;
-	if (listed(reading.files, own)) {
+// the precinct place through the host operations
+const hostRead =
+	(p: string, reading: Reading, d: string) => async (): Promise<PageRead> => {
+		const own = `.lawman/departments/${d}.md`;
+		if (!listed(reading.files, own)) return { kind: "none" };
 		const file = await operate(p, "file", call([reading.revision, own]));
-		if (file.text === null)
-			blockers.push(`${p}: department ${d} ${firstLine(file)}`);
-		return file.text === null ? null : { text: file.text, place: 1 };
-	}
-	const page = installationPage(d);
-	if (page === null) blockers.push(`${p}: department ${d} has no page`);
-	return page;
-}
+		return file.text === null
+			? { kind: "failed", why: firstLine(file) }
+			: { kind: "page", text: file.text };
+	};
 
 // The department that has waited longest and can take a lead, as the rotation walks it.
 async function chooseDepartment(
@@ -186,24 +166,32 @@ async function chooseDepartment(
 	config: string | null,
 	blockers: string[],
 ): Promise<string | null> {
-	const all = [...shared, ...reading.lines];
-	for (const d of all)
+	for (const d of [...shared, ...reading.lines])
 		if (!fits("department", d))
 			blockers.push(`${p}: a department name outside its class`);
-	const names = all.filter((d) => fits("department", d));
+	const names = departmentNames(shared, reading.lines).filter((d) =>
+		fits("department", d),
+	);
 	const turns = withDb((db) => rotationOrder(db, p, PATROL, names));
 	let capped = false;
 	for (const { department: d, cap } of turns) {
-		const page = await departmentPage(p, reading, d, blockers);
-		if (page === null) continue;
-		const lint = lintPage("department", page.text, d);
+		const found = await departmentPage(d, hostRead(p, reading, d));
+		if (found.kind === "failed")
+			blockers.push(`${p}: department ${d} ${found.why}`);
+		if (found.kind === "none")
+			blockers.push(`${p}: department ${d} has no page`);
+		if (found.kind !== "page") continue;
+		const { page, lint } = found;
 		if (lint.reasons.length > 0) {
 			blockers.push(`${p}: department ${d} page check failed`);
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped
-		const consented =
-			d !== LICENSES || page.place !== LAW_CLONE_PLACE || consents(config, p);
+		const consented = licensesAllowed(
+			d,
+			page.place,
+			consents(config, p, "license_precincts"),
+		);
 		if (consented && (cap > 0 || lint.alarmCheck)) return d;
 		capped = true;
 	}
