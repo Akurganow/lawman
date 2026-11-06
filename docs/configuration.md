@@ -69,8 +69,8 @@ Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The a
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
 | `trusted_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role uses this one identity. | The assembly at install |
 | `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
-| `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority. | The assembly at install |
-| `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief. | The assembly when it adds a precinct |
+| `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority, and whether the clerk may ask it which departments a precedent serves. | The assembly at install |
+| `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief and the clerk its precedent request. | The assembly when it adds a precinct |
 | `typesafe_key` | The place where the assembly found the TypeSafe API key, or where you will put it, in words. `none` when TypeSafe is off. Never the value. | The assembly at install, or `law-sync` as a default |
 | `catalog` | `yes` or `no`. Whether the patrol may check the dependencies of a precinct against the OSV catalog. An absent key reads as no. | The assembly at install, or when it asks the missing answer |
 | `catalog_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the patrol may send the precinct's packages. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
@@ -115,7 +115,7 @@ No role replaces `bin/journal` or `config.yaml` by any other means.
 
 The assembly writes `contract_version` and `amended_law_commit` again when it amends the precinct constitutions. If the new law carries another constitution contract version, `law-sync` prints an `ALARM contract-changed` line, and `law-update` passes it on. Run the assembly to amend. See [constitution](constitution.md).
 
-The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, it asks whether the court may send its brief about a conviction in that precinct to `api.typesafe.ai`. It writes the pair `<precinct>=<answer>` and replaces any earlier pair of that name.
+The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, it asks whether the court may send its brief about a conviction in that precinct to `api.typesafe.ai`. It writes the pair `<precinct>=<answer>` and replaces any earlier pair of that name. The same answer allows the clerk's request about the departments of a precedent. Answers given before this release were given for the court's brief, and they now allow that request too. Precedents come from convictions and acquittals, so the request goes for both.
 
 The assembly sets `catalog_precincts` per precinct in the same way, when `catalog` is `yes`. It then agrees the reading way with you for each precinct that said yes. An installation that predates the keys has neither. Run the assembly: it sees the missing answer and asks only that. A skip writes `no`. A cancel writes nothing, so the question returns at the next start. No role stops for a missing key, and no alarm or chat message goes out.
 
@@ -125,7 +125,11 @@ After an update, the tick that synced the law prints one line, `Licenses: run th
 
 ## What leaves the machine
 
-Roles read no network. Three exceptions exist: the catalog check of the patrol, the record read of the investigation and the license reading of both. All are off until you say yes.
+Roles read no network. Four exceptions exist: the catalog check of the patrol, the record read of the investigation, the license reading of both, and TypeSafe Jev for the court and the clerk. All are off until you say yes.
+
+- The court sends its brief about a conviction to TypeSafe at `api.typesafe.ai`. The brief states facts about the code in the court's own words.
+- The clerk sends one request to the same service for each new precedent file. It holds the rule of the precedent, the court's words from the Verdict and Grounds sections of the ruling, and whether the ruling convicts or acquits. It also holds the names and the Mission sections of the candidate departments, the precinct's own pages included.
+- Neither sends the body of an issue.
 
 - The patrol sends the names and versions of the pinned packages of a precinct, with their ecosystems, to the OSV service at `api.osv.dev`. It does so for a private repository too. The paths of your tree do not leave.
 - The investigation sends one record identifier to the same service for a lead of the catalog check.
@@ -173,6 +177,7 @@ Ticks read the keys they need.
 - The start of every tick reads `law_commit` and `trusted_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
 - The update reads `law_commit` and `release_repo`.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
+- The clerk applies the same rule through the journal, which reads `typesafe` and `typesafe_precincts` itself. The clerk reads only `typesafe_key`.
 - The patrol reads `catalog`, `catalog_precincts` and the precinct's line under `## Dependency reading` in `host.md`. The check runs only when `catalog` is exactly `yes`, the precinct pair is `yes` and the line names a way. Otherwise the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.

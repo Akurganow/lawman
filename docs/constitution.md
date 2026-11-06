@@ -21,7 +21,7 @@ The file starts with frontmatter that holds `contract_version: 4`. Next comes th
 | Executor loads | Skills and rules of the repository that the executor loads before it changes code. | Executor |
 | Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Court |
 
-Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin.
+Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. The journal writes `departments` of a court precedent: the department of the case, or an empty list for all departments. TypeSafe Jev may narrow it when the precinct allows Jev. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin.
 
 A path is relative to the repository root. It holds no `..` segment and has no leading slash. A role reads a referenced file only at the analysed commit.
 
