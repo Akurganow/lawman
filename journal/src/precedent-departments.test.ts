@@ -991,6 +991,22 @@ describe("the adding step", () => {
 		inprocFed(BASE, select("--answer", name), stdin);
 	const GOOD = reply({ alpha: HIGH, beta: LOW, gamma: LOW });
 
+	test("a hyphenated candidate goes out and comes back under one question id", async () => {
+		shared("agent-config");
+		await written();
+		const body = JSON.parse(
+			(await inprocAsync(BASE, select("--request", NAME))).out,
+		);
+		expect(Object.keys(body.questions)).toContain("agent_config");
+		expect(Object.keys(body.questions)).not.toContain("agent-config");
+		const r = await answer(
+			reply({ agent_config: HIGH, alpha: LOW, beta: LOW, gamma: LOW }),
+		);
+		expect(r.out).not.toContain("bad-answer");
+		expect(r.out).toBe("jev model=jev-1.14.0 departments=core,agent-config\n");
+		expect(departments()).toEqual(["core", "agent-config"]);
+	});
+
 	test("it changes only the departments of the header", async () => {
 		await written();
 		const before = text();
