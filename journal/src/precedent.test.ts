@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import {
 	existsSync,
@@ -11,18 +11,17 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { fits } from "./args";
-import { issuesJson, T } from "./cases-fixture";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
-import { config } from "./input-test-fixture";
+import { config, references } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
+import { cache } from "./precedent-test-fixture";
 import {
 	acquittal,
 	BASE,
 	conviction,
 	dir,
-	lead,
 	mark,
 	precinct,
 	ROOT,
@@ -30,6 +29,7 @@ import {
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
+import { CONSTITUTION, departmentPage } from "./tick-start-test-fixture";
 
 tempDb();
 
@@ -41,7 +41,6 @@ const ruling = (section: string[], marker = ACQUITTAL) =>
 	["Ruling.", "", ...section, "", marker].join("\n");
 const precedentSection = (...lines: string[]) => ["## Precedent", "", ...lines];
 
-type Comment = { body: string; author?: string };
 let tree: string;
 
 beforeEach(() => {
@@ -63,39 +62,6 @@ const put = (name: string, text: string) => {
 	mkdirSync(folder(), { recursive: true });
 	writeFileSync(file(name), text);
 };
-
-// readStdin reads file descriptor 0, so the test answers that read
-async function cache(...issues: (string | Comment)[][]) {
-	const json = JSON.parse(
-		issuesJson(
-			Object.fromEntries(
-				issues.map((comments, k) => [
-					k + 1,
-					{
-						body: [lead()],
-						comments: comments.map((c, i): [string, string] => [
-							T(10 + i),
-							typeof c === "string" ? c : c.body,
-						]),
-					},
-				]),
-			),
-		),
-	);
-	issues.forEach((comments, k) => {
-		comments.forEach((c, i) => {
-			if (typeof c !== "string" && c.author !== undefined)
-				json.issues[k].comments[i].author = { login: c.author };
-		});
-	});
-	const spy = spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(json));
-	try {
-		const r = await inprocAsync(BASE, ["sync", "main", "--author", TRUSTED]);
-		expect(r.code).toBe(EXIT.OK);
-	} finally {
-		spy.mockRestore();
-	}
-}
 
 const record = (issue = 1, at = tree, source = SOURCE) =>
 	inprocAsync(BASE, [
@@ -135,7 +101,7 @@ describe("precedent: a new precedent", () => {
 		expect(out).toEqual([`entry\t${DATE}-empty-doubles`]);
 		expect(header(`${DATE}-empty-doubles`)).toEqual({
 			kind: "protects",
-			departments: [],
+			departments: ["core"],
 			issue: 1,
 			date: DATE,
 			ruling: SOURCE,
@@ -146,7 +112,7 @@ describe("precedent: a new precedent", () => {
 				"---",
 				"kind: protects",
 				"departments: ",
-				"  []",
+				"  - core",
 				"issue: 1",
 				`date: ${DATE}`,
 				`ruling: "${SOURCE}"`,
@@ -332,10 +298,10 @@ describe("precedent: no precedent is lost", () => {
 			`entry\t${DATE}-issue-1\tbad-line`,
 		]);
 		const text = readFileSync(file(`${DATE}-issue-1`), "utf8");
-		expect(headerOf(text)).toEqual({ kind: "protects", departments: [] });
+		expect(headerOf(text)).toEqual({ kind: "protects", departments: ["core"] });
 		expect(header(`${DATE}-issue-1`)).toEqual({
 			kind: "protects",
-			departments: [],
+			departments: ["core"],
 			issue: 1,
 			date: DATE,
 			ruling: SOURCE,
@@ -346,14 +312,23 @@ describe("precedent: no precedent is lost", () => {
 
 describe("precedent: refine and cancel", () => {
 	const OWNED =
-		"---\r\nkind: protects\r\ndepartments: [core]\r\nowner: kept\r\n---\r\n\r\nOld rule.\r\n";
+		"---\r\nkind: protects\r\ndepartments: [tests]\r\nowner: kept\r\n---\r\n\r\nOld rule.\r\n";
 
-	test("a refine changes only the text after the header", async () => {
+	test("a refine changes only the text after the header and asks nothing", async () => {
+		config(
+			`trusted_login: ${TRUSTED}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
+		);
+		mkdirSync(references("departments"), { recursive: true });
+		writeFileSync(
+			references("departments", "tests.md"),
+			departmentPage("tests"),
+		);
+		writeFileSync(join(tree, "LAWMAN.md"), CONSTITUTION);
 		put("owned", OWNED);
 		const out = await written(precedentSection("- refine owned: New rule."));
 		expect(out).toEqual(["entry\towned"]);
 		expect(readFileSync(file("owned"), "utf8")).toBe(
-			"---\r\nkind: protects\r\ndepartments: [core]\r\nowner: kept\r\n---\r\n\nNew rule.\n",
+			"---\r\nkind: protects\r\ndepartments: [tests]\r\nowner: kept\r\n---\r\n\nNew rule.\n",
 		);
 	});
 
@@ -640,17 +615,45 @@ describe("oldLineToFile", () => {
 	});
 });
 
-describe("precedent: the ruling example of the court skill", () => {
+describe("precedent: the examples of the law", () => {
 	const COURT = join(ROOT, "skills", "court", "SKILL.md");
-	const OPEN = "A realistic ruling:\n\n````\n";
-
-	test("its Precedent section writes the expected file", async () => {
-		const skill = readFileSync(COURT, "utf8");
-		const at = skill.indexOf(OPEN);
+	const MARKERS = join(
+		ROOT,
+		"skills",
+		"lawman-law",
+		"references",
+		"markers.md",
+	);
+	const between = (path: string, open: string, close: string) => {
+		const text = readFileSync(path, "utf8");
+		const at = text.indexOf(open);
 		expect(at).toBeGreaterThan(-1);
-		const start = at + OPEN.length;
-		const example = skill.slice(start, skill.indexOf("\n````", start));
+		const start = at + open.length;
+		return text.slice(start, text.indexOf(close, start));
+	};
+	// a precinct whose candidates hold the departments the examples name, and one more
+	const candidates = (...departments: string[]) => {
+		const lines = [...departments, "web"].map((d) => `- ${d}: judged by none`);
+		writeFileSync(
+			join(tree, "LAWMAN.md"),
+			CONSTITUTION.replace(
+				/## Departments\n\n[\s\S]*?\n\n## Fence/,
+				`## Departments\n\n${lines.join("\n")}\n\n## Fence`,
+			),
+		);
+		mkdirSync(join(tree, ".lawman", "departments"), { recursive: true });
+		mkdirSync(references("departments"), { recursive: true });
+		for (const d of [...departments, "web"])
+			writeFileSync(
+				join(tree, ".lawman", "departments", `${d}.md`),
+				departmentPage(d),
+			);
+	};
+
+	test("the ruling example of the court skill writes the expected file", async () => {
+		const example = between(COURT, "A realistic ruling:\n\n````\n", "\n````");
 		expect(example).toContain("## Precedent");
+		candidates("claims");
 		await cache([example]);
 		const r = await record();
 		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
@@ -658,13 +661,30 @@ describe("precedent: the ruling example of the court skill", () => {
 		expect(r.out).toBe(`entry\t${name}\n`);
 		expect(header(name)).toEqual({
 			kind: "condemns",
-			departments: [],
+			departments: ["claims"],
 			issue: 1,
 			date: "2026-10-16",
 			ruling: SOURCE,
 		});
 		expect(body(name)?.trim()).toBe(
 			"A help text that names an option the parser does not accept is a violation.",
+		);
+	});
+
+	test("the Precedent example of the line law writes the expected file", async () => {
+		const section = between(MARKERS, "Example:\n\n```\n", "\n```");
+		expect(section).toContain("## Precedent");
+		candidates("dead-code");
+		await cache([ruling([section])]);
+		const r = await record();
+		const name = "2026-10-14-empty-test-double-conformances";
+		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
+		expect(r.out).toBe(
+			`cancel\t2026-09-02-unused-parameter-in-callbacks\tmissing\nentry\t${name}\n`,
+		);
+		expect(header(name)).toMatchObject({ departments: ["dead-code"] });
+		expect(body(name)?.trim()).toBe(
+			"An empty conformance of a test double to a protocol is not dead code.",
 		);
 	});
 });

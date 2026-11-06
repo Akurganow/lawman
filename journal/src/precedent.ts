@@ -8,27 +8,57 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import type { RootContent } from "mdast";
-import { check, checkLink, fits, parseArgs } from "./args";
-import { EXIT, Fail, out, withDb } from "./db";
+import { check, checkLink, fits, parseArgs, usage } from "./args";
+import { caseStage } from "./cases";
+import { cleanCharacters } from "./clean";
+import { consents, jevAllowed, licensesAllowed } from "./consent";
+import { EXIT, Fail, out, readStdin, withDb } from "./db";
+import {
+	departmentNames,
+	departmentPage,
+	type InstalledRead,
+	listSharedPages,
+	type PageRead,
+} from "./department-page";
 import { readConfig } from "./input-files";
-import { sectionNodes } from "./law-sections";
+import { jevNone, replyOf } from "./jev";
+import { sectionNodes, sectionWords, sliceOf } from "./law-sections";
 import { configValue } from "./law-sync";
+import { lintPage } from "./lint";
 import { extractMarkers, stripCr } from "./markers";
 import {
+	ALL,
+	asksJev,
+	type Candidate,
+	caseList,
+	DEPARTMENTS_THRESHOLD,
+	decide,
+	departmentsAnswer,
+	departmentsBody,
+	departmentsState,
+	droppedNames,
+	type Named,
+	originalList,
+} from "./precedent-departments";
+import {
 	buildPrecedent,
-	type Fields,
-	KINDS,
+	departmentsField,
+	headerOf,
 	NO_VALUE,
+	PRECEDENT_KINDS,
 	splitPrecedent,
+	withDepartments,
 } from "./precedent-file";
 
 const USAGE =
-	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>";
+	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
+const CONSTITUTION = "LAWMAN.md";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
 const NONE = "none";
 const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const NEW_LINE = /^new ([^\s:]+): (.+)$/;
+// the names stand before the first colon, so no character of the rule reads as a name
+const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
 const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
 const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
@@ -41,11 +71,6 @@ const KIND_OF = new Map([
 
 // an underlined heading never applies as written
 type Item = { text: string; bad: boolean };
-
-const sliceOf = (text: string, first?: RootContent, last?: RootContent) =>
-	text
-		.slice(first?.position?.start.offset ?? 0, last?.position?.end.offset ?? 0)
-		.trim();
 
 function itemsOf(text: string, nodes: RootContent[]): Item[] {
 	return nodes.flatMap((node): Item[] => {
@@ -70,9 +95,9 @@ function itemsOf(text: string, nodes: RootContent[]): Item[] {
 	});
 }
 
-type Kind = "absent" | "file" | "dir" | "other";
+type EntryKind = "absent" | "file" | "dir" | "other";
 
-function kindAt(path: string): Kind {
+function entryKind(path: string): EntryKind {
 	try {
 		const stat = lstatSync(path);
 		return stat.isFile() ? "file" : stat.isDirectory() ? "dir" : "other";
@@ -99,13 +124,13 @@ class Folder {
 		const lawman = join(tree, ".lawman");
 		this.dir = join(lawman, "precedents");
 		for (const path of [lawman, this.dir])
-			if (!["absent", "dir"].includes(kindAt(path))) throw unsafe(path);
+			if (!["absent", "dir"].includes(entryKind(path))) throw unsafe(path);
 	}
 
 	private path = (name: string) => join(this.dir, `${name}.md`);
 
 	private disk(name: string): string | null {
-		const kind = kindAt(this.path(name));
+		const kind = entryKind(this.path(name));
 		if (kind === "dir" || kind === "other") throw unsafe(this.path(name));
 		return kind === "file" ? readFileSync(this.path(name), "utf8") : null;
 	}
@@ -123,7 +148,7 @@ class Folder {
 	free(base: string): string {
 		for (let k = 1; ; k++) {
 			const name = k === 1 ? base : `${base}-${k}`;
-			if (!this.state.has(name) && kindAt(this.path(name)) === "absent")
+			if (!this.state.has(name) && entryKind(this.path(name)) === "absent")
 				return name;
 		}
 	}
@@ -141,50 +166,143 @@ class Folder {
 	}
 }
 
-type Ruling = { kind: string; date: string; issue: number; source: string };
+// A file of the clone, read without following a link. A path that is no plain
+// file or folder is a failed read, which is data. A plain file that cannot be
+// read is a fault of the journal and throws.
+function treeFile(tree: string, parts: string[]): PageRead {
+	let at = tree;
+	for (const [i, part] of parts.entries()) {
+		at = join(at, part);
+		const kind = entryKind(at);
+		if (kind === "absent") return { kind: "none" };
+		if (kind !== (i === parts.length - 1 ? "file" : "dir"))
+			return { kind: "failed" };
+	}
+	try {
+		return { kind: "page", text: readFileSync(at, "utf8") };
+	} catch (e) {
+		const code = (e as NodeJS.ErrnoException).code ?? "unknown";
+		throw new Error(`cannot read ${parts.join("/")} in the tree: ${code}`);
+	}
+}
 
-function apply(items: Item[], ruling: Ruling, folder: Folder): string[] {
-	const fields: Fields = {
-		kind: ruling.kind,
-		departments: [],
-		issue: ruling.issue,
-		date: ruling.date,
-		ruling: ruling.source,
-	};
+type Line =
+	| { type: "new"; gist: string; rule: string; named: Named }
+	| { type: "refine"; name: string; update: string }
+	| { type: "cancel"; name: string | null }
+	| { type: "none" }
+	| { type: "bad" };
+
+// one item of a Precedent section, as both the write and the admission read it
+function classify({ text, bad }: Item): Line {
+	const single = !bad && !text.includes("\n");
+	const [, gist, namesPart, rule] = (single && text.match(NEW_LINE)) || [];
+	const [, refined, update] = (single && text.match(REFINE_LINE)) || [];
+	const [, cancelled] = (single && text.match(CANCEL_LINE)) || [];
+	const named = namesPart?.split(",").map((n) => n.trim());
+	if (
+		gist !== undefined &&
+		rule !== undefined &&
+		GIST.test(gist) &&
+		!named?.includes("")
+	)
+		return {
+			type: "new",
+			gist,
+			rule: rule.trim(),
+			named: named === undefined ? null : named.includes(ALL) ? ALL : named,
+		};
+	if (
+		refined !== undefined &&
+		update !== undefined &&
+		fits("precedent", refined)
+	)
+		return { type: "refine", name: refined, update: update.trim() };
+	if (cancelled !== undefined)
+		return {
+			type: "cancel",
+			name: fits("precedent", cancelled) ? cancelled : null,
+		};
+	return single && text === NONE ? { type: "none" } : { type: "bad" };
+}
+
+type Ruling = {
+	precedentKind: string;
+	date: string;
+	issue: number;
+	source: string;
+};
+
+// What a write call did: the printed lines; the files that a new line created
+// under its own name and no later line changed, each with its original list; and
+// every file a new line created that exists after the commit, with the court's names.
+type Applied = {
+	lines: string[];
+	fresh: { name: string; original: string[] }[];
+	kept: { name: string; named: Named }[];
+};
+
+// originalOf gives the list of a new file; it reads nothing that can fail after
+// the first write, because the folder writes only at its commit.
+function apply(
+	items: Item[],
+	ruling: Ruling,
+	folder: Folder,
+	originalOf: (named: Named) => string[],
+): Applied {
 	const reasons = new Map<string, string>();
 	const lines: string[] = [];
-	const create = (base: string, text: string, reason?: string) => {
+	const fresh = new Map<string, string[]>();
+	const created = new Map<string, Named>();
+	const create = (
+		base: string,
+		text: string,
+		named: Named,
+		reason?: string,
+	) => {
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		folder.set(name, buildPrecedent(fields, text));
+		const original = originalOf(named);
+		folder.set(
+			name,
+			buildPrecedent(
+				{
+					kind: ruling.precedentKind,
+					departments: original,
+					issue: ruling.issue,
+					date: ruling.date,
+					ruling: ruling.source,
+				},
+				text,
+			),
+		);
 		if (why !== undefined) reasons.set(name, why);
+		created.set(name, named);
+		return { name, original };
 	};
 	const keep = `${ruling.date}-issue-${ruling.issue}`;
-	for (const { text, bad } of items) {
-		const single = !bad && !text.includes("\n");
-		const [, gist, rule] = (single && text.match(NEW_LINE)) || [];
-		const [, refined, update] = (single && text.match(REFINE_LINE)) || [];
-		const [, cancelled] = (single && text.match(CANCEL_LINE)) || [];
-		if (gist !== undefined && rule !== undefined && GIST.test(gist)) {
-			create(`${ruling.date}-${gist}`, rule.trim());
-		} else if (
-			refined !== undefined &&
-			update !== undefined &&
-			fits("precedent", refined)
-		) {
-			const was = folder.current(refined);
+	for (const item of items) {
+		const line = classify(item);
+		if (line.type === "new") {
+			const base = `${ruling.date}-${line.gist}`;
+			const made = create(base, line.rule, line.named);
+			if (made.name === base) fresh.set(base, made.original);
+		} else if (line.type === "refine") {
+			fresh.delete(line.name);
+			const was = folder.current(line.name);
 			const split = was === null ? null : splitPrecedent(was);
-			if (split === null) create(keep, update.trim(), "refine-missing");
-			else if (split.body.trim() !== update.trim())
-				folder.set(refined, `${split.header}\n\n${update.trim()}\n`);
-		} else if (cancelled !== undefined) {
-			const name = fits("precedent", cancelled) ? cancelled : null;
-			if (name !== null && folder.current(name) !== null)
-				folder.set(name, null);
-			else lines.push(`cancel\t${name ?? NO_VALUE}\tmissing`);
-		} else if (!(single && text === NONE)) create(keep, text, "bad-line");
+			if (split === null) create(keep, line.update, null, "refine-missing");
+			else if (split.body.trim() !== line.update)
+				folder.set(line.name, `${split.header}\n\n${line.update}\n`);
+		} else if (line.type === "cancel") {
+			if (line.name !== null) fresh.delete(line.name);
+			if (line.name !== null && folder.current(line.name) !== null)
+				folder.set(line.name, null);
+			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
+		} else if (line.type === "bad") create(keep, item.text, null, "bad-line");
 	}
-	for (const name of folder.commit()) {
+	const written = folder.commit();
+	for (const name of written) {
 		const reason = reasons.get(name);
 		lines.push(
 			folder.current(name) === null
@@ -192,7 +310,16 @@ function apply(items: Item[], ruling: Ruling, folder: Folder): string[] {
 				: ["entry", name, ...(reason === undefined ? [] : [reason])].join("\t"),
 		);
 	}
-	return lines;
+	return {
+		lines,
+		fresh: written.flatMap((name) => {
+			const original = fresh.get(name);
+			return original === undefined ? [] : [{ name, original }];
+		}),
+		kept: [...created]
+			.filter(([name]) => folder.current(name) !== null)
+			.map(([name, named]) => ({ name, named })),
+	};
 }
 
 type Stored = { stage: string; fields: string; raw: string };
@@ -267,27 +394,292 @@ function summary(sections: Item[][], lines: string[]): string[] {
 	return [...lines, end];
 }
 
-export function precedentCommand(args: string[]): number {
-	const { pos, opt } = parseArgs(args, 1, ["issue", "source", "tree"], USAGE);
-	const precinct = check("precinct", pos[0]);
-	const issue = Number(check("number", opt.issue));
-	const source = checkLink(opt.source);
+// the newest ruling of the case and its cached comment
+function rulingOf(precinct: string, issue: number) {
 	const login = trustedLogin();
 	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
 		return { marker: m, text: rulingText(db, precinct, issue, m.raw, login) };
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
-	const ruling = {
-		kind: KIND_OF.get(marker.stage) ?? NO_VALUE,
+	return {
+		precedentKind: KIND_OF.get(marker.stage) ?? NO_VALUE,
 		date: at.slice(0, 10),
-		issue,
-		source,
+		text,
 	};
-	const sections = sectionNodes(text, SECTION).map((s) => itemsOf(text, s));
-	const folder = new Folder(opt.tree);
-	for (const line of summary(sections, apply(sections.flat(), ruling, folder)))
-		out(line);
+}
+
+const itemsOfRuling = (text: string) =>
+	sectionNodes(text, SECTION).map((s) => itemsOf(text, s));
+
+const caseListOf = (db: Database, precinct: string, issue: number) =>
+	caseList(caseStage(db, precinct, issue).department);
+
+// The raw sources of the candidate departments. precinctRead reads the page of a
+// department at the precinct place; installedRead the other places, which the
+// installation holds unless a caller gives its own.
+export type Sources = {
+	constitution: string | null;
+	shared: string[];
+	licenseConsent: boolean;
+	precinctRead: (d: string) => () => Promise<PageRead>;
+	installedRead?: (d: string) => InstalledRead;
+};
+
+// The departments a precedent may serve, each with its Mission, in order: the
+// shared pages of the law, then the lines of the constitution. A page that is
+// absent, no plain file, fails its check or has no Mission gives no candidate.
+export async function readCandidates(s: Sources): Promise<Candidate[]> {
+	if (s.constitution === null) return [];
+	const lint = lintPage("constitution", s.constitution);
+	if (lint.reasons.length > 0) return [];
+	const found: Candidate[] = [];
+	const names = departmentNames(
+		s.shared,
+		lint.departments.map(([d]) => d),
+	);
+	for (const name of names) {
+		if (!fits("department", name)) continue;
+		const page = await departmentPage(
+			name,
+			s.precinctRead(name),
+			s.installedRead?.(name),
+		);
+		if (page.kind !== "page" || page.lint.reasons.length > 0) continue;
+		if (!licensesAllowed(name, page.page.place, s.licenseConsent)) continue;
+		const mission = sectionWords(
+			await cleanCharacters(page.page.text),
+			"Mission",
+		);
+		if (mission !== null) found.push({ name, mission });
+	}
+	return found;
+}
+
+// The clerk's sources: the tree for the precinct place, the installation for the
+// others. A failed listing of the shared pages is a fault, so no shared department
+// is lost.
+function treeSources(
+	tree: string,
+	config: string | null,
+	precinct: string,
+): Sources {
+	const constitution = treeFile(tree, [CONSTITUTION]);
+	return {
+		constitution: constitution.kind === "page" ? constitution.text : null,
+		shared: listSharedPages(),
+		licenseConsent: consents(config, precinct, "license_precincts"),
+		precinctRead: (d) => async () =>
+			treeFile(tree, [".lawman", "departments", `${d}.md`]),
+	};
+}
+
+// a gate that does not let a file through; any other error is a fault of the journal
+class Refusal extends Fail {
+	constructor(why: string) {
+		super(EXIT.USAGE, why);
+	}
+}
+
+// a refusal names its cause on stderr; any other error goes on as a fault
+const reportRefusal = (e: unknown) => {
+	if (!(e instanceof Refusal)) throw e;
+	process.stderr.write(`journal: ${e.message}\n`);
+};
+
+type Admitted = {
+	text: string;
+	rule: string;
+	ruling: { precedentKind: string; text: string };
+	original: string[];
+	candidateNames: string[];
+	asked: Candidate[];
+};
+
+// The gate of the request and the adding step, which run apart from the write:
+// the file of a new line of the newest ruling, as written, in a precinct allowed
+// to use Jev, whose list leaves a candidate out.
+async function admitted(
+	precinct: string,
+	issue: number,
+	tree: string,
+	name: string,
+): Promise<Admitted> {
+	if (!fits("precedent", name))
+		throw new Refusal(`invalid precedent: ${JSON.stringify(name)}`);
+	const ruling = rulingOf(precinct, issue);
+	const file = treeFile(tree, [".lawman", "precedents", `${name}.md`]);
+	if (file.kind === "none") throw new Refusal(`no precedent file: ${name}`);
+	if (file.kind === "failed")
+		throw new Refusal(`not a plain precedent file: ${name}`);
+	const body = splitPrecedent(file.text)?.body.trim();
+	const line = itemsOfRuling(ruling.text)
+		.flat()
+		.map(classify)
+		.find(
+			(l) =>
+				l.type === "new" &&
+				`${ruling.date}-${l.gist}` === name &&
+				l.rule === body,
+		);
+	if (body === undefined || line?.type !== "new")
+		throw new Refusal(`the file is not one new line of the ruling: ${name}`);
+	const config = readConfig();
+	if (!jevAllowed(config, precinct))
+		throw new Refusal(`Jev is not allowed for ${precinct}`);
+	const candidates = await readCandidates(treeSources(tree, config, precinct));
+	const candidateNames = candidates.map((c) => c.name);
+	const original = originalList(line.named, candidateNames, () =>
+		withDb((db) => caseListOf(db, precinct, issue)),
+	);
+	if (!asksJev(original, candidateNames))
+		throw new Refusal(`no candidate department to add: ${name}`);
+	return {
+		text: file.text,
+		rule: body,
+		ruling,
+		original,
+		candidateNames,
+		asked: candidates.filter((c) => !original.includes(c.name)),
+	};
+}
+
+const sameList = (a: string[], b: string[]) =>
+	a.length === b.length && a.every((d, i) => d === b[i]);
+
+async function requestBody(
+	precinct: string,
+	issue: number,
+	tree: string,
+	name: string,
+): Promise<string> {
+	const a = await admitted(precinct, issue, tree, name);
+	return departmentsBody(
+		await departmentsState({
+			rule: a.rule,
+			ruling: a.ruling.text,
+			precedentKind: a.ruling.precedentKind,
+			asked: a.asked,
+		}),
+	);
+}
+
+const UNCHANGED_LINE = "jev unchanged";
+
+// The adding step: it reads the reply once and writes only the departments of a
+// file that still holds its original list. Its reason brief means no usable
+// request: empty input, or a file the gate refuses.
+async function augmented(
+	precinct: string,
+	issue: number,
+	tree: string,
+	name: string,
+	input: string,
+): Promise<string> {
+	if (input.trim() === "") return jevNone("brief");
+	let a: Admitted;
+	try {
+		a = await admitted(precinct, issue, tree, name);
+	} catch (e) {
+		reportRefusal(e);
+		return jevNone("brief");
+	}
+	const current = headerOf(a.text).departments;
+	if (current === null || !sameList(current, a.original)) return UNCHANGED_LINE;
+	const reply = replyOf(input);
+	if ("none" in reply) return reply.none;
+	let answer: ReturnType<typeof departmentsAnswer>;
+	try {
+		answer = departmentsAnswer(
+			reply.body,
+			a.asked.map((c) => c.name),
+		);
+	} catch {
+		return jevNone("bad-answer");
+	}
+	const list = decide(
+		a.original,
+		a.candidateNames,
+		answer.scored,
+		DEPARTMENTS_THRESHOLD,
+	);
+	if (list === null) return UNCHANGED_LINE;
+	const folder = new Folder(tree);
+	folder.set(name, withDepartments(a.text, list));
+	folder.commit();
+	return `jev model=${answer.model} departments=${departmentsField(list)}`;
+}
+
+// a new line needs the candidates when the court named departments, or when Jev
+// may add to its list
+const needsCandidates = (lines: Line[], allowed: boolean) =>
+	lines.some(
+		(l) =>
+			l.type === "new" &&
+			(Array.isArray(l.named) || (allowed && l.named !== ALL)),
+	);
+
+// The write call. Every read comes before the first write, so a read fault
+// writes nothing; the ask lines come from what the write did.
+async function writePrecedents(
+	precinct: string,
+	issue: number,
+	tree: string,
+	source: string,
+): Promise<void> {
+	const { precedentKind, date, text } = rulingOf(precinct, issue);
+	const sections = itemsOfRuling(text);
+	const items = sections.flat();
+	const config = readConfig();
+	const allowed = jevAllowed(config, precinct);
+	// without a need nobody reads them: no name can be known and Jev asks nothing
+	const candidateNames = needsCandidates(items.map(classify), allowed)
+		? (await readCandidates(treeSources(tree, config, precinct))).map(
+				(c) => c.name,
+			)
+		: [];
+	let theCase: string[] | undefined;
+	const caseOf = () => {
+		theCase ??= withDb((db) => caseListOf(db, precinct, issue));
+		return theCase;
+	};
+	const { lines, fresh, kept } = apply(
+		items,
+		{ precedentKind, date, issue, source },
+		new Folder(tree),
+		(named) => originalList(named, candidateNames, caseOf),
+	);
+	for (const line of summary(sections, lines)) out(line);
+	for (const { name, named } of kept)
+		for (const d of droppedNames(named, candidateNames, (n) =>
+			fits("department", n),
+		))
+			out("drop", name, d === null ? NO_VALUE : await cleanCharacters(d));
+	// a precinct without Jev is a normal state: it asks nothing and says nothing
+	if (allowed)
+		for (const f of fresh)
+			if (asksJev(f.original, candidateNames)) out("ask", f.name);
+}
+
+export async function precedentCommand(args: string[]): Promise<number> {
+	const { pos, opt } = parseArgs(args, 1, ["issue", "tree"], USAGE, [
+		"source",
+		"request",
+		"answer",
+	]);
+	const precinct = check("precinct", pos[0]);
+	const issue = Number(check("number", opt.issue));
+	const modes = (["source", "request", "answer"] as const).filter(
+		(m) => opt[m] !== undefined,
+	);
+	const [mode] = modes;
+	const value = mode === undefined ? undefined : opt[mode];
+	if (modes.length !== 1 || value === undefined) throw usage(USAGE);
+	if (mode === "request")
+		process.stdout.write(await requestBody(precinct, issue, opt.tree, value));
+	else if (mode === "answer")
+		out(await augmented(precinct, issue, opt.tree, value, readStdin()));
+	else await writePrecedents(precinct, issue, opt.tree, checkLink(value));
 	return EXIT.OK;
 }
 
@@ -326,7 +718,9 @@ export function oldLineToFile(o: OldLine): Moved {
 		o.comment && markerAtEnd(o.comment.body, o.comment.author, o.login);
 	const kind =
 		(marker?.role === "court" ? KIND_OF.get(marker.stage) : undefined) ??
-		(o.kind !== undefined && KINDS.includes(o.kind) ? o.kind : undefined);
+		(o.kind !== undefined && PRECEDENT_KINDS.includes(o.kind)
+			? o.kind
+			: undefined);
 	if (kind === undefined) return { result: "ask" };
 	const [, rule = rest, link] = rest.match(OLD_SOURCE) ?? [];
 	const ruling = link === undefined ? undefined : linkOf(link);
