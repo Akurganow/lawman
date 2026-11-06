@@ -219,11 +219,11 @@ function treeFile(tree: string, parts: string[]): PageRead {
 			const kind = kindAt(at);
 			if (kind === "absent") return { kind: "none" };
 			if (kind !== (i === parts.length - 1 ? "file" : "dir"))
-				return { kind: "failed", why: `not a plain file: ${parts.join("/")}` };
+				return { kind: "failed" };
 		}
 		return { kind: "page", text: readFileSync(at, "utf8") };
 	} catch {
-		return { kind: "failed", why: `cannot read ${parts.join("/")}` };
+		return { kind: "failed" };
 	}
 }
 
@@ -519,8 +519,9 @@ async function admitted(
 		throw new Refusal(`invalid precedent: ${JSON.stringify(name)}`);
 	const ruling = rulingOf(precinct, issue);
 	const file = treeFile(tree, [".lawman", "precedents", `${name}.md`]);
-	if (file.kind !== "page")
-		throw new Refusal(`no plain precedent file: ${name}`);
+	if (file.kind === "none") throw new Refusal(`no precedent file: ${name}`);
+	if (file.kind === "failed")
+		throw new Refusal(`not a plain precedent file: ${name}`);
 	const body = splitPrecedent(file.text)?.body.trim();
 	const admits = itemsOfRuling(ruling.text)
 		.flat()
@@ -650,7 +651,7 @@ export async function precedentCommand(args: string[]): Promise<number> {
 	);
 	for (const line of summary(sections, lines)) out(line);
 	// a precinct without Jev is a normal state: it asks nothing and says nothing
-	if (!jevAllowed(readConfig(), precinct)) return EXIT.OK;
+	if (fresh.length === 0 || !jevAllowed(readConfig(), precinct)) return EXIT.OK;
 	for (const name of fresh)
 		try {
 			await admitted(precinct, issue, opt.tree, name);

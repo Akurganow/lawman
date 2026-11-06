@@ -324,11 +324,12 @@ const INSTALLATION_PATHS = {
 		join(commandFolder(), REFERENCES, "departments", `${d}.md`),
 };
 
-// A read of a page at one place. A failed read stops the walk, and why names its cause.
+// A read of a page at one place. A failed read stops the walk. Its why names the
+// cause for a reader that reports it.
 export type PageRead =
 	| { kind: "page"; text: string }
 	| { kind: "none" }
-	| { kind: "failed"; why: string };
+	| { kind: "failed"; why?: string };
 export type PlaceRead = (place: Place) => Promise<PageRead>;
 
 // an installation file that cannot be read counts as no page there
@@ -521,7 +522,7 @@ export async function tickStart(args: string[]): Promise<number> {
 						const file = await operate(p, "file", call([revision, own]));
 						if (file.text !== null) return { kind: "page", text: file.text };
 						o.add(...file.blocks);
-						return { kind: "failed", why: "the read failed" };
+						return { kind: "failed" };
 					});
 		const page = found?.kind === "page" ? found.page : null;
 		const self = found === null || found.kind === "failed";
