@@ -134,9 +134,9 @@ const KINDS: Record<string, Kind> = {
 
 // The departments kind: the journal builds its state from the ruling and the
 // department pages, so no brief exists. One question per candidate department.
-export const DEPARTMENTS_THRESHOLD = 0.5;
+export const DEPARTMENTS_THRESHOLD = 0.65;
 // the labelled cases the question and the threshold were checked on
-export const DEPARTMENTS_CHECKED = { tuning: 0, heldOut: 0 };
+export const DEPARTMENTS_CHECKED = { tuning: 24, heldOut: 16 };
 
 const departmentId = (name: string) => name.replaceAll("-", "_");
 

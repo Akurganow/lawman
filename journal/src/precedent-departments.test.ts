@@ -241,8 +241,8 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 });
 
 test("the count of checked cases names both parts", () => {
-	expect(Number.isInteger(DEPARTMENTS_CHECKED.tuning)).toBe(true);
-	expect(Number.isInteger(DEPARTMENTS_CHECKED.heldOut)).toBe(true);
+	expect(DEPARTMENTS_CHECKED.tuning).toBeGreaterThan(0);
+	expect(DEPARTMENTS_CHECKED.heldOut).toBeGreaterThan(0);
 });
 
 describe("the candidates", () => {
