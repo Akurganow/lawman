@@ -24,6 +24,8 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents`, record one commit, empty or holding that folder, and publish the one branch of the open or precedent recipe.
 - Never change what a clone has checked out, discard a change, create or move a branch or tag other than that one branch, merge, set changes aside or publish another ref.
 - Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
+- Read the place of the TypeSafe API key from the line `typesafe_key:` of `config.yaml`, only for the Jev requests of the precedent files.
+- Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the "Write the precedent files" section of `lawman/skills/clerk/references/jobs.md` says, and no other.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
   - Read the issues, the pull requests, the writers and the last actor as the "Sync the tracker", "Sync the pull requests" and "Check the decider" sections of `tick.md` say.
@@ -58,6 +60,8 @@ A value that reaches a command or a comment passes its check first. A failed che
 | Branch | The `branch` of `case`, which is built from integers. Never read the branch name from the host's pull request. |
 | Reaction | The clerk reads none. The journal compares reactions with two constants. |
 | Old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Name of an `ask` line | The name the journal printed in the line, passed to the journal unchanged. |
+| Jev reply | The service reply goes to the journal unread. Never an argument. |
 | Ruling URL | The URL of the ruling comment, as the host returned it. It passes the journal's link check. |
 | Comments | Stdin or a quoted heredoc only. Never an argument. |
 
@@ -218,7 +222,7 @@ Three lines:
 ```
 Coverage: <tip>, issue #<n>.
 Written: <comment, pull request and issue URLs, or the closures and reopenings with their reasons, or none>.
-Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, any facts about evidence, the state of the clone>.
+Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, the jev none lines and their reasons, any facts about evidence, the state of the clone>.
 ```
 
 When the order is stale, the report is the one line of step 5.
