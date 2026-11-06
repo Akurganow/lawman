@@ -3,6 +3,7 @@ import { readdirSync } from "node:fs";
 import { join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
+import { consents, licensesAllowed } from "./consent";
 import {
 	CLAIM_TTL_MS,
 	EXIT,
@@ -39,7 +40,6 @@ const START_USAGE =
 	"tick start --role <r> --order <id>|tick start --role duty-desk";
 const CONTINUE_USAGE = "tick continue <id>";
 const CONSTITUTION = "LAWMAN.md";
-export const LICENSES = "licenses";
 const RESPONSE_UNIT = "response-unit";
 // the roles whose orders come from the cases and the pull requests
 const CASE_ROLES = [
@@ -115,21 +115,6 @@ export function sharedPages(blockers: string[]): string[] {
 	}
 }
 
-// the precinct's consent: the whole token <precinct>=yes in the line of the key
-export const consents = (
-	config: string | null,
-	precinct: string,
-	key: "license_precincts" | "typesafe_precincts",
-) =>
-	(configValue(config ?? "", key) ?? "")
-		.split(/\s+/)
-		.includes(`${precinct}=yes`);
-
-// Jev is allowed only by the exact value yes and the precinct's consent
-export const jevAllowed = (config: string | null, precinct: string) =>
-	configValue(config ?? "", "typesafe") === "yes" &&
-	consents(config, precinct, "typesafe_precincts");
-
 // The fetch and the constitution of one precinct. Null, with the cause in Blockers, when either fails.
 async function readPrecinct(
 	p: string,
@@ -172,15 +157,15 @@ async function readPrecinct(
 
 // the precinct place through the host operations, the others as the journal reads them
 const hostRead =
-	(p: string, reading: Reading, d: string, blockers: string[]): PlaceRead =>
+	(p: string, reading: Reading, d: string): PlaceRead =>
 	async (place) => {
-		if (place !== 1) return installationRead(d, place);
+		if (place !== "precinct") return installationRead(d, place);
 		const own = `.lawman/departments/${d}.md`;
-		if (!listed(reading.files, own)) return null;
+		if (!listed(reading.files, own)) return { kind: "none" };
 		const file = await operate(p, "file", call([reading.revision, own]));
-		if (file.text !== null) return file.text;
-		blockers.push(`${p}: department ${d} ${firstLine(file)}`);
-		return false;
+		return file.text === null
+			? { kind: "failed", why: firstLine(file) }
+			: { kind: "page", text: file.text };
 	};
 
 // The department that has waited longest and can take a lead, as the rotation walks it.
@@ -199,19 +184,23 @@ async function chooseDepartment(
 	const turns = withDb((db) => rotationOrder(db, p, PATROL, names));
 	let capped = false;
 	for (const { department: d, cap } of turns) {
-		const found = await departmentPage(d, hostRead(p, reading, d, blockers));
-		if (found === null) blockers.push(`${p}: department ${d} has no page`);
-		if (found === null || found === false) continue;
+		const found = await departmentPage(d, hostRead(p, reading, d));
+		if (found.kind === "failed")
+			blockers.push(`${p}: department ${d} ${found.why}`);
+		if (found.kind === "none")
+			blockers.push(`${p}: department ${d} has no page`);
+		if (found.kind !== "page") continue;
 		const { page, lint } = found;
 		if (lint.reasons.length > 0) {
 			blockers.push(`${p}: department ${d} page check failed`);
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped
-		const consented =
-			d !== LICENSES ||
-			page.place !== LAW_CLONE_PLACE ||
-			consents(config, p, "license_precincts");
+		const consented = licensesAllowed(
+			d,
+			page.place === LAW_CLONE_PLACE,
+			consents(config, p, "license_precincts"),
+		);
 		if (consented && (cap > 0 || lint.alarmCheck)) return d;
 		capped = true;
 	}

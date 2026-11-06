@@ -12,8 +12,9 @@ import { EXIT as STOP, visit } from "unist-util-visit";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
+import { consents, jevAllowed, licensesAllowed } from "./consent";
 import { EXIT, Fail, out, readStdin, withDb } from "./db";
-import { consents, jevAllowed, LICENSES, sharedPages } from "./duty-desk";
+import { sharedPages } from "./duty-desk";
 import { readConfig } from "./input-files";
 import {
 	DEPARTMENTS_THRESHOLD,
@@ -42,13 +43,13 @@ import {
 	departmentPage,
 	installationRead,
 	LAW_CLONE_PLACE,
+	type PageRead,
 	type PlaceRead,
 } from "./tick-start";
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
 const CONSTITUTION = "LAWMAN.md";
-export const UNCHANGED = "unchanged";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
 const NONE = "none";
@@ -208,20 +209,21 @@ class Folder {
 	}
 }
 
-// A file of the clone, read without following a link: null when absent,
-// false when the path is no plain file or cannot be read.
-function treeFile(tree: string, parts: string[]): string | null | false {
+// A file of the clone, read without following a link. A path that is no plain
+// file or folder, or that cannot be read, is a failed read.
+function treeFile(tree: string, parts: string[]): PageRead {
 	try {
 		let at = tree;
 		for (const [i, part] of parts.entries()) {
 			at = join(at, part);
 			const kind = kindAt(at);
-			if (kind === "absent") return null;
-			if (kind !== (i === parts.length - 1 ? "file" : "dir")) return false;
+			if (kind === "absent") return { kind: "none" };
+			if (kind !== (i === parts.length - 1 ? "file" : "dir"))
+				return { kind: "failed", why: `not a plain file: ${parts.join("/")}` };
 		}
-		return readFileSync(at, "utf8");
+		return { kind: "page", text: readFileSync(at, "utf8") };
 	} catch {
-		return false;
+		return { kind: "failed", why: `cannot read ${parts.join("/")}` };
 	}
 }
 
@@ -256,13 +258,15 @@ function classify({ text, bad }: Item): Line {
 
 type Ruling = { kind: string; date: string; issue: number; source: string };
 
-// departments gives the fallback list, asked only when a file is written
+// The printed lines, and the files that a new line created under its own name and
+// no later line of the call changed. departments gives the fallback list, asked
+// only when a file is written.
 function apply(
 	items: Item[],
 	ruling: Ruling,
 	folder: Folder,
 	departments: () => string[],
-): string[] {
+): { lines: string[]; fresh: string[] } {
 	const fields = (): Fields => ({
 		kind: ruling.kind,
 		departments: departments(),
@@ -272,30 +276,36 @@ function apply(
 	});
 	const reasons = new Map<string, string>();
 	const lines: string[] = [];
+	const fresh = new Set<string>();
 	const create = (base: string, text: string, reason?: string) => {
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
 		folder.set(name, buildPrecedent(fields(), text));
 		if (why !== undefined) reasons.set(name, why);
+		return name;
 	};
 	const keep = `${ruling.date}-issue-${ruling.issue}`;
 	for (const item of items) {
 		const line = classify(item);
 		if (line.type === "new") {
-			create(`${ruling.date}-${line.gist}`, line.rule);
+			const base = `${ruling.date}-${line.gist}`;
+			if (create(base, line.rule) === base) fresh.add(base);
 		} else if (line.type === "refine") {
+			fresh.delete(line.name);
 			const was = folder.current(line.name);
 			const split = was === null ? null : splitPrecedent(was);
 			if (split === null) create(keep, line.update, "refine-missing");
 			else if (split.body.trim() !== line.update)
 				folder.set(line.name, `${split.header}\n\n${line.update}\n`);
 		} else if (line.type === "cancel") {
+			if (line.name !== null) fresh.delete(line.name);
 			if (line.name !== null && folder.current(line.name) !== null)
 				folder.set(line.name, null);
 			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
 		} else if (line.type === "bad") create(keep, item.text, "bad-line");
 	}
-	for (const name of folder.commit()) {
+	const written = folder.commit();
+	for (const name of written) {
 		const reason = reasons.get(name);
 		lines.push(
 			folder.current(name) === null
@@ -303,7 +313,7 @@ function apply(
 				: ["entry", name, ...(reason === undefined ? [] : [reason])].join("\t"),
 		);
 	}
-	return lines;
+	return { lines, fresh: written.filter((name) => fresh.has(name)) };
 }
 
 type Stored = { stage: string; fields: string; raw: string };
@@ -396,14 +406,15 @@ function rulingOf(precinct: string, issue: number) {
 const itemsOfRuling = (text: string) =>
 	sectionNodes(text, SECTION).map((s) => itemsOf(text, s));
 
-// the department of the case, or none for a case without one
-function fallbackOf(db: Database, precinct: string, issue: number): string[] {
-	const d = caseStage(db, precinct, issue).department;
-	return d === NO_VALUE ? [] : [d];
-}
+// the fallback list of a case department: the department, or all for `-`
+export const fallbackList = (department: string) =>
+	department === NO_VALUE ? [] : [department];
+
+const fallbackOf = (db: Database, precinct: string, issue: number) =>
+	fallbackList(caseStage(db, precinct, issue).department);
 
 // The raw sources of the candidate departments. read gives the page of one
-// department at one place: its text, null for none, false for a failed read.
+// department at one place.
 export type Sources = {
 	constitution: string | null;
 	shared: string[];
@@ -425,10 +436,8 @@ export async function candidates(s: Sources): Promise<[string, string][]> {
 	for (const d of names) {
 		if (!fits("department", d)) continue;
 		const page = await departmentPage(d, s.read(d));
-		if (page === null || page === false || page.lint.reasons.length > 0)
-			continue;
-		// the law page of licenses serves only a precinct that consented
-		if (d === LICENSES && page.page.place === LAW_CLONE_PLACE && !s.licenses)
+		if (page.kind !== "page" || page.lint.reasons.length > 0) continue;
+		if (!licensesAllowed(d, page.page.place === LAW_CLONE_PLACE, s.licenses))
 			continue;
 		const mission = sectionWords(
 			await cleanCharacters(page.page.text),
@@ -439,19 +448,23 @@ export async function candidates(s: Sources): Promise<[string, string][]> {
 	return found;
 }
 
-// the clerk's sources: the tree for the precinct place, the installation for the others
+// The clerk's sources: the tree for the precinct place, the installation for the
+// others. A failed listing of the shared pages refuses, so no shared department is lost.
 function treeSources(
 	tree: string,
 	config: string | null,
 	precinct: string,
 ): Sources {
 	const constitution = treeFile(tree, [CONSTITUTION]);
+	const failed: string[] = [];
+	const shared = sharedPages(failed);
+	if (failed[0] !== undefined) throw new Refusal(failed[0]);
 	return {
-		constitution: typeof constitution === "string" ? constitution : null,
-		shared: sharedPages([]),
+		constitution: constitution.kind === "page" ? constitution.text : null,
+		shared,
 		licenses: consents(config, precinct, "license_precincts"),
 		read: (d) => async (place) =>
-			place === 1
+			place === "precinct"
 				? treeFile(tree, [".lawman", "departments", `${d}.md`])
 				: installationRead(d, place),
 	};
@@ -475,7 +488,17 @@ export async function departmentsState(
 	};
 }
 
-const refused = (why: string) => new Fail(EXIT.USAGE, why);
+// a gate that does not let a file through; any other error is a fault of the journal
+class Refusal extends Fail {
+	constructor(why: string) {
+		super(EXIT.USAGE, why);
+	}
+}
+
+const refusedOn = (e: unknown) => {
+	if (!(e instanceof Refusal)) throw e;
+	process.stderr.write(`journal: ${e.message}\n`);
+};
 
 type Admitted = {
 	text: string;
@@ -492,49 +515,50 @@ async function admitted(
 	tree: string,
 	name: string,
 ): Promise<Admitted> {
-	check("precedent", name);
+	if (!fits("precedent", name))
+		throw new Refusal(`invalid precedent: ${JSON.stringify(name)}`);
 	const ruling = rulingOf(precinct, issue);
-	const text = treeFile(tree, [".lawman", "precedents", `${name}.md`]);
-	if (typeof text !== "string")
-		throw refused(`no plain precedent file: ${JSON.stringify(name)}`);
-	const body = splitPrecedent(text)?.body.trim();
-	const line = itemsOfRuling(ruling.text)
+	const file = treeFile(tree, [".lawman", "precedents", `${name}.md`]);
+	if (file.kind !== "page")
+		throw new Refusal(`no plain precedent file: ${name}`);
+	const body = splitPrecedent(file.text)?.body.trim();
+	const admits = itemsOfRuling(ruling.text)
 		.flat()
 		.map(classify)
-		.find(
+		.some(
 			(l) =>
 				l.type === "new" &&
 				`${ruling.date}-${l.gist}` === name &&
 				l.rule === body,
 		);
-	if (line === undefined)
-		throw refused(`the file is not one new line of the ruling: ${name}`);
+	if (body === undefined || !admits)
+		throw new Refusal(`the file is not one new line of the ruling: ${name}`);
 	const config = readConfig();
 	if (!jevAllowed(config, precinct))
-		throw refused(`Jev is not allowed for ${precinct}`);
+		throw new Refusal(`Jev is not allowed for ${precinct}`);
 	const missions = await candidates(treeSources(tree, config, precinct));
-	if (missions.length === 0) throw refused("no candidate department");
-	return { text, rule: body ?? "", ruling, missions };
+	if (missions.length === 0) throw new Refusal("no candidate department");
+	return { text: file.text, rule: body, ruling, missions };
 }
 
 const sameList = (a: string[], b: string[]) =>
 	a.length === b.length && a.every((d, i) => d === b[i]);
 
-// The list to write, or unchanged. A department counts when its probability, read
-// with two decimals as the evidence prints it, reaches the threshold. All
-// candidates give the empty list, which also serves departments added later.
+// The list to write, or null for no change. A department counts when its
+// probability, read with two decimals as the evidence prints it, reaches the
+// threshold. All candidates give the empty list, which also serves departments
+// added later.
 export function decide(
-	names: string[],
-	values: number[],
+	scored: [department: string, probability: number][],
 	threshold: number,
 	current: string[] | null,
-): string[] | typeof UNCHANGED {
-	const chosen = names.filter(
-		(_, i) => Number(shown(values[i] ?? Number.NaN)) >= threshold,
-	);
-	if (chosen.length === 0) return UNCHANGED;
-	const list = chosen.length === names.length ? [] : chosen;
-	return current !== null && sameList(list, current) ? UNCHANGED : list;
+): string[] | null {
+	const chosen = scored
+		.filter(([, p]) => Number(shown(p)) >= threshold)
+		.map(([d]) => d);
+	if (chosen.length === 0) return null;
+	const list = chosen.length === scored.length ? [] : chosen;
+	return current !== null && sameList(list, current) ? null : list;
 }
 
 async function requestBody(
@@ -549,6 +573,8 @@ async function requestBody(
 	);
 }
 
+const UNCHANGED_LINE = "jev unchanged";
+
 // The narrowing step: it reads the reply once and writes only the departments of
 // a file that still holds the fallback list.
 async function narrowed(
@@ -562,33 +588,31 @@ async function narrowed(
 	let a: Admitted;
 	try {
 		a = await admitted(precinct, issue, tree, name);
-	} catch {
+	} catch (e) {
+		refusedOn(e);
 		return jevNone("brief");
 	}
 	const current = headerOf(a.text).departments;
 	const fallback = withDb((db) => fallbackOf(db, precinct, issue));
-	if (current === null || !sameList(current, fallback))
-		return `jev ${UNCHANGED}`;
+	if (current === null || !sameList(current, fallback)) return UNCHANGED_LINE;
 	const reply = replyOf(input);
 	if ("none" in reply) return reply.none;
-	const names = a.missions.map(([d]) => d);
-	let answer: { model: string; values: number[] };
+	let answer: ReturnType<typeof departmentsAnswer>;
 	try {
-		answer = departmentsAnswer(reply.body, names);
+		answer = departmentsAnswer(
+			reply.body,
+			a.missions.map(([d]) => d),
+		);
 	} catch {
 		return jevNone("bad-answer");
 	}
-	const list = decide(names, answer.values, DEPARTMENTS_THRESHOLD, current);
-	if (list === UNCHANGED) return `jev ${UNCHANGED}`;
+	const list = decide(answer.scored, DEPARTMENTS_THRESHOLD, current);
+	if (list === null) return UNCHANGED_LINE;
 	const text = withDepartments(a.text, list);
 	if (text === null) return jevNone("brief");
-	try {
-		const folder = new Folder(tree);
-		folder.set(name, text);
-		folder.commit();
-	} catch {
-		return jevNone("brief");
-	}
+	const folder = new Folder(tree);
+	folder.set(name, text);
+	folder.commit();
 	return `jev model=${answer.model} departments=${departmentsField(list)}`;
 }
 
@@ -599,40 +623,41 @@ export async function precedentCommand(args: string[]): Promise<number> {
 		"answer",
 	]);
 	const modes = [opt.source, opt.request, opt.answer];
-	if (modes.filter((m) => m !== undefined).length !== 1) throw usage(USAGE);
+	const only = (mode: string | undefined): mode is string =>
+		mode !== undefined && modes.filter((m) => m !== undefined).length === 1;
 	const precinct = check("precinct", pos[0]);
 	const issue = Number(check("number", opt.issue));
-	if (opt.request !== undefined) {
+	if (only(opt.request)) {
 		process.stdout.write(
 			await requestBody(precinct, issue, opt.tree, opt.request),
 		);
 		return EXIT.OK;
 	}
-	if (opt.answer !== undefined) {
+	if (only(opt.answer)) {
 		out(await narrowed(precinct, issue, opt.tree, opt.answer, readStdin()));
 		return EXIT.OK;
 	}
-	const source = checkLink(opt.source ?? "");
+	if (!only(opt.source)) throw usage(USAGE);
+	const source = checkLink(opt.source);
 	const { kind, date, text } = rulingOf(precinct, issue);
 	const sections = itemsOfRuling(text);
 	const folder = new Folder(opt.tree);
-	const lines = summary(
-		sections,
-		apply(sections.flat(), { kind, date, issue, source }, folder, () =>
-			withDb((db) => fallbackOf(db, precinct, issue)),
-		),
+	const { lines, fresh } = apply(
+		sections.flat(),
+		{ kind, date, issue, source },
+		folder,
+		() => withDb((db) => fallbackOf(db, precinct, issue)),
 	);
-	for (const line of lines) out(line);
-	// a request goes only for a file this call wrote from a new line as it stands
-	for (const line of lines) {
-		const [type, name, reason] = line.split("\t");
-		if (type !== "entry" || name === undefined || reason !== undefined)
-			continue;
+	for (const line of summary(sections, lines)) out(line);
+	// a precinct without Jev is a normal state: it asks nothing and says nothing
+	if (!jevAllowed(readConfig(), precinct)) return EXIT.OK;
+	for (const name of fresh)
 		try {
 			await admitted(precinct, issue, opt.tree, name);
 			out("ask", name);
-		} catch {}
-	}
+		} catch (e) {
+			refusedOn(e);
+		}
 	return EXIT.OK;
 }
 

@@ -21,11 +21,11 @@ import {
 	candidates,
 	decide,
 	departmentsState,
+	fallbackList,
 	type Sources,
 	sectionWords,
-	UNCHANGED,
 } from "./precedent";
-import { headerOf, parsed, splitPrecedent } from "./precedent-file";
+import { headerOf, splitPrecedent } from "./precedent-file";
 import { cache, cacheWith } from "./precedent-test-fixture";
 import {
 	acquittal,
@@ -40,7 +40,7 @@ import {
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
-import { departmentPage } from "./tick-start";
+import { departmentPage, type PageRead } from "./tick-start";
 import {
 	CONSTITUTION,
 	leadIn,
@@ -212,11 +212,9 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 			shared: ["alpha", "beta"],
 			licenses: false,
 			read: (d) => async (place) =>
-				place === 1 && d === "gamma"
-					? page("gamma")
-					: place === 3 && d !== "gamma"
-						? page(d)
-						: null,
+				place === (d === "gamma" ? "precinct" : "law")
+					? { kind: "page", text: page(d) }
+					: { kind: "none" },
 		};
 		const body = departmentsBody(
 			await departmentsState(
@@ -249,11 +247,17 @@ test("the count of checked cases names both parts", () => {
 
 describe("the candidates", () => {
 	const PAGE_AT: Record<string, string | false> = {};
+	const readOf = (v: string | false | undefined): PageRead =>
+		v === undefined
+			? { kind: "none" }
+			: v === false
+				? { kind: "failed", why: "unreadable" }
+				: { kind: "page", text: v };
 	const sources = (over: Partial<Sources> = {}): Sources => ({
 		constitution: constitution("- gamma: judged by none"),
 		shared: ["alpha", "beta"],
 		licenses: false,
-		read: (d) => async (place) => PAGE_AT[`${place}:${d}`] ?? null,
+		read: (d) => async (place) => readOf(PAGE_AT[`${place}:${d}`]),
 		...over,
 	});
 	const names = async (over: Partial<Sources> = {}) =>
@@ -261,9 +265,9 @@ describe("the candidates", () => {
 
 	beforeEach(() => {
 		for (const k of Object.keys(PAGE_AT)) delete PAGE_AT[k];
-		PAGE_AT["3:alpha"] = page("alpha");
-		PAGE_AT["3:beta"] = page("beta");
-		PAGE_AT["1:gamma"] = page("gamma");
+		PAGE_AT["law:alpha"] = page("alpha");
+		PAGE_AT["law:beta"] = page("beta");
+		PAGE_AT["precinct:gamma"] = page("gamma");
 	});
 
 	test("the shared pages first, then the constitution, a repeat at its first place", async () => {
@@ -284,7 +288,7 @@ describe("the candidates", () => {
 	});
 
 	test("licenses from the law needs the consent, from the precinct it does not", async () => {
-		PAGE_AT["3:licenses"] = page("licenses");
+		PAGE_AT["law:licenses"] = page("licenses");
 		const withLicenses = { shared: ["alpha", "beta", "licenses"] };
 		expect(await names(withLicenses)).toEqual(["alpha", "beta", "gamma"]);
 		expect(await names({ ...withLicenses, licenses: true })).toEqual([
@@ -293,7 +297,7 @@ describe("the candidates", () => {
 			"licenses",
 			"gamma",
 		]);
-		PAGE_AT["1:licenses"] = page("licenses");
+		PAGE_AT["precinct:licenses"] = page("licenses");
 		expect(await names(withLicenses)).toEqual([
 			"alpha",
 			"beta",
@@ -303,14 +307,20 @@ describe("the candidates", () => {
 	});
 
 	test.each([
-		["an unreadable page", () => (PAGE_AT["1:gamma"] = false)],
-		["a page that fails its check", () => (PAGE_AT["1:gamma"] = "no page")],
+		["an unreadable page", () => (PAGE_AT["precinct:gamma"] = false)],
+		[
+			"a page that fails its check",
+			() => (PAGE_AT["precinct:gamma"] = "no page"),
+		],
 		[
 			"a page with an empty Mission",
-			() => (PAGE_AT["1:gamma"] = page("gamma", "")),
+			() => (PAGE_AT["precinct:gamma"] = page("gamma", "")),
 		],
-		["a Mission of none", () => (PAGE_AT["1:gamma"] = page("gamma", "none"))],
-		["no page at any place", () => delete PAGE_AT["1:gamma"]],
+		[
+			"a Mission of none",
+			() => (PAGE_AT["precinct:gamma"] = page("gamma", "none")),
+		],
+		["no page at any place", () => delete PAGE_AT["precinct:gamma"]],
 	])("%s gives no candidate", async (_n, change) => {
 		change();
 		expect(await names()).toEqual(["alpha", "beta"]);
@@ -329,16 +339,21 @@ describe("the candidates", () => {
 	});
 
 	test("the first place that has the page wins, as the duty desk reads it", async () => {
-		PAGE_AT["2:gamma"] = page("gamma", "The installation page.");
-		PAGE_AT["3:gamma"] = page("gamma", "The law page.");
+		PAGE_AT["installation:gamma"] = page("gamma", "The installation page.");
+		PAGE_AT["law:gamma"] = page("gamma", "The law page.");
 		const s = sources();
 		expect(await candidates(s)).toContainEqual(["gamma", missionOf("gamma")]);
 		const found = await departmentPage("gamma", s.read("gamma"));
-		expect(found !== null && found !== false && found.page.place).toBe(1);
-		delete PAGE_AT["1:gamma"];
+		expect(found.kind === "page" && found.page.place).toBe(1);
+		delete PAGE_AT["precinct:gamma"];
 		expect(await candidates(sources())).toContainEqual([
 			"gamma",
 			"The installation page.",
+		]);
+		delete PAGE_AT["installation:gamma"];
+		expect(await candidates(sources())).toContainEqual([
+			"gamma",
+			"The law page.",
 		]);
 	});
 
@@ -454,7 +469,17 @@ describe("the input and a hostile sample", () => {
 	});
 
 	test("hidden characters and secrets leave every text field of the body", async () => {
-		const mission = `Find ${HIDDEN}defects ${TOKEN}. Test: one?`;
+		const mission = [
+			`Find ${HIDDEN}defects ${TOKEN}. Test: one?`,
+			"",
+			"```",
+			"FENCED-MISSION",
+			"```",
+			"",
+			"<div>BLOCK-MISSION</div>",
+			"",
+			"> a quoted line",
+		].join("\n");
 		const s = await departmentsState(
 			`A rule ${HIDDEN}with ${TOKEN}.`,
 			HOSTILE,
@@ -464,7 +489,9 @@ describe("the input and a hostile sample", () => {
 				shared: [],
 				licenses: false,
 				read: () => async (place) =>
-					place === 1 ? page("alpha", mission) : null,
+					place === "precinct"
+						? { kind: "page", text: page("alpha", mission) }
+						: { kind: "none" },
 			}),
 		);
 		const body = departmentsBody(s);
@@ -478,7 +505,7 @@ describe("the input and a hostile sample", () => {
 		];
 		for (const t of texts) expect(stripInvisible(t)).toBe(t);
 		expect(fields.departments.alpha).toBe(
-			"Find defects REMOVED GITHUB SECRET. Test: one?",
+			"Find defects REMOVED GITHUB SECRET. Test: one?\n\n> a quoted line",
 		);
 	});
 
@@ -561,30 +588,39 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 
 describe("the decision", () => {
 	const t = DEPARTMENTS_THRESHOLD;
+	const scored = (names: string[], values: number[]) =>
+		names.map((d, i): [string, number] => [d, values[i] ?? Number.NaN]);
 
 	test("the value with two decimals meets the threshold", () => {
 		expect(
-			decide(["a", "b", "c", "d"], [t, LOW, HIGH, t - 0.004], t, ["core"]),
+			decide(scored(["a", "b", "c", "d"], [t, LOW, HIGH, t - 0.004]), t, [
+				"core",
+			]),
 		).toEqual(["a", "c", "d"]);
 	});
 
 	test("every candidate gives the empty list", () => {
-		expect(decide(["a", "b"], [HIGH, t], t, ["core"])).toEqual([]);
+		expect(decide(scored(["a", "b"], [HIGH, t]), t, ["core"])).toEqual([]);
 	});
 
 	test("no candidate gives unchanged, so the fallback stays", () => {
-		expect(decide(["a", "b"], [LOW, 0], t, ["core"])).toBe(UNCHANGED);
+		expect(decide(scored(["a", "b"], [LOW, 0]), t, ["core"])).toBeNull();
 	});
 
 	test("a list equal to the header gives unchanged", () => {
-		expect(decide(["a", "b"], [HIGH, LOW], t, ["a"])).toBe(UNCHANGED);
+		expect(decide(scored(["a", "b"], [HIGH, LOW]), t, ["a"])).toBeNull();
 	});
 
 	test("the list keeps the candidate order", () => {
-		expect(decide(["c", "a", "b"], [HIGH, HIGH, LOW], t, [])).toEqual([
+		expect(decide(scored(["c", "a", "b"], [HIGH, HIGH, LOW]), t, [])).toEqual([
 			"c",
 			"a",
 		]);
+	});
+
+	test("the fallback list is the case department, or all for -", () => {
+		expect(fallbackList("core")).toEqual(["core"]);
+		expect(fallbackList("-")).toEqual([]);
 	});
 
 	test("a case department outside the candidates keeps it when none reaches", async () => {
@@ -622,15 +658,47 @@ describe("the gate", () => {
 		},
 	);
 
-	test("no candidate: the fallback and no request line", async () => {
-		rmSync(references("departments"), { recursive: true });
-		rmSync(join(tree, ".lawman", "departments"), { recursive: true });
-		const r = await written();
-		expect(asks(r)).toEqual([]);
-		expect(departments()).toEqual(["core"]);
-		const built = await inprocAsync(BASE, select("--request", NAME));
-		expect([built.code === EXIT.OK, built.out]).toEqual([false, ""]);
-	});
+	test.each([
+		[
+			"no candidate",
+			() => {
+				for (const d of ["alpha", "beta"])
+					rmSync(references("departments", `${d}.md`));
+				rmSync(join(tree, ".lawman", "departments"), { recursive: true });
+			},
+			"no candidate department",
+		],
+		[
+			"a constitution that fails its check",
+			() => put(tree, "LAWMAN.md", "no constitution"),
+			"no candidate department",
+		],
+		[
+			"a constitution that cannot be read",
+			() => {
+				rmSync(join(tree, "LAWMAN.md"));
+				mkdirSync(join(tree, "LAWMAN.md"));
+			},
+			"no candidate department",
+		],
+		[
+			"a failed listing of the shared pages",
+			() => rmSync(references("departments"), { recursive: true }),
+			"shared department pages: the listing failed",
+		],
+	])(
+		"%s: the fallback, no request line and the cause on stderr",
+		async (_n, change, cause) => {
+			change();
+			await cache([RULING]);
+			const r = await record();
+			expect([r.code, linesOf(r)]).toEqual([EXIT.OK, [`entry\t${NAME}`]]);
+			expect(r.err).toBe(`journal: ${cause}\n`);
+			expect(departments()).toEqual(["core"]);
+			const built = await inprocAsync(BASE, select("--request", NAME));
+			expect([built.code === EXIT.OK, built.out]).toEqual([false, ""]);
+		},
+	);
 
 	test.each([
 		[
@@ -706,10 +774,11 @@ describe("the narrowing step", () => {
 			"jev model=jev-1.14.0 departments=alpha\n",
 		);
 		const after = text();
-		expect({ ...parsed(after), departments: null }).toEqual({
-			...parsed(before),
+		const fields = (t: string) => ({
+			...(Bun.YAML.parse(t.split("\n---\n")[0]?.slice(4) ?? "") as object),
 			departments: null,
 		});
+		expect(fields(after)).toEqual(fields(before));
 		expect(splitPrecedent(after)?.body).toBe(splitPrecedent(before)?.body);
 		expect(departments()).toEqual(["alpha"]);
 	});
@@ -733,7 +802,21 @@ describe("the narrowing step", () => {
 		await written();
 		config(ALLOWED.replace("typesafe: yes", "typesafe: no"));
 		const before = text();
-		expect((await answer(GOOD)).out).toBe("jev none reason=brief\n");
+		expect(await answer(GOOD)).toEqual({
+			code: EXIT.OK,
+			out: "jev none reason=brief\n",
+			err: "journal: Jev is not allowed for main\n",
+		});
+		expect(text()).toBe(before);
+	});
+
+	test("a failed case lookup is a fault: no jev line and a non-zero exit", async () => {
+		await written();
+		seed((db) => db.run("DELETE FROM issues"));
+		const before = text();
+		const r = await answer(GOOD);
+		expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
+		expect(r.err).toContain("unknown issue main #1");
 		expect(text()).toBe(before);
 	});
 
@@ -847,6 +930,30 @@ describe("the request lines of the write", () => {
 		],
 	])("%s", async (_n, lines, expected) => {
 		expect(await recorded(...lines)).toEqual(expected);
+	});
+
+	test("a new line and a refine of the file it names on disk ask nothing", async () => {
+		put(
+			tree,
+			`.lawman/precedents/${NAME}.md`,
+			`---\nkind: protects\ndepartments: [tests]\n---\n\nOld.\n`,
+		);
+		const out = await recorded(
+			`- new empty-doubles: ${RULE}`,
+			`- refine ${NAME}: ${RULE}`,
+		);
+		expect(out).toEqual([`entry\t${NAME}-2\tname-taken`, `entry\t${NAME}`]);
+		expect(departments()).toEqual(["tests"]);
+	});
+
+	test("the write form through the cli prints the entry and the request line", async () => {
+		await cache([RULING]);
+		const r = cli(select("--source", SOURCE), CLI_ENV());
+		expect(r).toEqual({
+			code: EXIT.OK,
+			out: `entry\t${NAME}\nask\t${NAME}\n`,
+			err: "",
+		});
 	});
 
 	test("a repeated call writes a copy and asks for neither file", async () => {

@@ -127,10 +127,6 @@ After an update, the tick that synced the law prints one line, `Licenses: run th
 
 Roles read no network. Four exceptions exist: the catalog check of the patrol, the record read of the investigation, the license reading of both, and TypeSafe Jev for the court and the clerk. All are off until you say yes.
 
-- The court sends its brief about a conviction to TypeSafe at `api.typesafe.ai`. The brief states facts about the code in the court's own words.
-- The clerk sends one request to the same service for each new precedent file. It holds the rule of the precedent, the court's words from the Verdict and Grounds sections of the ruling, and whether the ruling convicts or acquits. It also holds the names and the Mission sections of the candidate departments, the precinct's own pages included.
-- Neither sends the body of an issue.
-
 - The patrol sends the names and versions of the pinned packages of a precinct, with their ecosystems, to the OSV service at `api.osv.dev`. It does so for a private repository too. The paths of your tree do not leave.
 - The investigation sends one record identifier to the same service for a lead of the catalog check.
 - The service sees the address of the installation that sends.
@@ -138,6 +134,8 @@ Roles read no network. Four exceptions exist: the catalog check of the patrol, t
 - Lawman states nothing about how the service keeps what it receives.
 - A license source gets only what the file of its row names, at every visit, and sees the address of the installation. The patrol and the investigation read a license source only when three things hold. The precinct said yes in `license_precincts`. Its entry under `## License reading` agrees the row. Its section `## Licenses` has no `sources` line, or has one that names the row and is not `none`. A `sources` value outside its form reads as `none`. The assembly sends nothing to a source. The patrol finds the way to read it and checks it on its first request of each row in a visit. A row that fails the check shows in Coverage as `unread` or `status-<code>`. Its User-Agent names `lawman`, `release_tag` and `release_repo`, and never the repository of the precinct.
 - An expert may receive a license identifier or a quote of a clause. It never receives a package name or a path.
+- The court sends its brief about a conviction to TypeSafe at `api.typesafe.ai`. The brief states facts about the code in the court's own words.
+- The clerk sends one request to the same service for each new precedent file. It holds the rule of the precedent, the court's words from the Verdict and Grounds sections of the ruling, and whether the ruling convicts or acquits. It also holds the names and the Mission sections of the candidate departments, the precinct's own pages included. Neither the court nor the clerk sends the body of an issue.
 
 The rows, each with the file that says what it receives:
 

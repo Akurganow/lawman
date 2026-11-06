@@ -20,7 +20,7 @@ import { intakeStage } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
-import { lintPage, type PageKind, type PageLint, pageLines } from "./lint";
+import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
 import { departmentsField, headerOf, serves } from "./precedent-file";
@@ -311,43 +311,57 @@ async function precedentBlocks(
 	else if (shown === 0) o.line("precedents none");
 }
 
-// the place of the law clone in the "Resolve the department page" section
-export const LAW_CLONE_PLACE = 3;
-
-const installationPlaces = (d: string) => [
-	join(commandFolder(), "departments", `${d}.md`),
-	join(commandFolder(), REFERENCES, "departments", `${d}.md`),
-];
-
 // the places of the "Resolve the department page" section, in its order
-export function installationPage(d: string): Page | null {
-	for (const [i, path] of installationPlaces(d).entries()) {
-		const text = readText(path);
-		if (text !== null) return { text, place: i + 2 };
-	}
-	return null;
+const PLACES = ["precinct", "installation", "law"] as const;
+type Place = (typeof PLACES)[number];
+// the number of a place, as a tick prints it
+const placeNumber = (place: Place) => PLACES.indexOf(place) + 1;
+export const LAW_CLONE_PLACE = placeNumber("law");
+
+const INSTALLATION_PATHS = {
+	installation: (d: string) => join(commandFolder(), "departments", `${d}.md`),
+	law: (d: string) =>
+		join(commandFolder(), REFERENCES, "departments", `${d}.md`),
+};
+
+// A read of a page at one place. A failed read stops the walk, and why names its cause.
+export type PageRead =
+	| { kind: "page"; text: string }
+	| { kind: "none" }
+	| { kind: "failed"; why: string };
+export type PlaceRead = (place: Place) => Promise<PageRead>;
+
+// an installation file that cannot be read counts as no page there
+export function installationRead(
+	d: string,
+	place: keyof typeof INSTALLATION_PATHS,
+): PageRead {
+	const text = readText(INSTALLATION_PATHS[place](d));
+	return text === null ? { kind: "none" } : { kind: "page", text };
 }
 
-// the text of a page at one place, null when the place has none, false when it cannot be read
-export type PlaceRead = (place: number) => Promise<string | null | false>;
-
-// the installation places as the journal reads them; a failed read means no page there
-export const installationRead = (d: string, place: number) =>
-	readText(installationPlaces(d)[place - 2] ?? "");
-
-// The department page by the places of the "Resolve the department page" section,
-// with its page check. A failed read ends the walk.
-export async function departmentPage(
-	d: string,
+// The page of the first place that has one, or the failed read that stopped the walk.
+async function pageAt(
 	read: PlaceRead,
-): Promise<{ page: Page; lint: PageLint } | false | null> {
-	for (const place of [1, 2, LAW_CLONE_PLACE]) {
-		const text = await read(place);
-		if (text === false) return false;
-		if (text !== null)
-			return { page: { text, place }, lint: lintPage("department", text, d) };
+): Promise<{ kind: "page"; page: Page } | Exclude<PageRead, { kind: "page" }>> {
+	for (const place of PLACES) {
+		const r = await read(place);
+		if (r.kind === "failed") return r;
+		if (r.kind === "page")
+			return {
+				kind: "page",
+				page: { text: r.text, place: placeNumber(place) },
+			};
 	}
-	return null;
+	return { kind: "none" };
+}
+
+// The department page with its page check, as the duty desk and the clerk read it.
+export async function departmentPage(d: string, read: PlaceRead) {
+	const found = await pageAt(read);
+	return found.kind === "page"
+		? { ...found, lint: lintPage("department", found.page.text, d) }
+		: found;
 }
 
 export async function tickStart(args: string[]): Promise<number> {
@@ -498,15 +512,19 @@ export async function tickStart(args: string[]): Promise<number> {
 				id,
 			);
 		const own = `.lawman/departments/${d}.md`;
-		let page: Page | null = null;
-		let self = files === null;
-		if (files !== null && listed(files, own)) {
-			const file = await operate(p, "file", call([revision, own]));
-			if (file.text === null) {
-				o.add(...file.blocks);
-				self = true;
-			} else page = { text: file.text, place: 1 };
-		} else if (files !== null) page = installationPage(d);
+		const found =
+			files === null
+				? null
+				: await pageAt(async (place): Promise<PageRead> => {
+						if (place !== "precinct") return installationRead(d, place);
+						if (!listed(files, own)) return { kind: "none" };
+						const file = await operate(p, "file", call([revision, own]));
+						if (file.text !== null) return { kind: "page", text: file.text };
+						o.add(...file.blocks);
+						return { kind: "failed", why: "the read failed" };
+					});
+		const page = found?.kind === "page" ? found.page : null;
+		const self = found === null || found.kind === "failed";
 		if (page !== null) o.line(`department ${d} place=${page.place}`);
 		const lint =
 			page === null ? null : await lintedPage(o, "department", page, d);

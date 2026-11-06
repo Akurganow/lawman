@@ -28,7 +28,7 @@ export function splitPrecedent(
 	};
 }
 
-export function parsed(text: string): Record<string, unknown> | null {
+function parsed(text: string): Record<string, unknown> | null {
 	const lines = text.split("\n").map(stripCr);
 	const end = readFrontmatter(lines)?.end;
 	if (end === undefined) return null;

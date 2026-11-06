@@ -85,7 +85,7 @@ Then ask Jev once for each `ask` line, in order. `<name>` is the name that the l
 4. The answer prints one line that starts with `jev`:
    - `jev model=<model> departments=<a,b|all>`: the journal wrote these departments into the file.
    - `jev unchanged`: the file keeps its departments.
-   - `jev none reason=<reason>`: the file keeps its departments. The reason is `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`. Record the line in Blockers.
+   - `jev none reason=<reason>`: the file keeps its departments. The reason is, for example, `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`. Other reasons may appear. Record the line in Blockers.
 
 Rules for Jev:
 

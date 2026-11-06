@@ -13,7 +13,7 @@ import { join } from "node:path";
 import { fits } from "./args";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
-import { config } from "./input-test-fixture";
+import { config, references } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
 import { cache } from "./precedent-test-fixture";
@@ -29,6 +29,7 @@ import {
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
+import { CONSTITUTION, departmentPage } from "./tick-start-test-fixture";
 
 tempDb();
 
@@ -311,14 +312,23 @@ describe("precedent: no precedent is lost", () => {
 
 describe("precedent: refine and cancel", () => {
 	const OWNED =
-		"---\r\nkind: protects\r\ndepartments: [core]\r\nowner: kept\r\n---\r\n\r\nOld rule.\r\n";
+		"---\r\nkind: protects\r\ndepartments: [tests]\r\nowner: kept\r\n---\r\n\r\nOld rule.\r\n";
 
-	test("a refine changes only the text after the header", async () => {
+	test("a refine changes only the text after the header and asks nothing", async () => {
+		config(
+			`trusted_login: ${TRUSTED}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
+		);
+		mkdirSync(references("departments"), { recursive: true });
+		writeFileSync(
+			references("departments", "tests.md"),
+			departmentPage("tests"),
+		);
+		writeFileSync(join(tree, "LAWMAN.md"), CONSTITUTION);
 		put("owned", OWNED);
 		const out = await written(precedentSection("- refine owned: New rule."));
 		expect(out).toEqual(["entry\towned"]);
 		expect(readFileSync(file("owned"), "utf8")).toBe(
-			"---\r\nkind: protects\r\ndepartments: [core]\r\nowner: kept\r\n---\r\n\nNew rule.\n",
+			"---\r\nkind: protects\r\ndepartments: [tests]\r\nowner: kept\r\n---\r\n\nNew rule.\n",
 		);
 	});
 

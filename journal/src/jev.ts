@@ -138,7 +138,7 @@ export const DEPARTMENTS_THRESHOLD = 0.5;
 // the labelled cases the question and the threshold were checked on
 export const DEPARTMENTS_CHECKED = { tuning: 0, heldOut: 0 };
 
-export const departmentId = (name: string) => name.replaceAll("-", "_");
+const departmentId = (name: string) => name.replaceAll("-", "_");
 
 const departmentQuestion = (id: string) =>
 	noul(
@@ -267,13 +267,14 @@ function evidence(name: string, kind: Kind, body: string): string {
 export function departmentsAnswer(
 	body: string,
 	names: string[],
-): { model: string; values: number[] } {
+): { model: string; scored: [string, number][] } {
 	const root = JSON.parse(body);
 	return {
 		model: modelOf(root),
-		values: names.map((n) =>
+		scored: names.map((n): [string, number] => [
+			n,
 			finite(root, ["answers", departmentId(n), "noul"]),
-		),
+		]),
 	};
 }
 
