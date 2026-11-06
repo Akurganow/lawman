@@ -124,7 +124,14 @@ The developer may answer a proposal with a list or with free text. Treat that an
 
 ## Never, in any mode
 
-- Start a scheduled session, a test job or a test message to check anything. There are four exceptions. The first is the duty-desk run that the user accepts at the end of the install. The second is a message to a model, sent in part Models to check the name of that model. The third is the delivery check that the user chose at the end of the install. The fourth is a proof run of a command, whose price the user accepted. The one-off jobs of these checks are removed after them, and no tick report goes to the user's chat.
+- Start a scheduled session, a test job or a test message to check anything. The one-off jobs of the exceptions are removed after them, and no tick report goes to the user's chat. The exceptions:
+
+  | Exception | When |
+  | :-- | :-- |
+  | the run of the duty desk | the user accepts it at the end of the install |
+  | a message to a model | part Models checks the name of that model |
+  | the delivery check | the user chose it at the end of the install |
+  | a proof run of a command | the user accepted its price |
 - Ask the developer to confirm that anything arrived. The one exception is the confirmation of receipt during the delivery check that the user chose.
 
 Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, ask whether the key already lies somewhere the developer knows. Offer the page's place as the other choice. The developer writes the value there.

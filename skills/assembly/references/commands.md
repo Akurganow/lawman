@@ -55,7 +55,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 - A failure blocks the write in both environments.
 - Without consent, or without a way on the harness page, the command is not proven in the tick environment. The approval of the proposal confirms that gap.
 
-**Consent to paid runs.** A run in the tick environment is paid when the harness needs a model for it. Ask once for each pass, before the first such run, in the words: every such run is a short paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass.
+**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary: the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run, in the words: every such run is a short paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
@@ -81,7 +81,7 @@ Show one row for each operation: how it runs, its source (found, current, propos
 The developer chooses the method together with the assembly, on the Host screen, where the verifier is found. The list is open. For example:
 
 - Verify the signature with a verifier that was found on this machine (recommended). Name the found verifiers.
-- Install a verifier, when none fits.
+- Install a verifier, when none fits. Offer choices that fit this machine, and Apply installs the chosen one.
 - Decline the signature.
 
 Before the question, say the two facts of a refusal, in the developer's language.
@@ -89,9 +89,11 @@ Before the question, say the two facts of a refusal, in the developer's language
 1. Only the checksum from the same release remains.
 2. That checksum cannot tell a replaced release as a whole. Whoever replaces the release replaces the sum too, so the sum does not prove where the release came from.
 
-The label of the choice names the consequence in one phrase. The right to decline is the developer's.
+The label of the choice names the consequence in one phrase. The right to decline is the developer's. After a refusal, say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing.
 
-With a signature chosen, `verify` is needed, because nothing else can prove the method. "Leave empty" is then not offered. A refusal of the signature removes an existing `verify` file.
+With a signature chosen, `verify` is needed, because nothing else can prove the method. "Leave empty" is then not offered. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
+
+The summary of a refusal says the two facts above in plain words and names both ways to turn the check on later: the assembly offers it at each start while the notes record the refusal, and the menu item "Host" runs part Host again.
 
 The proposal shows the signer that the method checks: `<release_repo>` and its release workflow. The root of trust comes from the signature system, never from the release.
 
@@ -101,15 +103,16 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 
 | Case | Arguments | Expected |
 | :-- | :-- | :-- |
-| right | the asset, its provenance file, `release_repo`, the commit of the law folder | exit 0 |
-| swapped binary | a copy of the asset with one byte changed, and the right provenance file | not 0 |
-| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the one the developer named when choosing the method, else the repository of the chosen verifier | not 0 |
-| right signature, other commit | the right asset and file, and another commit in the argument | not 0 |
+| right | the asset, its provenance file, `release_repo`, the commit of the law folder | `verify passed` |
+| swapped binary | a copy of the asset with one byte changed, and the right provenance file | `verify failed reason=exit` |
+| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the one the developer named when choosing the method, else the repository of the chosen verifier | `verify failed reason=exit` |
+| right signature, other commit | the right asset and file, and another commit in the argument | `verify failed reason=exit` |
 
 - The files lie in `runs/` of the throwaway base. The real files lie in the folder that `release` built. On the first install, copy the downloaded files there from `runs/install-journal`.
 - When `release` is empty or its folder is missing, fetch the real files from `release_repo` by the tag, as the first install does.
 - The copy with a changed byte lies in a neighbouring folder of the same `runs/`, under the same file name. The platform gives the name of the asset.
-- Any other outcome is a proof failure. `verify` is not written, and the developer chooses another method or declines the signature.
+- Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure, because the verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
+- On a proof failure `verify` is not written, and the developer chooses another method or declines the signature.
 - Never run the copy with a changed byte.
 
 ### Prove a refused signature
@@ -175,12 +178,9 @@ A command of a precinct carries the facts that it reads itself. Examples are the
 - When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to move it in the same call of approval.
 - `law-sync` moves nothing.
 - The keys `typesafe` and `typesafe_key` lie in `config.yaml`, which belongs to the whole installation. They stay there.
-- A command file never holds the value of a key or a token.
 
 ## Leave empty
 
 An operation with no command stays a step that the role does itself.
 
 - "Leave empty" over an existing command removes the file at Apply. The approval names the file.
-- A screen whose commands already exist offers "Keep as is" first.
-- With a signature chosen, `verify` is never left empty. A refusal of the signature removes the `verify` file, because the journal runs `verify` always.

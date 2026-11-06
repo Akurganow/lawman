@@ -28,7 +28,7 @@ Phase 1 runs as follows.
 2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
 3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, the entry files and each job with its model when known. It names each job whose mode changes, with its change.
 
-Ask the consent to paid proof runs among the questions that come before the approval, as "Prove a command" in `references/commands.md` says. Ask it only when the harness page gives a way to reach the tick environment.
+Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
 Before the approval, write only the installation folder, the plugin link and the repository clones. The commands of the installation are proven inside Apply, after the approval. Their proposal rows read "will be proven at Apply". After the approval, Apply writes in the order of the section "Apply".
 
@@ -98,7 +98,7 @@ Part Host keeps every line of the section `## License reading` of an existing `h
 
 Part Host does not change the account. A run of part Host again serves a change of tool.
 
-Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. When no tool fits, ask whether the user wants to install one, and offer choices that fit this machine. Apply installs the chosen tool. The user may decline. Before the question, say the two facts of a refusal, as "Choose the method of verification" in `references/commands.md` gives them. Then say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing, and record the refusal in the notes.
+Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. The choice of the method, the facts of a refusal and what a refusal records follow "Choose the method of verification" in `references/commands.md`.
 
 Say in plain text that a written command must not send the host a request beyond the host's limits. "Host limits" in `references/commands.md` gives them.
 
@@ -151,11 +151,9 @@ This screen holds `release`, `verify` and `law-version`. Follow "Commands of the
 
 Finds: which of the three files exist in `shared/`, and how this machine does each operation.
 
-Proposes: one row for each operation, with how it runs, its source and its proof state. A new or changed command reads "will be proven at Apply". With a signature chosen, the `verify` row names the signer that the method checks.
+Proposes: one row for each operation, with how it runs, its source and its proof state. A new or changed command reads "will be proven at Apply".
 
-Decides: for each command, "Write" or "Leave empty", with "Keep as is" first for a command that exists. With a signature chosen, offer no "Leave empty" for `verify`. A refusal of the signature removes an existing `verify` file.
-
-Result of the refusal: `verify` is not written, and the notes record the refusal.
+Decides: for each command, "Write" or "Leave empty", with "Keep as is" first for a command that exists. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
 
 Never:
 
@@ -369,7 +367,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - The delivery check: checked, not checked, failed, or did not run.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
 - What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
-- When the user declined a verifier, the two facts of a refusal in plain words: only the checksum from the same release remains, and it does not prove where the release came from. Name both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
+- When the user declined a verifier, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written, that the role reads the facts of the law itself.
 - When TypeSafe is on, both uses: the court's brief and the clerk's request. When the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
