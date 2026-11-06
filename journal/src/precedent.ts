@@ -16,7 +16,6 @@ import { EXIT, Fail, out, readStdin, withDb } from "./db";
 import {
 	departmentNames,
 	departmentPage,
-	type InstalledRead,
 	listSharedPages,
 	type PageRead,
 } from "./department-page";
@@ -416,14 +415,12 @@ const caseListOf = (db: Database, precinct: string, issue: number) =>
 	caseList(caseStage(db, precinct, issue).department);
 
 // The raw sources of the candidate departments. precinctRead reads the page of a
-// department at the precinct place; installedRead the other places, which the
-// installation holds unless a caller gives its own.
+// department at the precinct place; the installation holds the other places.
 export type Sources = {
 	constitution: string | null;
 	shared: string[];
 	licenseConsent: boolean;
 	precinctRead: (d: string) => () => Promise<PageRead>;
-	installedRead?: (d: string) => InstalledRead;
 };
 
 // The departments a precedent may serve, each with its Mission, in order: the
@@ -440,11 +437,7 @@ export async function readCandidates(s: Sources): Promise<Candidate[]> {
 	);
 	for (const name of names) {
 		if (!fits("department", name)) continue;
-		const page = await departmentPage(
-			name,
-			s.precinctRead(name),
-			s.installedRead?.(name),
-		);
+		const page = await departmentPage(name, s.precinctRead(name));
 		if (page.kind !== "page" || page.lint.reasons.length > 0) continue;
 		if (!licensesAllowed(name, page.page.place, s.licenseConsent)) continue;
 		const mission = sectionWords(

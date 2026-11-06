@@ -84,6 +84,20 @@ const put = (root: string, path: string, text: string) => {
 };
 const shared = (d: string, text = page(d)) =>
 	put(references(), `departments/${d}.md`, text);
+const ownPage = (d: string, text = page(d)) =>
+	put(dir, `departments/${d}.md`, text);
+
+// the installation places are read beside the database, as a journal run reads them
+async function installed<T>(run: () => Promise<T>): Promise<T> {
+	const saved = process.env.LAWMAN_DB;
+	process.env.LAWMAN_DB = dbFile;
+	try {
+		return await run();
+	} finally {
+		if (saved === undefined) delete process.env.LAWMAN_DB;
+		else process.env.LAWMAN_DB = saved;
+	}
+}
 
 const ruling = (precedent: string[], ...more: string[]) =>
 	[
@@ -215,23 +229,19 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 
 	test("the builder prints the value of the exported functions on the raw sources", async () => {
 		await written();
-		const at = (d: string, place: string): PageRead =>
-			place === (d === "gamma" ? "precinct" : "law")
-				? { kind: "page", text: page(d) }
-				: { kind: "none" };
 		const sources: Sources = {
 			constitution: readFileSync(join(tree, "LAWMAN.md"), "utf8"),
 			shared: ["alpha", "beta"],
 			licenseConsent: false,
-			precinctRead: (d) => async () => at(d, "precinct"),
-			installedRead: (d) => (place) => at(d, place),
+			precinctRead: (d) => async () =>
+				d === "gamma" ? { kind: "page", text: page(d) } : { kind: "none" },
 		};
 		const body = departmentsBody(
 			await departmentsState({
 				rule: RULE,
 				ruling: cachedRuling(),
 				precedentKind: "protects",
-				asked: await readCandidates(sources),
+				asked: await installed(() => readCandidates(sources)),
 			}),
 		);
 		expect((await request(NAME)).out).toBe(body);
@@ -281,18 +291,16 @@ describe("the candidates", () => {
 		constitution: constitution("- gamma: judged by none"),
 		shared: ["alpha", "beta"],
 		licenseConsent: false,
-		precinctRead: (d) => async () => readOf(PAGE_AT[`precinct:${d}`]),
-		installedRead: (d) => (place) => readOf(PAGE_AT[`${place}:${d}`]),
+		precinctRead: (d) => async () => readOf(PAGE_AT[d]),
 		...over,
 	});
 	const names = async (over: Partial<Sources> = {}) =>
-		(await readCandidates(sources(over))).map((c) => c.name);
+		(await installed(() => readCandidates(sources(over)))).map((c) => c.name);
 
+	// the precinct pages by name; the law pages of alpha and beta are files
 	beforeEach(() => {
 		for (const k of Object.keys(PAGE_AT)) delete PAGE_AT[k];
-		PAGE_AT["law:alpha"] = page("alpha");
-		PAGE_AT["law:beta"] = page("beta");
-		PAGE_AT["precinct:gamma"] = page("gamma");
+		PAGE_AT.gamma = page("gamma");
 	});
 
 	test("the shared pages first, then the constitution, a repeat at its first place", async () => {
@@ -305,7 +313,7 @@ describe("the candidates", () => {
 			"beta",
 			"gamma",
 		]);
-		expect(await readCandidates(sources())).toEqual(
+		expect(await installed(() => readCandidates(sources()))).toEqual(
 			["alpha", "beta", "gamma"].map((name) => ({
 				name,
 				mission: missionOf(name),
@@ -314,7 +322,7 @@ describe("the candidates", () => {
 	});
 
 	test("licenses from the law needs the consent, from the precinct it does not", async () => {
-		PAGE_AT["law:licenses"] = page("licenses");
+		shared("licenses");
 		const withLicenses = { shared: ["alpha", "beta", "licenses"] };
 		expect(await names(withLicenses)).toEqual(["alpha", "beta", "gamma"]);
 		expect(await names({ ...withLicenses, licenseConsent: true })).toEqual([
@@ -323,7 +331,7 @@ describe("the candidates", () => {
 			"licenses",
 			"gamma",
 		]);
-		PAGE_AT["precinct:licenses"] = page("licenses");
+		PAGE_AT.licenses = page("licenses");
 		expect(await names(withLicenses)).toEqual([
 			"alpha",
 			"beta",
@@ -333,20 +341,11 @@ describe("the candidates", () => {
 	});
 
 	test.each([
-		["an unreadable page", () => (PAGE_AT["precinct:gamma"] = false)],
-		[
-			"a page that fails its check",
-			() => (PAGE_AT["precinct:gamma"] = "no page"),
-		],
-		[
-			"a page with an empty Mission",
-			() => (PAGE_AT["precinct:gamma"] = page("gamma", "")),
-		],
-		[
-			"a Mission of none",
-			() => (PAGE_AT["precinct:gamma"] = page("gamma", "none")),
-		],
-		["no page at any place", () => delete PAGE_AT["precinct:gamma"]],
+		["an unreadable page", () => (PAGE_AT.gamma = false)],
+		["a page that fails its check", () => (PAGE_AT.gamma = "no page")],
+		["a page with an empty Mission", () => (PAGE_AT.gamma = page("gamma", ""))],
+		["a Mission of none", () => (PAGE_AT.gamma = page("gamma", "none"))],
+		["no page at any place", () => delete PAGE_AT.gamma],
 	])("%s gives no candidate", async (_n, change) => {
 		change();
 		expect(await names()).toEqual(["alpha", "beta"]);
@@ -365,22 +364,20 @@ describe("the candidates", () => {
 	});
 
 	test("the first place that has the page wins, as the duty desk reads it", async () => {
-		PAGE_AT["installation:gamma"] = page("gamma", "The installation page.");
-		PAGE_AT["law:gamma"] = page("gamma", "The law page.");
-		const s = sources();
+		ownPage("gamma", page("gamma", "The installation page."));
+		shared("gamma", page("gamma", "The law page."));
 		const gamma = async () =>
-			(await readCandidates(sources())).find((c) => c.name === "gamma")
-				?.mission;
+			(await installed(() => readCandidates(sources()))).find(
+				(c) => c.name === "gamma",
+			)?.mission;
 		expect(await gamma()).toBe(missionOf("gamma"));
-		const found = await departmentPage(
-			"gamma",
-			s.precinctRead("gamma"),
-			s.installedRead?.("gamma"),
+		const found = await installed(() =>
+			departmentPage("gamma", sources().precinctRead("gamma")),
 		);
 		expect(found.kind === "page" && found.page.place).toBe("precinct");
-		delete PAGE_AT["precinct:gamma"];
+		delete PAGE_AT.gamma;
 		expect(await gamma()).toBe("The installation page.");
-		delete PAGE_AT["installation:gamma"];
+		rmSync(join(dir, "departments", "gamma.md"));
 		expect(await gamma()).toBe("The law page.");
 	});
 
@@ -526,7 +523,6 @@ describe("the input and a hostile sample", () => {
 						kind: "page",
 						text: page("alpha", mission),
 					}),
-					installedRead: () => () => ({ kind: "none" }),
 				}),
 			}),
 		);
@@ -948,6 +944,17 @@ describe("the case department", () => {
 		expect(existsSync(file(`${DATE}-issue-1`))).toBe(false);
 	});
 
+	test("a case fault after a good new line writes no file", async () => {
+		await cache([
+			ruling([`- new empty-doubles for beta: ${RULE}`, "- not a line"]),
+		]);
+		seed((db) => db.run("DELETE FROM issues"));
+		const r = await record();
+		expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
+		expect(r.err).toContain("unknown issue main #1");
+		expect(existsSync(join(tree, ".lawman", "precedents"))).toBe(false);
+	});
+
 	test.each([
 		["a name it knows", "for beta"],
 		["the word all", "for all"],
@@ -1318,7 +1325,8 @@ describe("the court's names", () => {
 			const r = await written(
 				ruling([`- new empty-doubles for ${secret}, beta: ${RULE}`]),
 			);
-			expect(drops(r)).toHaveLength(1);
+			// the cache masks the secret, and the mask is outside the class
+			expect(drops(r)).toEqual([`drop\t${NAME}\t-`]);
 			expect(r.out).not.toContain(secret);
 		});
 	});

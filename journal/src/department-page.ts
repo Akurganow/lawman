@@ -22,26 +22,24 @@ export type PageRead =
 	| { kind: "page"; text: string }
 	| { kind: "none" }
 	| { kind: "failed"; why?: string };
-export type InstalledRead = (place: InstalledPlace) => PageRead;
 
 // an installation file that cannot be read counts as no page there
-export const installationRead =
-	(d: string): InstalledRead =>
-	(place) => {
-		const text = readText(INSTALLATION_PATHS[place](d));
-		return text === null ? { kind: "none" } : { kind: "page", text };
-	};
+function installationRead(d: string, place: InstalledPlace): PageRead {
+	const text = readText(INSTALLATION_PATHS[place](d));
+	return text === null ? { kind: "none" } : { kind: "page", text };
+}
 
 export type Page = { text: string; place: Place };
 
 // The page of the first place that has one, or the failed read that stopped the
-// walk. precinct reads the precinct place; installed reads the other two.
+// walk. precinct reads the precinct place; the installation holds the other two.
 export async function pageAt(
+	d: string,
 	precinct: () => Promise<PageRead>,
-	installed: InstalledRead,
 ): Promise<{ kind: "page"; page: Page } | Exclude<PageRead, { kind: "page" }>> {
 	for (const place of PLACES) {
-		const r = place === "precinct" ? await precinct() : installed(place);
+		const r =
+			place === "precinct" ? await precinct() : installationRead(d, place);
 		if (r.kind === "failed") return r;
 		if (r.kind === "page")
 			return { kind: "page", page: { text: r.text, place } };
@@ -53,9 +51,8 @@ export async function pageAt(
 export async function departmentPage(
 	d: string,
 	precinct: () => Promise<PageRead>,
-	installed: InstalledRead = installationRead(d),
 ) {
-	const found = await pageAt(precinct, installed);
+	const found = await pageAt(d, precinct);
 	return found.kind === "page"
 		? { ...found, lint: lintPage("department", found.page.text, d) }
 		: found;

@@ -5,12 +5,7 @@ import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, inTransaction, now, open, out, withDb } from "./db";
-import {
-	installationRead,
-	type PageRead,
-	pageAt,
-	placeNumber,
-} from "./department-page";
+import { type PageRead, pageAt, placeNumber } from "./department-page";
 import { type Taken, takeableOrders, takeOrder } from "./dispatch";
 import { inputChars, orderLine, readConfig } from "./input-files";
 import { type Block, fencedBlock, framed, pack, render } from "./input-parts";
@@ -455,13 +450,13 @@ export async function tickStart(args: string[]): Promise<number> {
 		const found =
 			files === null
 				? null
-				: await pageAt(async (): Promise<PageRead> => {
+				: await pageAt(d, async (): Promise<PageRead> => {
 						if (!listed(files, own)) return { kind: "none" };
 						const file = await operate(p, "file", call([revision, own]));
 						if (file.text !== null) return { kind: "page", text: file.text };
 						o.add(...file.blocks);
 						return { kind: "failed" };
-					}, installationRead(d));
+					});
 		const page = found?.kind === "page" ? found.page : null;
 		const self = found === null || found.kind === "failed";
 		if (page !== null)
