@@ -151,7 +151,7 @@ The section `## Precedent` of a court ruling holds its precedent lines. A ruling
 - The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add departments it does not reject, and never removes one.
 - `all` is reserved: it means every department and never names a department called `all`. A list that holds `all` beside names means every department too, and its other names count for nothing.
 - An empty element in `<departments>` makes a line that fits no form.
-- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported. It never enters the file.
+- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds it only as the department of the case, when no other name counts.
 - `refine` and `cancel` carry no names.
 - A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
 - The journal writes the files. The writer never numbers, names or copies a rule into a file.

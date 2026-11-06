@@ -66,7 +66,7 @@ A non-zero exit ends the tick with `failed`. The output has one line per change:
 - `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
 - `none`: the ruling adds no precedent, and the folder does not change.
 - `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
-- `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, and the file `<name>` does not hold it. `-` stands for a name outside the department class. It is no change of its own.
+- `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, so the name counts for nothing. The file `<name>` holds it only as the department of the case. `-` stands for a name outside the department class. It is no change of its own.
 - `ask<TAB><name>`: send one Jev request for the file `<name>`, as the steps below say. It is no change of its own.
 
 A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output, every `cancel` line with `missing` and every `drop` line. A reason never goes to the owner.
