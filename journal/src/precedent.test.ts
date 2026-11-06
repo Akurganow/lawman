@@ -615,17 +615,45 @@ describe("oldLineToFile", () => {
 	});
 });
 
-describe("precedent: the ruling example of the court skill", () => {
+describe("precedent: the examples of the law", () => {
 	const COURT = join(ROOT, "skills", "court", "SKILL.md");
-	const OPEN = "A realistic ruling:\n\n````\n";
-
-	test("its Precedent section writes the expected file", async () => {
-		const skill = readFileSync(COURT, "utf8");
-		const at = skill.indexOf(OPEN);
+	const MARKERS = join(
+		ROOT,
+		"skills",
+		"lawman-law",
+		"references",
+		"markers.md",
+	);
+	const between = (path: string, open: string, close: string) => {
+		const text = readFileSync(path, "utf8");
+		const at = text.indexOf(open);
 		expect(at).toBeGreaterThan(-1);
-		const start = at + OPEN.length;
-		const example = skill.slice(start, skill.indexOf("\n````", start));
+		const start = at + open.length;
+		return text.slice(start, text.indexOf(close, start));
+	};
+	// a precinct whose candidates hold the departments the examples name, and one more
+	const candidates = (...departments: string[]) => {
+		const lines = [...departments, "web"].map((d) => `- ${d}: judged by none`);
+		writeFileSync(
+			join(tree, "LAWMAN.md"),
+			CONSTITUTION.replace(
+				/## Departments\n\n[\s\S]*?\n\n## Fence/,
+				`## Departments\n\n${lines.join("\n")}\n\n## Fence`,
+			),
+		);
+		mkdirSync(join(tree, ".lawman", "departments"), { recursive: true });
+		mkdirSync(references("departments"), { recursive: true });
+		for (const d of [...departments, "web"])
+			writeFileSync(
+				join(tree, ".lawman", "departments", `${d}.md`),
+				departmentPage(d),
+			);
+	};
+
+	test("the ruling example of the court skill writes the expected file", async () => {
+		const example = between(COURT, "A realistic ruling:\n\n````\n", "\n````");
 		expect(example).toContain("## Precedent");
+		candidates("core");
 		await cache([example]);
 		const r = await record();
 		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
@@ -640,6 +668,23 @@ describe("precedent: the ruling example of the court skill", () => {
 		});
 		expect(body(name)?.trim()).toBe(
 			"A help text that names an option the parser does not accept is a violation.",
+		);
+	});
+
+	test("the Precedent example of the line law writes the expected file", async () => {
+		const section = between(MARKERS, "Example:\n\n```\n", "\n```");
+		expect(section).toContain("## Precedent");
+		candidates("dead-code");
+		await cache([ruling([section])]);
+		const r = await record();
+		const name = "2026-10-14-empty-test-double-conformances";
+		expect([r.code, r.err]).toEqual([EXIT.OK, ""]);
+		expect(r.out).toBe(
+			`cancel\t2026-09-02-unused-parameter-in-callbacks\tmissing\nentry\t${name}\n`,
+		);
+		expect(header(name)).toMatchObject({ departments: ["dead-code"] });
+		expect(body(name)?.trim()).toBe(
+			"An empty conformance of a test double to a protocol is not dead code.",
 		);
 	});
 });

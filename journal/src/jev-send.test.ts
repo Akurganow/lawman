@@ -79,7 +79,7 @@ const CLERK_RULES = [
 	"Send a request only with a body that is not empty.",
 	"Send each request once. Do not retry it. Set no timeout.",
 	"A non-zero exit, or a harness timeout, is not a failed step. When the pipeline printed no line that starts with `jev`, record `jev none reason=failed` in Blockers.",
-	"A `jev none` line goes to Blockers, never to a comment and never to a pull request.",
+	"A `jev none` line and a `drop` line go to Blockers, never to a comment and never to a pull request.",
 	"The `typesafe-ai` skill is knowledge only. The clerk works without it.",
 	"Make no other request to the service in a tick. Only these steps use the key.",
 ];
@@ -109,5 +109,8 @@ describe("the Jev steps of the clerk's precedent files", () => {
 			"Run it only when the output of the `precedent` call above holds no `none` and no `no-entry` line.",
 		);
 		expect(recordStep).toContain("a `jev none` line is no `none` line");
+		expect(recordStep).toContain(
+			"A `drop` line is no `none` and no `no-entry` line either.",
+		);
 	});
 });

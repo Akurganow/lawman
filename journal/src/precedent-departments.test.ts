@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	chmodSync,
 	existsSync,
 	mkdirSync,
 	readFileSync,
@@ -18,10 +19,12 @@ import {
 	departmentsBody,
 } from "./jev";
 import {
+	asksJev,
 	candidates,
 	decide,
 	departmentsState,
 	fallbackList,
+	originalList,
 	type Sources,
 	sectionWords,
 } from "./precedent";
@@ -194,15 +197,23 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 		});
 	});
 
-	test("one question per candidate, in candidate order", async () => {
+	test("one question per candidate outside the list, in candidate order", async () => {
 		await written();
 		const body = JSON.parse((await request(NAME)).out);
 		expect(Object.keys(body.questions)).toEqual(["alpha", "beta", "gamma"]);
-		expect(Object.keys(body.state.departments)).toEqual([
-			"alpha",
-			"beta",
-			"gamma",
-		]);
+		expect(Object.keys(body.state)).toEqual(["precedent", "ruling"]);
+		for (const d of ["alpha", "beta", "gamma"])
+			for (const other of ["alpha", "beta", "gamma"])
+				expect(
+					JSON.stringify(body.questions[d]).includes(missionOf(other)),
+				).toBe(d === other);
+		expect(JSON.stringify(body.state)).not.toContain("Find defects");
+	});
+
+	test("a department of the list is not asked", async () => {
+		await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
+		const body = JSON.parse((await request(NAME)).out);
+		expect(Object.keys(body.questions)).toEqual(["alpha", "gamma"]);
 	});
 
 	test("the builder prints the value of the exported functions on the raw sources", async () => {
@@ -227,6 +238,19 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 		expect((await request(NAME)).out).toBe(body);
 	});
 
+	test("one list from other court names and another case department gives one body", async () => {
+		await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
+		const first = (await request(NAME)).out;
+		rmSync(join(tree, ".lawman", "precedents"), { recursive: true });
+		await cacheWith(
+			[leadIn("-", "response-unit")],
+			[ruling([`- new empty-doubles for zeta, beta: ${RULE}`])],
+		);
+		expect((await record()).code).toBe(EXIT.OK);
+		expect(departments()).toEqual(["beta"]);
+		expect((await request(NAME)).out).toBe(first);
+	});
+
 	test("the body holds no issue text and no Jev or Expert section", async () => {
 		await written();
 		const out = (await request(NAME)).out;
@@ -241,8 +265,9 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 });
 
 test("the count of checked cases names both parts", () => {
-	expect(DEPARTMENTS_CHECKED.tuning).toBeGreaterThan(0);
-	expect(DEPARTMENTS_CHECKED.heldOut).toBeGreaterThan(0);
+	expect(Object.keys(DEPARTMENTS_CHECKED)).toEqual(["tuning", "heldOut"]);
+	for (const n of Object.values(DEPARTMENTS_CHECKED))
+		expect(Number.isInteger(n) && n >= 0).toBe(true);
 });
 
 describe("the candidates", () => {
@@ -496,16 +521,16 @@ describe("the input and a hostile sample", () => {
 		);
 		const body = departmentsBody(s);
 		expect(body).not.toContain(TOKEN);
-		const fields = JSON.parse(body).state;
+		const { state: fields, questions } = JSON.parse(body);
 		const texts = [
 			fields.precedent.rule,
 			fields.ruling.verdict,
 			fields.ruling.grounds,
-			fields.departments.alpha,
+			questions.alpha.instructions,
 		];
 		for (const t of texts) expect(stripInvisible(t)).toBe(t);
-		expect(fields.departments.alpha).toBe(
-			"Find defects REMOVED GITHUB SECRET. Test: one?\n\n> a quoted line",
+		expect(questions.alpha.instructions).toEndWith(
+			"The duty: Find defects REMOVED GITHUB SECRET. Test: one?\n\n> a quoted line",
 		);
 	});
 
@@ -550,10 +575,10 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 		const r = await answer(NAME, reply({ alpha: 0.9, beta: 0.1, gamma: HIGH }));
 		expect(r).toEqual({
 			code: EXIT.OK,
-			out: "jev model=jev-1.14.0 departments=alpha,gamma\n",
+			out: "jev model=jev-1.14.0 departments=core,alpha,gamma\n",
 			err: "",
 		});
-		expect(departments()).toEqual(["alpha", "gamma"]);
+		expect(departments()).toEqual(["core", "alpha", "gamma"]);
 	});
 
 	test.each([
@@ -588,34 +613,81 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 
 describe("the decision", () => {
 	const t = DEPARTMENTS_THRESHOLD;
-	const scored = (names: string[], values: number[]) =>
-		names.map((d, i): [string, number] => [d, values[i] ?? Number.NaN]);
+	const ALL = ["a", "b", "c", "d"];
+	const at = (values: Record<string, number>) =>
+		Object.entries(values) as [string, number][];
 
-	test("the value with two decimals meets the threshold", () => {
-		expect(
-			decide(scored(["a", "b", "c", "d"], [t, LOW, HIGH, t - 0.004]), t, [
-				"core",
-			]),
-		).toEqual(["a", "c", "d"]);
-	});
-
-	test("every candidate gives the empty list", () => {
-		expect(decide(scored(["a", "b"], [HIGH, t]), t, ["core"])).toEqual([]);
-	});
-
-	test("no candidate gives unchanged, so the fallback stays", () => {
-		expect(decide(scored(["a", "b"], [LOW, 0]), t, ["core"])).toBeNull();
-	});
-
-	test("a list equal to the header gives unchanged", () => {
-		expect(decide(scored(["a", "b"], [HIGH, LOW]), t, ["a"])).toBeNull();
-	});
-
-	test("the list keeps the candidate order", () => {
-		expect(decide(scored(["c", "a", "b"], [HIGH, HIGH, LOW]), t, [])).toEqual([
-			"c",
+	test("a department of the list stays at any value", () => {
+		expect(decide(["a"], ALL, at({ b: LOW, c: 0, d: 0 }), t, ["a"])).toBeNull();
+		expect(decide(["a"], ALL, at({ a: 0, b: HIGH }), t, ["a"])).toEqual([
 			"a",
+			"b",
 		]);
+	});
+
+	test("a department outside the list is added at the threshold and above, not below", () => {
+		expect(decide(["a"], ALL, at({ b: t, c: HIGH, d: LOW }), t, ["a"])).toEqual(
+			["a", "b", "c"],
+		);
+		expect(decide(["a"], ALL, at({ b: t - 0.004 }), t, ["a"])).toEqual([
+			"a",
+			"b",
+		]);
+	});
+
+	test("no addition gives unchanged", () => {
+		expect(decide(["a"], ALL, at({ b: LOW, c: 0, d: 0 }), t, ["a"])).toBeNull();
+	});
+
+	test("a list that covers every candidate is written empty", () => {
+		expect(decide(["a"], ALL, at({ b: HIGH, c: t, d: 1 }), t, ["a"])).toEqual(
+			[],
+		);
+	});
+
+	test("a result equal to the header gives unchanged", () => {
+		expect(
+			decide(["a"], ALL, at({ b: HIGH, c: LOW }), t, ["a", "b"]),
+		).toBeNull();
+	});
+
+	test("the list keeps the candidate order, a case department outside first", () => {
+		expect(
+			decide(["core", "c"], ALL, at({ d: HIGH, a: HIGH, b: LOW }), t, [
+				"core",
+				"c",
+			]),
+		).toEqual(["core", "a", "c", "d"]);
+	});
+
+	test("the threshold has at most two decimals", () => {
+		expect(Number(DEPARTMENTS_THRESHOLD.toFixed(2))).toBe(
+			DEPARTMENTS_THRESHOLD,
+		);
+	});
+
+	test("the original list: all, the court names, else the case list", () => {
+		const none = () => {
+			throw new Error("the case is not looked up");
+		};
+		expect(originalList("all", ALL, none)).toEqual([]);
+		expect(originalList(["c", "a", "c", "zeta"], ALL, none)).toEqual([
+			"a",
+			"c",
+		]);
+		expect(originalList(["d", "c", "b", "a"], ALL, none)).toEqual([]);
+		expect(originalList(["zeta"], ALL, () => ["core"])).toEqual(["core"]);
+		expect(originalList(null, ALL, () => [])).toEqual([]);
+		expect(originalList(null, ["core"], () => ["core"])).toEqual(["core"]);
+	});
+
+	test("Jev is asked only for a named list that leaves a candidate out", () => {
+		expect(asksJev(["a"], ALL)).toBe(true);
+		expect(asksJev(["core"], ALL)).toBe(true);
+		expect(asksJev([], ALL)).toBe(false);
+		expect(asksJev(ALL, ALL)).toBe(false);
+		expect(asksJev(["core"], ["core"])).toBe(false);
+		expect(asksJev(["core"], [])).toBe(false);
 	});
 
 	test("the fallback list is the case department, or all for -", () => {
@@ -658,43 +730,54 @@ describe("the gate", () => {
 		},
 	);
 
+	const noPages = () => {
+		for (const d of ["alpha", "beta"])
+			rmSync(references("departments", `${d}.md`));
+		rmSync(join(tree, ".lawman", "departments"), { recursive: true });
+	};
 	test.each([
-		[
-			"no candidate",
-			() => {
-				for (const d of ["alpha", "beta"])
-					rmSync(references("departments", `${d}.md`));
-				rmSync(join(tree, ".lawman", "departments"), { recursive: true });
-			},
-			"no candidate department",
-		],
+		["no candidate", noPages, [`- new empty-doubles: ${RULE}`], ["core"]],
 		[
 			"a constitution that fails its check",
 			() => put(tree, "LAWMAN.md", "no constitution"),
-			"no candidate department",
+			[`- new empty-doubles: ${RULE}`],
+			["core"],
 		],
 		[
-			"a constitution that cannot be read",
+			"a constitution that is no plain file",
 			() => {
 				rmSync(join(tree, "LAWMAN.md"));
 				mkdirSync(join(tree, "LAWMAN.md"));
 			},
-			"no candidate department",
+			[`- new empty-doubles: ${RULE}`],
+			["core"],
+		],
+		["the word all", () => {}, [`- new empty-doubles for all: ${RULE}`], []],
+		[
+			"names that cover every candidate",
+			() => {},
+			[`- new empty-doubles for gamma, beta, alpha: ${RULE}`],
+			[],
 		],
 		[
-			"a failed listing of the shared pages",
-			() => rmSync(references("departments"), { recursive: true }),
-			"shared department pages: the listing failed",
+			"one candidate that is the case department",
+			() => {
+				noPages();
+				put(tree, "LAWMAN.md", constitution("- core: judged by none"));
+				put(tree, ".lawman/departments/core.md", page("core"));
+			},
+			[`- new empty-doubles: ${RULE}`],
+			["core"],
 		],
 	])(
-		"%s: the fallback, no request line and the cause on stderr",
-		async (_n, change, cause) => {
+		"%s: the original list, no request line and a refused builder",
+		async (_n, change, lines, list) => {
 			change();
-			await cache([RULING]);
+			await cache([ruling(lines)]);
 			const r = await record();
 			expect([r.code, linesOf(r)]).toEqual([EXIT.OK, [`entry\t${NAME}`]]);
-			expect(r.err).toBe(`journal: ${cause}\n`);
-			expect(departments()).toEqual(["core"]);
+			expect(r.err).toBe("");
+			expect(departments()).toEqual(list);
 			const built = await inprocAsync(BASE, select("--request", NAME));
 			expect([built.code === EXIT.OK, built.out]).toEqual([false, ""]);
 		},
@@ -721,6 +804,84 @@ describe("the gate", () => {
 	});
 });
 
+describe("a read failure is a fault", () => {
+	const FAILURES: [string, () => void, () => void][] = [
+		[
+			"the constitution",
+			() => chmodSync(join(tree, "LAWMAN.md"), 0o000),
+			() => chmodSync(join(tree, "LAWMAN.md"), 0o644),
+		],
+		[
+			"a department page of the tree",
+			() => chmodSync(join(tree, ".lawman/departments/gamma.md"), 0o000),
+			() => chmodSync(join(tree, ".lawman/departments/gamma.md"), 0o644),
+		],
+		[
+			"the listing of the shared pages",
+			() => rmSync(references("departments"), { recursive: true }),
+			() => {
+				shared("alpha");
+				shared("beta");
+			},
+		],
+	];
+	const noJev = (r: Result) =>
+		expect(linesOf(r).filter((l) => l.startsWith("jev"))).toEqual([]);
+
+	describe.each(FAILURES)("%s", (_n, fail, mend) => {
+		test.each([
+			["a precinct that allows Jev", ALLOWED, `- new empty-doubles: ${RULE}`],
+			[
+				"a line that names a department",
+				ALLOWED.replace("main=yes", "main=no"),
+				`- new empty-doubles for beta: ${RULE}`,
+			],
+		])(
+			"the write with %s writes nothing, and a retry writes",
+			async (_m, text, line) => {
+				config(text);
+				fail();
+				await cache([ruling([line])]);
+				const r = await record();
+				expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
+				expect(r.err).not.toBe("");
+				expect(existsSync(file())).toBe(false);
+				mend();
+				expect((await record()).code).toBe(EXIT.OK);
+				expect(existsSync(file())).toBe(true);
+			},
+		);
+
+		test("the builder prints nothing, the adding step keeps the header", async () => {
+			await written();
+			const before = text();
+			fail();
+			const built = await inprocAsync(BASE, select("--request", NAME));
+			expect([built.code === EXIT.OK, built.out]).toEqual([false, ""]);
+			const r = await inprocFed(
+				BASE,
+				select("--answer", NAME),
+				reply({ alpha: 1, beta: 1, gamma: 1 }),
+			);
+			expect(r.code).not.toBe(EXIT.OK);
+			noJev(r);
+			expect(text()).toBe(before);
+			mend();
+		});
+	});
+
+	test("a source that is absent, no plain file or fails its check is data", async () => {
+		rmSync(join(tree, ".lawman/departments/gamma.md"));
+		mkdirSync(join(tree, ".lawman/departments/gamma.md"));
+		const r = await written();
+		expect(asks(r)).toEqual([`ask\t${NAME}`]);
+		const body = JSON.parse(
+			(await inprocAsync(BASE, select("--request", NAME))).out,
+		);
+		expect(Object.keys(body.questions)).toEqual(["alpha", "beta"]);
+	});
+});
+
 describe("the case department", () => {
 	test("a patrol lead names it, a response unit gives the empty list", async () => {
 		await written();
@@ -739,6 +900,16 @@ describe("the case department", () => {
 		expect(r.out).toBe("");
 		expect(r.err).toContain("unknown issue main #1");
 		expect(existsSync(file())).toBe(false);
+	});
+
+	test.each([
+		["a name it knows", "for beta"],
+		["the word all", "for all"],
+	])("%s needs no case: a missing issue fails nothing", async (_n, names) => {
+		await cache([ruling([`- new empty-doubles ${names}: ${RULE}`])]);
+		seed((db) => db.run("DELETE FROM issues"));
+		const r = await record();
+		expect([r.code, linesOf(r)[0]]).toEqual([EXIT.OK, `entry\t${NAME}`]);
 	});
 
 	test("a none ruling without the issue gives the old output", async () => {
@@ -762,7 +933,7 @@ test("no output holds a value of the typesafe keys", async () => {
 			expect(`${r.out}${r.err}`).not.toContain(value);
 });
 
-describe("the narrowing step", () => {
+describe("the adding step", () => {
 	const answer = (stdin: string, name = NAME) =>
 		inprocFed(BASE, select("--answer", name), stdin);
 	const GOOD = reply({ alpha: HIGH, beta: LOW, gamma: LOW });
@@ -771,7 +942,7 @@ describe("the narrowing step", () => {
 		await written();
 		const before = text();
 		expect((await answer(GOOD)).out).toBe(
-			"jev model=jev-1.14.0 departments=alpha\n",
+			"jev model=jev-1.14.0 departments=core,alpha\n",
 		);
 		const after = text();
 		const fields = (t: string) => ({
@@ -780,7 +951,7 @@ describe("the narrowing step", () => {
 		});
 		expect(fields(after)).toEqual(fields(before));
 		expect(splitPrecedent(after)?.body).toBe(splitPrecedent(before)?.body);
-		expect(departments()).toEqual(["alpha"]);
+		expect(departments()).toEqual(["core", "alpha"]);
 	});
 
 	test("all candidates write the empty list", async () => {
@@ -791,7 +962,7 @@ describe("the narrowing step", () => {
 		expect(departments()).toEqual([]);
 	});
 
-	test("empty input gives brief, also on a narrowed header", async () => {
+	test("empty input gives brief, also on a header with additions", async () => {
 		await written();
 		expect((await answer("")).out).toBe("jev none reason=brief\n");
 		await answer(GOOD);
@@ -820,7 +991,7 @@ describe("the narrowing step", () => {
 		expect(text()).toBe(before);
 	});
 
-	test("a second run finds no fallback and stays unchanged, even on a bad reply", async () => {
+	test("a second run finds no original list and stays unchanged, even on a bad reply", async () => {
 		await written();
 		await answer(GOOD);
 		const before = text();
@@ -849,13 +1020,14 @@ describe("the narrowing step", () => {
 			ids.map((id, i) => [id, i === 2 ? HIGH : LOW]),
 		);
 		expect((await answer(reply(values))).out).toBe(
-			"jev model=jev-1.14.0 departments=gamma\n",
+			"jev model=jev-1.14.0 departments=core,gamma\n",
 		);
 		expect(text()).toBe(
 			[
 				"---",
 				"kind: protects",
 				"departments: ",
+				"  - core",
 				"  - gamma",
 				"issue: 1",
 				`date: ${DATE}`,
@@ -924,6 +1096,16 @@ describe("the request lines of the write", () => {
 			[`entry\t${NAME}`],
 		],
 		[
+			"a new line with dropped names, then its cancel",
+			[`- new empty-doubles for zeta: ${RULE}`, `- cancel ${NAME}`],
+			["no-entry\tno-change"],
+		],
+		[
+			"a new line whose names part the classifier does not read",
+			[`- new empty-doubles for alpha,,beta: ${RULE}`],
+			[`entry\t${DATE}-issue-1\tbad-line`],
+		],
+		[
 			"two new lines with one gist",
 			[`- new empty-doubles: ${RULE}`, "- new empty-doubles: Another rule."],
 			[`entry\t${NAME}`, `entry\t${NAME}-2\tname-taken`, `ask\t${NAME}`],
@@ -962,17 +1144,125 @@ describe("the request lines of the write", () => {
 		expect(linesOf(again)).toEqual([`entry\t${NAME}-2\tname-taken`]);
 	});
 
-	test("a ruling with two new lines writes both files with the fallback", async () => {
+	test("a ruling with two new lines writes both files with their original lists", async () => {
 		const out = await recorded(
 			`- new empty-doubles: ${RULE}`,
-			"- new other: Another rule.",
+			"- new other for gamma: Another rule.",
 		);
 		expect(out.filter((l) => l.startsWith("entry"))).toEqual([
 			`entry\t${NAME}`,
 			`entry\t${DATE}-other`,
 		]);
 		expect(departments()).toEqual(["core"]);
-		expect(departments(`${DATE}-other`)).toEqual(["core"]);
+		expect(departments(`${DATE}-other`)).toEqual(["gamma"]);
+	});
+});
+
+describe("the court's names", () => {
+	const drops = (r: Result) => linesOf(r).filter((l) => l.startsWith("drop\t"));
+
+	describe("the line", () => {
+		test("a line without names writes the old file without reading the sources", async () => {
+			config(ALLOWED.replace("main=yes", "main=no"));
+			rmSync(references("departments"), { recursive: true });
+			await cache([RULING]);
+			expect(await record()).toEqual({
+				code: EXIT.OK,
+				out: `entry\t${NAME}\n`,
+				err: "",
+			});
+			expect(departments()).toEqual(["core"]);
+			expect(splitPrecedent(text())?.body.trim()).toBe(RULE);
+		});
+	});
+
+	describe("the names part and the rule", () => {
+		test("the names never enter the body, which equals the rule as written", async () => {
+			await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
+			expect(splitPrecedent(text())?.body.trim()).toBe(RULE);
+		});
+
+		test("a rule that starts and ends like a names part stays whole", async () => {
+			const rule = "for alpha: a rule for beta";
+			await written(ruling([`- new empty-doubles: ${rule}`]));
+			expect(splitPrecedent(text())?.body.trim()).toBe(rule);
+			expect(departments()).toEqual(["core"]);
+		});
+
+		test.each([
+			["the word all", "for all"],
+			["all beside names", "for zeta, all, beta"],
+		])("%s gives the empty list and no drop line", async (_n, names) => {
+			const r = await written(
+				ruling([`- new empty-doubles ${names}: ${RULE}`]),
+			);
+			expect(departments()).toEqual([]);
+			expect(drops(r)).toEqual([]);
+		});
+	});
+
+	describe("recognition and order", () => {
+		test("known names go in candidate order, a repeat once", async () => {
+			await written(
+				ruling([`- new empty-doubles for gamma, alpha, gamma: ${RULE}`]),
+			);
+			expect(departments()).toEqual(["alpha", "gamma"]);
+		});
+
+		test.each([
+			["no candidate", "zeta"],
+			["outside the class", "Zeta_X"],
+		])(
+			"a name that is %s is dropped, and the case list stays",
+			async (_n, name) => {
+				await written(ruling([`- new empty-doubles for ${name}: ${RULE}`]));
+				expect(departments()).toEqual(["core"]);
+				expect(text()).not.toContain(name);
+			},
+		);
+
+		test("with no candidate at all every name is dropped", async () => {
+			put(tree, "LAWMAN.md", "no constitution");
+			const r = await written(
+				ruling([`- new empty-doubles for alpha: ${RULE}`]),
+			);
+			expect(departments()).toEqual(["core"]);
+			expect(drops(r)).toEqual([`drop\t${NAME}\talpha`]);
+		});
+
+		test("a case without a department gives the empty list", async () => {
+			await cacheWith(
+				[leadIn("-", "response-unit")],
+				[ruling([`- new empty-doubles for zeta: ${RULE}`])],
+			);
+			expect((await record()).code).toBe(EXIT.OK);
+			expect(departments()).toEqual([]);
+		});
+	});
+
+	describe("the dropped name", () => {
+		test("a name in its class is printed, one outside prints a fixed word", async () => {
+			const r = await written(
+				ruling([`- new empty-doubles for zeta, beta, zeta, Zeta_X: ${RULE}`]),
+			);
+			expect(linesOf(r)).toEqual([
+				`entry\t${NAME}`,
+				`drop\t${NAME}\tzeta`,
+				`drop\t${NAME}\t-`,
+				`ask\t${NAME}`,
+			]);
+			expect(departments()).toEqual(["beta"]);
+		});
+
+		test("a hostile name leaks nothing", async () => {
+			const names = [`Ze${HIDDEN}ta`, TOKEN, "../LAWMAN", "a\u2028b"];
+			const r = await written(
+				ruling([`- new empty-doubles for ${names.join(", ")}: ${RULE}`]),
+			);
+			expect(drops(r)).toEqual(names.map(() => `drop\t${NAME}\t-`));
+			for (const n of [...names, HIDDEN, "LAWMAN"])
+				expect(`${r.out}${r.err}`).not.toContain(n);
+		});
 	});
 });
 

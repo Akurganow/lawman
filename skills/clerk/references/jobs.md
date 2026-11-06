@@ -66,9 +66,10 @@ A non-zero exit ends the tick with `failed`. The output has one line per change:
 - `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
 - `none`: the ruling adds no precedent, and the folder does not change.
 - `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
-- `ask<TAB><name>`: the file `<name>` is written with the department of the case, or with all departments when the case has none. TypeSafe Jev may narrow its departments. It is no change of its own.
+- `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, and the file `<name>` does not hold it. `-` stands for a name outside the department class. It is no change of its own.
+- `ask<TAB><name>`: the file `<name>` is written with the departments the court named, or with the department of the case when the court named none the journal knows, or with all departments when the case has none. TypeSafe Jev may add departments. It is no change of its own.
 
-A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output and every `cancel` line with `missing`. A reason never goes to the owner.
+A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output, every `cancel` line with `missing` and every `drop` line. A reason never goes to the owner.
 
 Then ask Jev once for each `ask` line, in order. `<name>` is the name that the line printed. Pass it unchanged.
 
@@ -83,7 +84,7 @@ Then ask Jev once for each `ask` line, in order. `<name>` is the name that the l
    bin/journal precedent <p> --issue <n> --tree runs/<tick id>/tree --answer <name>
    ```
 4. The answer prints one line that starts with `jev`:
-   - `jev model=<model> departments=<a,b|all>`: the journal wrote these departments into the file.
+   - `jev model=<model> departments=<a,b|all>`: the journal added departments and wrote this list into the file.
    - `jev unchanged`: the file keeps its departments.
    - `jev none reason=<reason>`: the file keeps its departments. The reason is, for example, `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`. Other reasons may appear. Record the line in Blockers.
 
@@ -97,13 +98,13 @@ Rules for Jev:
 - Send a request only with a body that is not empty.
 - Send each request once. Do not retry it. Set no timeout.
 - A non-zero exit, or a harness timeout, is not a failed step. When the pipeline printed no line that starts with `jev`, record `jev none reason=failed` in Blockers.
-- A `jev none` line goes to Blockers, never to a comment and never to a pull request.
+- A `jev none` line and a `drop` line go to Blockers, never to a comment and never to a pull request.
 - The `typesafe-ai` skill is knowledge only. The clerk works without it.
 - Make no other request to the service in a tick. Only these steps use the key.
 
 ### Record the precedent files
 
-Run it only when the output of the `precedent` call above holds no `none` and no `no-entry` line. The `jev` lines of the answers are no part of that output. They never stop the commit, and a `jev none` line is no `none` line. Stage the folder `.lawman/precedents` of the tree, deletions included. Record one commit with the message `Record precedents of #<n>`.
+Run it only when the output of the `precedent` call above holds no `none` and no `no-entry` line. The `jev` lines of the answers are no part of that output. They never stop the commit, and a `jev none` line is no `none` line. A `drop` line is no `none` and no `no-entry` line either. Stage the folder `.lawman/precedents` of the tree, deletions included. Record one commit with the message `Record precedents of #<n>`.
 
 ## kept
 

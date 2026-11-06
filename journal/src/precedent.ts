@@ -54,7 +54,9 @@ const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
 const NONE = "none";
 const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
-const NEW_LINE = /^new ([^\s:]+): (.+)$/;
+// the names stand before the first colon, so no character of the rule reads as a name
+const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
+const ALL = "all";
 const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
 const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
@@ -210,7 +212,8 @@ class Folder {
 }
 
 // A file of the clone, read without following a link. A path that is no plain
-// file or folder, or that cannot be read, is a failed read.
+// file or folder is a failed read, which is data. A plain file that cannot be
+// read is a fault of the journal and throws.
 function treeFile(tree: string, parts: string[]): PageRead {
 	try {
 		let at = tree;
@@ -223,12 +226,15 @@ function treeFile(tree: string, parts: string[]): PageRead {
 		}
 		return { kind: "page", text: readFileSync(at, "utf8") };
 	} catch {
-		return { kind: "failed" };
+		throw new Error(`cannot read ${parts.join("/")} in the tree`);
 	}
 }
 
+// the court's names of a new line: listed, the word all, or none written
+type Names = string[] | typeof ALL | null;
+
 type Line =
-	| { type: "new"; gist: string; rule: string }
+	| { type: "new"; gist: string; rule: string; names: Names }
 	| { type: "refine"; name: string; update: string }
 	| { type: "cancel"; name: string | null }
 	| { type: "none" }
@@ -237,11 +243,22 @@ type Line =
 // one item of a Precedent section, as both the write and the admission read it
 function classify({ text, bad }: Item): Line {
 	const single = !bad && !text.includes("\n");
-	const [, gist, rule] = (single && text.match(NEW_LINE)) || [];
+	const [, gist, named, rule] = (single && text.match(NEW_LINE)) || [];
 	const [, refined, update] = (single && text.match(REFINE_LINE)) || [];
 	const [, cancelled] = (single && text.match(CANCEL_LINE)) || [];
-	if (gist !== undefined && rule !== undefined && GIST.test(gist))
-		return { type: "new", gist, rule: rule.trim() };
+	const names = named?.split(",").map((n) => n.trim());
+	if (
+		gist !== undefined &&
+		rule !== undefined &&
+		GIST.test(gist) &&
+		!names?.includes("")
+	)
+		return {
+			type: "new",
+			gist,
+			rule: rule.trim(),
+			names: names === undefined ? null : names.includes(ALL) ? ALL : names,
+		};
 	if (
 		refined !== undefined &&
 		update !== undefined &&
@@ -258,18 +275,19 @@ function classify({ text, bad }: Item): Line {
 
 type Ruling = { kind: string; date: string; issue: number; source: string };
 
-// The printed lines, and the files that a new line created under its own name and
-// no later line of the call changed. departments gives the fallback list, asked
-// only when a file is written.
+// The printed lines, the files that a new line created under its own name and no
+// later line of the call changed, and the court's dropped names of each new file.
+// original gives the list of a file, the case list asked only when needed.
 function apply(
 	items: Item[],
 	ruling: Ruling,
 	folder: Folder,
-	departments: () => string[],
-): { lines: string[]; fresh: string[] } {
-	const fields = (): Fields => ({
+	original: (names: Names) => string[],
+	dropped: (names: Names) => string[],
+): { lines: string[]; fresh: string[]; drops: string[] } {
+	const fields = (names: Names): Fields => ({
 		kind: ruling.kind,
-		departments: departments(),
+		departments: original(names),
 		issue: ruling.issue,
 		date: ruling.date,
 		ruling: ruling.source,
@@ -277,11 +295,18 @@ function apply(
 	const reasons = new Map<string, string>();
 	const lines: string[] = [];
 	const fresh = new Set<string>();
-	const create = (base: string, text: string, reason?: string) => {
+	const drops = new Map<string, string[]>();
+	const create = (
+		base: string,
+		text: string,
+		names: Names,
+		reason?: string,
+	) => {
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		folder.set(name, buildPrecedent(fields(), text));
+		folder.set(name, buildPrecedent(fields(names), text));
 		if (why !== undefined) reasons.set(name, why);
+		drops.set(name, dropped(names));
 		return name;
 	};
 	const keep = `${ruling.date}-issue-${ruling.issue}`;
@@ -289,12 +314,12 @@ function apply(
 		const line = classify(item);
 		if (line.type === "new") {
 			const base = `${ruling.date}-${line.gist}`;
-			if (create(base, line.rule) === base) fresh.add(base);
+			if (create(base, line.rule, line.names) === base) fresh.add(base);
 		} else if (line.type === "refine") {
 			fresh.delete(line.name);
 			const was = folder.current(line.name);
 			const split = was === null ? null : splitPrecedent(was);
-			if (split === null) create(keep, line.update, "refine-missing");
+			if (split === null) create(keep, line.update, null, "refine-missing");
 			else if (split.body.trim() !== line.update)
 				folder.set(line.name, `${split.header}\n\n${line.update}\n`);
 		} else if (line.type === "cancel") {
@@ -302,7 +327,7 @@ function apply(
 			if (line.name !== null && folder.current(line.name) !== null)
 				folder.set(line.name, null);
 			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
-		} else if (line.type === "bad") create(keep, item.text, "bad-line");
+		} else if (line.type === "bad") create(keep, item.text, null, "bad-line");
 	}
 	const written = folder.commit();
 	for (const name of written) {
@@ -313,7 +338,13 @@ function apply(
 				: ["entry", name, ...(reason === undefined ? [] : [reason])].join("\t"),
 		);
 	}
-	return { lines, fresh: written.filter((name) => fresh.has(name)) };
+	// a name is reported only for a file that exists after the commit
+	const kept = [...drops].filter(([name]) => folder.current(name) !== null);
+	return {
+		lines,
+		fresh: written.filter((name) => fresh.has(name)),
+		drops: kept.flatMap(([name, ds]) => ds.map((d) => `drop\t${name}\t${d}`)),
+	};
 }
 
 type Stored = { stage: string; fields: string; raw: string };
@@ -449,7 +480,8 @@ export async function candidates(s: Sources): Promise<[string, string][]> {
 }
 
 // The clerk's sources: the tree for the precinct place, the installation for the
-// others. A failed listing of the shared pages refuses, so no shared department is lost.
+// others. A failed listing of the shared pages is a fault, so no shared department
+// is lost.
 function treeSources(
 	tree: string,
 	config: string | null,
@@ -458,7 +490,7 @@ function treeSources(
 	const constitution = treeFile(tree, [CONSTITUTION]);
 	const failed: string[] = [];
 	const shared = sharedPages(failed);
-	if (failed[0] !== undefined) throw new Refusal(failed[0]);
+	if (failed[0] !== undefined) throw new Error(failed[0]);
 	return {
 		constitution: constitution.kind === "page" ? constitution.text : null,
 		shared,
@@ -500,15 +532,50 @@ const refusedOn = (e: unknown) => {
 	process.stderr.write(`journal: ${e.message}\n`);
 };
 
+// The list a file is written with: empty for the word all; else the court's names
+// that are candidates, in candidate order, empty when they cover every candidate;
+// else the case list, as is. caseList is asked only in that last case.
+export function originalList(
+	names: Names,
+	candidates: string[],
+	caseList: () => string[],
+): string[] {
+	if (names === ALL) return [];
+	const named = candidates.filter((d) => names?.includes(d));
+	if (named.length === 0) return caseList();
+	return named.length === candidates.length ? [] : named;
+}
+
+// Jev has something to add only to a named list that leaves a candidate out.
+export const asksJev = (original: string[], candidates: string[]) =>
+	original.length > 0 && candidates.some((d) => !original.includes(d));
+
+// The court's names that are no candidate, each once. A name outside the class
+// shows as NO_VALUE, so the output never repeats foreign text.
+const droppedNames = (names: Names, candidates: string[]) =>
+	names === null || names === ALL
+		? []
+		: [...new Set(names)]
+				.filter((n) => !candidates.includes(n))
+				.map((n) => (fits("department", n) ? n : NO_VALUE));
+
+const namesGiven = (items: Item[]) =>
+	items.some((i) => {
+		const l = classify(i);
+		return l.type === "new" && Array.isArray(l.names);
+	});
+
 type Admitted = {
 	text: string;
 	rule: string;
 	ruling: { kind: string; text: string };
-	missions: [string, string][];
+	original: string[];
+	candidates: string[];
+	asked: [string, string][];
 };
 
 // The gate of a request: the file of a new line of the newest ruling, as written,
-// in a precinct allowed to use Jev, with at least one candidate department.
+// in a precinct allowed to use Jev, whose list leaves a candidate out.
 async function admitted(
 	precinct: string,
 	issue: number,
@@ -523,43 +590,63 @@ async function admitted(
 	if (file.kind === "failed")
 		throw new Refusal(`not a plain precedent file: ${name}`);
 	const body = splitPrecedent(file.text)?.body.trim();
-	const admits = itemsOfRuling(ruling.text)
+	const line = itemsOfRuling(ruling.text)
 		.flat()
 		.map(classify)
-		.some(
+		.find(
 			(l) =>
 				l.type === "new" &&
 				`${ruling.date}-${l.gist}` === name &&
 				l.rule === body,
 		);
-	if (body === undefined || !admits)
+	if (body === undefined || line?.type !== "new")
 		throw new Refusal(`the file is not one new line of the ruling: ${name}`);
 	const config = readConfig();
 	if (!jevAllowed(config, precinct))
 		throw new Refusal(`Jev is not allowed for ${precinct}`);
 	const missions = await candidates(treeSources(tree, config, precinct));
-	if (missions.length === 0) throw new Refusal("no candidate department");
-	return { text: file.text, rule: body, ruling, missions };
+	const names = missions.map(([d]) => d);
+	const original = originalList(line.names, names, () =>
+		withDb((db) => fallbackOf(db, precinct, issue)),
+	);
+	if (!asksJev(original, names))
+		throw new Refusal(`no candidate department to add: ${name}`);
+	return {
+		text: file.text,
+		rule: body,
+		ruling,
+		original,
+		candidates: names,
+		asked: missions.filter(([d]) => !original.includes(d)),
+	};
 }
 
 const sameList = (a: string[], b: string[]) =>
 	a.length === b.length && a.every((d, i) => d === b[i]);
 
-// The list to write, or null for no change. A department counts when its
-// probability, read with two decimals as the evidence prints it, reaches the
-// threshold. All candidates give the empty list, which also serves departments
+// The list to write, or null for no change. A department outside the original
+// list is added when its probability, read with two decimals as the evidence
+// prints it, reaches the threshold; nothing leaves the original list. A list
+// that covers every candidate is written empty, which also serves departments
 // added later.
 export function decide(
+	original: string[],
+	candidates: string[],
 	scored: [department: string, probability: number][],
 	threshold: number,
 	current: string[] | null,
 ): string[] | null {
-	const chosen = scored
-		.filter(([, p]) => Number(shown(p)) >= threshold)
+	const added = scored
+		.filter(([d, p]) => !original.includes(d) && Number(shown(p)) >= threshold)
 		.map(([d]) => d);
-	if (chosen.length === 0) return null;
-	const list = chosen.length === scored.length ? [] : chosen;
-	return current !== null && sameList(list, current) ? null : list;
+	if (added.length === 0) return null;
+	const kept = new Set([...original, ...added]);
+	const list = [
+		...original.filter((d) => !candidates.includes(d)),
+		...candidates.filter((d) => kept.has(d)),
+	];
+	const written = candidates.every((d) => kept.has(d)) ? [] : list;
+	return current !== null && sameList(written, current) ? null : written;
 }
 
 async function requestBody(
@@ -570,15 +657,15 @@ async function requestBody(
 ): Promise<string> {
 	const a = await admitted(precinct, issue, tree, name);
 	return departmentsBody(
-		await departmentsState(a.rule, a.ruling.text, a.ruling.kind, a.missions),
+		await departmentsState(a.rule, a.ruling.text, a.ruling.kind, a.asked),
 	);
 }
 
 const UNCHANGED_LINE = "jev unchanged";
 
-// The narrowing step: it reads the reply once and writes only the departments of
-// a file that still holds the fallback list.
-async function narrowed(
+// The adding step: it reads the reply once and writes only the departments of a
+// file that still holds its original list.
+async function augmented(
 	precinct: string,
 	issue: number,
 	tree: string,
@@ -594,20 +681,25 @@ async function narrowed(
 		return jevNone("brief");
 	}
 	const current = headerOf(a.text).departments;
-	const fallback = withDb((db) => fallbackOf(db, precinct, issue));
-	if (current === null || !sameList(current, fallback)) return UNCHANGED_LINE;
+	if (current === null || !sameList(current, a.original)) return UNCHANGED_LINE;
 	const reply = replyOf(input);
 	if ("none" in reply) return reply.none;
 	let answer: ReturnType<typeof departmentsAnswer>;
 	try {
 		answer = departmentsAnswer(
 			reply.body,
-			a.missions.map(([d]) => d),
+			a.asked.map(([d]) => d),
 		);
 	} catch {
 		return jevNone("bad-answer");
 	}
-	const list = decide(answer.scored, DEPARTMENTS_THRESHOLD, current);
+	const list = decide(
+		a.original,
+		a.candidates,
+		answer.scored,
+		DEPARTMENTS_THRESHOLD,
+		current,
+	);
 	if (list === null) return UNCHANGED_LINE;
 	const text = withDepartments(a.text, list);
 	if (text === null) return jevNone("brief");
@@ -635,30 +727,50 @@ export async function precedentCommand(args: string[]): Promise<number> {
 		return EXIT.OK;
 	}
 	if (only(opt.answer)) {
-		out(await narrowed(precinct, issue, opt.tree, opt.answer, readStdin()));
+		out(await augmented(precinct, issue, opt.tree, opt.answer, readStdin()));
 		return EXIT.OK;
 	}
 	if (!only(opt.source)) throw usage(USAGE);
 	const source = checkLink(opt.source);
 	const { kind, date, text } = rulingOf(precinct, issue);
 	const sections = itemsOfRuling(text);
+	const items = sections.flat();
+	const config = readConfig();
+	const allowed = jevAllowed(config, precinct);
+	// candidates are read before any write, so a read fault writes nothing
+	const names =
+		namesGiven(items) || allowed
+			? (await candidates(treeSources(opt.tree, config, precinct))).map(
+					([d]) => d,
+				)
+			: [];
+	let caseList: string[] | undefined;
 	const folder = new Folder(opt.tree);
-	const { lines, fresh } = apply(
-		sections.flat(),
+	const { lines, fresh, drops } = apply(
+		items,
 		{ kind, date, issue, source },
 		folder,
-		() => withDb((db) => fallbackOf(db, precinct, issue)),
+		(given) =>
+			originalList(given, names, () => {
+				caseList ??= withDb((db) => fallbackOf(db, precinct, issue));
+				return caseList;
+			}),
+		(given) => droppedNames(given, names),
 	);
-	for (const line of summary(sections, lines)) out(line);
+	for (const line of [...summary(sections, lines), ...drops]) out(line);
 	// a precinct without Jev is a normal state: it asks nothing and says nothing
-	if (fresh.length === 0 || !jevAllowed(readConfig(), precinct)) return EXIT.OK;
-	for (const name of fresh)
+	if (fresh.length === 0 || !allowed) return EXIT.OK;
+	for (const name of fresh) {
+		// a list that is empty or covers every candidate is a normal state: Jev adds nothing
+		const list = headerOf(folder.current(name) ?? "").departments ?? [];
+		if (!asksJev(list, names)) continue;
 		try {
 			await admitted(precinct, issue, opt.tree, name);
 			out("ask", name);
 		} catch (e) {
 			refusedOn(e);
 		}
+	}
 	return EXIT.OK;
 }
 

@@ -212,7 +212,7 @@ Pull request #31 carries this issue.
 
 Rules:
 
-- The reasons of the precedent output, `missing` included, go to Blockers, never to the comment.
+- The reasons and the `drop` lines of the precedent output, `missing` included, go to Blockers, never to the comment.
 - Write no home path, no installation path, no token and no login.
 
 ## Report
@@ -222,7 +222,7 @@ Three lines:
 ```
 Coverage: <tip>, issue #<n>.
 Written: <comment, pull request and issue URLs, or the closures and reopenings with their reasons, or none>.
-Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, the jev none lines and their reasons, any facts about evidence, the state of the clone>.
+Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, the drop lines, the jev none lines and their reasons, any facts about evidence, the state of the clone>.
 ```
 
 When the order is stale, the report is the one line of step 5.

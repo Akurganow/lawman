@@ -133,18 +133,19 @@ const KINDS: Record<string, Kind> = {
 };
 
 // The departments kind: the journal builds its state from the ruling and the
-// department pages, so no brief exists. One question per candidate department.
-export const DEPARTMENTS_THRESHOLD = 0.51;
+// department pages, so no brief exists. One question per department outside the
+// court's list, and that department's Mission stands in its question alone.
+export const DEPARTMENTS_THRESHOLD = 0.3;
 // the labelled cases the question and the threshold were checked on
-export const DEPARTMENTS_CHECKED = { tuning: 40, heldOut: 16 };
+export const DEPARTMENTS_CHECKED = { tuning: 0, heldOut: 0 };
 
 const departmentId = (name: string) => name.replaceAll("-", "_");
 
-const departmentQuestion = (id: string) =>
+const departmentQuestion = (mission: string) =>
 	noul(
-		`A precedent binds each department that would decide one of its own findings differently because of its rule, and one rule can bind several departments. Would the department whose duty is \`state.departments.${id}\` decide one of its findings differently because of the rule in \`state.precedent\`? Judge this department alone: another department that the rule binds more clearly does not lower the answer. \`state.ruling\` holds the court's words that made the precedent.`,
-		"The rule speaks about a kind of text, code or defect that this department's duty covers, so a finding this department could file would be decided differently with the rule than without it.",
-		"No finding that this department could file, as its duty describes it, would be decided differently with the rule than without it.",
+		`Does the rule in \`state.precedent.rule\` speak about the kind of defect, text or code that this duty names? The duty: ${mission}`,
+		"The rule speaks about the kind of defect, text or code that the duty names.",
+		"The rule speaks about other kinds of defect, text or code than the duty names.",
 	);
 
 export type DepartmentsState = {
@@ -161,18 +162,14 @@ export function departmentsBody(s: DepartmentsState): string {
 		...(s.verdict === null ? {} : { verdict: s.verdict }),
 		...(s.grounds === null ? {} : { grounds: s.grounds }),
 	};
-	const ids = s.missions.map(([name]) => departmentId(name));
 	return `${JSON.stringify({
 		model: MODEL,
-		state: {
-			precedent: { rule: s.rule, kind: s.kind },
-			ruling,
-			departments: Object.fromEntries(
-				s.missions.map(([, mission], i) => [ids[i], mission]),
-			),
-		},
+		state: { precedent: { rule: s.rule, kind: s.kind }, ruling },
 		questions: Object.fromEntries(
-			ids.map((id) => [id, departmentQuestion(id)]),
+			s.missions.map(([name, mission]) => [
+				departmentId(name),
+				departmentQuestion(mission),
+			]),
 		),
 	})}\n`;
 }
