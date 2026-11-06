@@ -21,7 +21,7 @@ The file starts with frontmatter that holds `contract_version: 4`. Next comes th
 | Executor loads | Skills and rules of the repository that the executor loads before it changes code. | Executor |
 | Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Court |
 
-Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin.
+Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. The court names the departments of its precedent, or says all. The journal checks each name and writes the names it knows into `departments`. Without any, it writes the department of the case, or an empty list for all departments when the case has none. TypeSafe Jev may add departments when the precinct allows Jev, and never removes one. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin.
 
 A path is relative to the repository root. It holds no `..` segment and has no leading slash. A role reads a referenced file only at the analysed commit.
 
@@ -73,7 +73,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 
   Version 3 also touches the owner-attention label. When its line carries exactly the old purpose, the amendment replaces it with the new one. The proposal then shows a row that sets the new description of the label on the host. The write follows the pull request, after your approval. Any other purpose text stays your words.
 - **The assembly amends the license facts.** For an existing constitution, the assembly opens a pull request from the branch `lawman/licenses-sources`. It checks the file with `bin/journal lint-page constitution`. After the edit, the diff changes only the section `## Licenses`. A merge by you may narrow `sources` or change `use`, and the assembly asks no question about it.
-- **The court adds precedents.** A ruling may carry lines in its Precedent section: a new precedent, a refinement of one or the cancellation of one. The journal writes the files under `.lawman/precedents/`. The clerk opens a pull request with them. A taken name gets the next free one, so no precedent is lost. A precedent binds the roles only after you merge its pull request.
+- **The court adds precedents.** A ruling may carry lines in its Precedent section: a new precedent with the departments it binds, a refinement of one or the cancellation of one. The journal writes the files under `.lawman/precedents/`. The clerk opens a pull request with them. A taken name gets the next free one, so no precedent is lost. A precedent binds the roles only after you merge its pull request.
 
 A precedent is no recorded reason and drops no finding. It is a question the court has already decided for your repository, so the same dispute is not argued again in every case. A protecting precedent says that a shape is not a violation, and a condemning one says that it is. The roles rely on it, and a role that needs a different outcome shows how the new case differs or asks to cancel the precedent. The facts of each new case are still proved by evidence.
 

@@ -3,23 +3,23 @@ import { EXIT, Fail, out, readStdin } from "./db";
 import { isNoReply, splitReply } from "./reply-status";
 
 const USAGE = "jev <request|answer> --kind <p0|grade|requirement>";
-const MODEL = "jev-latest";
+export const MODEL = "jev-latest";
 const BRIEF_LINE = /^([a-z_]+): (.+)$/;
 const ANSWER_MODEL = /^[A-Za-z0-9._-]{1,40}$/;
 
-type Kind = {
+type QuestionSet = {
 	fields: string[];
 	questions: Record<string, object>;
 	levels: [label: string, level: string][];
 };
 
-const noul = (instructions: string, yes: string, no: string) => ({
+export const noul = (instructions: string, yes: string, no: string) => ({
 	type: "noul",
 	instructions,
 	criteria: { true: yes, false: no },
 });
 
-const P0: Kind = {
+const P0: QuestionSet = {
 	fields: [
 		"defect",
 		"secret",
@@ -48,7 +48,7 @@ const P0: Kind = {
 	levels: [],
 };
 
-const GRADE: Kind = {
+const GRADE: QuestionSet = {
 	fields: ["defect", "effect_today", "established", "not_established"],
 	questions: {
 		level: {
@@ -83,7 +83,7 @@ const GRADE: Kind = {
 	],
 };
 
-const REQUIREMENT: Kind = {
+const REQUIREMENT: QuestionSet = {
 	fields: [
 		"request",
 		"need",
@@ -126,7 +126,7 @@ const REQUIREMENT: Kind = {
 	levels: GRADE.levels,
 };
 
-const KINDS: Record<string, Kind> = {
+const QUESTION_SETS: Record<string, QuestionSet> = {
 	p0: P0,
 	grade: GRADE,
 	requirement: REQUIREMENT,
@@ -137,7 +137,7 @@ const reject = (why: string) => new Fail(EXIT.USAGE, why);
 function parseBrief(
 	text: string,
 	name: string,
-	kind: Kind,
+	set: QuestionSet,
 ): Record<string, string> {
 	const found = new Map<string, string>();
 	text.split("\n").forEach((raw, i) => {
@@ -146,13 +146,13 @@ function parseBrief(
 		const [, field, value] = line.match(BRIEF_LINE) ?? [];
 		if (field === undefined || value === undefined)
 			throw reject(`brief line ${i + 1} is not name: value`);
-		if (!kind.fields.includes(field))
+		if (!set.fields.includes(field))
 			throw reject(`brief field ${field} is not a ${name} field`);
 		if (found.has(field)) throw reject(`brief field ${field} appears twice`);
 		found.set(field, value);
 	});
 	const brief: Record<string, string> = {};
-	for (const field of kind.fields) {
+	for (const field of set.fields) {
 		const value = found.get(field);
 		if (value === undefined) throw reject(`brief field ${field} is missing`);
 		brief[field] = value;
@@ -160,20 +160,20 @@ function parseBrief(
 	return brief;
 }
 
-function kindOf(args: string[]): { name: string; kind: Kind } {
+function questionSetOf(args: string[]): { name: string; set: QuestionSet } {
 	const { opt } = parseArgs(args, 0, ["kind"], USAGE);
-	const kind = pick(KINDS, opt.kind);
-	if (kind === undefined) throw usage(USAGE);
-	return { name: opt.kind, kind };
+	const set = pick(QUESTION_SETS, opt.kind);
+	if (set === undefined) throw usage(USAGE);
+	return { name: opt.kind, set };
 }
 
 export function requestLine(args: string[], text: string): string {
-	const { name, kind } = kindOf(args);
-	const brief = parseBrief(text, name, kind);
+	const { name, set } = questionSetOf(args);
+	const brief = parseBrief(text, name, set);
 	return JSON.stringify({
 		model: MODEL,
 		state: { brief },
-		questions: kind.questions,
+		questions: set.questions,
 	});
 }
 
@@ -183,42 +183,59 @@ const at = (root: unknown, path: string[]) =>
 		root,
 	);
 
-const shown = (n: number) => n.toFixed(2).replace(/^-0\.00$/, "0.00");
+export const shown = (n: number) => n.toFixed(2).replace(/^-0\.00$/, "0.00");
 
-function evidence(name: string, kind: Kind, body: string): string {
-	const root = JSON.parse(body);
+export function modelOf(root: unknown): string {
 	const model = at(root, ["model"]);
 	if (typeof model !== "string" || !ANSWER_MODEL.test(model))
 		throw new Error("model is not valid");
-	const noulIds = Object.entries(kind.questions)
+	return model;
+}
+
+export const finite = (root: unknown, path: string[]): number => {
+	const n = at(root, path);
+	if (typeof n !== "number" || !Number.isFinite(n))
+		throw new Error("not a finite number");
+	return n;
+};
+
+function evidence(name: string, set: QuestionSet, body: string): string {
+	const root = JSON.parse(body);
+	const model = modelOf(root);
+	const noulIds = Object.entries(set.questions)
 		.filter(([, q]) => "type" in q && q.type === "noul")
 		.map(([id]): [string, string[]] => [id, ["answers", id, "noul"]]);
 	const readings = [
-		...kind.levels.map(([label, level]): [string, string[]] => [
+		...set.levels.map(([label, level]): [string, string[]] => [
 			label,
 			["answers", "level", "probabilities", level],
 		]),
 		...noulIds,
 	];
-	const values = readings.map(([label, path]) => {
-		const n = at(root, path);
-		if (typeof n !== "number" || !Number.isFinite(n))
-			throw new Error("not a finite number");
-		return `${label}=${shown(n)}`;
-	});
+	const values = readings.map(
+		([label, path]) => `${label}=${shown(finite(root, path))}`,
+	);
 	return `jev model=${model} kind=${name} ${values.join(" ")}`;
 }
 
-export function answerLine(args: string[], input: string): string {
-	const { name, kind } = kindOf(args);
-	const none = (reason: string) => `jev none reason=${reason}`;
+export const jevNone = (reason: string) => `jev none reason=${reason}`;
+
+// the body of a reply with status 200, or the jev none line of any other status
+export function replyOf(input: string): { body: string } | { none: string } {
 	const { body, status } = splitReply(input);
-	if (isNoReply(status)) return none("no-reply");
-	if (status !== "200") return none(`status-${status}`);
+	if (isNoReply(status)) return { none: jevNone("no-reply") };
+	if (status !== "200") return { none: jevNone(`status-${status}`) };
+	return { body };
+}
+
+export function answerLine(args: string[], input: string): string {
+	const { name, set } = questionSetOf(args);
+	const reply = replyOf(input);
+	if ("none" in reply) return reply.none;
 	try {
-		return evidence(name, kind, body);
+		return evidence(name, set, reply.body);
 	} catch {
-		return none("bad-answer");
+		return jevNone("bad-answer");
 	}
 }
 

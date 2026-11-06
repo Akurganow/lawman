@@ -141,10 +141,18 @@ The section `## Precedent` of a court ruling holds its precedent lines. A ruling
 | Line | Result |
 | :-- | :-- |
 | `new <gist>: <rule>` | a new precedent |
+| `new <gist> for <departments>: <rule>` | a new precedent that binds the named departments |
 | `refine <name>: <rule>` | the rule text of an existing precedent changes |
 | `cancel <name>` | an existing precedent is deleted |
 
 - `<gist>` matches `[a-z0-9]+(-[a-z0-9]+)*`. `<name>` matches `[A-Za-z0-9][A-Za-z0-9._-]*`. `<rule>` is non-empty text to the end of the line.
+- `<departments>` is a list of department names separated by commas, or the word `all`. It stands before the first colon, so no character of the rule reads as a name, and the rule keeps every character after `: `. The names never enter the rule.
+- A `new` line without names is a valid line.
+- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add departments it does not reject, and never removes one.
+- `all` is reserved: it means every department and never names a department called `all`. A list that holds `all` beside names means every department too, and its other names count for nothing.
+- An empty element in `<departments>` makes a line that fits no form.
+- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds it only as the department of the case, when no other name counts.
+- `refine` and `cancel` carry no names.
 - A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
 - The journal writes the files. The writer never numbers, names or copies a rule into a file.
 
@@ -153,7 +161,7 @@ Example:
 ```
 ## Precedent
 
-- new empty-test-double-conformances: An empty conformance of a test double to a protocol is not dead code.
+- new empty-test-double-conformances for dead-code: An empty conformance of a test double to a protocol is not dead code.
 - cancel 2026-09-02-unused-parameter-in-callbacks
 ```
 

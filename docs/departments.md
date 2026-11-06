@@ -12,7 +12,7 @@ A page starts with frontmatter. It holds `name`, which matches the file name wit
 
 | Section | Holds |
 | :-- | :-- |
-| Mission | One paragraph that names the class of defect. It ends with the deciding test. |
+| Mission | One paragraph that names the class of defect. It ends with the deciding test. The clerk's TypeSafe Jev question about the departments of a precedent reads it too. |
 | Kinds | A table of `kind`, `meaning` and `measurement`. A kind names a symptom, never a tool. |
 | Where to look | The subject in terms of the tree. |
 | Not findings | What the page excludes beyond the law, and the threshold below which a true finding stays unfiled. |

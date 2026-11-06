@@ -1,6 +1,7 @@
-import type { Heading, Root, RootContent } from "mdast";
+import type { Heading, Nodes, Root, RootContent } from "mdast";
 import remarkParse from "remark-parse";
 import { unified } from "unified";
+import { EXIT as STOP, visit } from "unist-util-visit";
 import { INTRO, WHOLE } from "./input-roles";
 
 type Found = { name: string; depth: number; start: number };
@@ -71,4 +72,56 @@ export function sectionsOf(
 			text.length;
 		return lines(text.slice(h.start, end));
 	});
+}
+
+// the text of the nodes from first to last, as written
+export const sliceOf = (
+	text: string,
+	first?: RootContent,
+	last?: RootContent,
+) =>
+	text
+		.slice(first?.position?.start.offset ?? 0, last?.position?.end.offset ?? 0)
+		.trim();
+
+// html whose parent holds a line of text is inline; any other html is a block
+const INLINE_PARENTS = new Set([
+	"paragraph",
+	"heading",
+	"emphasis",
+	"strong",
+	"link",
+	"linkReference",
+]);
+
+// a code block, or block html, at any depth
+function holdsBlock(node: Nodes): boolean {
+	let found = false;
+	visit(node, (n, _i, parent) => {
+		found =
+			n.type === "code" ||
+			(n.type === "html" && !INLINE_PARENTS.has(parent?.type ?? ""));
+		return found ? STOP : undefined;
+	});
+	return found;
+}
+
+// The court's words of every `## <name>` section, in order and one blank line apart:
+// each top-level node and list item without code or block html, as written.
+// Null for no section, an empty one or `none`.
+export function sectionWords(text: string, name: string): string | null {
+	const words = sectionNodes(text, name)
+		.flat()
+		.flatMap((node) =>
+			node.type === "list"
+				? node.children
+						.filter((li) => !holdsBlock(li))
+						.map((li) => sliceOf(text, li.children[0], li.children.at(-1)))
+				: holdsBlock(node)
+					? []
+					: [sliceOf(text, node, node)],
+		)
+		.filter((t) => t !== "")
+		.join("\n\n");
+	return words === "" || words === "none" ? null : words;
 }

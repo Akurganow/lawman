@@ -2,7 +2,7 @@ import { fits } from "./args";
 import { readFrontmatter } from "./lint";
 import { stripCr } from "./markers";
 
-export const KINDS = ["protects", "condemns"];
+export const PRECEDENT_KINDS = ["protects", "condemns"];
 export const NO_VALUE = "-";
 
 // departments is null when the value is outside its class
@@ -48,7 +48,10 @@ export function headerOf(text: string): Header {
 	const kind = h?.kind;
 	const departments = h?.departments;
 	return {
-		kind: typeof kind === "string" && KINDS.includes(kind) ? kind : NO_VALUE,
+		kind:
+			typeof kind === "string" && PRECEDENT_KINDS.includes(kind)
+				? kind
+				: NO_VALUE,
 		departments:
 			Array.isArray(departments) &&
 			departments.every((d) => typeof d === "string" && fits("department", d))
@@ -69,3 +72,12 @@ export const serves = (d: string[] | null, department: string) =>
 
 export const buildPrecedent = (fields: Fields, text: string) =>
 	`---\n${Bun.YAML.stringify(fields, null, 2)}\n---\n\n${text}\n`;
+
+// the file with only its departments field changed; the caller has read its header
+export function withDepartments(text: string, departments: string[]): string {
+	const split = splitPrecedent(text);
+	const fields = parsed(text);
+	if (split === null || fields === null)
+		throw new Error("the precedent has no readable header");
+	return `---\n${Bun.YAML.stringify({ ...fields, departments }, null, 2)}\n---\n${split.body}`;
+}

@@ -284,7 +284,7 @@ A comment: the court rules again with it as evidence.
 Closing the issue ends the case, whoever closes it.
 
 ## Precedent
-<only for a conviction or an acquittal: one line per precedent, in a form of the "Precedent" section of `markers.md`. `new <gist>: <rule>` when the verdict settles a question of a shape for the future. `refine <name>: <rule>` or `cancel <name>` when the court departs from a precedent: a party showed a difference, or a request to cancel convinced the court. `<name>` comes from a `precedent <name>` line of the input. Build each line from Verdict and Grounds only, with no quoted third-party text. Write no date and no kind. The single line `none` when the ruling settles no question of a shape for the future.>
+<only for a conviction or an acquittal: one line per precedent, in a form of the "Precedent" section of `markers.md`. `new <gist> for <departments>: <rule>` when the verdict settles a question of a shape for the future. `<departments>` names each department whose findings the rule decides, separated by commas: the `department` of the case and the departments of the `lint` fence. Name no other department, and leave out a department the rule does not touch. Write `all` instead when the rule decides the findings of every department. `refine <name>: <rule>` or `cancel <name>` when the court departs from a precedent: a party showed a difference, or a request to cancel convinced the court. `<name>` comes from a `precedent <name>` line of the input. Build each line from Verdict and Grounds only, with no quoted third-party text. Write no date and no kind. The single line `none` when the ruling settles no question of a shape for the future.>
 <marker>
 ````
 
@@ -325,7 +325,7 @@ not_established: none
 jev model=jev-1.13.0 kind=grade P1=0.12 P2=0.31 P3=0.57 harm_users=0.08 harm_maintainers=0.05 cosmetic_only=0.91
 
 ## Precedent
-- new help-names-unaccepted-option: A help text that names an option the parser does not accept is a violation.
+- new help-names-unaccepted-option for claims: A help text that names an option the parser does not accept is a violation.
 
 <!-- lawman: role=court stage=conviction sha=c81e4f27a9d305b6e1f20c7a3d85b94e6f10a2c7 priority=P3 at=2026-10-16T10:20:00Z -->
 ````

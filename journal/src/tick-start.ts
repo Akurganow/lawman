@@ -1,23 +1,16 @@
 import type { Database } from "bun:sqlite";
-import { join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs } from "./args";
 import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, inTransaction, now, open, out, withDb } from "./db";
+import { type PageRead, pageAt, placeNumber } from "./department-page";
 import { type Taken, takeableOrders, takeOrder } from "./dispatch";
-import {
-	inputChars,
-	orderLine,
-	REFERENCES,
-	readConfig,
-	readText,
-} from "./input-files";
+import { inputChars, orderLine, readConfig } from "./input-files";
 import { type Block, fencedBlock, framed, pack, render } from "./input-parts";
 import { inputOf, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
-import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
 import { lintPage, type PageKind, pageLines } from "./lint";
@@ -221,19 +214,17 @@ function fieldsFailure(input: RoleInput, order: Taken): string | null {
 const listed = (files: string, path: string) =>
 	files.split("\n").map(stripCr).includes(path);
 
-export type Page = { text: string; place: number };
-
 // The lint lines go in a fence of their own. Null when the cleaning failed.
 async function lintedPage(
 	o: Output,
 	kind: PageKind,
-	page: Page,
+	page: string,
 	name?: string,
 ): Promise<{ passed: boolean; reasons: string[] } | null> {
-	const lint = lintPage(kind, page.text, name);
+	const lint = lintPage(kind, page, name);
 	const passed = lint.reasons.length === 0;
 	const lines = await characters(pageLines(lint).join("\n"));
-	const text = passed ? await characters(page.text) : "";
+	const text = passed ? await characters(page) : "";
 	if (lines === null || text === null) return null;
 	o.add(fencedBlock("lint", lines));
 	if (passed) o.add(fencedBlock(kind, text));
@@ -309,22 +300,6 @@ async function precedentBlocks(
 	}
 	if (missed) o.selfs.push(SELF_PRECEDENTS);
 	else if (shown === 0) o.line("precedents none");
-}
-
-// the place of the law clone in the "Resolve the department page" section
-export const LAW_CLONE_PLACE = 3;
-
-// the places of the "Resolve the department page" section, in its order
-export function installationPage(d: string): Page | null {
-	const places = [
-		join(commandFolder(), "departments", `${d}.md`),
-		join(commandFolder(), REFERENCES, "departments", `${d}.md`),
-	];
-	for (const [i, path] of places.entries()) {
-		const text = readText(path);
-		if (text !== null) return { text, place: i + 2 };
-	}
-	return null;
 }
 
 export async function tickStart(args: string[]): Promise<number> {
@@ -444,10 +419,7 @@ export async function tickStart(args: string[]): Promise<number> {
 				o.add(...file.blocks);
 				o.selfs.push("constitution");
 			} else {
-				const lint = await lintedPage(o, "constitution", {
-					text: file.text,
-					place: 1,
-				});
+				const lint = await lintedPage(o, "constitution", file.text);
 				if (lint === null) o.selfs.push("constitution");
 				else if (!lint.passed) {
 					const token = lint.reasons.some((r) => r.includes("contract_version"))
@@ -475,18 +447,22 @@ export async function tickStart(args: string[]): Promise<number> {
 				id,
 			);
 		const own = `.lawman/departments/${d}.md`;
-		let page: Page | null = null;
-		let self = files === null;
-		if (files !== null && listed(files, own)) {
-			const file = await operate(p, "file", call([revision, own]));
-			if (file.text === null) {
-				o.add(...file.blocks);
-				self = true;
-			} else page = { text: file.text, place: 1 };
-		} else if (files !== null) page = installationPage(d);
-		if (page !== null) o.line(`department ${d} place=${page.place}`);
+		const found =
+			files === null
+				? null
+				: await pageAt(d, async (): Promise<PageRead> => {
+						if (!listed(files, own)) return { kind: "none" };
+						const file = await operate(p, "file", call([revision, own]));
+						if (file.text !== null) return { kind: "page", text: file.text };
+						o.add(...file.blocks);
+						return { kind: "failed" };
+					});
+		const page = found?.kind === "page" ? found.page : null;
+		const self = found === null || found.kind === "failed";
+		if (page !== null)
+			o.line(`department ${d} place=${placeNumber(page.place)}`);
 		const lint =
-			page === null ? null : await lintedPage(o, "department", page, d);
+			page === null ? null : await lintedPage(o, "department", page.text, d);
 		if (self || (page !== null && lint === null))
 			o.selfs.push(`department ${d}`);
 		else if (lint === null || !lint.passed)
