@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import * as fs from "node:fs";
 import {
 	existsSync,
@@ -11,18 +11,17 @@ import {
 } from "node:fs";
 import { join } from "node:path";
 import { fits } from "./args";
-import { issuesJson, T } from "./cases-fixture";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
 import { config } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
+import { cache } from "./precedent-test-fixture";
 import {
 	acquittal,
 	BASE,
 	conviction,
 	dir,
-	lead,
 	mark,
 	precinct,
 	ROOT,
@@ -41,7 +40,6 @@ const ruling = (section: string[], marker = ACQUITTAL) =>
 	["Ruling.", "", ...section, "", marker].join("\n");
 const precedentSection = (...lines: string[]) => ["## Precedent", "", ...lines];
 
-type Comment = { body: string; author?: string };
 let tree: string;
 
 beforeEach(() => {
@@ -63,39 +61,6 @@ const put = (name: string, text: string) => {
 	mkdirSync(folder(), { recursive: true });
 	writeFileSync(file(name), text);
 };
-
-// readStdin reads file descriptor 0, so the test answers that read
-async function cache(...issues: (string | Comment)[][]) {
-	const json = JSON.parse(
-		issuesJson(
-			Object.fromEntries(
-				issues.map((comments, k) => [
-					k + 1,
-					{
-						body: [lead()],
-						comments: comments.map((c, i): [string, string] => [
-							T(10 + i),
-							typeof c === "string" ? c : c.body,
-						]),
-					},
-				]),
-			),
-		),
-	);
-	issues.forEach((comments, k) => {
-		comments.forEach((c, i) => {
-			if (typeof c !== "string" && c.author !== undefined)
-				json.issues[k].comments[i].author = { login: c.author };
-		});
-	});
-	const spy = spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(json));
-	try {
-		const r = await inprocAsync(BASE, ["sync", "main", "--author", TRUSTED]);
-		expect(r.code).toBe(EXIT.OK);
-	} finally {
-		spy.mockRestore();
-	}
-}
 
 const record = (issue = 1, at = tree, source = SOURCE) =>
 	inprocAsync(BASE, [
@@ -135,7 +100,7 @@ describe("precedent: a new precedent", () => {
 		expect(out).toEqual([`entry\t${DATE}-empty-doubles`]);
 		expect(header(`${DATE}-empty-doubles`)).toEqual({
 			kind: "protects",
-			departments: [],
+			departments: ["core"],
 			issue: 1,
 			date: DATE,
 			ruling: SOURCE,
@@ -146,7 +111,7 @@ describe("precedent: a new precedent", () => {
 				"---",
 				"kind: protects",
 				"departments: ",
-				"  []",
+				"  - core",
 				"issue: 1",
 				`date: ${DATE}`,
 				`ruling: "${SOURCE}"`,
@@ -332,10 +297,10 @@ describe("precedent: no precedent is lost", () => {
 			`entry\t${DATE}-issue-1\tbad-line`,
 		]);
 		const text = readFileSync(file(`${DATE}-issue-1`), "utf8");
-		expect(headerOf(text)).toEqual({ kind: "protects", departments: [] });
+		expect(headerOf(text)).toEqual({ kind: "protects", departments: ["core"] });
 		expect(header(`${DATE}-issue-1`)).toEqual({
 			kind: "protects",
-			departments: [],
+			departments: ["core"],
 			issue: 1,
 			date: DATE,
 			ruling: SOURCE,
@@ -658,7 +623,7 @@ describe("precedent: the ruling example of the court skill", () => {
 		expect(r.out).toBe(`entry\t${name}\n`);
 		expect(header(name)).toEqual({
 			kind: "condemns",
-			departments: [],
+			departments: ["core"],
 			issue: 1,
 			date: "2026-10-16",
 			ruling: SOURCE,

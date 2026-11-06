@@ -28,7 +28,7 @@ export function splitPrecedent(
 	};
 }
 
-function parsed(text: string): Record<string, unknown> | null {
+export function parsed(text: string): Record<string, unknown> | null {
 	const lines = text.split("\n").map(stripCr);
 	const end = readFrontmatter(lines)?.end;
 	if (end === undefined) return null;
@@ -69,3 +69,11 @@ export const serves = (d: string[] | null, department: string) =>
 
 export const buildPrecedent = (fields: Fields, text: string) =>
 	`---\n${Bun.YAML.stringify(fields, null, 2)}\n---\n\n${text}\n`;
+
+// the file with only its departments field changed; null without a readable header
+export function withDepartments(text: string, departments: string[]) {
+	const split = splitPrecedent(text);
+	const fields = parsed(text);
+	if (split === null || fields === null) return null;
+	return `---\n${Bun.YAML.stringify({ ...fields, departments }, null, 2)}\n---\n${split.body}`;
+}

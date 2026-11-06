@@ -132,6 +132,51 @@ const KINDS: Record<string, Kind> = {
 	requirement: REQUIREMENT,
 };
 
+// The departments kind: the journal builds its state from the ruling and the
+// department pages, so no brief exists. One question per candidate department.
+export const DEPARTMENTS_THRESHOLD = 0.5;
+// the labelled cases the question and the threshold were checked on
+export const DEPARTMENTS_CHECKED = { tuning: 0, heldOut: 0 };
+
+export const departmentId = (name: string) => name.replaceAll("-", "_");
+
+const departmentQuestion = (id: string) =>
+	noul(
+		`Would the precedent in \`state.precedent\` change how the department whose duty is \`state.departments.${id}\` decides one of its findings? \`state.ruling\` holds the court's words that made the precedent.`,
+		"The rule governs the kind of defect this department looks for, so the department would decide one of its findings differently because of it.",
+		"The rule concerns other kinds of defect, and this department would decide each of its findings the same without it.",
+	);
+
+export type DepartmentsState = {
+	rule: string;
+	kind: string;
+	verdict: string | null;
+	grounds: string | null;
+	missions: [name: string, mission: string][];
+};
+
+// the request body, its final newline included, exactly as the journal prints it
+export function departmentsBody(s: DepartmentsState): string {
+	const ruling = {
+		...(s.verdict === null ? {} : { verdict: s.verdict }),
+		...(s.grounds === null ? {} : { grounds: s.grounds }),
+	};
+	const ids = s.missions.map(([name]) => departmentId(name));
+	return `${JSON.stringify({
+		model: MODEL,
+		state: {
+			precedent: { rule: s.rule, kind: s.kind },
+			ruling,
+			departments: Object.fromEntries(
+				s.missions.map(([, mission], i) => [ids[i], mission]),
+			),
+		},
+		questions: Object.fromEntries(
+			ids.map((id) => [id, departmentQuestion(id)]),
+		),
+	})}\n`;
+}
+
 const reject = (why: string) => new Fail(EXIT.USAGE, why);
 
 function parseBrief(
@@ -183,13 +228,25 @@ const at = (root: unknown, path: string[]) =>
 		root,
 	);
 
-const shown = (n: number) => n.toFixed(2).replace(/^-0\.00$/, "0.00");
+export const shown = (n: number) => n.toFixed(2).replace(/^-0\.00$/, "0.00");
 
-function evidence(name: string, kind: Kind, body: string): string {
-	const root = JSON.parse(body);
+function modelOf(root: unknown): string {
 	const model = at(root, ["model"]);
 	if (typeof model !== "string" || !ANSWER_MODEL.test(model))
 		throw new Error("model is not valid");
+	return model;
+}
+
+const finite = (root: unknown, path: string[]): number => {
+	const n = at(root, path);
+	if (typeof n !== "number" || !Number.isFinite(n))
+		throw new Error("not a finite number");
+	return n;
+};
+
+function evidence(name: string, kind: Kind, body: string): string {
+	const root = JSON.parse(body);
+	const model = modelOf(root);
 	const noulIds = Object.entries(kind.questions)
 		.filter(([, q]) => "type" in q && q.type === "noul")
 		.map(([id]): [string, string[]] => [id, ["answers", id, "noul"]]);
@@ -200,25 +257,44 @@ function evidence(name: string, kind: Kind, body: string): string {
 		]),
 		...noulIds,
 	];
-	const values = readings.map(([label, path]) => {
-		const n = at(root, path);
-		if (typeof n !== "number" || !Number.isFinite(n))
-			throw new Error("not a finite number");
-		return `${label}=${shown(n)}`;
-	});
+	const values = readings.map(
+		([label, path]) => `${label}=${shown(finite(root, path))}`,
+	);
 	return `jev model=${model} kind=${name} ${values.join(" ")}`;
+}
+
+// The model and one probability per asked department; it throws on any bad answer.
+export function departmentsAnswer(
+	body: string,
+	names: string[],
+): { model: string; values: number[] } {
+	const root = JSON.parse(body);
+	return {
+		model: modelOf(root),
+		values: names.map((n) =>
+			finite(root, ["answers", departmentId(n), "noul"]),
+		),
+	};
+}
+
+export const jevNone = (reason: string) => `jev none reason=${reason}`;
+
+// the body of a reply with status 200, or the jev none line of any other status
+export function replyOf(input: string): { body: string } | { none: string } {
+	const { body, status } = splitReply(input);
+	if (isNoReply(status)) return { none: jevNone("no-reply") };
+	if (status !== "200") return { none: jevNone(`status-${status}`) };
+	return { body };
 }
 
 export function answerLine(args: string[], input: string): string {
 	const { name, kind } = kindOf(args);
-	const none = (reason: string) => `jev none reason=${reason}`;
-	const { body, status } = splitReply(input);
-	if (isNoReply(status)) return none("no-reply");
-	if (status !== "200") return none(`status-${status}`);
+	const reply = replyOf(input);
+	if ("none" in reply) return reply.none;
 	try {
-		return evidence(name, kind, body);
+		return evidence(name, kind, reply.body);
 	} catch {
-		return none("bad-answer");
+		return jevNone("bad-answer");
 	}
 }
 

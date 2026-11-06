@@ -60,3 +60,54 @@ describe("the Send section of the court skill", () => {
 		expect(lines).toContain(`- ${rule}`);
 	});
 });
+
+const jobs = readFileSync(
+	join(ROOT, "skills", "clerk", "references", "jobs.md"),
+	"utf8",
+);
+const sectionOf = (heading: string) =>
+	(jobs.split(`### ${heading}\n`)[1] ?? "").split(/^##+ /m)[0] ?? "";
+const write = sectionOf("Write the precedent files");
+const recordStep = sectionOf("Record the precedent files");
+
+const CLERK_RULES = [
+	"Never print, echo or trace the key.",
+	"Never run a command that prints the key to you.",
+	"Never put the key on a command line or into a file.",
+	"Never send the request body to any place other than the endpoint above.",
+	"Write no file for the request body or the reply. Pipe them from the request command through the service to the answer command.",
+	"Send a request only with a body that is not empty.",
+	"Send each request once. Do not retry it. Set no timeout.",
+	"A non-zero exit, or a harness timeout, is not a failed step. When the pipeline printed no line that starts with `jev`, record `jev none reason=failed` in Blockers.",
+	"A `jev none` line goes to Blockers, never to a comment and never to a pull request.",
+	"The `typesafe-ai` skill is knowledge only. The clerk works without it.",
+	"Make no other request to the service in a tick. Only these steps use the key.",
+];
+
+describe("the Jev steps of the clerk's precedent files", () => {
+	test("the step names the request and answer forms, the endpoint and the key line", () => {
+		expect(write).toContain("--request <name>");
+		expect(write).toContain("--answer <name>");
+		expect(write).toContain("https://api.typesafe.ai/v1/systemone");
+		expect(write).toContain("typesafe_key");
+		expect(write).toContain("jev none reason=no-key");
+	});
+
+	test("the step runs one pipeline and names no file for the body or the reply", () => {
+		expect(write).toContain("Run one pipeline.");
+		expect(write).not.toMatch(/\btmp\b|\.json\b|TYPESAFE_API_KEY|curl/);
+	});
+
+	test("the clerk keeps its own rules, apart from those of the court", () => {
+		expect(CLERK_RULES).not.toEqual(RULES);
+		for (const rule of CLERK_RULES)
+			expect(write.split("\n")).toContain(`- ${rule}`);
+	});
+
+	test("the commit reads only the precedent output, and jev none is no none line", () => {
+		expect(recordStep).toContain(
+			"Run it only when the output of the `precedent` call above holds no `none` and no `no-entry` line.",
+		);
+		expect(recordStep).toContain("a `jev none` line is no `none` line");
+	});
+});

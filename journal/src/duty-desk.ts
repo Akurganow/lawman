@@ -28,9 +28,10 @@ import { type Operated, operate } from "./operations";
 import { rotationOrder } from "./rotation";
 import { JOBS } from "./settings";
 import {
-	installationPage,
+	departmentPage,
+	installationRead,
 	LAW_CLONE_PLACE,
-	type Page,
+	type PlaceRead,
 	stageFor,
 } from "./tick-start";
 
@@ -38,7 +39,7 @@ const START_USAGE =
 	"tick start --role <r> --order <id>|tick start --role duty-desk";
 const CONTINUE_USAGE = "tick continue <id>";
 const CONSTITUTION = "LAWMAN.md";
-const LICENSES = "licenses";
+export const LICENSES = "licenses";
 const RESPONSE_UNIT = "response-unit";
 // the roles whose orders come from the cases and the pull requests
 const CASE_ROLES = [
@@ -100,7 +101,7 @@ function ended(
 }
 
 // The shared department pages of the law, by file name. A failed listing leaves none and says so.
-function sharedPages(blockers: string[]): string[] {
+export function sharedPages(blockers: string[]): string[] {
 	try {
 		return readdirSync(join(commandFolder(), REFERENCES, "departments"), {
 			withFileTypes: true,
@@ -114,10 +115,20 @@ function sharedPages(blockers: string[]): string[] {
 	}
 }
 
-const consents = (config: string | null, precinct: string) =>
-	(configValue(config ?? "", "license_precincts") ?? "")
+// the precinct's consent: the whole token <precinct>=yes in the line of the key
+export const consents = (
+	config: string | null,
+	precinct: string,
+	key: "license_precincts" | "typesafe_precincts",
+) =>
+	(configValue(config ?? "", key) ?? "")
 		.split(/\s+/)
 		.includes(`${precinct}=yes`);
+
+// Jev is allowed only by the exact value yes and the precinct's consent
+export const jevAllowed = (config: string | null, precinct: string) =>
+	configValue(config ?? "", "typesafe") === "yes" &&
+	consents(config, precinct, "typesafe_precincts");
 
 // The fetch and the constitution of one precinct. Null, with the cause in Blockers, when either fails.
 async function readPrecinct(
@@ -159,24 +170,18 @@ async function readPrecinct(
 	};
 }
 
-// the places of the "Resolve the department page" section, in its order
-async function departmentPage(
-	p: string,
-	reading: Reading,
-	d: string,
-	blockers: string[],
-): Promise<Page | null> {
-	const own = `.lawman/departments/${d}.md`;
-	if (listed(reading.files, own)) {
+// the precinct place through the host operations, the others as the journal reads them
+const hostRead =
+	(p: string, reading: Reading, d: string, blockers: string[]): PlaceRead =>
+	async (place) => {
+		if (place !== 1) return installationRead(d, place);
+		const own = `.lawman/departments/${d}.md`;
+		if (!listed(reading.files, own)) return null;
 		const file = await operate(p, "file", call([reading.revision, own]));
-		if (file.text === null)
-			blockers.push(`${p}: department ${d} ${firstLine(file)}`);
-		return file.text === null ? null : { text: file.text, place: 1 };
-	}
-	const page = installationPage(d);
-	if (page === null) blockers.push(`${p}: department ${d} has no page`);
-	return page;
-}
+		if (file.text !== null) return file.text;
+		blockers.push(`${p}: department ${d} ${firstLine(file)}`);
+		return false;
+	};
 
 // The department that has waited longest and can take a lead, as the rotation walks it.
 async function chooseDepartment(
@@ -194,16 +199,19 @@ async function chooseDepartment(
 	const turns = withDb((db) => rotationOrder(db, p, PATROL, names));
 	let capped = false;
 	for (const { department: d, cap } of turns) {
-		const page = await departmentPage(p, reading, d, blockers);
-		if (page === null) continue;
-		const lint = lintPage("department", page.text, d);
+		const found = await departmentPage(d, hostRead(p, reading, d, blockers));
+		if (found === null) blockers.push(`${p}: department ${d} has no page`);
+		if (found === null || found === false) continue;
+		const { page, lint } = found;
 		if (lint.reasons.length > 0) {
 			blockers.push(`${p}: department ${d} page check failed`);
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped
 		const consented =
-			d !== LICENSES || page.place !== LAW_CLONE_PLACE || consents(config, p);
+			d !== LICENSES ||
+			page.place !== LAW_CLONE_PLACE ||
+			consents(config, p, "license_precincts");
 		if (consented && (cap > 0 || lint.alarmCheck)) return d;
 		capped = true;
 	}

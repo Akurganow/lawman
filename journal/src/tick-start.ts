@@ -20,7 +20,7 @@ import { intakeStage } from "./intake";
 import { commandFolder } from "./launch";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
-import { lintPage, type PageKind, pageLines } from "./lint";
+import { lintPage, type PageKind, type PageLint, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
 import { departmentsField, headerOf, serves } from "./precedent-file";
@@ -314,15 +314,38 @@ async function precedentBlocks(
 // the place of the law clone in the "Resolve the department page" section
 export const LAW_CLONE_PLACE = 3;
 
+const installationPlaces = (d: string) => [
+	join(commandFolder(), "departments", `${d}.md`),
+	join(commandFolder(), REFERENCES, "departments", `${d}.md`),
+];
+
 // the places of the "Resolve the department page" section, in its order
 export function installationPage(d: string): Page | null {
-	const places = [
-		join(commandFolder(), "departments", `${d}.md`),
-		join(commandFolder(), REFERENCES, "departments", `${d}.md`),
-	];
-	for (const [i, path] of places.entries()) {
+	for (const [i, path] of installationPlaces(d).entries()) {
 		const text = readText(path);
 		if (text !== null) return { text, place: i + 2 };
+	}
+	return null;
+}
+
+// the text of a page at one place, null when the place has none, false when it cannot be read
+export type PlaceRead = (place: number) => Promise<string | null | false>;
+
+// the installation places as the journal reads them; a failed read means no page there
+export const installationRead = (d: string, place: number) =>
+	readText(installationPlaces(d)[place - 2] ?? "");
+
+// The department page by the places of the "Resolve the department page" section,
+// with its page check. A failed read ends the walk.
+export async function departmentPage(
+	d: string,
+	read: PlaceRead,
+): Promise<{ page: Page; lint: PageLint } | false | null> {
+	for (const place of [1, 2, LAW_CLONE_PLACE]) {
+		const text = await read(place);
+		if (text === false) return false;
+		if (text !== null)
+			return { page: { text, place }, lint: lintPage("department", text, d) };
 	}
 	return null;
 }
