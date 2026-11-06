@@ -621,13 +621,16 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 			reply({ alpha: 0.9, beta: 0.1, gamma: 0.1 }, "jev latest!"),
 			"bad-answer",
 		],
-	])("%s gives jev none and keeps the original list", async (_m, input, reason) => {
-		await written();
-		const before = text();
-		const r = await answer(NAME, input);
-		expect([r.code, r.out]).toEqual([EXIT.OK, `jev none reason=${reason}\n`]);
-		expect(text()).toBe(before);
-	});
+	])(
+		"%s gives jev none and keeps the original list",
+		async (_m, input, reason) => {
+			await written();
+			const before = text();
+			const r = await answer(NAME, input);
+			expect([r.code, r.out]).toEqual([EXIT.OK, `jev none reason=${reason}\n`]);
+			expect(text()).toBe(before);
+		},
+	);
 });
 
 describe("the decision", () => {
