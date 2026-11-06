@@ -26,14 +26,14 @@ const HARNESS = join(
 	"harnesses",
 	"hermes.md",
 );
-const ENTRY_SECTION = /^### Run gate\n([\s\S]*?)(?=^### )/m;
+const ENTRY_SECTION = /^### Role entry\n([\s\S]*?)(?=^### )/m;
 const PRINTF = /^printf '%s\\n' ((?:'[^']*' ?)+) > .+\/lawman-<role>\.sh$/m;
 
 function entryLines(): string[] {
 	const section = ENTRY_SECTION.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
 	const args = PRINTF.exec(section)?.[1];
 	if (args === undefined) {
-		throw new Error("hermes.md Run gate section has no entry file command");
+		throw new Error("hermes.md Role entry section has no entry file command");
 	}
 	return [...args.matchAll(/'([^']*)'/g)].map((m) => (m[1] ?? "").trim());
 }
