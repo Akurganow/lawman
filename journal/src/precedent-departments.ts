@@ -2,11 +2,11 @@ import { cleanCharacters } from "./clean";
 import { finite, MODEL, modelOf, noul, shown } from "./jev";
 import { sectionWords } from "./law-sections";
 
-// The start value of the threshold and zero checked cases: the calibration of the
-// question on labelled cases replaces both.
-export const DEPARTMENTS_THRESHOLD = 0.3;
+// The threshold and the question come from labelled cases: the tuning cases
+// chose them, and the held-out cases check them once.
+export const DEPARTMENTS_THRESHOLD = 0.7;
 // the labelled cases the question and the threshold were checked on
-export const DEPARTMENTS_CHECKED = { tuning: 0, heldOut: 0 };
+export const DEPARTMENTS_CHECKED = { tuning: 56, heldOut: 24 };
 
 // A department the precedent may serve, with the Mission of its page.
 export type Candidate = { name: string; mission: string };
@@ -77,9 +77,9 @@ const questionId = (name: string) => name.replaceAll("-", "_");
 
 const departmentQuestion = (mission: string) =>
 	noul(
-		`Does the rule in \`state.precedent.rule\` speak about the kind of defect, text or code that this duty names? \`state.ruling\` holds the court's words that made the rule, and \`state.precedent.kind\` says whether the rule condemns a shape or protects it. The duty: ${mission}`,
-		"The rule speaks about the kind of defect, text or code that the duty names.",
-		"The rule speaks about other kinds of defect, text or code than the duty names.",
+		`Is the defect that the rule in \`state.precedent.rule\` condemns or excuses of the class of defect that this duty names? \`state.ruling\` holds the court's words that made the rule, and \`state.precedent.kind\` says whether the rule condemns a shape or protects it. The duty: ${mission}`,
+		"The rule condemns or excuses a defect of the class the duty names.",
+		"The defect the rule condemns or excuses is of another class; the rule at most touches the text or code that the duty also reads.",
 	);
 
 export type DepartmentsState = {
