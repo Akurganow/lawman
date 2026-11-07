@@ -185,7 +185,7 @@ openclaw cron add --name "[lawman] <role>" --cron "<cron expression>" --tz <time
 - `add` is also `create`. The command is `openclaw cron`, alias `openclaw automations` (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
 - `--agent` picks the Lawman agent. Its workspace is the working folder of the run, as "Isolation" says.
 - `--session isolated` starts a fresh session for each run (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
-- `--tools exec,read` limits the job to the two tools a role needs. A job created with no `--tools` stores `*` (read in the harness code, openclaw/src/cron/tools-allow.ts).
+- `--tools exec,read` limits the job to the two tools that a role's steps run through. `exec` runs the journal's commands and the shell steps of the skills, and `read` loads the skill and the law files it names (as the skills' steps say). A job created with no `--tools` stores `*` (read in the harness code, openclaw/src/cron/tools-allow.ts).
 - `--trigger-script` names the role's entry. "Role entry" says what the file holds and how the assembly passes it.
 - `--light-context` keeps the start context files out of the run. "Isolation" names them.
 - `--message` carries the tick prompt. The words after it name the role's skill and tell the role to read it with the tool `read`.
@@ -291,8 +291,8 @@ How the entry works:
 - The script returns `{ fire, message }`. `fire: false` runs no model turn and writes no run record. `fire: true` runs the turn, and `message` joins the job's message (read in the harness code, openclaw/src/cron/trigger-script-result.ts and openclaw/src/cron/service/timer-execution.ts).
 - The script calls `exec` and waits for the result, because `awaitResults: true` makes the answer final (read in the harness code, openclaw/src/agents/bash-tools.schemas.ts and openclaw/src/agents/bash-tools.exec-run.ts). The answer holds `status`, `exitCode` and `aggregated` (read in the harness code, openclaw/src/agents/bash-tools.exec-result.types.ts).
 - The working folder of the script is the workspace of the Lawman agent, which is the installation (read in the harness code, openclaw/src/cron/trigger-script.ts). So `bin/journal` resolves. That `exec` from a script behaves so is (not verified). So is what it returns for a command that runs past the 10-second yield.
-- The assembly writes the script into a file in `runs/` of the installation. It passes the file to `--trigger-script` and removes the file. `--trigger-script -` reads the script from standard input, but the assembly uses a file. The CLI reads at most 65 536 bytes of UTF-8 and stores the text in the job (read in the harness code, openclaw/src/cli/cron-cli/trigger-options.ts).
-- The job keeps a copy. Editing the file later changes nothing. Run `openclaw cron edit <job id> --trigger-script <script file>` again.
+- The assembly writes the script into a file in `runs/` of the installation. It passes the file to `--trigger-script` and removes the file. `--trigger-script -` reads the script from standard input, but the assembly uses a file. The CLI reads at most 65 536 bytes of UTF-8 and stores the text in the job (read in the harness code, openclaw/src/cli/cron-cli/trigger-options.ts, openclaw/src/cli/cron-cli/register.cron-add.ts and openclaw/src/cli/cron-cli/register.cron-edit.ts).
+- The job keeps a copy of the text in `trigger.script`. Editing the file later changes nothing (read in the harness code, openclaw/src/cli/cron-cli/register.cron-add.ts and openclaw/src/cli/cron-cli/register.cron-edit.ts). Run `openclaw cron edit <job id> --trigger-script <script file>` again.
 - Without work the journal prints nothing, and the script returns `fire: false`. The turn and the delivery are skipped.
 - With work the journal prints the first part of the role's input. The output is appended to the job's message after a blank line, as raw text. No fence is added and no secret masking or injection scan runs on it (read in the harness code, openclaw/src/cron/stream-schedule.ts and openclaw/src/cron/run-prompt.ts). Every line of the law in the input starts with `| `, and that prefix is the only guard.
 - The script bounds are 30 seconds of wall time, 5 tool calls and 3 evaluations at once. A fourth evaluation is deferred, not failed (read in the harness code, openclaw/src/cron/trigger-script.ts).
@@ -330,7 +330,7 @@ input_chars: 15000
 - With the code mode engaged, the model reaches `exec` through a cell whose output is capped at 64 KiB. A part of 15 000 characters passes both ways (read in the harness code, openclaw/src/agents/code-mode-runtime.ts).
 - A role's input comes in 4 to 6 parts at this size, and the duty desk's in 2.
 
-**Reading `SKILL.md`.** No binding loads a skill into the run. The role reads its skill with `read`, a page at a time. The `read` tool takes an offset and a limit. It cuts a page by bytes and by the cap of a result. It adds a note such as `Use offset=N to continue` or `Use offset=N, cursor=K to continue` (read in the harness code, openclaw/src/agents/agent-tools.read.ts and openclaw/src/agents/sessions/tools/read-page.ts). The skill of `court` has 29 793 bytes and the skill of `patrol` 21 742 bytes. Both are longer than 16 000 characters, so the role reads them in several pages. Whether `skills.read` of the code mode pages the same way is (not verified). The docs describe the call (stated by the docs, https://docs.openclaw.ai/tools/code-mode/guest-api.md; not verified).
+**Reading `SKILL.md`.** No binding loads a skill into the run. The role reads its skill with `read`, a page at a time. The `read` tool takes an offset and a limit. It cuts a page by bytes and by the cap of a result. It adds a note such as `Use offset=N to continue` or `Use offset=N, cursor=K to continue` (read in the harness code, openclaw/src/agents/agent-tools.read.ts and openclaw/src/agents/sessions/tools/read-page.ts). The skills of `court` and `patrol` are each over 16 000 characters, so the role reads each of them in several pages. Whether `skills.read` of the code mode pages the same way is (not verified). The docs describe the call (stated by the docs, https://docs.openclaw.ai/tools/code-mode/guest-api.md; not verified).
 
 No rule withholds the job's identity or tokens from the script. It holds the job's tools, and with `exec` it has the same environment as any `exec` (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified).
 
@@ -484,7 +484,7 @@ The harness injects the files of the workspace into the system prompt: `AGENTS.m
 
 none: OpenClaw has no bare mode for a stored job. `--light-context` and `contextInjection` are the closest. Isolation rests on the working folder and the light context.
 
-A run's tool set is the job's `--tools`. `--tools exec,read` shrinks the surface to the two tools a role needs.
+A run's tool set is the job's `--tools`. `--tools exec,read` shrinks the surface to `exec` and `read`, the two tools that a role's steps run through (see "Scheduling").
 
 The run prompt tells the agent that it may remove its own job. A run with that grant lists, reads the history of and removes only its own job (read in the harness code, openclaw/src/cron/run-prompt.ts). Whether a scheduled turn can create a job is (not verified).
 

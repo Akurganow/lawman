@@ -180,7 +180,7 @@ Where the page puts the entry files outside the installation, the approval names
 2. Build every create or edit command with "Command forms".
 3. List each entry file with its place and its mark, and each job to create or edit, with its model when known. Name each job to translate, with its change from monitor mode to the entry mode of the page. Name the keys that part Limits writes, with their values.
 4. Show the content of each different file.
-5. Only where the page's "Role entry" says so, say that a job keeps a copy of the entry, that the entry first runs at a scheduled slot, or that a manual run skips the entry.
+5. Say each of these only where the page's "Role entry" says it: that a job keeps a copy of the entry; that editing the entry file does not change the copy; that the entry first runs at a scheduled slot; that a failure shows in the run history; that a manual run skips the entry.
 6. When the approval carries the lines of a new agent, say that a job has no folder of its own, that creating the agent changes the harness settings, and that the installation gains the start-context files that the page names.
 7. Ask for one approval. Ask in the question tool, and offer apply and change.
 8. After approval, when the approval carried the lines of a new agent, wait for the developer to run them and to say so. Then find the agent again. When none is found, stop and name the lines.

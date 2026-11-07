@@ -624,7 +624,7 @@ full text <precinct> issue <number> body
 ~~~
 ```
 
-- The start is the first whole lines of the text, and the end the last whole lines. The two pieces together get the largest number of characters for which the cut block fits in one part. Each piece gets at most half of that number. A first or last line longer than its share is cut by characters, so both lines are always there.
+- The start is the first whole lines of the text, and the end the last whole lines. The two pieces together get the largest number of characters for which the cut block fits in one part. Each piece gets at most half of that number. A first or last line that does not fit in its half is cut by characters: the head keeps the start of the first line, and the tail keeps the end of the last line. A shorter line stays whole.
 - The `cut` line starts with the word `cut` and holds `kept=`, `of=` and `secrets=`, each with its value. `kept=<head>+<tail>` gives the characters of the start and of the end. `of=` gives the characters of the whole text inside the fence, including the `id=… author=…` line of a comment. `secrets=` gives the number of secret marks in the removed middle. Numbers count characters, each line with its line break.
 - The `full` line starts with the words `full text`. After them come the precinct, `issue` or `pull`, the number, and `body` or `comment <at> <j>`. Those words are the arguments of `text`.
 - A comment is named by its time `at` and by its number `j`. `j` counts from 1 among the comments with that time, in id order. A comment added with another time does not change `j`. A comment added with the same time and a smaller id does.
