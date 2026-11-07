@@ -111,11 +111,11 @@ export function cutBlock(
 	room: number,
 	full: string,
 	secretsIn: (text: string) => number,
+	secretsInBlock = secretsIn(block.lines.join("\n")),
 ): string[] {
-	const text = block.lines.join("\n");
 	const head = piece(block.lines, room, false);
 	const tail = piece(block.lines, room, true);
-	const secrets = secretsIn(text) - secretsIn(head) - secretsIn(tail);
+	const secrets = secretsInBlock - secretsIn(head) - secretsIn(tail);
 	const kept = `${cost(head.split("\n"))}+${cost(tail.split("\n"))}`;
 	return [
 		...(block.head === undefined ? [] : [block.head]),
@@ -137,7 +137,9 @@ export function cutToFit(
 	secretsIn: (text: string) => number,
 ): Block {
 	if (cost(render(block)) <= size || block.lines.length === 0) return block;
-	const build = (room: number) => cutBlock(block, room, full, secretsIn);
+	const secretsInBlock = secretsIn(block.lines.join("\n"));
+	const build = (room: number) =>
+		cutBlock(block, room, full, secretsIn, secretsInBlock);
 	let lo = MIN_ROOM;
 	let hi = Math.floor(Math.min(size, cost(block.lines)) / 2);
 	if (hi < lo || cost(build(lo)) > size) return block;

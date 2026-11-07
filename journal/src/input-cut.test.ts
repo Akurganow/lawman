@@ -8,7 +8,7 @@ import {
 	type TextKey,
 } from "./cache-text";
 import { human, T } from "./cases-fixture";
-import { countSecretMarks } from "./clean";
+import { countSecretMarks, MARK_LABELS } from "./clean";
 import { cleanHostText } from "./clean-host";
 import * as db from "./db";
 import { fenceOf } from "./fence";
@@ -690,6 +690,52 @@ describe("a tilde line and the search for the pieces", () => {
 			expect(secrets).toBe(1);
 		}
 	});
+
+	test("every label the cleaner can emit counts as one removed secret", async () => {
+		expect(MARK_LABELS.length).toBeGreaterThan(10);
+		for (const label of MARK_LABELS)
+			expect(countSecretMarks(`a ${label} b ${label}`)).toBe(2);
+		const masked = await cleanHostText(`k ${TOKEN}`);
+		expect(MARK_LABELS.some((label) => masked.includes(label))).toBe(true);
+		expect(countSecretMarks(masked)).toBe(1);
+	});
+
+	test("text that no rule emits does not count as a mark", () => {
+		for (const text of [
+			"REMOVED SECRET",
+			"REMOVED  SECRET",
+			"REMOVED lower SECRET",
+			"REMOVED NO SUCH RULE SECRET",
+			"REMOVED GITHUB",
+		])
+			expect(countSecretMarks(text)).toBe(0);
+	});
+
+	// the quadratic count took several seconds on the first two shapes
+	const HOSTILE = [
+		["a run of REMOVED", (n: number) => "REMOVED ".repeat(n / 8)],
+		[
+			"marks that miss the end",
+			(n: number) => "REMOVED GITHUB SECRE ".repeat(n / 21),
+		],
+		["a long label without the end", (n: number) => `REMOVED ${"A".repeat(n)}`],
+	] as const;
+	for (const [shape, make] of HOSTILE)
+		test(`a text of 130000 characters made of ${shape} is cut in linear time`, () => {
+			const text = `${make(130000)}\nREMOVED GITHUB SECRET`;
+			const block = fencedBlock("issue", text);
+			const started = performance.now();
+			const got = cutToFit(block, 16000, "full", countSecretMarks);
+			expect(performance.now() - started).toBeLessThan(2000);
+			const lines = render(got);
+			expect(cost(lines)).toBeLessThanOrEqual(16000);
+			expect(lines.some((l) => l.startsWith("cut kept="))).toBe(true);
+			const [secrets] = /secrets=(\d+)/.exec(lines.join("\n"))?.slice(1) ?? [];
+			const kept = countSecretMarks(
+				lines.filter((l) => !l.startsWith("cut ")).join("\n"),
+			);
+			expect(Number(secrets) + kept).toBe(1);
+		});
 
 	test("the pieces are the longest that fit, against a brute-force search", () => {
 		let seedN = 7;
