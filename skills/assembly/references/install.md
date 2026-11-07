@@ -274,11 +274,11 @@ Write `<installation>/host.md` as the approved Host rows show, by the head of "H
 
 ### Install a verifier
 
-When the notes name a verifier that is not on this machine, install it.
+When the approved method of part Host names a verifier that is not on this machine, install it.
 
 ### Install the journal
 
-Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier the host notes name, confirm three facts. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the notes name a verifier, a check that cannot run or that reports anything but success is a stop. Notes that are missing or name neither a verifier nor a refusal are a stop too. When the notes record that the user declined a verifier, skip the signature check. None of this needs an account on the release host.
+Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier of the method in the approved proposal of part Host, confirm three facts. The host notes get the record of that method only at step 5 of Apply, so this section never reads the method from the notes. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the method names a verifier, a check that cannot run or that reports anything but success is a stop. A proposal that names neither a verifier nor a refusal is a stop too. When the user declined the signature, skip the signature check. None of this needs an account on the release host.
 
 At install, also confirm that the verifier rejects a changed copy of the binary. Never run the copy, and remove every file of the test. A verifier that accepts the copy is a stop.
 
@@ -286,8 +286,8 @@ At install, also confirm that the verifier rejects a changed copy of the binary.
 2. Set `<asset>` to `journal-bun-<os>-<arch>`, and set `<provenance>` to `<asset>.sigstore.json`.
 3. Create `bin` and `runs/install-journal`, then fetch `<asset>`, `<provenance>` and `SHA256SUMS` of `<release_tag>` from `<release_repo>` into `runs/install-journal`, replacing files that lie there, and stop if the fetch fails.
 4. Check `<asset>` against the line for it in `SHA256SUMS`, and stop unless they match.
-5. When the notes name a verifier, check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
-6. When the notes name a verifier, run its first test as the second paragraph above says.
+5. When the method names a verifier, check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
+6. When the method names a verifier, run its first test as the second paragraph above says.
 7. Copy `runs/install-journal/<asset>` to `bin/journal` and make it executable. Copy it only after the checks of items 4 to 6 passed. The files stay for the proof of `verify`.
 8. Run `bin/journal probe --schema <n>`, and stop if it exits non-zero. Read the number on the lines of `probe --schema` in the skills of the roles, take the largest, and keep no copy of it.
 9. Compute the SHA-256 digest of `bin/journal`, and record it as `journal_sha256`.
