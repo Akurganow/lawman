@@ -13,9 +13,18 @@ export const LAW_FILES = [
 
 export type Ref = { line: number; name: string; file: string | null };
 
-// The headings that the law no longer has, in quotes. The step that rewrites the
-// links to the new headings fills the list.
-export const DEPARTED: string[] = [];
+// The headings that LAW.md had and no longer has. A link to one of them, quoted
+// or as an anchor, fails the check.
+export const DEPARTED: string[] = [
+	"The funnel",
+	"The roles of this release",
+	"Evidence",
+	"Alarms and their repetition",
+	"Dedupe and closures",
+	"Pull requests",
+	"The report",
+	"The cache",
+];
 
 const FENCE = /^\s*(```|~~~)/;
 

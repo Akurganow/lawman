@@ -34,7 +34,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -42,7 +42,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role investigation
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
 
    Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -50,7 +50,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role investigation --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role investigation --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -71,7 +71,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
 
 ### Step 1: the stage
 
-The `revision=` line gives the fetched commit. It is the analysed sha, and `<ref>` is that sha. The `case` line is the stage, as the "Read the stage" section says.
+The `revision=` line gives the fetched commit. It is the analysed sha, and `<ref>` is that sha. The `case` line is the stage, as the `tick.md#read-the-stage` section says.
 
 - The journal ends a stale order itself. After a self step `fetch`, `issues` or `stage`, a `need` other than `investigation`, or `state=CLOSED`, ends the tick with `silent`. Its report is `Order stale: <the case line>`.
 - Keep `round`, `lead`, `related`, `department` and `kind`.
@@ -129,15 +129,15 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
 10. For a requirement, also record these tree facts under Claims checked, and no opinion. Record the claim of absence with its control search, or the lines of the shape. Record the places that already name the subject. A request too vague to test goes to Not established.
 11. A claim may touch how the project is used. Then read the `use` line of the section `## Licenses` of the constitution and compare its value with the tree. The value is `commercial`, `non-commercial` or `unknown`. Any other value reads as absent. A feature of the tree that contradicts the line goes in Claims checked with `LAWMAN.md:<line>` and the place of the feature. This adds no outcome. Without the section or the line there is nothing to compare: add nothing.
 
-When a claim shows a critical condition, print its ALARM line as the "Alarm" section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The case is still written.
+When a claim shows a critical condition, print its ALARM line as the `tick.md#alarm` section says. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. The case is still written.
 
 ### Step 6: write the case
 
-Compose the comment from the Case format section. Write it as the "Write a comment" section says, with the heading `Case`.
+Compose the comment from the Case format section. Write it as the `tick.md#write-a-comment` section says, with the heading `Case`.
 
 ### Step 7: end the tick
 
-Run the "End the tick" section. The success token is `investigated`.
+Run the `tick.md#end-the-tick` section. The success token is `investigated`.
 
 ## Case format
 
@@ -211,7 +211,7 @@ Rules:
 - Cut an absolute path in quoted output to a path from the tree root.
 - Put quoted third-party text and every `@` inside a fenced block. When the claim holds an `@`, write `Lead: #<n>` and put the claim in a fenced block below it.
 - Write no home path, installation path, token or login.
-- `at` is the `<UTC>` of the "Write a comment" section.
+- `at` is the `<UTC>` of the `tick.md#write-a-comment` section.
 - The marker is the last line of the body. Nothing follows it.
 
 ## Report

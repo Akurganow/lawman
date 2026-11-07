@@ -80,7 +80,7 @@ The skill listing command is `hermes skills list`. It shows `typesafe-ai` by its
 
 ## Syncing the law
 
-The sync's steps are in "Sync the law" of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
+The sync's steps are in `tick.md#sync-the-law` of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
 
 ## Running a role once
 
@@ -100,7 +100,7 @@ hermes cron run "[lawman] <role>"
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false, and the reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." Resume the job first, with the form under "Paused jobs" (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`).
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
-- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the "End the tick" section of `tick.md` says.
+- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.

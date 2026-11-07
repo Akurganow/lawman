@@ -1,13 +1,15 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { lawOf } from "./input-roles";
+import { lawOf, WHOLE } from "./input-roles";
 import { ROLE_NAMES } from "./input-test-fixture";
 import {
 	DEPARTED,
+	HEADINGS,
 	linksIn,
 	missing,
 	readBy,
+	slug,
 	unfound,
 	wordsIn,
 } from "./law-links-fixture";
@@ -99,7 +101,21 @@ describe("the check of the links", () => {
 		]);
 	});
 
-	test("the list of headings that left the law is empty until the links are rewritten", () => {
-		expect(DEPARTED).toEqual([]);
+	test("a link of the named form to a heading that left the law fails", () => {
+		expect(DEPARTED.length).toBeGreaterThan(0);
+		for (const name of DEPARTED) {
+			const text = `Read LAW.md#${slug(name)} and "${name}" and «${name}».`;
+			const found = missing(
+				linksIn(text),
+				[text],
+				readBy([["LAW.md", [WHOLE]]]),
+			);
+			expect([name, found.length]).toEqual([name, 3]);
+		}
+	});
+
+	test("no heading on the list of departed headings stands in the four files", () => {
+		const standing = Object.values(HEADINGS).flat();
+		expect(DEPARTED.filter((name) => standing.includes(name))).toEqual([]);
 	});
 });

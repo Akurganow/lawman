@@ -28,7 +28,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the "Write the precedent files" section of `lawman/skills/clerk/references/jobs.md` says, and no other.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
-  - Read the issues, the pull requests, the writers and the last actor as the "Sync the tracker", "Sync the pull requests" and "Check the decider" sections of `tick.md` say.
+  - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections of `tick.md` say.
   - Read the comments of an issue, and the state of an issue.
   - Read one comment by its id, for the read-back.
   - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
@@ -67,7 +67,7 @@ A value that reaches a command or a comment passes its check first. A failed che
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -75,7 +75,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role clerk
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
 
    Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -83,7 +83,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -116,7 +116,7 @@ When the stage names a pull request in `pull`, the tick group prints it with its
 
 ### Step 4: the stage
 
-The `case` line is the stage, as the "Read the stage" section says. Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
+The `case` line is the stage, as the `tick.md#read-the-stage` section says. Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 
 ### Step 5: a stale order
 
@@ -126,7 +126,7 @@ The journal ends a stale order itself. After a self step `fetch`, `issues`, `pul
 
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
-1. `job=state`: run the "Check the decider" section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
+1. `job=state`: run the `tick.md#check-the-decider` section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
 2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
 3. `job=adopt`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
@@ -154,7 +154,7 @@ The outcome is the token below. After a failed step it is the token that the ste
 | **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
 | **kept** | `kept` |
 
-Run the "End the tick" section.
+Run the `tick.md#end-the-tick` section.
 
 ## Comment format
 

@@ -434,7 +434,7 @@ A section is its heading and everything up to the next heading of the same or a 
 | clerk | `LAW.md`, `tick.md` (common sections, Sync the tracker, Sync the pull requests, Read the stage, Check the decider, Write a comment, Close the issue, Alarm) |
 | spec-writer | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
 | executor | `LAW.md`, `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
-| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms and their repetition, and Tick outcomes of `LAW.md`, and the intro and the sections Sync the law, Sync the tracker and Sync the pull requests of `tick.md` |
+| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms a role prints, Alarms the journal computes, and Tick outcomes of `LAW.md`, and the intro and the sections Sync the law, Sync the tracker and Sync the pull requests of `tick.md` |
 
 `LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick. The section "Sync the law with an older journal" belongs to no group of a role. No input prints it. A role reads it from the file when it finds an older journal, as [the lines of the input](#the-lines-of-the-input) say.
 

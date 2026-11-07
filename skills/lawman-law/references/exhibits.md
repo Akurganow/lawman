@@ -1,6 +1,6 @@
 # Reading an exhibit
 
-A role reads this file when it quotes a line, quotes a claim of absence, meets a path that is missing at `<ref>`, reads an external source, or sends to one. It also reads it when it asks an expert. The file says what each Evidence rule of the law needs an exhibit to show. `<ref>` is the commit at which the skill reads the precinct. Investigation uses its analysed commit.
+A role reads this file when it quotes a line, quotes a claim of absence, meets a path that is missing at `<ref>`, reads an external source, or sends to one. It also reads it when it asks an expert. The file says what each rule of `LAW.md#exhibits` needs an exhibit to show. `<ref>` is the commit at which the skill reads the precinct. Investigation uses its analysed commit.
 
 An exhibit records the exact command the role ran, so another role can repeat it. A role repeats a recorded command only when the command reads the precinct at the recorded ref and writes nothing. A source command of a department page that passes its check stays allowed, as the "Run a source" section says. Every value in a repeated command keeps the protections of the law.
 
@@ -12,7 +12,7 @@ A cited number that the printed range does not support makes the exhibit a claim
 
 ## Quote a claim of absence
 
-A claim that something is absent quotes two searches in one fenced block. The first is the search with its output. The second is the control search with its non-empty output. Each search takes its patterns as `tick.md` "Reading without a tree" says. The control pattern is one known to match.
+A claim that something is absent quotes two searches in one fenced block. The first is the search with its output. The second is the control search with its non-empty output. Each search takes its patterns as `tick.md#reading-without-a-tree` says. The control pattern is one known to match.
 
 Investigation runs both searches on its tree. A role that re-reads a claim of absence runs both searches again on `<ref>` and compares the outputs.
 
@@ -36,7 +36,7 @@ A role reads this section when it runs a source command of a department page. Pa
 
 Find the source commands first. Only the page in the precinct's own `.lawman/departments/` counts. Read it at the tip of the precinct's default branch, because the page counts for the reason that a reviewed merge put it on the main branch.
 
-1. The tick group gives the page to patrol, the defender and the court, with its place, at the fetched commit, the tip. They use that page, and only when its place is 1. Investigation and the prosecutor resolve the page at place 1 of the "Resolve the department page" section of `tick.md`, with that tip as `<ref>`. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
+1. The tick group gives the page to patrol, the defender and the court, with its place, at the fetched commit, the tip. They use that page, and only when its place is 1. Investigation and the prosecutor resolve the page at place 1 of the `tick.md#resolve-the-department-page` section of `tick.md`, with that tip as `<ref>`. `<d>` is the department of the case. The case has no source command when `<d>` is outside its class in the Source values table, is `-`, has no page at place 1, or fails the lint (exit 8). That ends no tick and gives no outcome.
 2. A quoted command is a source command when it equals an item of the page with every placeholder replaced by a value of its class. Any other command, and its output, is a claim, not an exhibit.
 
 Then run it.

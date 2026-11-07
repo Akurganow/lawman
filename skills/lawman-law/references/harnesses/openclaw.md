@@ -103,7 +103,7 @@ The skill listing commands are `openclaw skills list` and `openclaw skills check
 
 ## Syncing the law
 
-The sync's steps are in "Sync the law" of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
+The sync's steps are in `tick.md#sync-the-law` of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
 
 - Update the plugin with `openclaw plugins update lawman`, after the gateway is stopped through its service owner (stated by the docs, https://docs.openclaw.ai/cli/plugins/uninstall-and-update.md; not verified). The stop commands are `openclaw gateway stop` and `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
 - No tick runs while the gateway is stopped. After the restart, overdue agent jobs are rescheduled and not replayed at once (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
@@ -127,7 +127,7 @@ openclaw cron run <job id> --wait
 - Read the result with `openclaw cron runs <job id> --run-id <run id>` (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
 - From an agent session, the tool `automations` starts a run with `action` set to `run` and `runMode` set to `force`. The default `runMode` is `due`, which honors the entry script (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified). A run aimed at the requesting conversation starts after that turn ends (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
 - The run is recorded like a scheduled one. `openclaw cron runs <job id>` lists it, and its output lands in the run history.
-- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the "End the tick" section of `tick.md` says.
+- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it after two hours. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Add `--precinct <p> --dispatch <order id>` when the tick took an order. `bin/journal status` prints the order id. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 
 `openclaw agent exec` runs one embedded turn in the foreground and records no job (stated by the docs, https://docs.openclaw.ai/cli/agent.md; not verified). Use it only while developing a skill.
 
@@ -311,7 +311,7 @@ How the entry works:
 - A script that outlives 30 seconds fails the same way, so a slow journal ends in an error.
 - No fallback exists for a failure by schedule. The failure is loud. The fallback is a manual run, or a job with no entry script.
 - A journal that fails is never quiet, because the script checks `status` and `exitCode`. A script that returned `fire: false` instead would look healthy while broken.
-- Output whose first line is not `lawman input` still starts the turn. The script reads no line. The role then does the section "Sync the law with an older journal" of `tick.md`.
+- Output whose first line is not `lawman input` still starts the turn. The script reads no line. The role then does the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`.
 
 **The size of a part.** The model sees at most one cap of characters per tool result. Weighted characters count: each CJK character weighs 4, and the list of heavy characters is open (read in the harness code, openclaw/src/agents/tool-result-limits.ts and openclaw/packages/normalization-core/src/cjk-chars.ts). Cyrillic and Latin weigh 1.
 

@@ -280,7 +280,7 @@ Take `<UTC>` once, before item 1, as the current time in UTC, written `YYYY-MM-D
 
 The court only, for an acquittal. Run it after the read-back. A decline of the prosecutor and a refute of the defender close nothing: the case goes to the court.
 
-1. Close issue `<n>` of `<owner/repo>` on the host, as the host notes record. Use the reason the law's Closure classes subsection gives for the class: completed for `gone at <tip>`, not planned for the other three. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. The issue stays open with its marker. Blockers names the issue number and the cause. The owner closes it by hand.
+1. Close issue `<n>` of `<owner/repo>` on the host, as the host notes record. Use the reason the law's Closure classes section gives for the class: completed for `gone at <tip>`, not planned for the other three. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`. The issue stays open with its marker. Blockers names the issue number and the cause. The owner closes it by hand.
 2. Read the issue's state back from the host. It must read as closed. Anything else gives `stopped-readback`.
 
 The clerk closes an issue only with `declined by the owner`, which closes as not planned, or `gone at <tip>`, which closes as completed. The clerk gives the merge commit as the tip. It reopens an issue on the host as the host notes record, and reads the state back. The state must read as open. Anything else gives `stopped-readback`. An HTTP 403 or 429 reply gives `stopped-rate-limit`. Any other failure gives `failed`.
