@@ -130,8 +130,15 @@ function merged(found: Found[]): Found[] {
 	return out;
 }
 
+const MARK_START = "REMOVED";
+const MARK_END = "SECRET";
 const label = (kind: string) =>
-	`REMOVED ${kind.replaceAll("-", " ").toUpperCase()} SECRET`;
+	`${MARK_START} ${kind.replaceAll("-", " ").toUpperCase()} ${MARK_END}`;
+const MARK = new RegExp(`${MARK_START} [A-Z0-9 ]+? ${MARK_END}`, "g");
+
+// the law counts a mark of a removed secret as a secret
+export const countSecretMarks = (text: string) =>
+	(text.match(MARK) ?? []).length;
 
 // a block quote prefix inside a key block hides the key, so detection reads
 // the text without those prefixes and maps each finding back

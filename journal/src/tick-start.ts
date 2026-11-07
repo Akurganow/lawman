@@ -101,6 +101,7 @@ async function caseTexts(
 	db: Database,
 	precinct: string,
 	texts: [Text, number][],
+	size: number,
 ): Promise<{ blocks: Block[]; selfs: string[] }> {
 	const blocks: Block[] = [];
 	const selfs: string[] = [];
@@ -114,7 +115,7 @@ async function caseTexts(
 		const cleanTitle = title === null ? null : await characters(title.title);
 		let cached: Block[] | null = null;
 		try {
-			cached = await printCached(db, precinct, kind, n);
+			cached = await printCached(db, precinct, kind, n, size);
 		} catch (e) {
 			if (!(e instanceof CleanFailed)) throw e;
 		}
@@ -477,7 +478,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	const pd = precedentsOf(input, order, stage);
 	if (pd !== null) await precedentBlocks(o, p, revision, files, pd);
 	const texts = await withDbAsync((db) =>
-		caseTexts(db, p, textsOf(input, order, stage)),
+		caseTexts(db, p, textsOf(input, order, stage), size),
 	);
 	o.add(...texts.blocks);
 	o.selfs.push(...texts.selfs);
@@ -545,7 +546,7 @@ export async function tickInput(args: string[]): Promise<number> {
 		o.selfs.push(fits("department", d) ? `department ${d}` : "department");
 	if (input.precedents !== null) o.selfs.push(SELF_PRECEDENTS);
 	const texts = await withDbAsync((db) =>
-		caseTexts(db, order.precinct, textsOf(input, order, stage)),
+		caseTexts(db, order.precinct, textsOf(input, order, stage), size),
 	);
 	o.add(...texts.blocks);
 	o.selfs.push(...texts.selfs);
