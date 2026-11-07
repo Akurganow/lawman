@@ -27,7 +27,8 @@ const HARNESS = join(
 	"hermes.md",
 );
 const ENTRY_SECTION = /^### Role entry\n([\s\S]*?)(?=^### )/m;
-const PRINTF = /^printf '%s\\n' ((?:'[^']*' ?)+) > .+\/lawman-<role>\.sh$/m;
+const PRINTF =
+	/^printf '%s\\n' ((?:'[^']*' ?)+) > "[^"]+\/lawman-<role>\.sh"$/m;
 
 function entryLines(): string[] {
 	const section = ENTRY_SECTION.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
