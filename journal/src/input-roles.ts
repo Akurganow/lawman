@@ -232,13 +232,13 @@ export const ROLES: Record<string, RoleInput> = {
 	},
 	investigation: {
 		...ISSUE_ROLE,
-		law: law("investigation", CASE_STEPS),
+		law: law("investigation", [...CASE_STEPS, "Resolve the department page"]),
 		stale: either(needNot("investigation"), closed),
 		precedents: "stage",
 	},
 	prosecutor: {
 		...ISSUE_ROLE,
-		law: law("prosecutor", CLOSING_STEPS),
+		law: law("prosecutor", JUDGING_STEPS),
 		stale: either(needNot("prosecutor"), closed),
 	},
 	defender: {

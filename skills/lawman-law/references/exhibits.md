@@ -12,7 +12,7 @@ A cited number that the printed range does not support makes the exhibit a claim
 
 ## Quote a claim of absence
 
-A claim that something is absent quotes two searches in one fenced block. The first is the search with its output. The second is the control search with its non-empty output. Each search takes its patterns as `tick.md#reading-without-a-tree` says. The control pattern is one known to match.
+A claim that something is absent quotes two searches in one fenced block. The first is the search with its output. The second is the control search with its non-empty output. Each search takes its patterns as `tick.md#reading-without-a-tree` says, or, in a role with a worktree, as the pattern rule of its own Working rules says. The control pattern is one known to match.
 
 Investigation runs both searches on its tree. A role that re-reads a claim of absence runs both searches again on `<ref>` and compares the outputs.
 

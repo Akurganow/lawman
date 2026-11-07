@@ -115,10 +115,11 @@ const MORE: Record<string, string[]> = {
 		"Sync the tracker",
 		"Read the stage",
 		"Check the constitution",
+		"Resolve the department page",
 		"Write a comment",
 		"Alarm",
 	],
-	prosecutor: PROSECUTOR,
+	prosecutor: [...PROSECUTOR, "Resolve the department page"],
 	defender: [...PROSECUTOR, "Resolve the department page"],
 	court: [...PROSECUTOR, "Resolve the department page"],
 	clerk: [
