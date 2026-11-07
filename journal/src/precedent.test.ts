@@ -565,6 +565,15 @@ describe("oldLineToFile", () => {
 		expect(body("2026-09-03-no-link")?.trim()).toBe("A rule with no link.");
 	});
 
+	test("a second Precedents section left with no item reads none", () => {
+		const two = `${PAGE}\n## Precedents\n\n- 2026-09-04 #3: A rule of the second section.\n`;
+		writeFileSync(page(), two);
+		expect(move({ number: 3, gist: "second" })).toBe("2026-09-04-second");
+		expect(readFileSync(page(), "utf8")).toBe(
+			two.replace("- 2026-09-04 #3: A rule of the second section.\n", "none\n"),
+		);
+	});
+
 	test("a taken name gets the next number", () => {
 		put("2026-09-02-callbacks", "x\n");
 		expect(move()).toBe("2026-09-02-callbacks-2");

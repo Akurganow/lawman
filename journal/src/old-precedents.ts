@@ -21,8 +21,9 @@ const USAGE =
 	"old-precedent list|old-precedent added --base <file> --head <file>|old-precedent check <precinct> <line>[:<issue>]...|old-precedent move <precinct> --tree <folder> --line <n> --gist <gist> [--issue <n>] [--kind protects|condemns]";
 const PAIR = /^([1-9][0-9]*)(?::([1-9][0-9]*))?$/;
 
-// why a line gets a question instead of a kind; a refused run of the issues
-// command is no such answer, it prints as the refusal of that command
+// the value of `reason=` in `ask reason=<reason>`: why a line gets a question
+// instead of a kind. A refused run of the issues command is no such answer; it
+// prints as the refusal of that command.
 const WHY = [
 	"no-issue",
 	"absent",

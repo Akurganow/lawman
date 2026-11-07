@@ -9,7 +9,7 @@ import {
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
 import { caseStage } from "./cases";
@@ -684,6 +684,8 @@ export async function precedentCommand(args: string[]): Promise<number> {
 // numbered line of the old form carries its date, number, rule and link.
 export type OldItem = {
 	position: number;
+	// the index of its Precedents section, so a move judges that section alone
+	section: number;
 	start: number;
 	end: number;
 	text: string;
@@ -705,19 +707,22 @@ function oldLine(text: string): OldItem["line"] {
 
 // every item of the old sections except `none`, numbered from 1 in page order
 export function oldItems(page: string): OldItem[] {
-	const nodes = sectionNodes(page, OLD_SECTION).flat();
-	const parts = nodes.flatMap((node) =>
-		node.type === "list"
-			? node.children.map((li) => ({
-					node: li,
-					item: itemsOf(page, [{ ...node, children: [li] }]),
-				}))
-			: [{ node, item: itemsOf(page, [node]) }],
+	const parts = sectionNodes(page, OLD_SECTION).flatMap((nodes, section) =>
+		nodes.flatMap((node) =>
+			node.type === "list"
+				? node.children.map((li) => ({
+						section,
+						node: li,
+						item: itemsOf(page, [{ ...node, children: [li] }]),
+					}))
+				: [{ section, node, item: itemsOf(page, [node]) }],
+		),
 	);
 	return parts
-		.flatMap(({ node, item }) =>
+		.flatMap(({ section, node, item }) =>
 			item.map((i) => ({
 				...i,
+				section,
 				start: node.position?.start.offset ?? 0,
 				end: node.position?.end.offset ?? 0,
 			})),
@@ -727,6 +732,7 @@ export function oldItems(page: string): OldItem[] {
 			const line = i.bad || i.text.includes("\n") ? undefined : oldLine(i.text);
 			return {
 				position: k + 1,
+				section: i.section,
 				start: i.start,
 				end: i.end,
 				text: i.text,
@@ -735,14 +741,14 @@ export function oldItems(page: string): OldItem[] {
 		});
 }
 
-// The page without the item's lines. A section left with no item reads `none`.
+// The page without the item's lines. Its section, left with no item, reads `none`.
 function withoutItem(page: string, item: OldItem): string {
 	const from = page.lastIndexOf("\n", item.start - 1) + 1;
 	const next = page.indexOf("\n", item.end);
 	const to = next < 0 ? page.length : next + 1;
 	const ending = page.slice(from, to).endsWith("\r\n") ? "\r\n" : "\n";
 	const cut = page.slice(0, from) + page.slice(to);
-	if (oldItems(cut).length > 0) return cut;
+	if (oldItems(cut).some((i) => i.section === item.section)) return cut;
 	return `${page.slice(0, from)}${NONE}${next < 0 ? "" : ending}${page.slice(to)}`;
 }
 
@@ -753,9 +759,51 @@ export type OldLine = {
 	kind: string;
 };
 
+// Writes the files of the folder, then the page by one rename. A failure takes the
+// files and the folders the move made away, so both stand or neither does.
+function swapPage(
+	path: string,
+	page: string,
+	folder: Folder,
+	name: string,
+	made: string[],
+): void {
+	// A leftover of a crashed move is removed, a link as a link. "wx" then
+	// refuses any name that came back, so nothing is written through a link.
+	const temp = join(dirname(path), `.${CONSTITUTION}.move`);
+	const kind = entryKind(temp);
+	if (kind === "dir") throw unsafe(temp);
+	if (kind !== "absent") unlinkSync(temp);
+	const mode = lstatSync(path).mode & 0o7777;
+	let wrote = false;
+	try {
+		folder.commit();
+		writeFileSync(temp, page, { flag: "wx" });
+		wrote = true;
+		chmodSync(temp, mode);
+		renameSync(temp, path);
+	} catch (e) {
+		// each step runs whatever the others do; the first error is the one to report
+		const undo = [
+			() => wrote && unlinkSync(temp),
+			() => {
+				folder.set(name, null);
+				folder.commit();
+			},
+			...[...made].reverse().map((dir) => () => rmdirSync(dir)),
+		];
+		for (const step of undo)
+			try {
+				step();
+			} catch {
+				// the rule still stands in the page
+			}
+		throw e;
+	}
+}
+
 // One numbered line of an old Precedents section becomes a file, and the line
-// leaves LAWMAN.md of the tree. Both stand, or neither does: the page changes by
-// one rename, and a failed rename takes the file and the folders it made away.
+// leaves LAWMAN.md of the tree.
 export function oldLineToFile(o: OldLine): string {
 	if (!GIST.test(o.gist))
 		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
@@ -785,43 +833,11 @@ export function oldLineToFile(o: OldLine): string {
 			rule,
 		),
 	);
-	const page = withoutItem(text, item);
 	const lawman = join(o.tree, ".lawman");
 	const made = [lawman, join(lawman, "precedents")].filter(
 		(dir) => entryKind(dir) === "absent",
 	);
-	// A leftover of a crashed move is removed, a link as a link. "wx" then
-	// refuses any name that came back, so nothing is written through a link.
-	const temp = join(o.tree, `.${CONSTITUTION}.move`);
-	const kind = entryKind(temp);
-	if (kind === "dir") throw unsafe(temp);
-	if (kind !== "absent") unlinkSync(temp);
-	const mode = lstatSync(path).mode & 0o7777;
-	let wrote = false;
-	try {
-		folder.commit();
-		writeFileSync(temp, page, { flag: "wx" });
-		wrote = true;
-		chmodSync(temp, mode);
-		renameSync(temp, path);
-	} catch (e) {
-		// each step runs whatever the others do; the first error is the one to report
-		const undo = [
-			() => wrote && unlinkSync(temp),
-			() => {
-				folder.set(name, null);
-				folder.commit();
-			},
-			...made.reverse().map((dir) => () => rmdirSync(dir)),
-		];
-		for (const step of undo)
-			try {
-				step();
-			} catch {
-				// the rule still stands in the page
-			}
-		throw e;
-	}
+	swapPage(path, withoutItem(text, item), folder, name, made);
 	return name;
 }
 
