@@ -332,9 +332,9 @@ The results of one turn add up to at most 200 000 characters. Hermes replaces th
 The form of a role's entry file. Replace the placeholders:
 
 ```
-mkdir -p <scripts directory>
-printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > <scripts directory>/lawman-<role>.sh
-(cd "<installation>" && bash <scripts directory>/lawman-<role>.sh)
+mkdir -p "<scripts directory>"
+printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > "<scripts directory>/lawman-<role>.sh"
+(cd "<installation>" && bash "<scripts directory>/lawman-<role>.sh")
 ```
 
 ### Order and overlap
