@@ -749,9 +749,9 @@ function withoutItem(page: string, item: OldItem): string {
 			page.lastIndexOf("\n", item.start - 1),
 			page.lastIndexOf("\r", item.start - 1),
 		) + 1;
-	const end = /\r\n|\r|\n/.exec(page.slice(item.end));
+	const end = page.slice(item.end).match(/\r\n|\r|\n/);
 	const ending = end?.[0] ?? "";
-	const to = end ? item.end + end.index + ending.length : page.length;
+	const to = end ? item.end + (end.index ?? 0) + ending.length : page.length;
 	const cut = page.slice(0, from) + page.slice(to);
 	if (oldItems(cut).some((i) => i.section === item.section)) return cut;
 	return `${page.slice(0, from)}${NONE}${ending}${page.slice(to)}`;
