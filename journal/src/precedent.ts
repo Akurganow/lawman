@@ -741,15 +741,20 @@ export function oldItems(page: string): OldItem[] {
 		});
 }
 
-// The page without the item's lines. Its section, left with no item, reads `none`.
+// The page without the item's lines, for pages that end lines in LF, CRLF or a
+// bare CR. Its section, left with no item, reads `none`.
 function withoutItem(page: string, item: OldItem): string {
-	const from = page.lastIndexOf("\n", item.start - 1) + 1;
-	const next = page.indexOf("\n", item.end);
-	const to = next < 0 ? page.length : next + 1;
-	const ending = page.slice(from, to).endsWith("\r\n") ? "\r\n" : "\n";
+	const from =
+		Math.max(
+			page.lastIndexOf("\n", item.start - 1),
+			page.lastIndexOf("\r", item.start - 1),
+		) + 1;
+	const end = /\r\n|\r|\n/.exec(page.slice(item.end));
+	const ending = end?.[0] ?? "";
+	const to = end ? item.end + end.index + ending.length : page.length;
 	const cut = page.slice(0, from) + page.slice(to);
 	if (oldItems(cut).some((i) => i.section === item.section)) return cut;
-	return `${page.slice(0, from)}${NONE}${next < 0 ? "" : ending}${page.slice(to)}`;
+	return `${page.slice(0, from)}${NONE}${ending}${page.slice(to)}`;
 }
 
 export type OldLine = {

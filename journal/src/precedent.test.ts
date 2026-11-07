@@ -565,6 +565,45 @@ describe("oldLineToFile", () => {
 		expect(body("2026-09-03-no-link")?.trim()).toBe("A rule with no link.");
 	});
 
+	test.each([
+		["LF", "\n"],
+		["CRLF", "\r\n"],
+		["a bare CR", "\r"],
+	])("a page with %s line ends loses only the moved line", (_, end) => {
+		const three = [
+			"# Constitution",
+			"",
+			"## Precedents",
+			"",
+			"- 2026-09-01 #1: First.",
+			"- 2026-09-02 #2: Middle.",
+			"- 2026-09-03 #3: Last.",
+			"",
+			"## Notes",
+			"",
+			"Kept.",
+			"",
+		];
+		const text = (lines: string[]) => lines.join(end);
+		writeFileSync(page(), text(three));
+		move({ number: 2, gist: "middle" });
+		expect(readFileSync(page(), "utf8")).toBe(
+			text(three.filter((l) => !l.includes("#2:"))),
+		);
+		move({ number: 3, gist: "last" });
+		expect(readFileSync(page(), "utf8")).toBe(
+			text(three.filter((l) => !l.includes("#2:") && !l.includes("#3:"))),
+		);
+		move({ number: 1, gist: "first" });
+		expect(readFileSync(page(), "utf8")).toBe(
+			text(
+				three
+					.map((l) => (l.includes("#1:") ? "none" : l))
+					.filter((l) => !l.includes(" #")),
+			),
+		);
+	});
+
 	test("a second Precedents section left with no item reads none", () => {
 		const two = `${PAGE}\n## Precedents\n\n- 2026-09-04 #3: A rule of the second section.\n`;
 		writeFileSync(page(), two);
