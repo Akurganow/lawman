@@ -186,7 +186,8 @@ journal form <issues|pulls|decider|catalog>
 
 ### Checks and builders
 
-- `clean`: reads host text on stdin and prints it without hidden comments, secrets and hidden characters, and with each image turned into a link. Plain text is the default form. The option `--json` reads one JSON value or several and cleans every string. A JSON input that does not parse gives exit 1 and no output.
+- `clean`: reads host text on stdin and prints it without hidden comments, secrets and hidden characters, and with each image turned into a link. Plain text is the default form. The option `--json` reads one JSON value or several and cleans every string. A JSON input that does not parse gives exit 1 and no output. The option `--part <k>` prints part `k` of an output longer than one part, as [Parts of clean and text](#parts-of-clean-and-text) says.
+- `text`: prints the whole cleaned text that a `full` line names, from the cache, in parts. Its arguments are the words after `full text`, as [Cut texts](#cut-texts) says.
 - `lint-body`: reads a text on stdin as the host renders it and prints the cleaned text. Exit 7 prints the reasons on stderr, prints nothing on stdout and never prints the matched value.
 - `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. It then prints one line that starts with `#` for each section the contract does not list. A good department page with an alarm check prints `alarm-check`.
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
@@ -201,7 +202,8 @@ journal form <issues|pulls|decider|catalog>
 - `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
 
 ```
-journal clean [--json] (stdin: host text, or with --json one or more JSON values)
+journal clean [--json] [--part <k>] (stdin: host text, or with --json one or more JSON values)
+journal text <precinct> <issue|pull> <number> body|comment <at> <j> [--part <k>]
 journal lint-body [--no-marker] (stdin: the text to write)
 journal lint-page <constitution|department> [--name <expected>] (stdin: the page)
 journal department-line --name <department> --judged-by <path|none> (stdin: the constitution)
@@ -239,6 +241,16 @@ Among other things, the body check rejects these in the text a role writes:
 It cleans a quote and does not reject it. It checks no path, no mention and no size.
 
 See [the law](../skills/lawman-law/references/LAW.md) for when roles call it.
+
+### Parts of clean and text
+
+A part holds at most `input_chars` characters, counted as [the parts of a role's input](#parts) count them. A framed part of `text` or `clean` starts with `lawman input 1 text part <k> of <n>` or `lawman input 1 clean part <k> of <n>`, and ends with `end part <k> of <n>`.
+
+- `clean` prints an output that fits in one part as it always did: the same bytes, with no frame, in plain and in `--json` mode. A longer output prints framed parts in both modes. `--part <k>` prints part `k`, and part 1 without it. An output of one part prints unframed, with or without `--part 1`.
+- Nothing is cut. `clean` reads standard input, and the journal keeps no copy of it. The caller sends the same reply again with `--part <k>` for each other part it needs.
+- The journal cleans the whole text before it splits it. In `--json` mode it cleans each string. Each value is one line, and a line longer than a part is cut into pieces of characters. A piece of a long value is not JSON.
+- The option order is `clean [--json] [--part <k>]`. Another order, or a part that is not a whole number above zero, exits 1 with the usage line. A part outside the output exits 1 too.
+- `text` always frames its part, even when the text fits in one part. Its parts split by lines, as the input does, and a line longer than a part is cut into characters.
 
 ## Commands of the installation and the precincts
 
@@ -426,17 +438,18 @@ A section is its heading and everything up to the next heading of the same or a 
 
 | Role | Law |
 | :-- | :-- |
-| patrol | `LAW.md`, `tick.md` (common sections, Sync the tracker, Check the constitution, Resolve the department page, Alarm), `markers.md`, `departments.md` |
-| response-unit | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the tracker, Check the intake order, Check the constitution, Write a comment, Alarm), the section "The `id` value" of `markers.md` |
-| investigation | `LAW.md`, `tick.md` (common sections, Sync the tracker, Read the stage, Check the constitution, Write a comment, Alarm) |
-| prosecutor | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the tracker, Read the stage, Check the constitution, Write a comment, Close the issue, Alarm) |
-| defender, court | as the prosecutor, and Resolve the department page |
-| clerk | `LAW.md`, `tick.md` (common sections, Sync the tracker, Sync the pull requests, Read the stage, Check the decider, Write a comment, Close the issue, Alarm) |
-| spec-writer | `LAW.md`, `tick.md` (common sections, Reading without a tree, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
-| executor | `LAW.md`, `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
-| duty-desk | the sections Silence is the default, One tick, one case, exit, Alarms a role prints, Alarms the journal computes, and Tick outcomes of `LAW.md`, and the intro and the sections Sync the law, Sync the tracker and Sync the pull requests of `tick.md` |
+| patrol | `LAW.md` (intro, Role patrol, Silence is the default, Language, Exhibits, Third-party text, Execution, Sources, Recorded reasons, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Returns instead of stops, Write discipline, Dedupe, Terms, The cap table, Five-part report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Sync the tracker, Check the constitution, Resolve the department page, Alarm), `markers.md` (Line shape, Fields, The `id` value, Defined markers), `departments.md` (whole) |
+| response-unit | `LAW.md` (intro, Role response unit, Silence is the default, Language, Exhibits, Third-party text, Execution, Recorded reasons, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Write discipline, Terms, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Reading without a tree, Sync the tracker, Check the intake order, Check the constitution, Write a comment, Alarm), `markers.md` (The `id` value) |
+| investigation | `LAW.md` (intro, Role investigation, Silence is the default, Language, Exhibits, Third-party text, Execution, Sources, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Returns instead of stops, Write discipline, Terms, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Sync the tracker, Read the stage, Check the constitution, Resolve the department page, Write a comment, Alarm) |
+| prosecutor | `LAW.md` (intro, Role prosecutor, Silence is the default, Language, Exhibits, Third-party text, Execution, Sources, Recorded reasons, Requirement parts, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Returns instead of stops, Write discipline, Closure classes, Terms, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Reading without a tree, Sync the tracker, Read the stage, Check the constitution, Resolve the department page, Write a comment, Close the issue, Alarm) |
+| defender | `LAW.md` (intro, Role defender, Silence is the default, Language, Exhibits, Third-party text, Execution, Sources, Recorded reasons, Requirement parts, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Returns instead of stops, Write discipline, Closure classes, Terms, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Reading without a tree, Sync the tracker, Read the stage, Check the constitution, Resolve the department page, Write a comment, Close the issue, Alarm) |
+| court | `LAW.md` (intro, Role court, Silence is the default, Language, Exhibits, Third-party text, Execution, Sources, Recorded reasons, Requirement parts, Texts of the precinct, Precedents, One tick, one case, exit, Alarms a role prints, Returns instead of stops, Write discipline, Closure classes, Terms, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Reading without a tree, Sync the tracker, Read the stage, Check the constitution, Resolve the department page, Write a comment, Close the issue, Alarm), `markers.md` (Precedent) |
+| clerk | `LAW.md` (intro, Role clerk, Silence is the default, Language, Third-party text, Execution, One tick, one case, exit, Alarms a role prints, Write discipline, Closure classes, Terms, Pairs, Votes and work, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Sync the tracker, Sync the pull requests, Read the stage, Check the decider, Write a comment, Close the issue, Alarm) |
+| spec-writer | `LAW.md` (intro, Role spec writer, Silence is the default, Language, Exhibits, Third-party text, Execution, Texts of the precinct, Precedents, One tick, one case, exit, Write discipline, Terms, Votes and work, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Reading without a tree, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
+| executor | `LAW.md` (intro, Role executor, Silence is the default, Language, Third-party text, Execution, Orders, Texts of the precinct, Precedents, One tick, one case, exit, Write discipline, Terms, Votes and work, Three-line report, Tick outcomes, Journal exit codes, The leak rule, Hard constraints), `tick.md` (common sections, Sync the pull requests, Read the pull stage, Check the constitution, Write a comment) |
+| duty-desk | `LAW.md` (Role duty desk, Silence is the default, One tick, one case, exit, Alarms a role prints, Alarms the journal computes, Tick outcomes), `tick.md` (intro, Sync the law, Sync the tracker, Sync the pull requests) |
 
-`LAW.md`, `markers.md` and `departments.md` print whole where the table names no section. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick. The section "Sync the law with an older journal" belongs to no group of a role. No input prints it. A role reads it from the file when it finds an older journal, as [the lines of the input](#the-lines-of-the-input) say.
+`LAW.md` and `markers.md` print by section, as the table names them. No role gets `LAW.md` whole, and every section of `LAW.md` reaches at least one role. `departments.md` prints whole for patrol. The common sections of `tick.md` are the intro, One end, Sync the law, Working rules, Instructions and evidence, Fetch the precinct and End the tick. The section "Sync the law with an older journal" belongs to no group of a role. No input prints it. A role reads it from the file when it finds an older journal, as [the lines of the input](#the-lines-of-the-input) say.
 
 A file, a section, `config.yaml` or the key `harness` that the journal cannot read stands as a self line in place of its block. `<harness>` stays as it is in that line when no harness is named. So a binary and a law of different releases never stop a role.
 
@@ -458,7 +471,7 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 12. For the roles that read a constitution, it lists the files at the revision and reads `LAWMAN.md`. The check of `lint-page constitution` prints in a `lint` fence, the text in a `constitution` fence.
     For the roles that get precedents, it reads each direct `.md` file of `.lawman/precedents/` from the same list. It prints the line `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and the whole file in a `precedent` fence, by name. An empty or missing folder prints `precedents none`, and so does a folder where no file serves the role's department. A value outside its class prints `-`. A department list outside its class reads as all departments. The prosecutor, the defender, the court, the spec writer and the executor get all precedents. Investigation and the response unit get those of the case's department. Patrol gets those of the visit's department. A department `-` gets all precedents. The clerk gets none.
 13. For patrol, the defender and the court, it resolves the department page. Patrol takes the department from the order, the defender and the court from the stage. `-` means no page. The places are `.lawman/departments/<d>.md` of the precinct, `departments/<d>.md` of the installation and the page of the law, in that order. A failed check never falls through. The line `department <d> place=<1|2|3>` stands before the fences. The check prints in a `lint` fence, the page in a `department` fence.
-14. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field.
+14. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field. A text longer than one part is cut, as [cut texts](#cut-texts) says.
 15. The self lines come last.
 
 A failed or empty operation prints the lines of `run` and a self line, and the start goes on. Only a usage error and a broken database exit non-zero.
@@ -530,6 +543,8 @@ The frame of a part:
 - the first line of the part that `wake` prints: `lawman input <form> role=<role> at=<time> part 1 of <n>`;
 - the first line of a part of the role group that `tick input --role` prints: `lawman input <form> role=<role> part <k> of <n>`;
 - the first line of a part of the tick group: `lawman input <form> role=<role> tick=<tick id> part <k> of <n>`;
+- the first line of a part of `text`: `lawman input <form> text part <k> of <n>`, also when the text has one part;
+- the first line of a part of `clean`, when its output has more than one part: `lawman input <form> clean part <k> of <n>`;
 - the last line of every part: `end part <k> of <n>`.
 
 The role group:
@@ -549,6 +564,7 @@ The tick group:
 - `department <d> place=<1|2|3>`;
 - `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and `precedents none`;
 - `comment at=<time>` as the print of the cache gives it;
+- `cut kept=<head>+<tail> of=<n> secrets=<s>` and `full text <precinct> <issue|pull> <number> body|comment <at> <j>` for a cut text, as [cut texts](#cut-texts) says;
 - `<operation> empty`, `<operation> failed reason=<reason>` and the `error` fence as `journal run` prints them;
 - `self <step>`;
 - `ended <outcome>`, then `report <report>`.
@@ -577,10 +593,11 @@ The line `self law-version` of the tick group is not the line that `law-update` 
 
 ### Parts
 
-The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the key. The size counts Unicode characters of the content, fence lines included, each line with its line break. The first and the last line of a part do not count.
+The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the key. The size counts Unicode characters of the content, fence lines included, each line with its line break. The first and the last line of a part do not count. The same key sets the size at which a case text is cut, and the part size of `text` and `clean`. See [cut texts](#cut-texts) and [parts of clean and text](#parts-of-clean-and-text).
 
 - Each group splits on its own. A group within the size is one part.
 - A split falls between blocks. A block longer than the size splits by lines, a line longer than the size by characters. Each piece of a law line keeps the prefix. Each piece of a foreign text gets a fence of its own with the same kind. A `comment at=` line goes with the fence of its comment.
+- A cut case text is one block. Its pieces and its two journal lines stay in one part.
 - When the role group splits, its orders take the last part or parts. The parts of the law and the page then stay the same while the orders change, and the count changes only with the law folder. The role takes the order id from the last part. The duty desk has no orders.
 - A part without its last line was cut from the end by the harness.
 
@@ -592,6 +609,36 @@ The output of a start that stopped on its own steps is one part and is not store
 
 An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
 
+### Cut texts
+
+A case text is the body of its issue or pull request, and each comment of it. A body's block is one fence of its kind, `issue` or `pull`. A comment's block is one fence of kind `comment`, with a `comment at=<time>` line before it. The first line inside a comment's fence is `id=… author=…`. When a block, counted with its fence lines and its `comment at=` line, is longer than `input_chars`, the journal cuts it. The cut keeps the start and the end of the text and removes the middle:
+
+```
+~~~issue
+<the first lines of the text>
+~~~
+cut kept=<head>+<tail> of=<n> secrets=<s>
+full text <precinct> issue <number> body
+~~~issue
+<the last lines of the text>
+~~~
+```
+
+- The start is the first whole lines of the text, and the end the last whole lines. The two pieces together get the largest number of characters for which the cut block fits in one part. Each piece gets at most half of that number. A first or last line longer than its share is cut by characters, so both lines are always there.
+- The `cut` line starts with the word `cut` and holds `kept=`, `of=` and `secrets=`, each with its value. `kept=<head>+<tail>` gives the characters of the start and of the end. `of=` gives the characters of the whole text inside the fence, including the `id=… author=…` line of a comment. `secrets=` gives the number of secret marks in the removed middle. Numbers count characters, each line with its line break.
+- The `full` line starts with the words `full text`. After them come the precinct, `issue` or `pull`, the number, and `body` or `comment <at> <j>`. Those words are the arguments of `text`.
+- A comment is named by its time `at` and by its number `j`. `j` counts from 1 among the comments with that time, in id order. A comment added with another time does not change `j`. A comment added with the same time and a smaller id does.
+- Never cut: the title, the constitution, a department page, the precedents and the orders. They split by lines, as before, and a journal line is never cut. A text that fits in its part prints as before, byte for byte.
+- A cut block stays in one part with its two journal lines, so no part ends between a piece and its `cut` line. A part too small for even the shortest cut does not cut the text. It splits the text by lines, as before.
+
+The command `text` prints the whole text that a `full` line names, from the cache:
+
+```
+journal text <precinct> <issue|pull> <number> body|comment <at> <j> [--part <k>]
+```
+
+It cleans the cached text again and prints part `k` of it, 1 without the option. The parts are framed as [parts of clean and text](#parts-of-clean-and-text) says. It reads the cache, not the host, and it needs no open tick, so it works after a tick ends. It exits 0 on success. It exits 1 for a usage error, for a part outside the text, for a text the cache lacks, and when the cleaning library fails. A text the cache lacks gets a message that says to read the host itself, as for a self step.
+
 ### What the input leaves out
 
 The input never prints:
@@ -602,7 +649,7 @@ The input never prints:
 
 ## The catalog check
 
-The patrol of the department `vulnerabilities` and the investigation of its leads use `catalog`. The journal builds every request and reads every reply. It opens no socket and starts no process. The role sends what the journal printed, with a send form of the harness page, and hands the reply back unread. The check works on any harness whose page carries those forms. The Hermes page carries them today, in its section "Sending to the catalog". A harness page without them cannot send, so the patrol ends its tick and reports that the check did not run. See [harnesses](harnesses.md).
+The patrol of the department `vulnerabilities` and the investigation of its leads use `catalog`. The journal builds every request and reads every reply. It opens no socket and starts no process. The role sends what the journal printed, with a send form of the harness page, and hands the reply back unread. The check works on any harness whose page carries those forms. The Hermes page carries them today, in its section "Sending to the catalog". A harness whose section says none cannot send, so the patrol ends its tick and reports that the check did not run. See [harnesses](harnesses.md).
 
 ### The list
 
@@ -687,9 +734,11 @@ A role treats exit 2 as silence. Skills cite the other codes by number.
 - [launch.ts](../journal/src/launch.ts): the places of the commands and their start, and the three operations of the installation.
 - [operations.ts](../journal/src/operations.ts): `commands`, `run`, the forms of the output and the reasons.
 - [fence.ts](../journal/src/fence.ts): the fence.
-- [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache and their print.
+- [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache, their print and the cut of a case text.
+- [text-command.ts](../journal/src/text-command.ts): the command `text`.
+- [clean-command.ts](../journal/src/clean-command.ts): the command `clean` and its parts.
 - [input-roles.ts](../journal/src/input-roles.ts): the blocks of each role's input.
-- [input-parts.ts](../journal/src/input-parts.ts): the blocks, the parts and their frame.
+- [input-parts.ts](../journal/src/input-parts.ts): the blocks, the parts, their frame and the cut of a case text.
 - [role-entry.ts](../journal/src/role-entry.ts): the role group.
 - [tick-start.ts](../journal/src/tick-start.ts): the start of a tick with an order and the tick group.
 - [law-sync.ts](../journal/src/law-sync.ts): the command that the new binary runs to swap itself in.
