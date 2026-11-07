@@ -116,7 +116,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-update`: makes one pass of the law update and prints one line from [the table](#what-law-update-prints). It runs the checks, and the `law-sync` of the checked file changes the binary and the keys. See [Updates](#updates).
 
 ```
-journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run> [args]
+journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|old-precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run|run-installation> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 journal law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
@@ -188,6 +188,11 @@ journal form <issues|pulls|decider|catalog>
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
 - `handoff`: builds the hand-over comment of the clerk for a pull request and prints it. With `--adopted` it cleans the old body of the pull request first. It never exits with 7.
 - `precedent`: reads the newest counted ruling of a case from the journal's cache and writes its precedent files into the folder `.lawman/precedents/` of a tree. It prints one line for each change: `entry <name> [<reason>]`, `cancel <name or -> [missing]`, `none` or `no-entry <reason>`. A taken name gets the next free one, so no precedent is lost. The model passes no ruling text. A link or a folder in the path that is no plain file or folder gives a non-zero exit and no write. Each new file carries its original list in `departments`, as [constitution](constitution.md) says. It prints `drop <name> <department or ->` for each name the court gave that is no candidate, only for a file that stays. It prints `ask <name>` for each file it wrote from a new line of the ruling as it stands, when the precinct allows Jev and the original list is not empty and leaves a candidate out. With `--request <name>` it prints the TypeSafe Jev request body for that file, built from its cache, the tree and the pages of the candidates outside the list, or nothing with a non-zero exit. With `--answer <name>` it reads the reply and its status line on stdin. It changes only the `departments` field, and only of a file that still holds its original list. It prints one line: `jev model=<model> departments=<a,b|all>`, `jev unchanged` or `jev none reason=<reason>`. A file that the gate refuses gets its cause on stderr: no `ask` line in the write, and `jev none reason=brief` in the answer. Any other error is a fault: it prints on stderr and exits non-zero. A department source in the tree that exists and cannot be read, a failed listing of the shared department pages and a case missing from the cache are such faults, and a write call with one writes nothing. The journal sends nothing.
+- `old-precedent`: moves the numbered lines of an old `## Precedents` section of `LAWMAN.md` into precedent files.
+  - `list` reads a page on stdin. It prints `line <n> date=<date> link=<yes|no> position=<p>` and the rule in a `rule` fence for each numbered line, and `outside position=<p>` for an item outside the form. `<n>` is the number of the precedent in the section, not an issue. A page with no item prints `none`.
+  - `added` prints the same lines for the numbered lines of the page at `--head` whose number the page at `--base` lacks. The base is the page at the merge base of a pull request, so a pull request that is stale after a move gets no moved line. An edited line keeps its number and is not added. A free note is no old line.
+  - `check` reads the issues form, without the cache. The precinct's `issues` command gives it. A precinct without that command takes the form on stdin. For each `<line>:<issue>` it prints `line <n> kind=<protects|condemns>` when every counted court ruling on the issue gives one kind. Otherwise it prints `line <n> ask reason=<reason>`. The reasons are `no-issue`, `absent`, `repeated`, `no-ruling`, `mixed`, `form` and `ceiling`. A marker of another stage is no ruling.
+  - `move` takes the kind the same way, or the user's `--kind` when the rulings give none. It writes the file `<date>-<gist>.md` into `.lawman/precedents/` of the tree, or `<date>-<gist>-<k>.md` with the next free number `<k>` from 2 when that name is taken, and takes the line out of `LAWMAN.md` of the tree: both stand, or neither does. A page that is not UTF-8 is refused. The rest of the page keeps its bytes, and a section with no item left reads `none`. The file holds `kind`, `departments: []`, `date` and `ruling`, the link of the line. A tail in parentheses that fails the link class is no link: it stays part of the rule, in the list and in the file. It prints `entry <name>` or `ask reason=<reason>`. A link or a folder in the place of `LAWMAN.md`, `.lawman` or `.lawman/precedents` gives a non-zero exit and no write.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
 - `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
 
@@ -200,6 +205,10 @@ journal handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old p
 journal precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>
 journal precedent <precinct> --issue <n> --tree <folder> --request <name>
 journal precedent <precinct> --issue <n> --tree <folder> --answer <name> (stdin: the reply, then the status line)
+journal old-precedent list (stdin: the page)
+journal old-precedent added --base <file> --head <file>
+journal old-precedent check <precinct> <line>[:<issue>]... (stdin: the issues form, when the precinct has no issues command)
+journal old-precedent move <precinct> --tree <folder> --line <n> --gist <gist> [--issue <n>] [--kind protects|condemns] (stdin: the same)
 journal jev <request|answer> --kind <p0|grade|requirement>
 journal catalog request --kind batch --tick <tick id> [--precinct <p>] (stdin with --precinct: the list)
 journal catalog answer --kind batch --tick <tick id> (stdin: the reply, then the status line)
@@ -329,6 +338,23 @@ tag=<tag>
 - The output is in form when it is valid UTF-8 and holds these three lines, in this order, with no other line. A value is any text on one line, and a value may be empty. The value of `changed` is `yes` or `no` only. A file that does not start, a non-zero exit, a signal or an output outside the form stops the update with "the law-version command failed".
 - A value in form still passes its class. A revision outside its class, an empty one included, stops the update with "a value is not safe". A tag outside its class stops it with "the tag is not safe". An empty tag means no tag. The journal judges nothing more about the tag. The step that gets the release judges it: with no release it says "binary not ready".
 - With the file in `shared/`, the update and the check at the start of a tick need no step of the role for the facts of the law folder. Without it, the role reads the revision and the state itself.
+
+#### Running an operation of the installation
+
+`run-installation` runs one operation of the installation the way the update runs it. The assembly uses it to prove a command before it writes the command into the installation.
+
+```
+journal run-installation <release <repo> <tag>|verify <asset> <provenance> <repo> <commit>|law-version>
+```
+
+- It opens no database and needs no precinct.
+- The arguments pass the classes of `law-update`: `release_repo` has two segments, the tag is the release tag class, and the commit is 40 lowercase hexadecimal digits.
+- `release`: the journal removes the folder `runs/installation-release` of the database folder, creates it empty and passes its absolute path and the asset name of this platform. On success it prints `release done folder=runs/installation-release asset=<asset>`.
+- `verify`: the asset and the provenance file are paths relative to the database folder, inside `runs/`. Each is a plain file, and no link stands on the way. The journal builds nothing and passes the absolute paths. On exit 0 it prints `verify passed`.
+- `law-version`: the journal passes the law folder, `lawman` in the database folder. Output in form prints the three facts, `revision=<revision>`, `changed=<yes|no>` and `tag=<tag>`. Output outside the form, or not UTF-8, prints `law-version stop the law-version command failed`. A revision outside its class prints `law-version stop a value is not safe`, a tag outside its class `law-version stop the tag is not safe`. Each stop exits 5.
+- An operation without a file prints `<operation> empty` and exits 0.
+- A failure prints `<operation> failed reason=<reason>` and an `error` fence, as `run` does. The reasons are `argument`, `start`, `exit` and `clean`. The fence holds the cleaned standard error after `exit`.
+- The journal prints no word of the standard output of `release` and `verify`. Of `law-version` it prints only the three facts in their classes.
 
 ### The classes of the arguments
 

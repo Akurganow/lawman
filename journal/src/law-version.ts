@@ -1,10 +1,9 @@
-import { join } from "node:path";
 import {
-	commandFolder,
 	hasCommand,
 	installationPlace,
 	LAW_VERSION,
-	launch,
+	runLawVersion,
+	utf8,
 } from "./launch";
 import { configValue } from "./law-sync";
 
@@ -12,6 +11,7 @@ export const COMMIT = /^[0-9a-f]{40}$/;
 export const DRIFT = "stopped-law-drift";
 export const DIRTY = "stopped-dirty-law";
 export const UNSAFE = "a value is not safe";
+export const UNSAFE_TAG = "the tag is not safe";
 export const DIRTY_REASON = "the law folder has a local change";
 export const COMMAND_FAILED = "the law-version command failed";
 const FORM =
@@ -20,24 +20,19 @@ const FORM =
 export type LawFacts = { revision: string; changed: boolean; tag: string };
 type Stop = { outcome: string; report: string };
 
-const lawFolder = () => join(commandFolder(), "lawman");
+// the three facts of an output in form, null for any other output
+export function readFacts(stdout: Uint8Array): LawFacts | null {
+	const m = utf8(stdout)?.match(FORM);
+	if (m === null || m === undefined) return null;
+	return { revision: m[1] ?? "", changed: m[2] === "yes", tag: m[3] ?? "" };
+}
 
 // "failed" when the file did not start, exited non-zero, or printed outside the form
 export async function lawVersion(): Promise<LawFacts | "absent" | "failed"> {
 	if (!hasCommand(installationPlace(), LAW_VERSION)) return "absent";
-	const ran = await launch(installationPlace(), LAW_VERSION, [lawFolder()]);
+	const ran = await runLawVersion();
 	if (ran === null || !ran.ok) return "failed";
-	let text: string;
-	try {
-		text = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
-			ran.stdout,
-		);
-	} catch {
-		return "failed";
-	}
-	const m = text.match(FORM);
-	if (m === null) return "failed";
-	return { revision: m[1] ?? "", changed: m[2] === "yes", tag: m[3] ?? "" };
+	return readFacts(ran.stdout) ?? "failed";
 }
 
 // The check of the law folder at the start of every tick. "self" when the

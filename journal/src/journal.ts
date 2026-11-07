@@ -36,6 +36,8 @@ export const COMMANDS: Record<string, Handler> = {
 	commands: async (args) =>
 		(await import("./operations")).commandsCommand(args),
 	run: async (args) => (await import("./operations")).runCommand(args),
+	"run-installation": async (args) =>
+		(await import("./run-installation")).runInstallationCommand(args),
 	leads,
 	seen,
 	cap,
@@ -48,6 +50,8 @@ export const COMMANDS: Record<string, Handler> = {
 	"department-line": departmentLineCommand,
 	precedent: async (args) =>
 		(await import("./precedent")).precedentCommand(args),
+	"old-precedent": async (args) =>
+		(await import("./old-precedents")).oldPrecedentCommand(args),
 	pull: pullCommand,
 	handoff: async (args) => (await import("./handoff")).handoffCommand(args),
 	clean: async (args) => (await import("./clean-command")).cleanCommand(args),
