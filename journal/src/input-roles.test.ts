@@ -6,6 +6,7 @@ import {
 	HARNESS_SECTIONS,
 	INTRO,
 	inputOf,
+	lawMap,
 	lawOf,
 	TICK_ORDER,
 	WHOLE,
@@ -30,6 +31,13 @@ describe("the role table", () => {
 			}
 		},
 	);
+
+	test("a section that names a reader which is not a role stops the map", () => {
+		expect(() => lawMap([["Language", ["patrol", "patrolman"]]])).toThrow(
+			/"patrolman", which is not a role/,
+		);
+		expect(() => lawMap([["Language", ["duty-desk"]]])).not.toThrow();
+	});
 
 	test("every section of LAW.md has a reader, and the whole file counts as every section", () => {
 		const sections = [INTRO, ...(HEADINGS["LAW.md"] ?? [])];

@@ -8,6 +8,7 @@ import { withDb } from "./db";
 import { takeableOrders } from "./dispatch";
 import { captured, inprocAsync } from "./inproc";
 import { readConfig } from "./input-files";
+import { lawSections } from "./input-roles";
 import {
 	CONFIG,
 	config,
@@ -148,50 +149,6 @@ const MORE: Record<string, string[]> = {
 const heading = (name: string) =>
 	name === "intro" ? "# The tick" : `## ${name}`;
 
-// The sections of LAW.md each role reads, as the skills read them at this commit:
-// an x for the roles in ROLE_NAMES order. The section of the role itself is the
-// one that bears its name.
-const LAW_READERS: [section: string, readers: string][] = [
-	["intro", "xxxxxxxxx."],
-	["Role duty desk", ".........x"],
-	["Role patrol", "x........."],
-	["Role response unit", ".x........"],
-	["Role investigation", "..x......."],
-	["Role prosecutor", "...x......"],
-	["Role defender", "....x....."],
-	["Role court", ".....x...."],
-	["Role clerk", "......x..."],
-	["Role spec writer", ".......x.."],
-	["Role executor", "........x."],
-	["Silence is the default", "xxxxxxxxxx"],
-	["Language", "xxxxxxxxx."],
-	["Exhibits", "xxxxxx.x.."],
-	["Third-party text", "xxxxxxxxx."],
-	["Execution", "xxxxxxxxx."],
-	["Sources", "x.xxxx...."],
-	["Recorded reasons", "xx.xxx...."],
-	["Requirement parts", "...xxx...."],
-	["Orders", "........x."],
-	["Texts of the precinct", "xxxxxx.xx."],
-	["Precedents", "xxxxxx.xx."],
-	["One tick, one case, exit", "xxxxxxxxxx"],
-	["Alarms a role prints", "xxxxxxx..x"],
-	["Alarms the journal computes", ".........x"],
-	["Returns instead of stops", "x.xxxx...."],
-	["Write discipline", "xxxxxxxxx."],
-	["Dedupe", "x........."],
-	["Closure classes", "...xxxx..."],
-	["Terms", "xxxxxxxxx."],
-	["Pairs", "......x..."],
-	["Votes and work", "......xxx."],
-	["The cap table", "x........."],
-	["Five-part report", "x........."],
-	["Three-line report", ".xxxxxxxx."],
-	["Tick outcomes", "xxxxxxxxxx"],
-	["Journal exit codes", "xxxxxxxxx."],
-	["The leak rule", "xxxxxxxxx."],
-	["Hard constraints", "xxxxxxxxx."],
-];
 // LAW.md has no fenced block, so a heading at the start of a line starts a section
 const LAW_PARTS = new Map(
 	readFileSync(join(LAW, "LAW.md"), "utf8")
@@ -201,9 +158,10 @@ const LAW_PARTS = new Map(
 			part.replace(/\n$/, "").split("\n"),
 		]),
 );
+// the map is the one in the journal; the file is read here, not copied
 const lawLines = (role: string): string[] =>
-	LAW_READERS.filter(([, r]) => r[ROLE_NAMES.indexOf(role)] === "x").flatMap(
-		([section]) => LAW_PARTS.get(section) ?? [`missing ${section}`],
+	lawSections(role).flatMap(
+		(section) => LAW_PARTS.get(section) ?? [`missing ${section}`],
 	);
 const file = (path: string) =>
 	readFileSync(join(LAW, path), "utf8").replace(/\n$/, "").split("\n");

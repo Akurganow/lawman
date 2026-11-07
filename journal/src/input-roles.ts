@@ -31,8 +31,8 @@ export const HARNESS_SECTIONS = ["Silence"];
 
 export const DUTY_DESK = "duty-desk";
 
-// the columns of the map of LAW.md
-const COLUMNS = [
+// the ten roles; the first nine hold a case or a pull, the duty desk wakes them
+const WORKING_ROLES = [
 	"patrol",
 	"response-unit",
 	"investigation",
@@ -42,56 +42,102 @@ const COLUMNS = [
 	"clerk",
 	"spec-writer",
 	"executor",
-	DUTY_DESK,
 ];
+const LAW_ROLES = [...WORKING_ROLES, DUTY_DESK];
 
-// The sections of LAW.md in the order of the document, each with an x for every
-// role in COLUMNS that reads it. A role reads a section when its skill names the
-// section or one of its steps does what the section governs.
-const LAW_MAP: [section: string, readers: string][] = [
-	[INTRO, "xxxxxxxxx."],
-	["Role duty desk", ".........x"],
-	["Role patrol", "x........."],
-	["Role response unit", ".x........"],
-	["Role investigation", "..x......."],
-	["Role prosecutor", "...x......"],
-	["Role defender", "....x....."],
-	["Role court", ".....x...."],
-	["Role clerk", "......x..."],
-	["Role spec writer", ".......x.."],
-	["Role executor", "........x."],
-	["Silence is the default", "xxxxxxxxxx"],
-	["Language", "xxxxxxxxx."],
-	["Exhibits", "xxxxxx.x.."],
-	["Third-party text", "xxxxxxxxx."],
-	["Execution", "xxxxxxxxx."],
-	["Sources", "x.xxxx...."],
-	["Recorded reasons", "xx.xxx...."],
-	["Requirement parts", "...xxx...."],
-	["Orders", "........x."],
-	["Texts of the precinct", "xxxxxx.xx."],
-	["Precedents", "xxxxxx.xx."],
-	["One tick, one case, exit", "xxxxxxxxxx"],
-	["Alarms a role prints", "xxxxxxx..x"],
-	["Alarms the journal computes", ".........x"],
-	["Returns instead of stops", "x.xxxx...."],
-	["Write discipline", "xxxxxxxxx."],
-	["Dedupe", "x........."],
-	["Closure classes", "...xxxx..."],
-	["Terms", "xxxxxxxxx."],
-	["Pairs", "......x..."],
-	["Votes and work", "......xxx."],
-	["The cap table", "x........."],
-	["Five-part report", "x........."],
-	["Three-line report", ".xxxxxxxx."],
-	["Tick outcomes", "xxxxxxxxxx"],
-	["Journal exit codes", "xxxxxxxxx."],
-	["The leak rule", "xxxxxxxxx."],
-	["Hard constraints", "xxxxxxxxx."],
-];
+// The sections of LAW.md in the order of the document, each with the roles that
+// read it. A role reads a section when its skill names the section or one of
+// its steps does what the section governs.
+type LawRow = [section: string, readers: string[]];
 
-const lawSections = (role: string): string[] =>
-	LAW_MAP.filter(([, readers]) => readers[COLUMNS.indexOf(role)] === "x").map(
+// a row that names a role this list lacks is a typo, so building the map stops
+export function lawMap(rows: LawRow[]): LawRow[] {
+	for (const [section, readers] of rows)
+		for (const reader of readers)
+			if (!LAW_ROLES.includes(reader))
+				throw new Error(
+					`LAW.md section ${JSON.stringify(section)} names ${JSON.stringify(reader)}, which is not a role; the roles are ${LAW_ROLES.join(", ")}`,
+				);
+	return rows;
+}
+
+const EVERY = LAW_ROLES;
+const WORKING = WORKING_ROLES;
+const WITHOUT_CLERK = WORKING.filter((r) => r !== "clerk");
+
+const LAW_MAP = lawMap([
+	[INTRO, WORKING],
+	["Role duty desk", [DUTY_DESK]],
+	["Role patrol", ["patrol"]],
+	["Role response unit", ["response-unit"]],
+	["Role investigation", ["investigation"]],
+	["Role prosecutor", ["prosecutor"]],
+	["Role defender", ["defender"]],
+	["Role court", ["court"]],
+	["Role clerk", ["clerk"]],
+	["Role spec writer", ["spec-writer"]],
+	["Role executor", ["executor"]],
+	["Silence is the default", EVERY],
+	["Language", WORKING],
+	[
+		"Exhibits",
+		[
+			"patrol",
+			"response-unit",
+			"investigation",
+			"prosecutor",
+			"defender",
+			"court",
+			"spec-writer",
+		],
+	],
+	["Third-party text", WORKING],
+	["Execution", WORKING],
+	["Sources", ["patrol", "investigation", "prosecutor", "defender", "court"]],
+	[
+		"Recorded reasons",
+		["patrol", "response-unit", "prosecutor", "defender", "court"],
+	],
+	["Requirement parts", ["prosecutor", "defender", "court"]],
+	["Orders", ["executor"]],
+	["Texts of the precinct", WITHOUT_CLERK],
+	["Precedents", WITHOUT_CLERK],
+	["One tick, one case, exit", EVERY],
+	[
+		"Alarms a role prints",
+		[
+			"patrol",
+			"response-unit",
+			"investigation",
+			"prosecutor",
+			"defender",
+			"court",
+			"clerk",
+			DUTY_DESK,
+		],
+	],
+	["Alarms the journal computes", [DUTY_DESK]],
+	[
+		"Returns instead of stops",
+		["patrol", "investigation", "prosecutor", "defender", "court"],
+	],
+	["Write discipline", WORKING],
+	["Dedupe", ["patrol"]],
+	["Closure classes", ["prosecutor", "defender", "court", "clerk"]],
+	["Terms", WORKING],
+	["Pairs", ["clerk"]],
+	["Votes and work", ["clerk", "spec-writer", "executor"]],
+	["The cap table", ["patrol"]],
+	["Five-part report", ["patrol"]],
+	["Three-line report", WORKING.filter((r) => r !== "patrol")],
+	["Tick outcomes", EVERY],
+	["Journal exit codes", WORKING],
+	["The leak rule", WORKING],
+	["Hard constraints", WORKING],
+]);
+
+export const lawSections = (role: string): string[] =>
+	LAW_MAP.filter(([, readers]) => readers.includes(role)).map(
 		([section]) => section,
 	);
 
