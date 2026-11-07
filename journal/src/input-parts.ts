@@ -62,7 +62,7 @@ function chop(line: string, width: number): string[] {
 }
 
 // Groups lines into runs that each cost at most `room`, a long line chopped.
-function runs(lines: string[], room: number, wrap: number): string[][] {
+export function runs(lines: string[], room: number, wrap: number): string[][] {
 	const out: string[][] = [[]];
 	let used = 0;
 	for (const line of lines)

@@ -1,10 +1,13 @@
-import { usage } from "./args";
+import { fits, usage } from "./args";
 import { cleanHostText } from "./clean-host";
-import { EXIT, Fail, readStdin } from "./db";
+import { EXIT, Fail, out, readStdin } from "./db";
+import { inputChars, readConfig } from "./input-files";
+import { framed, runs } from "./input-parts";
 
 const CLEAN_USAGE =
-	"clean [--json] (stdin: host text, or JSON values with --json)";
+	"clean [--json] [--part <k>] (stdin: host text, or JSON values with --json)";
 const JSON_FLAG = "--json";
+const PART_FLAG = "--part";
 const NOT_JSON =
 	"clean: the input does not parse as JSON values; read the host reply again";
 const CLEAN_FAILED =
@@ -46,18 +49,42 @@ async function cleanedValue(value: unknown): Promise<unknown> {
 	return Object.fromEntries(await Promise.all(entries));
 }
 
-// plain text keeps its bytes, and its final newline is the one every printed line ends with
-export async function cleanCommand(args: string[]): Promise<number> {
+const lineList = (text: string) => (text.trim() === "" ? [] : text.split("\n"));
+
+// the option order is [--json] [--part <k>]; any other form is a usage error
+function options(args: string[]): { json: boolean; part: number | undefined } {
 	const json = args[0] === JSON_FLAG;
-	if (args.length > (json ? 1 : 0)) throw usage(CLEAN_USAGE);
+	const rest = json ? args.slice(1) : args;
+	if (rest.length === 0) return { json, part: undefined };
+	const [flag, given] = rest;
+	if (rest.length !== 2 || flag !== PART_FLAG || !fits("number", given ?? ""))
+		throw usage(CLEAN_USAGE);
+	return { json, part: Number(given) };
+}
+
+// Plain text keeps its bytes, and its final newline is the one every printed line ends with.
+// Output within one part prints as it always did. A longer one prints in framed parts,
+// split by lines, and nothing is cut: the journal does not keep the text.
+export async function cleanCommand(args: string[]): Promise<number> {
+	const { json, part } = options(args);
+	const size = inputChars(readConfig());
 	const input = readStdin();
 	const lines = json
 		? (await Promise.all(parsedValues(input).map(cleanedValue))).map((v) =>
 				JSON.stringify(v),
 			)
-		: [(await cleaned(input)).replace(/\n$/, "")].filter(
-				(text) => text.trim() !== "",
-			);
-	process.stdout.write(lines.map((line) => `${line}\n`).join(""));
+		: lineList((await cleaned(input)).replace(/\n$/, ""));
+	const pieces = runs(lines, size, 0);
+	const wanted = part ?? 1;
+	if (wanted > pieces.length)
+		throw new Fail(
+			EXIT.USAGE,
+			`clean: part ${wanted} is out of range; the output has ${pieces.length} ${pieces.length === 1 ? "part" : "parts"}`,
+		);
+	if (pieces.length === 1) {
+		process.stdout.write(lines.map((line) => `${line}\n`).join(""));
+		return EXIT.OK;
+	}
+	out(framed(pieces, () => "clean")[wanted - 1] ?? "");
 	return EXIT.OK;
 }
