@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { lawOf, WHOLE } from "./input-roles";
+import { INTRO, lawOf, ROLES, WHOLE } from "./input-roles";
 import { ROLE_NAMES } from "./input-test-fixture";
 import {
 	DEPARTED,
@@ -11,6 +11,7 @@ import {
 	readBy,
 	slug,
 	unfound,
+	unreached,
 	wordsIn,
 } from "./law-links-fixture";
 import { LAW, ROOT } from "./test-helpers";
@@ -49,6 +50,41 @@ describe("links from the skills to the sections of the law", () => {
 			expect([file, unfound(wordsIn(text, file))]).toEqual([file, []]);
 		}
 	});
+
+	test.each(ROLE_NAMES)(
+		"%s reads every section that a section it reads in LAW.md or tick.md names",
+		(role) => {
+			const read = readBy(lawOf(role));
+			for (const file of ["LAW.md", "tick.md"]) {
+				const text = readFileSync(join(LAW, file), "utf8");
+				expect([file, unreached(text, file, read)]).toEqual([file, []]);
+			}
+		},
+	);
+});
+
+describe("the self steps of the table in the intro of tick.md", () => {
+	test.each(Object.entries(ROLES))(
+		"%s reads the section of each self step that it can get",
+		(_, role) => {
+			const read = readBy(role.law);
+			const STAGE = {
+				case: "Read the stage",
+				intake: "Check the intake order",
+				pull: "Read the pull stage",
+			};
+			const needed = [
+				"Fetch the precinct",
+				...role.sync.map((s) =>
+					s === "issues" ? "Sync the tracker" : "Sync the pull requests",
+				),
+				...(role.stage === null ? [] : [STAGE[role.stage]]),
+				...(role.constitution ? ["Check the constitution"] : []),
+				...(role.department === null ? [] : ["Resolve the department page"]),
+			];
+			expect(needed.filter((s) => !read.has(`tick.md#${s}`))).toEqual([]);
+		},
+	);
 });
 
 describe("the check of the links", () => {
@@ -76,6 +112,30 @@ describe("the check of the links", () => {
 		expect(check('Run the "Run a source" section of `exhibits.md`.')).toEqual(
 			[],
 		);
+	});
+
+	test("a reader of a section reads the sections that it names", () => {
+		const text = [
+			'Intro names "Orders".',
+			"## Terms",
+			'See "Language", the "Orders" section and LAW.md#exhibits.',
+			'A line `self law` stands for "Exhibits".',
+			"## Pairs",
+			'See "Exhibits".',
+		].join("\n");
+		const only = (...sections: string[]) =>
+			unreached(text, "LAW.md", readBy([["LAW.md", sections]]));
+		expect(only(INTRO, "Terms", "Pairs", "Language", "Orders")).toEqual([
+			"3: Exhibits",
+			"6: Exhibits",
+		]);
+		expect(only("Terms", "Language", "Orders", "Exhibits")).toEqual([]);
+		expect(only(INTRO, "Terms", "Language", "Exhibits")).toEqual([
+			"1: Orders",
+			"3: Orders",
+		]);
+		expect(only("Pairs")).toEqual(["6: Exhibits"]);
+		expect(only("Language")).toEqual([]);
 	});
 
 	test("a template in a fenced block is no link", () => {

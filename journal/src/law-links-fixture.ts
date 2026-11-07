@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
-import { WHOLE } from "./input-roles";
+import { INTRO, WHOLE } from "./input-roles";
 import { LAW } from "./test-helpers";
 
 // The four files whose sections the roles take by heading.
@@ -66,7 +66,8 @@ const filesOf = (name: string): string[] =>
 const NAMED = /(LAW|tick|markers|departments)\.md#([a-z0-9-]+)/g;
 
 // A link in a skill or a role reference: a heading of the four files in straight
-// or guillemet quotes, or an anchor `<file>.md#<slug>`. The name of an anchor
+// or guillemet quotes, an anchor `<file>.md#<slug>`, or the words `<name> section`
+// for a heading that left the law. The name of an anchor
 // whose target is missing stays as written, so it fails the check.
 export function linksIn(text: string, departed: string[] = DEPARTED): Ref[] {
 	const known = new Set([
@@ -78,6 +79,10 @@ export function linksIn(text: string, departed: string[] = DEPARTED): Ref[] {
 		for (const name of known)
 			for (const quoted of [`"${name}"`, `«${name}»`])
 				if (body.includes(quoted)) refs.push({ line, name, file: null });
+		// the words `<name> section` of a heading that left the law, quoted or not
+		for (const name of departed)
+			if (new RegExp(`\\b${name} section\\b`).test(body))
+				refs.push({ line, name, file: null });
 		for (const m of body.matchAll(NAMED)) {
 			const file = `${m[1]}.md`;
 			const target = HEADINGS[file]?.find((h) => slug(h) === m[2]);
@@ -142,3 +147,40 @@ export const unfound = (refs: Ref[]): string[] =>
 			? [`${line}: ${name}`]
 			: [],
 	);
+
+// the section that holds each line outside fenced blocks: INTRO before the first heading
+const holders = (text: string): Map<number, string> => {
+	let section = INTRO;
+	const held = new Map<number, string>();
+	for (const [line, body] of prose(text)) {
+		section = body.match(/^## (.+)$/)?.[1] ?? section;
+		held.set(line, section);
+	}
+	return held;
+};
+
+// What a reader of a section of `own` lacks of the sections that the section names.
+// A sentence of a section goes to every role that reads it, so each of those roles
+// must read the sections the sentence names. A row of the table of self steps in
+// the intro of tick.md is exempt: the journal prints a `self` line only for a step
+// that the role has, and the test of the self steps checks that it reads the section.
+// Each entry reads `line: name`.
+export function unreached(
+	text: string,
+	own: string,
+	read: Set<string>,
+): string[] {
+	const held = holders(text);
+	const lines = text.split("\n");
+	const row = (line: number) =>
+		own === "tick.md" &&
+		held.get(line) === INTRO &&
+		(lines[line - 1] ?? "").startsWith("| `");
+	const refs = [...linksIn(text, []), ...wordsIn(text, own)].filter(
+		({ line, file }) =>
+			read.has(`${own}#${held.get(line)}`) &&
+			!row(line) &&
+			(file === null || LAW_FILES.some((f) => f === file)),
+	);
+	return [...new Set(missing(refs, lines, read))];
+}
