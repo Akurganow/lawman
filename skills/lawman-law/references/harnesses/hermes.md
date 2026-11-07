@@ -415,7 +415,7 @@ hermes sessions export --title "lawman-proof-<n>" --after <time before the run> 
 ```
 
 - The title of the run's session holds the job's name (seen in a scheduled run). Give each proof job a name of its own, so the filter matches one session.
-- Take the `tool` message of the `terminal` call whose arguments hold the command. Its content is a JSON object. `output` is what the journal printed, and `exit_code` is its exit code (seen in a scheduled run).
+- Take the `tool` message of the `terminal` call whose arguments hold the command. Its content is a JSON object. `output` is what the journal printed, without the last newline, and `exit_code` is its exit code (seen in a scheduled run). Compare the value with the expected line without its newline.
 - A content whose `error` starts with `BLOCKED` means that the check refused the command, and the command did not run. No `terminal` call with the command means that the model did not run it. Both are no proof in the environment of a tick.
 - `--deliver local` keeps the output in the harness's output folder and sends nothing to a chat.
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
