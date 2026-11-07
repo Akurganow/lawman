@@ -146,6 +146,64 @@ const MORE: Record<string, string[]> = {
 };
 const heading = (name: string) =>
 	name === "intro" ? "# The tick" : `## ${name}`;
+
+// The sections of LAW.md each role reads, as the skills read them at this commit:
+// an x for the roles in ROLE_NAMES order. The section of the role itself is the
+// one that bears its name.
+const LAW_READERS: [section: string, readers: string][] = [
+	["intro", "xxxxxxxxx."],
+	["Role duty desk", ".........x"],
+	["Role patrol", "x........."],
+	["Role response unit", ".x........"],
+	["Role investigation", "..x......."],
+	["Role prosecutor", "...x......"],
+	["Role defender", "....x....."],
+	["Role court", ".....x...."],
+	["Role clerk", "......x..."],
+	["Role spec writer", ".......x.."],
+	["Role executor", "........x."],
+	["Silence is the default", "xxxxxxxxxx"],
+	["Language", "xxxxxxxxx."],
+	["Exhibits", "xxxxxx.x.."],
+	["Third-party text", "xxxxxxxxx."],
+	["Execution", "xxxxxxxxx."],
+	["Sources", "x.xxxx...."],
+	["Recorded reasons", "xx.xxx...."],
+	["Requirement parts", "...xxx...."],
+	["Orders", "........x."],
+	["Texts of the precinct", "xxxxxx.xx."],
+	["Precedents", "xxxxxx.xx."],
+	["One tick, one case, exit", "xxxxxxxxxx"],
+	["Alarms a role prints", "xxxxxxx..x"],
+	["Alarms the journal computes", ".........x"],
+	["Returns instead of stops", "x.xxxx...."],
+	["Write discipline", "xxxxxxxxx."],
+	["Dedupe", "x........."],
+	["Closure classes", "...xxxx..."],
+	["Terms", "xxxxxxxxx."],
+	["Pairs", "......x..."],
+	["Votes and work", "......xxx."],
+	["The cap table", "x........."],
+	["Five-part report", "x........."],
+	["Three-line report", ".xxxxxxxx."],
+	["Tick outcomes", "xxxxxxxxxx"],
+	["Journal exit codes", "xxxxxxxxx."],
+	["The leak rule", "xxxxxxxxx."],
+	["Hard constraints", "xxxxxxxxx."],
+];
+// LAW.md has no fenced block, so a heading at the start of a line starts a section
+const LAW_PARTS = new Map(
+	readFileSync(join(LAW, "LAW.md"), "utf8")
+		.split(/^(?=## )/m)
+		.map((part) => [
+			part.startsWith("# ") ? "intro" : (/^## (.+)\n/.exec(part)?.[1] ?? ""),
+			part.replace(/\n$/, "").split("\n"),
+		]),
+);
+const lawLines = (role: string): string[] =>
+	LAW_READERS.filter(([, r]) => r[ROLE_NAMES.indexOf(role)] === "x").flatMap(
+		([section]) => LAW_PARTS.get(section) ?? [`missing ${section}`],
+	);
 const file = (path: string) =>
 	readFileSync(join(LAW, path), "utf8").replace(/\n$/, "").split("\n");
 
@@ -159,15 +217,7 @@ function expected(role: string): Expected[] {
 	const order = { head: "order 1 main o/main - 3", headings: [] };
 	if (role === "duty-desk")
 		return [
-			{
-				head: "law LAW.md",
-				headings: [
-					"## Silence is the default",
-					"## One tick, one case, exit",
-					"## Alarms and their repetition",
-					"## Tick outcomes",
-				],
-			},
+			{ head: "law LAW.md", whole: lawLines(role) },
 			{
 				head: "law tick.md",
 				headings: [
@@ -182,17 +232,28 @@ function expected(role: string): Expected[] {
 	const tick = TICK_HEADINGS.filter(
 		(h) => EVERY_ROLE.includes(h) || (MORE[role] ?? []).includes(h),
 	);
-	const extra: Expected[] =
-		role === "patrol"
-			? [
-					{ head: "law markers.md", whole: file("markers.md") },
-					{ head: "law departments.md", whole: file("departments.md") },
-				]
-			: role === "response-unit"
-				? [{ head: "law markers.md", headings: ["## The `id` value"] }]
-				: [];
+	// the example in the section Precedent repeats its heading inside a fence
+	const markers: Record<string, string[]> = {
+		patrol: [
+			"## Line shape",
+			"## Fields",
+			"## The `id` value",
+			"## Defined markers",
+		],
+		"response-unit": ["## The `id` value"],
+		court: ["## Precedent", "## Precedent"],
+	};
+	const wanted = markers[role];
+	const extra: Expected[] = [
+		...(wanted === undefined
+			? []
+			: [{ head: "law markers.md", headings: wanted }]),
+		...(role === "patrol"
+			? [{ head: "law departments.md", whole: file("departments.md") }]
+			: []),
+	];
 	return [
-		{ head: "law LAW.md", whole: file("LAW.md") },
+		{ head: "law LAW.md", whole: lawLines(role) },
 		{ head: "law tick.md", headings: tick.map(heading) },
 		...extra,
 		harness,

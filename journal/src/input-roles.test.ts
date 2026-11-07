@@ -4,12 +4,14 @@ import { join } from "node:path";
 import {
 	DUTY_DESK,
 	HARNESS_SECTIONS,
+	INTRO,
 	inputOf,
 	lawOf,
 	TICK_ORDER,
 	WHOLE,
 } from "./input-roles";
 import { ROLE_NAMES } from "./input-test-fixture";
+import { HEADINGS } from "./law-links-fixture";
 import { sectionsOf } from "./law-sections";
 import { LAW } from "./test-helpers";
 
@@ -28,6 +30,21 @@ describe("the role table", () => {
 			}
 		},
 	);
+
+	test("every section of LAW.md has a reader, and the whole file counts as every section", () => {
+		const sections = [INTRO, ...(HEADINGS["LAW.md"] ?? [])];
+		expect(sections).toHaveLength(39);
+		const read = new Set(
+			ROLE_NAMES.flatMap((role) =>
+				lawOf(role)
+					.filter(([path]) => path === "LAW.md")
+					.flatMap(([, wanted]) =>
+						wanted.includes(WHOLE) ? sections : wanted,
+					),
+			),
+		);
+		expect(sections.filter((s) => !read.has(s))).toEqual([]);
+	});
 
 	test("every role has its precedents, the duty desk none", () => {
 		const precedents = Object.fromEntries(

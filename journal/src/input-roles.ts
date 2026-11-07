@@ -29,6 +29,72 @@ export type RoleInput = {
 
 export const HARNESS_SECTIONS = ["Silence"];
 
+export const DUTY_DESK = "duty-desk";
+
+// the columns of the map of LAW.md
+const COLUMNS = [
+	"patrol",
+	"response-unit",
+	"investigation",
+	"prosecutor",
+	"defender",
+	"court",
+	"clerk",
+	"spec-writer",
+	"executor",
+	DUTY_DESK,
+];
+
+// The sections of LAW.md in the order of the document, each with an x for every
+// role in COLUMNS that reads it. A role reads a section when its skill names the
+// section or one of its steps does what the section governs.
+const LAW_MAP: [section: string, readers: string][] = [
+	[INTRO, "xxxxxxxxx."],
+	["Role duty desk", ".........x"],
+	["Role patrol", "x........."],
+	["Role response unit", ".x........"],
+	["Role investigation", "..x......."],
+	["Role prosecutor", "...x......"],
+	["Role defender", "....x....."],
+	["Role court", ".....x...."],
+	["Role clerk", "......x..."],
+	["Role spec writer", ".......x.."],
+	["Role executor", "........x."],
+	["Silence is the default", "xxxxxxxxxx"],
+	["Language", "xxxxxxxxx."],
+	["Exhibits", "xxxxxx.x.."],
+	["Third-party text", "xxxxxxxxx."],
+	["Execution", "xxxxxxxxx."],
+	["Sources", "x.xxxx...."],
+	["Recorded reasons", "xx.xxx...."],
+	["Requirement parts", "...xxx...."],
+	["Orders", "........x."],
+	["Texts of the precinct", "xxxxxx.xx."],
+	["Precedents", "xxxxxx.xx."],
+	["One tick, one case, exit", "xxxxxxxxxx"],
+	["Alarms a role prints", "xxxxxxx..x"],
+	["Alarms the journal computes", ".........x"],
+	["Returns instead of stops", "x.xxxx...."],
+	["Write discipline", "xxxxxxxxx."],
+	["Dedupe", "x........."],
+	["Closure classes", "...xxxx..."],
+	["Terms", "xxxxxxxxx."],
+	["Pairs", "......x..."],
+	["Votes and work", "......xxx."],
+	["The cap table", "x........."],
+	["Five-part report", "x........."],
+	["Three-line report", ".xxxxxxxx."],
+	["Tick outcomes", "xxxxxxxxxx"],
+	["Journal exit codes", "xxxxxxxxx."],
+	["The leak rule", "xxxxxxxxx."],
+	["Hard constraints", "xxxxxxxxx."],
+];
+
+const lawSections = (role: string): string[] =>
+	LAW_MAP.filter(([, readers]) => readers[COLUMNS.indexOf(role)] === "x").map(
+		([section]) => section,
+	);
+
 // the sections of tick.md in the order of the document
 export const TICK_ORDER = [
 	INTRO,
@@ -62,8 +128,8 @@ const EVERY_ROLE = [
 	"End the tick",
 ];
 
-const law = (tick: string[], extra: Read[] = []): Read[] => [
-	["LAW.md", [WHOLE]],
+const law = (role: string, tick: string[], extra: Read[] = []): Read[] => [
+	["LAW.md", lawSections(role)],
 	[
 		"tick.md",
 		TICK_ORDER.filter((s) => EVERY_ROLE.includes(s) || tick.includes(s)),
@@ -122,6 +188,7 @@ const PULL_ROLE: Shared = {
 export const ROLES: Record<string, RoleInput> = {
 	patrol: {
 		law: law(
+			"patrol",
 			[
 				"Sync the tracker",
 				"Check the constitution",
@@ -129,7 +196,11 @@ export const ROLES: Record<string, RoleInput> = {
 				"Alarm",
 			],
 			[
-				["markers.md", [WHOLE]],
+				// the sections behind the step that writes a lead marker
+				[
+					"markers.md",
+					["Line shape", "Fields", "The `id` value", "Defined markers"],
+				],
 				["departments.md", [WHOLE]],
 			],
 		),
@@ -144,6 +215,7 @@ export const ROLES: Record<string, RoleInput> = {
 	"response-unit": {
 		...ISSUE_ROLE,
 		law: law(
+			"response-unit",
 			[
 				"Sync the tracker",
 				"Check the intake order",
@@ -160,30 +232,30 @@ export const ROLES: Record<string, RoleInput> = {
 	},
 	investigation: {
 		...ISSUE_ROLE,
-		law: law(CASE_STEPS),
+		law: law("investigation", CASE_STEPS),
 		stale: either(needNot("investigation"), closed),
 		precedents: "stage",
 	},
 	prosecutor: {
 		...ISSUE_ROLE,
-		law: law(CLOSING_STEPS),
+		law: law("prosecutor", CLOSING_STEPS),
 		stale: either(needNot("prosecutor"), closed),
 	},
 	defender: {
 		...ISSUE_ROLE,
-		law: law(JUDGING_STEPS),
+		law: law("defender", JUDGING_STEPS),
 		stale: either(needNot("defender"), notOpen),
 		department: "stage",
 	},
 	court: {
 		...ISSUE_ROLE,
-		law: law(JUDGING_STEPS),
+		law: law("court", JUDGING_STEPS, [["markers.md", ["Precedent"]]]),
 		stale: either(needNot("court"), notOpen),
 		department: "stage",
 	},
 	clerk: {
 		...ISSUE_ROLE,
-		law: law([
+		law: law("clerk", [
 			"Sync the tracker",
 			"Sync the pull requests",
 			"Read the stage",
@@ -200,27 +272,18 @@ export const ROLES: Record<string, RoleInput> = {
 	},
 	"spec-writer": {
 		...PULL_ROLE,
-		law: law([...PULL_STEPS, "Reading without a tree"]),
+		law: law("spec-writer", [...PULL_STEPS, "Reading without a tree"]),
 		stale: needNot("spec-writer"),
 	},
 	executor: {
 		...PULL_ROLE,
-		law: law(PULL_STEPS),
+		law: law("executor", PULL_STEPS),
 		stale: needNot("executor"),
 	},
 };
 
-export const DUTY_DESK = "duty-desk";
 const DUTY_DESK_LAW: Read[] = [
-	[
-		"LAW.md",
-		[
-			"Silence is the default",
-			"One tick, one case, exit",
-			"Alarms and their repetition",
-			"Tick outcomes",
-		],
-	],
+	["LAW.md", lawSections(DUTY_DESK)],
 	[
 		"tick.md",
 		[INTRO, "Sync the law", "Sync the tracker", "Sync the pull requests"],
