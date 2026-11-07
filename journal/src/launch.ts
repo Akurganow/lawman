@@ -1,4 +1,4 @@
-import { statSync } from "node:fs";
+import { mkdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join, resolve } from "node:path";
 import { dbPath } from "./db";
 
@@ -76,3 +76,44 @@ export async function launch(
 		stderr,
 	};
 }
+
+// strict UTF-8, null for bytes that are not
+export function utf8(bytes: Uint8Array): string | null {
+	try {
+		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
+			bytes,
+		);
+	} catch {
+		return null;
+	}
+}
+
+// the folder made anew and empty, false when the journal cannot
+export function freshFolder(folder: string): boolean {
+	try {
+		rmSync(folder, { recursive: true, force: true });
+		mkdirSync(folder, { recursive: true });
+		return true;
+	} catch {
+		return false;
+	}
+}
+
+export const lawFolder = () => join(commandFolder(), "lawman");
+
+// The operations of the installation as the update calls them. The proof of a
+// command calls the same functions, so the proof and the update cannot drift.
+export const runRelease = (
+	repo: string,
+	tag: string,
+	folder: string,
+	asset: string,
+) => launch(installationPlace(), "release", [repo, tag, folder, asset]);
+export const runVerify = (
+	asset: string,
+	provenance: string,
+	repo: string,
+	commit: string,
+) => launch(installationPlace(), "verify", [asset, provenance, repo, commit]);
+export const runLawVersion = () =>
+	launch(installationPlace(), LAW_VERSION, [lawFolder()]);

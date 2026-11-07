@@ -17,7 +17,11 @@ The journal looks for `configs/` and `shared/` in the folder of its database, wh
 - `configs/<precinct>/` holds the commands of one precinct and the files they need.
 - `shared/` holds the commands of the installation and the files they need. The installation has three: `release`, `verify` and `law-version`. The update of the journal uses them. See [the operations of the installation](journal.md#the-operations-of-the-installation).
 
-A command reads only and never writes to the host. The assembly writes each command with your consent. An operation without a command is a step that the role does itself. See [the commands](journal.md#commands-of-the-installation-and-the-precincts).
+A command reads only and never writes to the host. The assembly writes each command with your consent, and only after the command passed a proof. The proof runs the command through the journal on a temporary database that lies outside the installation, then compares the output with what the host reports. The file that passed is the file the assembly writes. A command that fails its proof is not written. An operation without a command is a step that the role does itself, and a command you leave empty removes its file. See [the commands](journal.md#commands-of-the-installation-and-the-precincts).
+
+A command carries the facts it reads, such as the repository on the host, the tool, the place of the tracker and the account. The issues and the pull requests of a precinct may live in another tracker than its repository host, or in a source without a host. A command must not send the host a request beyond the host's limits, and a request that the host refuses for its size fails the proof.
+
+Each command is either proved in the scheduler's environment or not. A proof there is a short paid run of the harness's default model, and the assembly asks your consent once for each pass. Without it, the command is proved in the environment of the assembly's session, and the summary names it as not proved in the scheduler's environment.
 
 ## What it never holds
 
@@ -29,12 +33,12 @@ A command reads only and never writes to the host. The assembly writes each comm
 
 - The host, the tool that reaches it, the account the host reports for that tool and the place where its credential lives.
 - How the host keeps issues and their templates, and anything particular to this host.
-- The action record: for each host action that the role skills name, how this machine does it with the chosen tool. That includes handing host data to the journal in its forms. `journal form` prints them.
-- The verifier of Lawman's release, or the record that you declined one. An update uses it only when `shared/` has no `verify` command.
+- The action record: for each host action that the role skills name, how this machine does it with the chosen tool. That includes handing host data to the journal in its forms. `journal form` prints them. Three actions serve the move of the old precedents: reading a file at the revision of a pull request, writing to the branch of a pull request and turning the link of an old precedent line into an issue number. The notes keep every line, even when a command now does the same work, because the roles read the notes for the steps they do themselves.
+- The verifier of Lawman's release, or the record that you declined one. An update uses it only when `shared/` has no `verify` command. The assembly replaces the record of the binary check only after the commands of the installation passed their proof.
 - The section `## Dependency reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the catalog check. The words say which dependencies to check, where they are listed and by what way they are read, or `none` when the precinct lists no dependencies. You and the assembly agree the line when the precinct joins or when the assembly asks for the missing answer. The way never runs code of the precinct or a tool that the precinct configures. The patrol reads the line and checks only what it names. A precinct that said yes and has no line gets no check. Rewriting the notes in part Host keeps every line of this section.
 - The section `## License reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the license question. Nested lines under it hold the blocks of the agreed license sources, which the assembly copies word for word from the file of each row. You see the whole entry before the assembly writes it. The entry says, for each ecosystem of the precinct, whether its lock records the license and which sources are agreed, in order. It also keeps the rows you refused. It holds `none` when nothing is agreed. Rewriting the notes in part Host keeps every line of this section too.
 
-The menu item "Host" runs the part again, for a change of tool. It never changes `trusted_login`. See [the journal](journal.md#where-it-comes-from).
+The menu item "Host" runs the part again, for a change of tool. It also writes and proves the commands of the installation, and it can install a verifier. It never changes `trusted_login`. After a change of tool, its summary names the precincts whose commands were proved for the earlier tool. The job "re-check a precinct" proves them again. See [the journal](journal.md#where-it-comes-from).
 
 ## The fifteen keys
 
@@ -58,7 +62,7 @@ amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 
 Every value above is a placeholder. `hermes` is the name of the one shipped harness page. The order follows the assembly skill.
 
-Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The assembly does not require them. Until the assembly asks for them, in a later release, only `law-sync` writes `jobs` and `progress_checks`. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. A value that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
+Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -107,7 +111,7 @@ The key `progress_checks` is a whole number above zero. The alarm `no-progress` 
 
 ## Who writes it
 
-The assembly writes the file at install. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires neither `jobs` nor `progress_checks`.
+The assembly writes the file at install, after the commands of the installation passed their proof, so that a stopped proof leaves no `config.yaml` behind. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires none of the three optional keys.
 
 After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. In this release the defaults cover `typesafe_key`, `amended_law_commit`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
@@ -115,7 +119,7 @@ No role replaces `bin/journal` or `config.yaml` by any other means.
 
 The assembly writes `contract_version` and `amended_law_commit` again when it amends the precinct constitutions. If the new law carries another constitution contract version, `law-sync` prints an `ALARM contract-changed` line, and `law-update` passes it on. Run the assembly to amend. See [constitution](constitution.md).
 
-The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, it asks whether the court may send its brief about a conviction in that precinct to `api.typesafe.ai`. It writes the pair `<precinct>=<answer>` and replaces any earlier pair of that name. The same answer allows the clerk's request about the departments to add to a precedent. Answers given before this release were given for the court's brief, and they now allow that request too. Precedents come from convictions and acquittals, so the request goes for both. The consent covers only the request to Jev. The court names the departments of a precedent, and the journal checks them, without consent: nothing leaves the machine for that.
+The assembly sets `typesafe_precincts` per precinct. When `typesafe` is `yes`, it asks whether the court may send its brief about a conviction in that precinct to `api.typesafe.ai`. It writes the pair `<precinct>=<answer>` and replaces any earlier pair of that name. The question names both uses, the address of the service, whether the repository is private or public, what each use sends and that no issue text leaves. It also says that the service charges for each input token. The same answer allows the clerk's request about the departments to add to a precedent. Answers given before this release were given for the court's brief, and they now allow that request too. The assembly states this once as a fact in the summary of an update and asks nothing. Precedents come from convictions and acquittals, so the request goes for both. The consent covers only the request to Jev. The court names the departments of a precedent, and the journal checks them, without consent: nothing leaves the machine for that.
 
 The assembly sets `catalog_precincts` per precinct in the same way, when `catalog` is `yes`. It then agrees the reading way with you for each precinct that said yes. An installation that predates the keys has neither. Run the assembly: it sees the missing answer and asks only that. A skip writes `no`. A cancel writes nothing, so the question returns at the next start. No role stops for a missing key, and no alarm or chat message goes out.
 
@@ -189,6 +193,8 @@ See [the pipeline](pipeline.md) for the checks that open every tick.
 
 - [assembly skill](../skills/assembly/SKILL.md): the key list and the rules for the file.
 - [install](../skills/assembly/references/install.md): the steps that write the keys.
+- [commands](../skills/assembly/references/commands.md): how the assembly proves and writes a command.
+- [precinct](../skills/assembly/references/precinct.md): the commands of a precinct and the move of the old precedents.
 - [amend](../skills/assembly/references/amend.md): the steps that update the contract keys.
 - [catalog](../skills/assembly/references/catalog.md): the mode that asks the missing catalog answers.
 - [law-sync](../journal/src/law-sync.ts): the command that rewrites the sync keys.

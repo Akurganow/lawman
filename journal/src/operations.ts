@@ -12,12 +12,14 @@ import {
 	launch,
 	PRECINCT_OPERATIONS,
 	precinctPlace,
+	type Ran,
+	utf8,
 } from "./launch";
 import { syncPulls } from "./pulls";
 import { syncIssues } from "./sync";
 
 export type Operation = (typeof PRECINCT_OPERATIONS)[number];
-type Reason = "argument" | "start" | "exit" | "form" | "clean";
+export type Reason = "argument" | "start" | "exit" | "form" | "clean";
 type Slot = "revision" | "path" | "number" | "word";
 export type Call = { args: string[]; author: string; reset: boolean };
 
@@ -36,7 +38,7 @@ const SLOTS: Record<Operation, Slot[]> = {
 	files: ["revision"],
 };
 
-class Refused {
+export class Refused {
 	constructor(
 		readonly reason: Reason,
 		readonly code: number,
@@ -46,7 +48,7 @@ class Refused {
 
 const formRefused = (why: string) => new Refused("form", EXIT.SYNC_INPUT, why);
 
-function registered(name: string): void {
+export function registered(name: string): void {
 	withDb((db) => {
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
@@ -113,8 +115,8 @@ const READERS: Record<
 		renderAll([fencedBlock("files", await characters(text))]),
 };
 
-async function output(place: string, operation: Operation, args: string[]) {
-	const ran = await launch(place, operation, args);
+// the standard output of a file that ran and exited 0
+export function ranOutput(ran: Ran | null): Uint8Array {
 	if (ran === null) throw new Refused("start", EXIT.COMMAND);
 	if (!ran.ok)
 		throw new Refused(
@@ -122,13 +124,17 @@ async function output(place: string, operation: Operation, args: string[]) {
 			EXIT.COMMAND,
 			new TextDecoder().decode(ran.stderr),
 		);
-	try {
-		return new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(
-			ran.stdout,
-		);
-	} catch {
-		throw formRefused("the output is not UTF-8");
-	}
+	return ran.stdout;
+}
+
+export async function output(
+	place: string,
+	operation: Operation,
+	args: string[],
+) {
+	const text = utf8(ranOutput(await launch(place, operation, args)));
+	if (text === null) throw formRefused("the output is not UTF-8");
+	return text;
 }
 
 async function read(
@@ -147,7 +153,7 @@ async function read(
 }
 
 // the error fence holds the command's own words, so they pass the character layer
-async function refusal(operation: Operation, refused: Refused) {
+export async function refusal(operation: string, refused: Refused) {
 	let { reason, code, detail } = refused;
 	try {
 		detail = await cleanCharacters(detail);
