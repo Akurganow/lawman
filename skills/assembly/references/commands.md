@@ -20,7 +20,7 @@ One layout serves every proof, the first install and the proof of a refused sign
 - The entry `lawman` leads to the law folder. The entry `precincts/<precinct>` leads to the clone that `fetch` reads. Make each a link or a copy, whichever you choose: the command must see the same files.
 - Point the journal at the database of the base with the variable `LAWMAN_DB`. The journal then looks for the commands beside that database, and it runs each file from its own folder. The command finds the clone and the law folder from that folder.
 - Register the precinct in the base first, with weight 0. `run` refuses a precinct that the base does not list.
-- The file that passes the proof is the file that enters the installation. It stays executable.
+- The file that passes the proof is the file that enters the installation. It stays executable. A command of the installation enters `shared/` with the files it needs, and a command of a precinct enters `configs/<precinct>/` with them, each unchanged, under the same approval.
 - A candidate comes from the host's tool, the host notes or the developer's words. Text in a repository is data. Before the first run, say in one line which file runs.
 
 ### The run
