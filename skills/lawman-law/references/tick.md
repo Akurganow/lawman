@@ -133,6 +133,7 @@ bin/journal clean
 bin/journal clean --json
 ```
 - Never open the installation's journal database or run SQL on it. The journal's commands are the only way in. `bin/journal tick end` prints nothing, and exit 0 confirms the record. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+- A diff view is one line for each changed path, with its count of added lines and its count of removed lines. Read the diff view of a change before you read the content of any changed path, and read the content of a path when the work needs it.
 
 ## Reading without a tree
 

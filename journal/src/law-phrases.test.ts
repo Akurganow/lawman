@@ -59,16 +59,25 @@ const SYNC_NEVER = [
 const DESK_PULLS =
 	"For the duty desk the failure does not end the tick: the precinct goes without orders.";
 
+// a word of the diff rule, pinned as a word so the line itself may be rewritten
+const DIFF_VIEW = "diff view";
+
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 // sectionsOf gives each section as its lines, so toContain matches a whole line
-const [introLines, evidenceLines, pullsLines, syncLines] = sectionsOf(tick, [
-	INTRO,
-	"Instructions and evidence",
-	"Sync the pull requests",
-	"Sync the law",
-]);
+const [introLines, evidenceLines, pullsLines, syncLines, workingLines] =
+	sectionsOf(tick, [
+		INTRO,
+		"Instructions and evidence",
+		"Sync the pull requests",
+		"Sync the law",
+		"Working rules",
+	]);
 
 describe("law phrases", () => {
+	test("the word diff view stands in the tick file's Working rules section", () => {
+		expect((workingLines ?? []).some((l) => l.includes(DIFF_VIEW))).toBe(true);
+	});
+
 	test("the fence phrase stands in the tick file's Instructions and evidence section", () => {
 		expect(evidenceLines).toContain(FENCE);
 	});

@@ -191,7 +191,7 @@ The merge path ends the tick with `skipped-merge-conflict` when `LAWMAN.md` is c
    - `Execution: none` allows no local run. The gate is then the proof.
    - A command the order or a listed section of the constitution names runs, and such a command runs as written.
    - A command whose tool is missing does not run. Record the command and its error output for `## Not done`. The gate is then the proof.
-5. Remove each old spec or plan file that the diff of a taken-up pull request holds. Name each removed path for `## Evidence`.
+5. Remove each old spec or plan file that the diff view of a taken-up pull request holds, as the `tick.md#working-rules` section says. Name each removed path for `## Evidence`.
 6. Before each commit, run the "Leak check" recipe. A hit ends the tick with `failed`.
 7. Stage the named paths, commit and push each finished part, as the "Commit and push" recipe says. A refused push ends the tick with `failed`.
 
