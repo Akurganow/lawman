@@ -61,6 +61,8 @@ const DESK_PULLS =
 
 // a word of the diff rule, pinned as a word so the line itself may be rewritten
 const DIFF_VIEW = "diff view";
+// the words of the cut-text lines, pinned as words for the same reason
+const CUT_TEXT_WORDS = ["cut", "full", "--part"];
 
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 // sectionsOf gives each section as its lines, so toContain matches a whole line
@@ -77,6 +79,13 @@ describe("law phrases", () => {
 	test("the word diff view stands in the tick file's Working rules section", () => {
 		expect((workingLines ?? []).some((l) => l.includes(DIFF_VIEW))).toBe(true);
 	});
+
+	test.each(CUT_TEXT_WORDS)(
+		"the word %s stands in the tick file's Instructions and evidence section",
+		(word) => {
+			expect((evidenceLines ?? []).some((l) => l.includes(word))).toBe(true);
+		},
+	);
 
 	test("the fence phrase stands in the tick file's Instructions and evidence section", () => {
 		expect(evidenceLines).toContain(FENCE);

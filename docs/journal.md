@@ -116,7 +116,7 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 - `law-update`: makes one pass of the law update and prints one line from [the table](#what-law-update-prints). It runs the checks, and the `law-sync` of the checked file changes the binary and the keys. See [Updates](#updates).
 
 ```
-journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|lint-body|lint-page|department-line|precedent|old-precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run|run-installation> [args]
+journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|text|lint-body|lint-page|department-line|precedent|old-precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run|run-installation> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
 journal law-update <role> [--revision <revision>|unreadable [--state clean|changed] [--tag <tag>]] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
