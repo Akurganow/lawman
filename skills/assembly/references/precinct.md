@@ -393,7 +393,7 @@ Ask in the question tool.
 8. Run `bin/journal precinct set <precinct name> --weight <n>`, and stop if it fails.
 9. Skip the rest unless an edit sets a weight above zero.
 10. Run the list command from the harness page, and take the `[lawman]` jobs that it shows as paused. Skip the rest when none is paused.
-11. Show the paused jobs as rows, with the line: a job created paused first runs at its next slot.
+11. Show the paused jobs as rows, with the line that the page's "Paused jobs" gives for the first run of a job created paused, marked as the page marks it.
 12. Ask in the question tool which jobs resume, with several-choice.
 13. Offer "All" first, then the paused jobs, up to the tool's limit.
 14. Take the jobs beyond the limit as free text, and resume nothing on an empty answer.

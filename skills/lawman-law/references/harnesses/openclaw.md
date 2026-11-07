@@ -224,6 +224,8 @@ There is no output folder. The result of each run lies in the run history, which
 
 `openclaw cron edit <job id>` changes one job with the flags of `add`. `--trigger-script <script file>` replaces the script. `--clear-trigger`, `--clear-model`, `--clear-fallbacks`, `--clear-thinking`, `--clear-tools` and `--clear-agent` clear one field. A set flag and its clear flag together are refused (read in the harness code, openclaw/src/cli/cron-cli/register.cron-edit.ts). `--enable` and `--disable` exist.
 
+`openclaw cron show <job id> --json` prints one job, with the field `trigger.script` holding the stored script (read in the harness code, openclaw/src/cli/cron-cli/register.cron-simple.ts, openclaw/src/cron/job-read-view.ts, openclaw/src/cron/public-job.ts and openclaw/packages/gateway-protocol/src/schema/cron.ts). A job with a `trigger.script` has an entry. A job without one has none. The live output is (not verified).
+
 none: OpenClaw has one kind of entry. No job holds a monitor, so no translation from monitor mode to script mode exists. The assembly skips that step.
 
 ### Schedule forms and time zone
@@ -297,6 +299,7 @@ How the entry works:
 - A schedule with a script has a minimum interval of 30 seconds (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified).
 - A script runs with the job's tool policy, `exec` included. The setting `cron.triggers.enabled: false` removes triggers (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified).
 - A forced run skips the script (read in the harness code, openclaw/src/cron/service/run-queue-execution.ts). The role then runs `bin/journal wake --role <role>` itself as its first call. That is the fallback.
+- Creating a job and a forced run do not evaluate the script, so its first run is the first scheduled slot. A failure shows in the run history with the status `error` (read in the harness code, openclaw/src/cron/service/run-queue-execution.ts for the forced run; stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
 - A run with `--due` checks the script only for a job that is due (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified). The script's environment is checked by such a run and by the live run.
 
 **The failure of the entry.** The script throws when the command does not finish with status `completed` and code 0. The throw is an error, not a quiet skip.

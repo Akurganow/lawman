@@ -22,8 +22,7 @@
 
 1. State these facts of "Models", as the page gives them:
     - Whether a command lists models.
-    - How a name is written, and that the harness stores it unchecked.
-    - That the provider is a separate flag.
+    - How a name is written, with its provider where the page names one, and what the page says about a check of the name.
     - How a job resolves its model at run time.
 2. State that a job with its own model leaves the fallback chain when "Models" says so. State that `default` keeps the chain.
 
@@ -85,13 +84,13 @@
 
 1. Tell the developer:
 
-> The role entry is a small file the harness runs before a role's job. It asks the journal whether the role has an order it can take now. A role that has an order gets its input at once, with the law it reads, so it needs no first call of its own. A role with no order costs no session, because the harness skips it until an order comes. The duty desk always has work, so its entry always gives its input. The files live in the harness's scripts directory, outside the installation. They stay there after you remove Lawman.
+> The role entry is a small program the harness runs before a role's job. It asks the journal whether the role has an order it can take now. A role that has an order gets its input at once, with the law it reads, so it needs no first call of its own. A role with no order costs no session, because the harness skips it until an order comes. The duty desk always has work, so its entry always gives its input.
 
-2. Tell the developer:
+2. Name the entry of each role as "Role entry" on the harness page names it. Say where it lives and, when it lies outside the installation, that it stays after you remove Lawman. Then tell the developer:
 
-> The entry file is `lawman-<role>.sh` in the harness's scripts directory. The harness runs it by its extension. It has no filter and no fallback. The journal's exit status is the file's status. Every job the assembly creates uses it.
+> The entry has no filter and no fallback. A journal that fails makes the entry fail. Every job the assembly creates uses it.
 
-3. Tell the developer:
+3. Only when the page names an older mode of the entry, tell the developer:
 
 > A job created by an earlier release may run the entry in an older mode of the harness. The page of your harness says what that mode costs. The Roles part of the menu moves such a job to the new mode, after you approve the change.
 
