@@ -259,6 +259,8 @@ Never:
 
 Apply starts after the approval of phase 1. The order is the same for the first install and for a run of part Host again. The first install is an install with no `config.yaml`. Nothing is installed before the approval. The file by which the next start would skip the install, `config.yaml`, is not written before the proofs succeed. A step with no condition that holds is skipped.
 
+In Apply, "the method" is the verifier or the refusal of the signature in the approved proposal of part Host. `host.md` gets its record only at step 5, so no step before it reads the method from the notes.
+
 1. Write the host notes, with no new record about the verification of the binary. The earlier record stays.
 2. Install the verifier that the developer chose, when it is not on this machine.
 3. Get the release files. On the first install, go on: check the sum and the signature, install the binary and probe it.
@@ -274,11 +276,11 @@ Write `<installation>/host.md` as the approved Host rows show, by the head of "H
 
 ### Install a verifier
 
-When the approved method of part Host names a verifier that is not on this machine, install it.
+When the method names a verifier that is not on this machine, install it.
 
 ### Install the journal
 
-Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier of the method in the approved proposal of part Host, confirm three facts. The host notes get the record of that method only at step 5 of Apply, so this section never reads the method from the notes. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the method names a verifier, a check that cannot run or that reports anything but success is a stop. A proposal that names neither a verifier nor a refusal is a stop too. When the user declined the signature, skip the signature check. None of this needs an account on the release host.
+Lawman's release carries, beside each journal binary, a signed statement of where the binary came from. Before a new binary runs, confirm that it matches the checksum the release publishes. Then, with the verifier of the method, confirm three facts. The statement names the file's own digest. The release workflow of `release_repo` signed it. That workflow built the file from the commit the law folder holds. Check the signature against a trusted root from Sigstore, never from the release. When the method names a verifier, a check that cannot run or that reports anything but success is a stop. A proposal that names neither a verifier nor a refusal is a stop too. After the refusal of the signature, skip the signature check. None of this needs an account on the release host.
 
 At install, also confirm that the verifier rejects a changed copy of the binary. Never run the copy, and remove every file of the test. A verifier that accepts the copy is a stop.
 
@@ -367,7 +369,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - The delivery check: checked, not checked, failed, or did not run.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
 - What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
-- When the user declined a verifier, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
+- After the refusal of the signature, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written, that the role reads the facts of the law itself.
 - When TypeSafe is on, both uses: the court's brief and the clerk's request. When the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.

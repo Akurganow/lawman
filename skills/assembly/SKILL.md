@@ -53,7 +53,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds. When that commit differs from `law_commit`, stop. Say that a plugin update moved the law and no tick has synced it. Tell the developer to run one role once, as the page's "Running a role once" says, or to wait for the next tick. Tell them to start the assembly again. When the commit of the law folder cannot be read, because the folder has no history, compare nothing. Say in one line that no comparison was made and that the role checks the facts itself.
 
-When the host notes record that the user declined a verifier, look for one on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
+When the host notes record the refusal of the signature, look for a verifier on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
 
 Take the first mode that holds.
 

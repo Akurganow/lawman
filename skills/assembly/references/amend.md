@@ -20,7 +20,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 
 1. Run `bin/journal precinct list`, then fetch the origin of each precinct, and stop if a fetch fails.
 2. For each precinct, lint its `LAWMAN.md` at the origin's head with `bin/journal lint-page constitution`. A printed line that starts with `#` is a note and changes nothing.
-2a. For each precinct whose `LAWMAN.md` at the origin's head holds old precedent lines, or that has open pull requests of the old form, run part one of the section "Move the old precedents" in `references/precinct.md`. Run it before any decision about the amendment of that precinct, whether the precinct gets a draft or not. It asks one question for the precinct and writes nothing.
+2a. For each precinct whose `LAWMAN.md` at the tip of the default branch holds old precedent lines, or that has open pull requests of the old form, run part one of the section "Move the old precedents" in `references/precinct.md`. Run it before any decision about the amendment of that precinct, whether the precinct gets a draft or not. It asks one question for the precinct and writes nothing.
 3. When the file's `contract_version` is lower than `<n>`, draft an amendment. Skip a precinct that already has an open pull request from `lawman/constitution-v<n>`, and name it as waiting for that merge.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
    1. Create and switch to the branch `lawman/constitution-v<n>` from the origin's head in the precinct, and stop if that fails.

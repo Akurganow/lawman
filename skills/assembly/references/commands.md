@@ -41,6 +41,7 @@ Compare what the command printed with a value that you get from the host separat
 | `pulls` | The count of open pull requests equals the host's count. |
 | `decider`, `file`, `files` | The run is in form, and the journal's reader reads the output. `decider` gets the number of a closed issue from this same check. `file` gets a path from the list that `files` printed, and that path must lie in the clone. The value is not compared, and the proposal says so. |
 
+- Judge a run by the first line that the journal printed. It is the outcome line, such as `revision=<revision>`, `login=<login>`, the counts of `issues` and `pulls`, `verify passed` or `<operation> failed reason=<reason>`. A failure line is followed by its `error` fence. In the tick environment the harness page gives that output as the record of the run, with the surrounding whitespace trimmed.
 - `fetch` and `identity` carry no count. Their comparison with the host's answer is the whole check.
 - An operation with no case to compare, such as a precinct without a closed issue or an empty repository, is recorded as "value not checked". That is no failure.
 
@@ -59,7 +60,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
-- A pass of part Host or of "Re-check a precinct" that will have such a run asks it before the approval question of that part, with the other questions.
+- A pass of part Host asks it before the approval question of that part, with the other questions. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
 - A pass without a run in the tick environment asks nothing. Examples are "Roles" with entry files and a single proof of a refused signature.
 
 ### A failed proof

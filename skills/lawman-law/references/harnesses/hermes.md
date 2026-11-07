@@ -107,13 +107,14 @@ hermes cron run "[lawman] <role>"
 
 ## Commands in scheduled runs
 
-A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The refusal message starts `BLOCKED: Command flagged as dangerous`. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). Lawman leaves it unchanged.
+A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). The refused command does not run. Its terminal call comes back as a `tool` message whose content is `{"output": "", "exit_code": -1, "error": "BLOCKED: Command flagged as dangerous (<reason>) …"}` (seen in a scheduled run). Lawman leaves it unchanged.
 
 Refused, seen in scheduled runs:
 
 - a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
 - an interpreter started with `-c`: `python3 -c`;
-- a recursive delete: `rm -rf`.
+- a recursive delete: `rm -rf`;
+- a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
 
 A role removes a folder without a recursive delete. Each form below passed the harness's check function as a role sends it. Removing the files with `rm -f` and then the folder with `rmdir` was seen in scheduled runs.
 
@@ -129,9 +130,7 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 
 Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the Send body. The pipe passed when a role repeated a refused command without the wrapper.
 
-Accepted, checked with the harness's check function: `&&`, `;`, a redirect, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
-
-Refused, seen in a scheduled run: a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
+Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
 
 Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter, a pipe into `sed -E` with a quoted script, and such a pipeline inside `(set -o pipefail; …)`. None of these was seen in a scheduled run.
 
@@ -395,12 +394,14 @@ The environment of a tick is the terminal of a scheduled agent session. A one-of
 - The terminal of that session builds its environment with the function of the terminal tool. That function completes `PATH` with the standard binary directories. The environment of a job's script comes from another function and gets no such completion. So a script, a `--no-agent` job included, does not reach the environment of a tick (read in the harness code: `tools/environments/local.py`, `_make_run_env`, `_sanitize_subprocess_env`).
 - The terminal command of that session passes the approval check of the cron context. The setting `approvals.cron_mode` decides, and the default refuses what the check flags as dangerous ("Commands in scheduled runs") (read in the harness code: `tools/approval.py`, `_unattended_contexts`).
 
-What runs in it is one terminal command, or a few, that the prompt gives word for word. Each command runs the journal on the throwaway database and writes no file. The harness keeps the output of each terminal call in the run's session, so the model passes nothing on and paraphrases nothing. The assembly reads that record.
+What runs in it is one terminal command, or a few, that the prompt gives word for word. Each command runs the journal on the throwaway database and writes no output file of its own. The harness keeps the output of each terminal call in the run's session, so the model passes nothing on and paraphrases nothing. The assembly reads that record.
 
 ```
 hermes cron create "in 24h" "<proof prompt>" \
   --name "lawman-proof-<n>" --workdir "<installation>" --deliver local --repeat 1
 ```
+
+`<n>` is the number of the proof job in the pass, in three digits from `001`, so no name of the pass contains another.
 
 The proof prompt gives the command and the answer. Replace the placeholders. `<base>` is the folder of the throwaway database. One line stands for each command.
 
@@ -414,13 +415,13 @@ Read the result after the run, with the job's name:
 hermes sessions export --title "lawman-proof-<n>" --after <time before the run> --format jsonl --redact -
 ```
 
-- The title of the run's session holds the job's name (seen in a scheduled run). Give each proof job a name of its own, so the filter matches one session.
-- Take the `tool` message of the `terminal` call whose arguments hold the command. Its content is a JSON object. `output` is what the journal printed, without the last newline, and `exit_code` is its exit code (seen in a scheduled run). Compare the value with the expected line without its newline.
-- A content whose `error` starts with `BLOCKED` means that the check refused the command, and the command did not run. No `terminal` call with the command means that the model did not run it. Both are no proof in the environment of a tick.
+- `--title` matches a part of the title, and the title of the run's session holds the job's name (see "Run records"). The filter matches one session when no proof name of the pass contains another and the record is read before the next proof job is created. `<time before the run>` takes the forms that "Run records" gives.
+- Take the `tool` message whose `tool_call_id` equals the `id` of the `terminal` call that holds the command. Its content is a JSON object. `output` is what the journal printed, with the surrounding whitespace trimmed, and `exit_code` is its exit code (seen in a scheduled run; read in the harness code: `tools/terminal_tool_result.py`, `output.strip()`). "Prove a command" in `references/commands.md` of the assembly judges that output.
+- A refused command comes back in the shape that "Commands in scheduled runs" gives. No `terminal` call with the command means that the model did not run it. Both are no proof in the environment of a tick.
 - `--deliver local` keeps the output in the harness's output folder and sends nothing to a chat.
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
 - The answer `[SILENT]` alone is the harness's silence form (see "Silence"). A model that answers otherwise changes nothing in the record of the terminal call.
-- A redirect into a file is not part of the form. The check refuses a redirect whose target is a system path, and the temporary folders of macOS lie under one (seen in a scheduled run; see "Commands in scheduled runs").
+- The form holds no redirect into a file: the check refuses a redirect whose target is a system path (see "Commands in scheduled runs").
 - Each of these lines passed the harness's check function as a role would send it: the create line, the create line with the proof prompt filled in, the terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder, and the export line (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
 
 Run the job and remove it as the order above says.
@@ -462,14 +463,18 @@ Read in the harness code:
 
 - The terminal tool appends the standard binary directories and the user's local binary directory to `PATH`.
 
+Seen in a scheduled run, and read in the harness code (`gateway/session_cron.py`, `_create`, `local_identity`; `cron/scheduler.py`, the session title):
+
+- The id of a scheduled session is a hash with the prefix `local-`. Its title is the job name, cut at 60 characters, and the time, so a role's session title holds `[lawman] <role>`.
+- A refused command comes back in the shape that "Commands in scheduled runs" gives.
+
 Seen when the commands ran in a terminal, read only:
 
 - A timestamp that ends in `Z` is read as UTC. The dry-run prints it in local time.
 - `hermes sessions list` shows the recent sessions only.
-- The id of a scheduled session is a hash with the prefix `local-`, and its title holds the job's name and the time (seen in a scheduled run; read in the harness code: `gateway/session_cron.py`, `_create`, `local_identity`). The session starts a few seconds before the journal's `tick start`. Most titles carry no `[lawman]` prefix, so match the role name alone.
+- The session starts a few seconds before the journal's `tick start`.
 - The object holds the model, the cost, the working directory and the stored system prompt next to `messages`. A page filters it with `jq` and prints the messages only.
 - A message holds `role`, `content`, `reasoning`, `tool_name` and `tool_calls`. A call holds `function.name` and `function.arguments`, a string.
-- A command that the harness refused comes back as a `tool` message whose content holds `BLOCKED: Command flagged as dangerous`.
 - Home paths occur in message content. A page replaces them with `sed -E`.
 - A window whose `--after` is not earlier than `--before` prints `Error: Empty start-time window` and exits with code 0. A window that holds no session prints `Would export 0 session(s)` and exits with code 0. An unknown `--session-id` prints `No session` and exits with code 1.
 - A pipeline exits with the code of its last command. A failed `hermes` before `sed` gives code 0 and no data. Under `set -o pipefail` the same pipeline exits with a code other than 0.

@@ -205,7 +205,7 @@ Write no file that carries the mark identical.
 
 Translate a job in monitor mode when all three conditions hold.
 
-1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name one run of a role, by the form the harness page gives under "Running a role once", which updates the journal, and change no job.
+1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name one run of a role, which updates the journal. The harness page gives its form under "Running a role once". Change no job.
 2. The entry file is in place and proven. A new or different file passed "Write and prove". A file marked identical is not written again: its run proved it when it was written, and the probe covers the new journal.
 3. The developer approved the change in Apply, which named the job and its change.
 
