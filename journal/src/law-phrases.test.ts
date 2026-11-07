@@ -62,7 +62,16 @@ const DESK_PULLS =
 // a word of the diff rule, pinned as a word so the line itself may be rewritten
 const DIFF_VIEW = "diff view";
 // the words of the cut-text lines, pinned as words for the same reason
-const CUT_TEXT_WORDS = ["cut", "full", "--part"];
+const CUT_TEXT_WORDS = [
+	"cut",
+	"full",
+	"--part",
+	"`kept`",
+	"`of`",
+	"`secrets`",
+	"end part",
+	"lawman input 1 clean part",
+];
 
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 // sectionsOf gives each section as its lines, so toContain matches a whole line
