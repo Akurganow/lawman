@@ -124,7 +124,7 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 - Each entry file of a role whose job is new or in monitor mode, marked by "Entry file marks".
 - In the menu, the mode of each job, by "Entry mode".
 
-**Proposes.** Send the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job in monitor mode appears as a translation to that mode, and the proposal states whether the conditions of "Translation" hold. A job with no entry stays as it is, and the proposal says that its role calls the entry itself.
+**Proposes.** Send the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job in monitor mode appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job, and that a failed condition leaves the job as it is. A job with no entry stays as it is, and the proposal says that its role calls the entry itself.
 
 **Decides.** Ask nothing here. The developer cannot judge the modes. Take a typed edit of the proposal, such as leaving one job untranslated.
 
@@ -205,7 +205,7 @@ Write no file that carries the mark identical.
 
 Translate a job in monitor mode when all three conditions hold.
 
-1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name the one role run that updates the journal, as `SKILL.md` says for the update check, and change no job.
+1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name one run of a role, by the form the harness page gives under "Running a role once", which updates the journal, and change no job.
 2. The entry file is in place and proven. A new or different file passed "Write and prove". A file marked identical is not written again: its run proved it when it was written, and the probe covers the new journal.
 3. The developer approved the change in Apply, which named the job and its change.
 
