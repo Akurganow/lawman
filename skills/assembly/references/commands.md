@@ -14,7 +14,7 @@ A command file carries no value of a key or a token. A role never writes a comma
 
 One layout serves every proof, the first install and the proof of a refused signature included.
 
-- The base is a new folder outside the installation. Create it fresh for each proof pass, and remove it on every outcome, a stop included. It is the one exception to "before approval, write only the installation folder, the plugin link and the repository clones" in `SKILL.md`.
+- The base is a new folder outside the installation. Create it fresh for each proof pass, and remove it on every outcome, a stop included. It is the first of two exceptions to "before approval, write only the installation folder, the plugin link and the repository clones" in `SKILL.md`. The second is the one-off job of a consented proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent, its name never starts with the prefix of an installation job, and it is removed on every outcome, a stop included.
 - The folder holds a database, and the journal makes it when the precinct is registered. It holds `config.yaml` with `trusted_login`, which the check of kinds reads. It holds `shared/` and `configs/<precinct>/` with the candidates. It holds `runs/`, where every file of a proof lies. This list of entries is open.
 - Each candidate comes with the files it needs.
 - The entry `lawman` leads to the law folder. The entry `precincts/<precinct>` leads to the clone that `fetch` reads. Make each a link or a copy, whichever you choose: the command must see the same files.
