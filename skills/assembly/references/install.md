@@ -309,7 +309,7 @@ A proof that fails stops Apply before any write of step 5.
 
 Write in this order.
 
-1. `shared/release`, `shared/verify` and `shared/law-version`, each with the files it needs, unchanged and executable, as they passed the proof. Remove a file that the developer left empty or whose signature was refused.
+1. `shared/release`, `shared/verify` and `shared/law-version`, each with the files it needs, unchanged and executable, copied from the throwaway base where they passed the proof. Remove a file that the developer left empty or whose signature was refused.
 2. The record of the method of verification in `host.md`. It replaces the earlier record only now.
 3. On the first install, `config.yaml`, with `journal_sha256`. See "Write the config".
 4. Remove the files of the proof: `SHA256SUMS`, the provenance file and `runs/install-journal`.

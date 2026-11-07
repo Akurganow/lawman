@@ -166,7 +166,7 @@ Then decide.
 48a. When the row "Facts to copy" exists, ask in the same call whether to copy each fact into the commands of this precinct. Offer "No" first and "Yes" second. The line itself stays in its file either way.
 49. When the repository lacks typical documents, ask the question of "Recommended documents" in the same call.
 50. Treat a skip or an empty answer as "Skip", a missing consent as "No", and a missing documents choice as "Skip".
-51. On "Skip", write nothing for the repository, and go on with the next one. No command file, no host action, no move and no pull request follows. The proof folder of "Prove a command" is gone by then.
+51. On "Skip", write nothing for the repository, and go on with the next one. No command file, no host action, no move and no pull request follows. Remove the throwaway base of "Prove a command" for the repository.
 52. On "Change", apply the rule "Bulk edits" of `SKILL.md` to the rows.
 53. After a change to a draft line, check each new path as in the Draft section. A judging path follows the section "Departments": check that it exists, and a missing one reads as `judged by none`.
 54. After that change, run the lint step again.
@@ -283,13 +283,13 @@ Write `issues`, `pulls` and `decider` for any choice. For a source that has no a
 - A command only reads. It never writes to the host and holds no key or token value. Neither does a proposal row.
 - A command must not send the host a request beyond the host's limits. A request that the host refuses for size, limit or complexity fails the proof. Never assume a limit that the tool or the host did not report.
 - A command carries the facts it reads, such as the repository on the host, the tool, the place of the tracker and the account. Keep the lines of `host.md` and `config.yaml` where they are, because roles and the journal read them. When the precinct already exists and a line is read only by a command of this precinct, put the line in the row "Facts to copy" of the proposal and ask the consent in the approval call of the proposal.
-- Nothing reaches the installation before the approval. The proof folder lies outside the installation, and it is gone on every outcome, a stop included.
+- Nothing reaches the installation before the approval. The proof folder lies outside the installation. "The throwaway base" in `references/commands.md` says when it is removed.
 
 ### Write the commands
 
 Run this subsection after the approval and after the precinct is in the journal.
 
-1. Copy each proved command, unchanged and executable, with the files it needs, into `configs/<precinct name>/`. Create the folder when it is missing. A changed command replaces the old file.
+1. Copy each proved command, unchanged and executable, with the files it needs, from the throwaway base of its proof into `configs/<precinct name>/`. "The throwaway base" in `references/commands.md` keeps them there until this copy. Create the folder when it is missing. A changed command replaces the old file.
 2. Remove the file of each operation that the user left empty over an existing command.
 3. Run `bin/journal commands <precinct name>` and check that each written operation reads `command` and each emptied one reads `empty`. Stop and show the difference when they do not match.
 
