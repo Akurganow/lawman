@@ -112,7 +112,7 @@ The assembly asks the developer through the harness's question tool. Each row na
 | Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
 | Pi | none built in (read in the harness code) | (not verified) | (not verified) |
 
-A harness page names the question tool in its own section. When the page has none, the model finds the tool itself.
+A harness page names the question tool in its own section. When the section says none, the model finds the tool itself.
 
 A harness without a question tool uses the plain numbered message. The plain message does not serve messengers.
 
