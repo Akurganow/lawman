@@ -1,7 +1,8 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { human, T } from "./cases-fixture";
+import * as cleanHost from "./clean-host";
 import { cleanHostText } from "./clean-host";
 import { inprocAsync } from "./inproc";
 import { CONFIG, content } from "./input-test-fixture";
@@ -236,12 +237,45 @@ describe("the text command", () => {
 		}
 	});
 
+	test("cleans only the selected text, so a failure on another comment does not block it", async () => {
+		await started(16000, "the body", [
+			{ id: "IC_a", at: AT, body: "bad comment" },
+			{ id: "IC_b", at: AT, body: "good comment" },
+		]);
+		const seen: string[] = [];
+		const spy = spyOn(cleanHost, "cleanHostText").mockImplementation(
+			async (t) => {
+				seen.push(t);
+				if (t.includes("bad")) throw new Error("the library quotes the input");
+				return t;
+			},
+		);
+		try {
+			const r = await text("main", "issue", "3", "comment", AT, "2");
+			expect(r.code).toBe(0);
+			expect(inside(r.out)).toEqual([
+				`id="IC_b" author="${LOGIN}"`,
+				"good comment",
+			]);
+			expect(seen).toEqual(["good comment"]);
+			seen.length = 0;
+			expect((await text("main", "issue", "3", "body")).code).toBe(0);
+			expect(seen).toEqual(["the body"]);
+			const failed = await text("main", "issue", "3", "comment", AT, "1");
+			expect(failed.code).toBe(1);
+			expect(failed.err).toContain("a library failed while cleaning");
+			expect(failed.err).not.toContain("quotes the input");
+		} finally {
+			spy.mockRestore();
+		}
+	});
+
 	test("exits 1 for a part out of range", async () => {
 		await started(16000, "alpha");
 		const r = await text("main", "issue", "3", "body", "--part", "2");
 		expect(r.code).toBe(1);
 		expect(r.out).toBe("");
-		expect(r.err).toContain("part 2 is out of range; the text has 1 parts");
+		expect(r.err).toContain("part 2 is out of range; there is 1 part");
 	});
 
 	test.each([

@@ -1,4 +1,4 @@
-import { fits, usage } from "./args";
+import { parsePart, partOutOfRange, usage } from "./args";
 import { cleanHostText } from "./clean-host";
 import { EXIT, Fail, out, readStdin } from "./db";
 import { inputChars, readConfig } from "./input-files";
@@ -57,9 +57,8 @@ function options(args: string[]): { json: boolean; part: number | undefined } {
 	const rest = json ? args.slice(1) : args;
 	if (rest.length === 0) return { json, part: undefined };
 	const [flag, given] = rest;
-	if (rest.length !== 2 || flag !== PART_FLAG || !fits("number", given ?? ""))
-		throw usage(CLEAN_USAGE);
-	return { json, part: Number(given) };
+	if (rest.length !== 2 || flag !== PART_FLAG) throw usage(CLEAN_USAGE);
+	return { json, part: parsePart(given, CLEAN_USAGE) };
 }
 
 // Plain text keeps its bytes, and its final newline is the one every printed line ends with.
@@ -76,11 +75,7 @@ export async function cleanCommand(args: string[]): Promise<number> {
 		: lineList((await cleaned(input)).replace(/\n$/, ""));
 	const pieces = runs(lines, size, 0);
 	const wanted = part ?? 1;
-	if (wanted > pieces.length)
-		throw new Fail(
-			EXIT.USAGE,
-			`clean: part ${wanted} is out of range; the output has ${pieces.length} ${pieces.length === 1 ? "part" : "parts"}`,
-		);
+	if (wanted > pieces.length) throw partOutOfRange(wanted, pieces.length);
 	if (pieces.length === 1) {
 		process.stdout.write(lines.map((line) => `${line}\n`).join(""));
 		return EXIT.OK;

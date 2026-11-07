@@ -1,6 +1,13 @@
 import type { Database } from "bun:sqlite";
 import { reconcileAlarms } from "./alarms";
-import { check, count, fits, parseArgs } from "./args";
+import {
+	check,
+	count,
+	fits,
+	parseArgs,
+	parsePart,
+	partOutOfRange,
+} from "./args";
 import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
@@ -163,6 +170,9 @@ function storeParts(t: Tick, blocks: Block[], size: number): string[] {
 	return parts;
 }
 
+export const withoutCaseTexts = (blocks: Block[]) =>
+	blocks.filter((b) => !("label" in b && CASE_TEXTS.includes(b.label)));
+
 // One part, whatever its size: the journal ended the tick, the role only answers.
 function ended(
 	t: Tick,
@@ -185,11 +195,8 @@ function ended(
 				);
 		}),
 	);
-	const kept = o.blocks.filter(
-		(b) => !("label" in b && CASE_TEXTS.includes(b.label)),
-	);
 	const lines = [
-		...kept.flatMap(render),
+		...withoutCaseTexts(o.blocks).flatMap(render),
 		`ended ${outcome}`,
 		`report ${report}`,
 	];
@@ -509,10 +516,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	const stored = JSON.parse(row.parts ?? "[]") as string[];
 	// a built group stays as it was, so its constitution and page are not lost
 	if (opt.part !== undefined || stored.length > 0) {
-		const k = opt.part === undefined ? 1 : count(opt.part, "part", 1);
+		const k = parsePart(opt.part, TICK_INPUT_USAGE);
 		const part = stored[k - 1];
-		if (part === undefined)
-			throw new Fail(EXIT.USAGE, `tick ${id} has no part ${k}`);
+		if (part === undefined) throw partOutOfRange(k, stored.length);
 		out(part);
 		return EXIT.OK;
 	}

@@ -615,18 +615,16 @@ describe("in process", () => {
 			"2",
 		]);
 		expect(second).toMatchObject({ code: 0, out: part("spec-writer", 2).out });
-		expect(
-			(
-				await inprocAsync(BASE, [
-					"tick",
-					"input",
-					"--role",
-					"spec-writer",
-					"--part",
-					"99",
-				])
-			).code,
-		).toBe(1);
+		const past = await inprocAsync(BASE, [
+			"tick",
+			"input",
+			"--role",
+			"spec-writer",
+			"--part",
+			"99",
+		]);
+		expect(past.code).toBe(1);
+		expect(past.err).toContain("part 99 is out of range; there are ");
 		expect(
 			(await inprocAsync(BASE, ["tick", "input", "--role", "spec-writer"]))
 				.code,

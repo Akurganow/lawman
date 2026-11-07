@@ -367,7 +367,11 @@ describe("tick start with an order", () => {
 				content(part).reduce((s, l) => s + [...l].length + 1, 0),
 			).toBeLessThanOrEqual(400);
 		}
-		expect(input("1", "--part", String(n + 1)).code).toBe(1);
+		const past = input("1", "--part", String(n + 1));
+		expect(past.code).toBe(1);
+		expect(past.err).toContain(
+			`part ${n + 1} is out of range; there are ${n} parts`,
+		);
 		expect(
 			call(BASE, [
 				"tick",

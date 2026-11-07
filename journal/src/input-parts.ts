@@ -6,7 +6,8 @@ export const DEFAULT_INPUT_CHARS = 16000;
 
 // A journal line is never cut. Law lines print behind "| ". A fenced text
 // keeps one fence for all its pieces. A head line goes with the first piece.
-// A whole block is rendered lines that stay together in one part.
+// A whole block is rendered lines that stay together in one part. A cut text
+// keeps the label of its fence.
 export type FencedBlock = {
 	head?: string;
 	label: string;
@@ -15,7 +16,7 @@ export type FencedBlock = {
 };
 export type Block =
 	| { line: string }
-	| { whole: string[] }
+	| { whole: string[]; label?: string }
 	| { head?: string; law: string[] }
 	| FencedBlock;
 
@@ -148,7 +149,7 @@ export function cutToFit(
 		if (cost(build(mid)) <= size) lo = mid;
 		else hi = mid - 1;
 	}
-	return { whole: build(lo) };
+	return { whole: build(lo), label: block.label };
 }
 
 const PREFIX = 2;

@@ -125,9 +125,38 @@ export function parseTextWords(words: string[]): TextKey | null {
 	return null;
 }
 
+type CommentRow = {
+	id: string;
+	author: string | null;
+	at: string;
+	body: string;
+};
+
+const COMMENTS =
+	"SELECT id, author, at, body FROM comments WHERE precinct = ? AND kind = ? AND number = ?";
+
+const bodyOf = (db: Database, k: Omit<TextKey, "part">) =>
+	(
+		db.query(BODY[k.kind]).get(k.precinct, k.number) as {
+			body: string;
+		} | null
+	)?.body ?? null;
+
+// A comment's block carries its `comment at=` line.
+async function commentBlock(c: CommentRow): Promise<FencedBlock> {
+	return fencedBlock(
+		"comment",
+		`${await header(c)}\n${await cleanHostText(c.body)}`,
+		`comment at=${c.at}`,
+	);
+}
+
+// A text above `size` is cut to one block of that size.
+const fit = (block: FencedBlock, k: TextKey, size: number) =>
+	cutToFit(block, size, fullLine(k), countSecretMarks);
+
 // Every cached text is cleaned again, so a text an older cleaning stored prints clean.
-// A comment's block carries its `comment at=` line. Null when the cache holds no
-// such issue or pull request. A text above `size` is cut to one block of that size.
+// Null when the cache holds no such issue or pull request.
 export async function printCached(
 	db: Database,
 	precinct: string,
@@ -135,24 +164,19 @@ export async function printCached(
 	number: number,
 	size = Number.POSITIVE_INFINITY,
 ): Promise<Block[] | null> {
-	const row = db.query(BODY[kind]).get(precinct, number) as {
-		body: string;
-	} | null;
-	if (row === null) return null;
-	const comments = db
-		.query(
-			"SELECT id, author, at, body FROM comments WHERE precinct = ? AND kind = ? AND number = ? ORDER BY at, id",
-		)
-		.all(precinct, kind, number) as CommentText[];
 	const key = { precinct, kind, number };
-	const fit = (block: FencedBlock, k: TextKey) =>
-		cutToFit(block, size, fullLine(k), countSecretMarks);
+	const body = bodyOf(db, key);
+	if (body === null) return null;
+	const comments = db
+		.query(`${COMMENTS} ORDER BY at, id`)
+		.all(precinct, kind, number) as CommentRow[];
 	return cleaning(async () => {
 		const blocks = [
-			fit(fencedBlock(kind, await cleanHostText(row.body)), {
-				...key,
-				part: "body",
-			}),
+			fit(
+				fencedBlock(kind, await cleanHostText(body)),
+				{ ...key, part: "body" },
+				size,
+			),
 		];
 		let j = 0;
 		let at: string | null = null;
@@ -160,16 +184,34 @@ export async function printCached(
 			j = c.at === at ? j + 1 : 1;
 			at = c.at;
 			blocks.push(
-				fit(
-					fencedBlock(
-						"comment",
-						`${await header(c)}\n${await cleanHostText(c.body)}`,
-						`comment at=${c.at}`,
-					),
-					{ ...key, part: { at: c.at, j } },
-				),
+				fit(await commentBlock(c), { ...key, part: { at, j } }, size),
 			);
 		}
 		return blocks;
 	});
+}
+
+// One text of a case, cleaned alone. Null when the cache holds no such text.
+export async function printText(
+	db: Database,
+	key: TextKey,
+	size = Number.POSITIVE_INFINITY,
+): Promise<Block | null> {
+	const body = bodyOf(db, key);
+	if (body === null) return null;
+	if (key.part === "body")
+		return cleaning(async () =>
+			fit(fencedBlock(key.kind, await cleanHostText(body)), key, size),
+		);
+	const row = db
+		.query(`${COMMENTS} AND at = ? ORDER BY id LIMIT 1 OFFSET ?`)
+		.get(
+			key.precinct,
+			key.kind,
+			key.number,
+			key.part.at,
+			key.part.j - 1,
+		) as CommentRow | null;
+	if (row === null) return null;
+	return cleaning(async () => fit(await commentBlock(row), key, size));
 }

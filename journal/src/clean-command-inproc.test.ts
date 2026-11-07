@@ -175,7 +175,9 @@ describe("clean command in parts", () => {
 		expect((await cleanIn(long, "--json", "--part", "9")).code).toBe(
 			EXIT.USAGE,
 		);
-		expect((await cleanIn("short\n", "--part", "2")).code).toBe(EXIT.USAGE);
+		const single = await cleanIn("short\n", "--part", "2");
+		expect(single.code).toBe(EXIT.USAGE);
+		expect(single.err).toContain("part 2 is out of range; there is 1 part");
 	});
 
 	test("--json --part is accepted and the reverse order is a usage error", async () => {
