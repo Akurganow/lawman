@@ -131,6 +131,8 @@ Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around t
 
 Accepted, checked with the harness's check function: `&&`, `;`, a redirect, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
 
+Refused, seen in a scheduled run: a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
+
 Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter, a pipe into `sed -E` with a quoted script, and such a pipeline inside `(set -o pipefail; …)`. None of these was seen in a scheduled run.
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
@@ -393,24 +395,33 @@ The environment of a tick is the terminal of a scheduled agent session. A one-of
 - The terminal of that session builds its environment with the function of the terminal tool. That function completes `PATH` with the standard binary directories. The environment of a job's script comes from another function and gets no such completion. So a script, a `--no-agent` job included, does not reach the environment of a tick (read in the harness code: `tools/environments/local.py`, `_make_run_env`, `_sanitize_subprocess_env`).
 - The terminal command of that session passes the approval check of the cron context. The setting `approvals.cron_mode` decides, and the default refuses what the check flags as dangerous ("Commands in scheduled runs") (read in the harness code: `tools/approval.py`, `_unattended_contexts`).
 
-What runs in it is one terminal command, or a few, that the prompt gives word for word. Each command runs the journal on the throwaway database and sends its whole output to a file. The shell writes the file, so the model passes nothing on and paraphrases nothing. The assembly reads the file. A missing file means the command did not run in the environment of a tick.
+What runs in it is one terminal command, or a few, that the prompt gives word for word. Each command runs the journal on the throwaway database and writes no file. The harness keeps the output of each terminal call in the run's session, so the model passes nothing on and paraphrases nothing. The assembly reads that record.
 
 ```
 hermes cron create "in 24h" "<proof prompt>" \
   --name "lawman-proof-<n>" --workdir "<installation>" --deliver local --repeat 1
 ```
 
-The proof prompt gives the command and the answer. Replace the placeholders. `<base>` is the folder of the throwaway database. The folder `<base>/proof` exists before the create. One line stands for each command.
+The proof prompt gives the command and the answer. Replace the placeholders. `<base>` is the folder of the throwaway database. One line stands for each command.
 
 ```
-Run this command once in the terminal, exactly as written, and answer [SILENT] alone: LAWMAN_DB='<base>/journal.sqlite' bin/journal <journal command> > '<base>/proof/<name>.out' 2>&1
+Run this command once in the terminal, exactly as written, and answer [SILENT] alone: LAWMAN_DB='<base>/journal.sqlite' bin/journal <journal command>
 ```
 
+Read the result after the run, with the job's name:
+
+```
+hermes sessions export --title "lawman-proof-<n>" --after <time before the run> --format jsonl --redact -
+```
+
+- The title of the run's session holds the job's name (seen in a scheduled run). Give each proof job a name of its own, so the filter matches one session.
+- Take the `tool` message of the `terminal` call whose arguments hold the command. Its content is a JSON object. `output` is what the journal printed, and `exit_code` is its exit code (seen in a scheduled run).
+- A content whose `error` starts with `BLOCKED` means that the check refused the command, and the command did not run. No `terminal` call with the command means that the model did not run it. Both are no proof in the environment of a tick.
 - `--deliver local` keeps the output in the harness's output folder and sends nothing to a chat.
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
-- The answer `[SILENT]` alone is the harness's silence form (see "Silence").
-- Each of these lines passed the harness's check function as a role would send it: the create line, the create line with the proof prompt filled in, and the terminal command with a `run` or a `run-installation` form (checked with the harness's check function). A redirect and a `VAR=x cmd` prefix are among the forms that "Commands in scheduled runs" lists as accepted. None of these was seen in a scheduled run.
-- A command the model changes shows in the file as different output, or as no file. A command the check refuses comes back as `BLOCKED: Command flagged as dangerous` in the run's session, and no file stands (see "Run records").
+- The answer `[SILENT]` alone is the harness's silence form (see "Silence"). A model that answers otherwise changes nothing in the record of the terminal call.
+- A redirect into a file is not part of the form. The check refuses a redirect whose target is a system path, and the temporary folders of macOS lie under one (seen in a scheduled run; see "Commands in scheduled runs").
+- Each of these lines passed the harness's check function as a role would send it: the create line, the create line with the proof prompt filled in, the terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder, and the export line (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
 
 Run the job and remove it as the order above says.
 
@@ -455,7 +466,7 @@ Seen when the commands ran in a terminal, read only:
 
 - A timestamp that ends in `Z` is read as UTC. The dry-run prints it in local time.
 - `hermes sessions list` shows the recent sessions only.
-- The id of a scheduled session starts with `cron_` and holds the job id. The session starts a few seconds before the journal's `tick start`. Most titles carry no `[lawman]` prefix, so match the role name alone.
+- The id of a scheduled session is a hash with the prefix `local-`, and its title holds the job's name and the time (seen in a scheduled run; read in the harness code: `gateway/session_cron.py`, `_create`, `local_identity`). The session starts a few seconds before the journal's `tick start`. Most titles carry no `[lawman]` prefix, so match the role name alone.
 - The object holds the model, the cost, the working directory and the stored system prompt next to `messages`. A page filters it with `jq` and prints the messages only.
 - A message holds `role`, `content`, `reasoning`, `tool_name` and `tool_calls`. A call holds `function.name` and `function.arguments`, a string.
 - A command that the harness refused comes back as a `tool` message whose content holds `BLOCKED: Command flagged as dangerous`.
