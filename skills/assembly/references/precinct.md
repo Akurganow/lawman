@@ -228,7 +228,7 @@ Ask in the question tool.
 6. Find the account's access level, as the Measure access section of the add path does, and show it as a row.
 6a. For a precinct with `yes` in `license_precincts` and without its own page `licenses`, run `references/licenses/update.md` at the tip of the default branch.
 6b. Offer to ask the use and source questions again, with the original first sentences. The answers replace the entry and the `use` value, and a changed section opens a pull request. This withdraws a consent.
-7. Run the section "Commands of the precinct" for both screens. Prove the commands that exist again, as "Prove a command" in `references/commands.md` says, and show each result. A command that fails again keeps its file until the user chooses "Change" or "Leave empty". The proof state "not proven in the tick environment" of a command stays visible. Ask the consent to paid proof runs before the question of item 10, by "Consent to paid runs" in `references/commands.md`.
+7. Run the section "Commands of the precinct" for both screens. Prove the commands that exist again, as "Prove a command" in `references/commands.md` says, and show each result. A command that fails again keeps its file until the user chooses "Change" or "Leave empty". The proof state "not proven in the tick environment" of a command stays visible. Ask the consent to paid proof runs before the first proof of this item, and so before the question of item 10, by "Consent to paid runs" in `references/commands.md`.
 8. Run part one of the section "Move the old precedents". This is the late move: it asks when the repository still holds old lines or has open pull requests of the old form, and asks nothing otherwise.
 9. Show one proposal with the rows of the lint result, the notes, the access level, the commands of version control, the commands of the tracker, the facts to copy and the old precedents, as "The repository proposal" describes them. Add a row for each host action that the section "Move the old precedents" found and that `host.md` lacks.
 10. When the proposal holds a write, ask in the question tool and offer "Apply" (recommended), "Change" and "Skip". A write is a command to write, change or remove, a fact to copy, a host action to record or a move. A skip, an empty answer or a cancel writes nothing. On "Change", follow the change items of "The repository proposal".
@@ -303,13 +303,13 @@ An old line is a numbered line `<date> #<n>: <rule> (<link>)` of the section, ot
 
 1. Skip the precinct and name it as waiting for that merge when a pull request from the branch `lawman/move-precedents` is open. Ask nothing then.
 2. Run `bin/journal old-precedent list` with `LAWMAN.md` at the tip of the default branch on stdin. The answer `none` means no old line. A line `outside position=<p>` is an item outside the form: it stays a note, and the proposal names its position.
-3. Find the open pull requests of the old form, as the subsection "Pull requests of the old form" says.
+3. Find the open pull requests of the old form, as items 1 to 4 of the subsection "Pull requests of the old form" say.
 4. End the section for this precinct when there is no old line and no such pull request.
 5. Tell the user the facts, before the question, in the user's language.
    - Precedents are files in `.lawman/precedents` now, and the roles are bound by those files. The numbered lines of `## Precedents` become a note in the margin that binds no role.
    - "Move" turns the lines whose kind is known into files. The owner merges the pull request. Open pull requests of the old form get the files by a commit.
    - The open pull requests of the old form, each with its link, or none.
-6. Ask one question for the precinct, with the number of lines and the number of pull requests in it: move the old precedents? Offer "Move" (recommended) and "Keep as notes". The label of "Keep as notes" says what follows: nothing is written, the lines stay notes that bind no role, and the open pull requests stay as they are.
+6. Ask one question for the precinct, with the number of old lines at the tip of the default branch and the number of pull requests of the old form in it: move the old precedents? Offer "Move" (recommended) and "Keep as notes". The label of "Keep as notes" says what follows: nothing is written, the lines stay notes that bind no role, and the open pull requests stay as they are.
 7. Treat a skip, an empty answer or a cancel as "Keep as notes". Write nothing and touch no pull request on "Keep as notes".
 
 On "Move", find the kind of each line.
@@ -351,7 +351,7 @@ An old-form pull request is an open pull request of the trusted account whose `L
 2. Find the open pull requests of the trusted account, by the way the host notes record for listing pull requests. The `pulls` form gives no head and no changed files of a pull request.
 3. For each, read `LAWMAN.md` at the head of the pull request with the host action. The same action gives the head revision. Let the version-control tool compute the merge base from that head and the tip of the default branch, and read `LAWMAN.md` at the merge base with the same action. Put both pages into files in a temporary folder outside the installation. Remove that folder on every outcome, a stop included.
 4. Run `bin/journal old-precedent added --base <file> --head <file>`. A pull request with no printed line is not of the old form.
-5. For each pull request with printed lines, apply items 8 to 13 of part one to those lines.
+5. On "Move", for each pull request with printed lines, apply items 8 to 13 of part one to those lines.
 6. After the approval, make a working copy of the branch of the pull request, as item 14 of part two does. Apply items 15 and 16 of part two to its lines. Commit the result on that branch as an ordinary commit with the message "Move the precedents to files", and publish it. Never rewrite history, and keep the commits of the executor on the branch.
 7. When the notes name no write to the branch, or the account cannot write to it, for example because the pull request comes from another fork, name the pull request to the user by its link. Change nothing in it, and say that its lines stay notes.
 
