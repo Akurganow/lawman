@@ -59,16 +59,44 @@ const SYNC_NEVER = [
 const DESK_PULLS =
 	"For the duty desk the failure does not end the tick: the precinct goes without orders.";
 
+// a word of the diff rule, pinned as a word so the line itself may be rewritten
+const DIFF_VIEW = "diff view";
+// the words of the cut-text lines, pinned as words for the same reason
+const CUT_TEXT_WORDS = [
+	"cut",
+	"full",
+	"--part",
+	"`kept`",
+	"`of`",
+	"`secrets`",
+	"end part",
+	"lawman input 1 text part",
+	"lawman input 1 clean part",
+];
+
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 // sectionsOf gives each section as its lines, so toContain matches a whole line
-const [introLines, evidenceLines, pullsLines, syncLines] = sectionsOf(tick, [
-	INTRO,
-	"Instructions and evidence",
-	"Sync the pull requests",
-	"Sync the law",
-]);
+const [introLines, evidenceLines, pullsLines, syncLines, workingLines] =
+	sectionsOf(tick, [
+		INTRO,
+		"Instructions and evidence",
+		"Sync the pull requests",
+		"Sync the law",
+		"Working rules",
+	]);
 
 describe("law phrases", () => {
+	test("the word diff view stands in the tick file's Working rules section", () => {
+		expect((workingLines ?? []).some((l) => l.includes(DIFF_VIEW))).toBe(true);
+	});
+
+	test.each(CUT_TEXT_WORDS)(
+		"the word %s stands in the tick file's Instructions and evidence section",
+		(word) => {
+			expect((evidenceLines ?? []).some((l) => l.includes(word))).toBe(true);
+		},
+	);
+
 	test("the fence phrase stands in the tick file's Instructions and evidence section", () => {
 		expect(evidenceLines).toContain(FENCE);
 	});

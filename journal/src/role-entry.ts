@@ -1,5 +1,5 @@
 import { join } from "node:path";
-import { check, count, fits, parseArgs } from "./args";
+import { check, fits, parseArgs, parsePart, partOutOfRange } from "./args";
 import { EXIT, Fail, now, out, withDb } from "./db";
 import { type Taken, takeableOrders } from "./dispatch";
 import {
@@ -84,15 +84,14 @@ export function rolePartCommand(args: string[]): number {
 	const role = check("role", opt.role);
 	if (role !== DUTY_DESK && inputOf(role) === undefined)
 		throw new Fail(EXIT.USAGE, `no input for role ${role}`);
-	const k = count(opt.part, "part", 1);
+	const k = parsePart(opt.part, PART_USAGE);
 	const orders = withDb((db) => takeableOrders(db, role, now()));
 	const parts = framed(
 		roleParts(role, orders, readConfig()),
 		() => `role=${role}`,
 	);
 	const part = parts[k - 1];
-	if (part === undefined)
-		throw new Fail(EXIT.USAGE, `no part ${k}: the group has ${parts.length}`);
+	if (part === undefined) throw partOutOfRange(k, parts.length);
 	out(part);
 	return EXIT.OK;
 }

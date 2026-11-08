@@ -55,6 +55,7 @@ export const COMMANDS: Record<string, Handler> = {
 	pull: pullCommand,
 	handoff: async (args) => (await import("./handoff")).handoffCommand(args),
 	clean: async (args) => (await import("./clean-command")).cleanCommand(args),
+	text: async (args) => (await import("./text-command")).textCommand(args),
 	decider,
 	form,
 	jev,

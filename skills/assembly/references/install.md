@@ -26,7 +26,7 @@ Phase 1 runs as follows.
 
 1. Find the facts of every screen.
 2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, the entry files and each job with its model when known. It names each job whose mode changes, with its change.
+3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, the entry files, the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
@@ -264,11 +264,11 @@ In Apply, "the method" is the verifier or the refusal of the signature in the ap
 1. Write the host notes, with no new record about the verification of the binary. The earlier record stays.
 2. Install the verifier that the developer chose, when it is not on this machine.
 3. Get the release files. On the first install, go on: check the sum and the signature, install the binary and probe it.
-4. Prove the commands of the installation through the journal on a throwaway base.
+4. Where the page's "One-off run" needs the Lawman agent, find it first, or show the lines of a new agent and wait for the developer to create it, by items 1 and 8 of "Apply" in `references/roles.md`. Create no proof job before the agent exists. Then prove the commands of the installation through the journal on a throwaway base.
 5. Write the installation: the files of `shared/`, the record of the method, `config.yaml`. Remove the files of the proof.
 6. On the first install and in the part "Roles": write and prove the entry files, and create the jobs.
 
-Ask nothing in the middle of Apply. On a failure, stop, name the cause and the fix, and write nothing more.
+Ask nothing in the middle of Apply, except the wait for the agent in step 4. On a failure, stop, name the cause and the fix, and write nothing more.
 
 ### Write the host notes
 
@@ -367,7 +367,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - The commands: which files were written, which were left empty, which were removed, and which are proven in the tick environment and which are not. Name the gap of each command that is not proven in it.
 - The limits: the numbers of jobs and N that are in force, and the size of a part when the page gives one.
 - The delivery check: checked, not checked, failed, or did not run.
-- For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
+- For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Where the page names no output folder, say that the results lie in the run records. Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
 - What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
 - After the refusal of the signature, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written, that the role reads the facts of the law itself.
@@ -379,7 +379,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 When TypeSafe is on and the official skill was missing at install, add these items.
 
 - Show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page.
-- Give the step that attaches the skill to the court job: the add-skill form that the harness page gives under "Editing a job".
+- When the harness page gives an add-skill form under "Editing a job", give the step that attaches the skill to the court job with that form.
 
 Offer the user one manual run of the duty desk, and say that the run is paid. When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run by the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
 

@@ -38,6 +38,23 @@ export function usage(text: string): Fail {
 	return new Fail(EXIT.USAGE, `usage: journal ${text}`);
 }
 
+// the number of `--part <k>`: 1 when the option is absent, a usage error when it is no count from 1
+export function parsePart(
+	given: string | undefined,
+	usageText: string,
+): number {
+	if (given === undefined) return 1;
+	if (!fits("number", given) || !Number.isSafeInteger(Number(given)))
+		throw usage(usageText);
+	return Number(given);
+}
+
+export const partOutOfRange = (k: number, parts: number) =>
+	new Fail(
+		EXIT.USAGE,
+		`part ${k} is out of range; there ${parts === 1 ? "is 1 part" : `are ${parts} parts`}`,
+	);
+
 type Parsed<P extends 0 | 1, N extends string, O extends string> = {
 	pos: P extends 1 ? [string] : [];
 	opt: Record<N, string> & Partial<Record<O, string>>;

@@ -78,22 +78,24 @@ LICENSE
 
 ## The harnesses
 
-A cell without a mark rests on a fact with its source in the section "What each harness does". For Hermes Agent it rests on the Hermes page. A cell marked `(not verified)` has no such fact.
+A cell without a mark rests on a fact with its source in the section "What each harness does". For Hermes Agent and OpenClaw it rests on the harness page. A cell marked `(not verified)` has no such fact.
 
 | Harness | Install | Manifest | Skill names | Setup | Scheduler | Status |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
 | Hermes Agent | `hermes plugins install Akurganow/lawman --enable` | `plugin.yaml`, else the root `plugin.json` | `agent-plugin-lawman-492e59eb:<skill>` | The skill `assembly`, started as a chat command | `hermes cron create` with `--skill` and `--workdir` | Supported |
 | Kiro | IDE: Powers panel, import from GitHub. CLI: `/powers install <name\|path>` | `plugin.json`, or the legacy `POWER.md`, at the power's package root | `<skill>` (not verified) | The skill `assembly` (not verified) | None found (not verified). Headless `kiro-cli chat --no-interactive` under an external cron | TBD |
-| OpenClaw | `openclaw plugins install lawman --marketplace Akurganow/lawman` | Other bundle manifests first, then the root `plugin.json` | `<skill>` (not verified) | The skill `assembly` (not verified) | `openclaw cron add` with an agent whose workspace is the working directory | TBD |
+| OpenClaw | `openclaw plugins install lawman --marketplace Akurganow/lawman` | Other bundle manifests first, then the root `plugin.json` | `<skill>` (not verified) | The skill `assembly` (not verified) | `openclaw cron add` with `--trigger-script` and an agent whose workspace is the installation | TBD |
 | Pi | `pi install git:github.com/Akurganow/lawman` | `package.json` key `pi`, else conventional folders | `<skill>`, `/skill:<skill>` | The skill `assembly` (not verified) | None found (not verified). Headless `pi -p` under an external cron | TBD |
 | Oh-My-Pi | `omp plugin marketplace add Akurganow/lawman`, then `omp plugin install lawman@lawman` | The root `plugin.json` with the exact schema | `<skill>` | The skill `assembly` (not verified) | None found (not verified). Headless `omp -p --cwd <dir>` under an external cron | TBD |
 | Claude Code | `/plugin marketplace add Akurganow/lawman`, then `/plugin install lawman@lawman` | `.claude-plugin/plugin.json`, optional | `lawman:<skill>` | The skill `assembly` (not verified) | Desktop scheduled tasks, `/loop` in a session, or `claude -p` under an external cron | TBD |
 | Codex | `codex plugin marketplace add Akurganow/lawman`, then `codex plugin add lawman@lawman` | The root `plugin.json` with the exact schema, else `.codex-plugin/`, `.claude-plugin/` or `.cursor-plugin/` | `lawman:<skill>` | The skill `assembly`. The manifest has an onboarding skill field that Lawman does not use | Desktop app scheduled tasks, or `codex exec` under an external cron (not verified) | TBD |
 | GitHub Copilot CLI | `copilot plugin marketplace add Akurganow/lawman`, then `copilot plugin install lawman@lawman` | The root `plugin.json`, which wins over the legacy manifests | `lawman:<skill>` (not verified) | The skill `assembly` (not verified) | `/every` and `/loop` in a session, or `copilot -p` under an external cron (not verified) | TBD |
 
-The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". A harness whose page has none does not send, and the patrol reports that the check did not run. The page also carries the command that starts an expert, in its section "Calling an expert". A harness whose page has none lets the role go on without the expert. See [the pipeline](pipeline.md#experts). The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
+OpenClaw has a page, and its status stays TBD until a live run proves the install and the entry script.
 
-No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). No other harness was found to do both (not verified).
+The Hermes page carries the send forms of the catalog check, in its section "Sending to the catalog". A harness whose section says none does not send, and the patrol reports that the check did not run. The page also carries the command that starts an expert, in its section "Calling an expert". A harness whose section says none lets the role go on without the expert. The OpenClaw page says none in both sections. See [the pipeline](pipeline.md#experts). The law and the skills name no harness. See [the journal](journal.md#the-catalog-check).
+
+No harness lets a plugin declare a schedule (not verified). Hermes attaches a skill and a working directory to a scheduled job (stated by `--help`, `hermes cron create --help`). OpenClaw attaches an agent to a job, and the workspace of that agent is the working directory. No flag binds a skill to an OpenClaw job (read in the harness code, openclaw/src/cli/cron-cli/register.cron-options.ts), so the job message names the skill. No other harness was found to do both (not verified).
 
 ## Asking the developer
 
@@ -110,7 +112,7 @@ The assembly asks the developer through the harness's question tool. Each row na
 | Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
 | Pi | none built in (read in the harness code) | (not verified) | (not verified) |
 
-A harness page names the question tool in its own section. When the page has none, the model finds the tool itself.
+A harness page names the question tool in its own section. When the section says none, the model finds the tool itself.
 
 A harness without a question tool uses the plain numbered message. The plain message does not serve messengers.
 
@@ -152,11 +154,14 @@ The page for Hermes holds the rest, among it the send forms for the catalog chec
 - The detection returns native when `package.json` declares `openclaw.extensions` and `openclaw.plugin.json` sits at the root. It returns native too when the root holds a default plugin entry file and no bundle manifest (read in the harness code, openclaw/src/plugins/bundle-manifest.ts).
 - Discovery treats a package whose `package.json` declares `openclaw.extensions` as a native package, before it looks for a bundle manifest (read in the harness code, openclaw/src/plugins/discovery.ts).
 - Plugin skills load at low precedence. A same-named workspace, agent, managed or bundled skill overrides them (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/tools/skills.md).
-- A plugin skill appears under its bare name (not verified).
+- A plugin skill appears under its bare name (stated by the docs, https://docs.openclaw.ai/plugins/bundles.md; not verified).
 - `openclaw cron` registers the automation commands. `openclaw cron add` creates a job (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/cli/cron.md).
 - A detached cron agent-turn job runs in the workspace of the scheduled agent. A job bound to an existing session uses that session's saved workspace and working directory (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/automation/cron-jobs/payloads.md).
 - The docs read give a per-job working directory only to command payloads, through `--command-cwd`. A command payload runs a shell command and not a skill (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/automation/cron-jobs/payloads.md).
-- Naming a skill in a cron prompt works (not verified).
+- A cron job can carry a trigger script, which runs before the model turn. A throw fails the run (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified).
+- A `$<skill>` reference is not expanded in a cron run. The role reads the skill with the tool `read` (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified).
+
+The page for OpenClaw holds the rest: `skills/lawman-law/references/harnesses/openclaw.md`.
 
 ### Pi
 
@@ -245,11 +250,11 @@ A new harness needs four things:
 - a row in the table above
 - a live install proof
 
-The page answers the eight sections of the Hermes page. They are installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer.
+The page answers every section of the Hermes page except the last, "What a second harness needs". The sections are installing the plugin, syncing the law, running a role once, commands in scheduled runs, sending to the catalog, sending to license sources, calling an expert, scheduling with its subsections, isolation, budget and token, and asking the developer. A test takes the headings from `hermes.md` and checks every other page.
 
-A page may also carry the send forms for the catalog check, and the form that calls an expert. Both sections are optional and not among the eight. A harness that adds them gains the check or the experts with no change to the law or the skills.
+Every heading must stand. Its body is a fact with its source, the word none with its consequence, or a fact marked `(not verified)`. A page that has no send form or no expert call says none. A harness that adds a form gains the check or the experts with no change to the law or the skills.
 
-The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list command that shows each job's working directory. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
+The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list commands that show each job's working directory. A page may give two commands in series, as the OpenClaw page does: the list of jobs, then the list of agents. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 
 Follow these steps.
 
@@ -257,7 +262,7 @@ Follow these steps.
 2. Check each root file of the layout against what the harness reads. Record every conflict in the list above.
 3. Add no root file unless every harness reads it by the standard.
 4. When the harness needs its own manifest, put it where the harness looks and mirror the root fields.
-5. Write the page with the eight sections.
+5. Write the page with every section of the Hermes page.
 6. Write the five things of "Choose the installation" and the scheduler check on the page.
 7. Mark every fact on the page by its source.
 8. Run each command that a scheduled session sends through the harness's own approval check.
@@ -268,7 +273,7 @@ Follow these steps.
 
 A harness is done when all of these hold.
 
-- The page exists, answers the eight sections and gives the six things above.
+- The page exists, answers every section of the Hermes page and gives the six things above.
 - The README subsection holds the real steps. Only its Uninstall part may hold TBD until the assembly can uninstall.
 - The table row says Supported.
 - A clean harness profile installs the plugin by the README steps alone.

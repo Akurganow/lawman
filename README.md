@@ -16,7 +16,7 @@ Each role is an Agent Skill. The scheduler starts a role. The role takes a few o
 
 ### Harnesses
 
-Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Lawman installs on Hermes Agent today. The other harnesses are TBD.
+Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Two harnesses have a page today. Lawman installs on Hermes Agent. OpenClaw has a page and install steps that no live run has proved yet. The other harnesses are TBD.
 
 [Harnesses and layout](docs/harnesses.md)
 
@@ -109,6 +109,38 @@ TBD
 TBD
 
 ### OpenClaw
+
+OpenClaw runs each role as a scheduled job with an entry script. It needs its gateway running. These steps rest on OpenClaw's documentation, and no live run has proved them yet.
+
+1. Install and enable the plugin in a terminal:
+
+   ```bash
+   openclaw plugins install lawman --marketplace Akurganow/lawman
+   ```
+
+2. In an OpenClaw chat, run the skill `assembly`. The docs name the forms `$assembly` and `/assembly`.
+
+3. The assembly asks you to create one OpenClaw agent whose workspace is the installation folder. It shows the lines and waits, because creating an agent changes OpenClaw's settings. You apply them:
+
+   ```bash
+   openclaw agents add <agent id> --workspace "<installation>" --non-interactive
+   ```
+
+The assembly then goes on as it does on Hermes Agent. It writes one paused job for each role, with the entry script of that role and the model you chose. A job holds a copy of its script. A change to the script reaches a job only when the assembly writes the job again.
+
+#### Update
+
+Stop the gateway, update the plugin, then start the gateway:
+
+```bash
+openclaw gateway stop
+openclaw plugins update lawman
+openclaw gateway start
+```
+
+No tick runs while the gateway is stopped. Then run the assembly, as after a Hermes update.
+
+#### Uninstall
 
 TBD
 

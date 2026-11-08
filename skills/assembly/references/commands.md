@@ -51,7 +51,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 
 - A command has one of two states: proven in the tick environment, or not proven in it. A proposal row shows the state.
 - The runs of the command files of the installation and of a precinct through the journal go in the tick environment. A call of the verifier inside `verify` is part of such a run.
-- The entry files and the proof of a refused signature need no tick environment.
+- The entry files need no tick environment where the page's entry is a file the harness runs. A script held in the job runs in the exec environment, which the test and the live run prove. The proof of a refused signature needs none.
 - The harness page, in "One-off run", says how to reach the tick environment, what runs in it and how the journal's output comes back to the assembly.
 - A failure blocks the write in both environments.
 - Without consent, or without a way on the harness page, the command is not proven in the tick environment. The approval of the proposal confirms that gap.

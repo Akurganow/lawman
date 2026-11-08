@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { fenceOf } from "./fence";
 import { type Block, fencedBlock, pack, renderAll } from "./input-parts";
 
 const cost = (lines: string[]) =>
@@ -16,7 +17,7 @@ describe("pack", () => {
 	});
 
 	test.each([40, 64, 100])(
-		"at size %d each part fits and a cut fence keeps its label and its length",
+		"at size %d each part fits and each cut piece keeps its label and takes the fence of its own lines",
 		(size) => {
 			const parts = pack(blocks, size);
 			expect(parts.length).toBeGreaterThan(1);
@@ -24,20 +25,31 @@ describe("pack", () => {
 				expect(cost(part)).toBeLessThanOrEqual(size);
 				expect(part.some((l) => l.startsWith("`"))).toBe(false);
 			}
-			const fences = parts.flat().filter((l) => /^~+issue$/.test(l));
-			expect(new Set(fences)).toEqual(new Set(["~~~~~issue"]));
+			// each piece takes the fence of its own lines
+			const bodies: string[] = [];
+			const fences = new Set<string>();
+			for (const part of parts) {
+				let open: { fence: string; body: string[] } | undefined;
+				for (const l of part) {
+					if (open === undefined) {
+						const m = /^(~+)issue$/.exec(l);
+						if (m) open = { fence: m[1] ?? "", body: [] };
+					} else if (l === open.fence) {
+						expect(open.fence).toBe(fenceOf(open.body.join("\n")));
+						fences.add(open.fence);
+						bodies.push(...open.body);
+						open = undefined;
+					} else open.body.push(l);
+				}
+				expect(open).toBeUndefined();
+			}
+			expect(bodies).toEqual(["one", "~~~~", "two", "three", "four"]);
+			// a piece without the tilde line takes a shorter fence than the piece with it
+			const pieces = parts.flat().filter((l) => /^~+issue$/.test(l)).length;
+			if (pieces > 1) expect(fences.size).toBeGreaterThan(1);
 			expect(parts.flat().filter((l) => l.startsWith("comment at="))).toEqual([
 				"comment at=t",
 			]);
-			// the pieces of a cut fence join again once each repeated close and open goes
-			const joined = parts
-				.flat()
-				.filter(
-					(l, i, all) =>
-						!(l === "~~~~~" && all[i + 1] === "~~~~~issue") &&
-						!(l === "~~~~~issue" && all[i - 1] === "~~~~~"),
-				);
-			expect(joined).toEqual(renderAll(blocks).split("\n"));
 		},
 	);
 

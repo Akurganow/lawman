@@ -60,9 +60,9 @@ contract_version: 4
 amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 ```
 
-Every value above is a placeholder. `hermes` is the name of the one shipped harness page. The order follows the assembly skill.
+Every value above is a placeholder. `hermes` and `openclaw` are the names of the shipped harness pages. The order follows the assembly skill.
 
-Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work. See [the journal](journal.md#the-role-entry).
+Three more keys are optional: `input_chars`, `jobs` and `progress_checks`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The same size is the cut size of a case text longer than one part, and the part size of `text` and `clean`. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work, and makes `text` and `clean` exit 1. See [the journal](journal.md#the-role-entry) and [cut texts](journal.md#cut-texts).
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -185,7 +185,7 @@ Ticks read the keys they need.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
 - The alarms read `progress_checks` every time the journal computes them.
-- The role's input reads `jobs`, `harness` and `input_chars` when the role has work, and `trusted_login` at the start of a tick with an order. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
+- The role's input reads `jobs`, `harness` and `input_chars` when it builds its group: at `wake` with work, and at `tick input --role`. The start of a tick that takes an order reads `input_chars` and `trusted_login`. `tick input <tick id>` reads `input_chars` when it builds the tick group, and the commands `text` and `clean` read it too. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
 
 See [the pipeline](pipeline.md) for the checks that open every tick.
 

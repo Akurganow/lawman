@@ -8,6 +8,7 @@ import { withDb } from "./db";
 import { takeableOrders } from "./dispatch";
 import { captured, inprocAsync } from "./inproc";
 import { readConfig } from "./input-files";
+import { lawSections } from "./input-roles";
 import {
 	CONFIG,
 	config,
@@ -115,10 +116,11 @@ const MORE: Record<string, string[]> = {
 		"Sync the tracker",
 		"Read the stage",
 		"Check the constitution",
+		"Resolve the department page",
 		"Write a comment",
 		"Alarm",
 	],
-	prosecutor: PROSECUTOR,
+	prosecutor: [...PROSECUTOR, "Resolve the department page"],
 	defender: [...PROSECUTOR, "Resolve the department page"],
 	court: [...PROSECUTOR, "Resolve the department page"],
 	clerk: [
@@ -146,6 +148,21 @@ const MORE: Record<string, string[]> = {
 };
 const heading = (name: string) =>
 	name === "intro" ? "# The tick" : `## ${name}`;
+
+// LAW.md has no fenced block, so a heading at the start of a line starts a section
+const LAW_PARTS = new Map(
+	readFileSync(join(LAW, "LAW.md"), "utf8")
+		.split(/^(?=## )/m)
+		.map((part) => [
+			part.startsWith("# ") ? "intro" : (/^## (.+)\n/.exec(part)?.[1] ?? ""),
+			part.replace(/\n$/, "").split("\n"),
+		]),
+);
+// the map is the one in the journal; the file is read here, not copied
+const lawLines = (role: string): string[] =>
+	lawSections(role).flatMap(
+		(section) => LAW_PARTS.get(section) ?? [`missing ${section}`],
+	);
 const file = (path: string) =>
 	readFileSync(join(LAW, path), "utf8").replace(/\n$/, "").split("\n");
 
@@ -159,15 +176,7 @@ function expected(role: string): Expected[] {
 	const order = { head: "order 1 main o/main - 3", headings: [] };
 	if (role === "duty-desk")
 		return [
-			{
-				head: "law LAW.md",
-				headings: [
-					"## Silence is the default",
-					"## One tick, one case, exit",
-					"## Alarms and their repetition",
-					"## Tick outcomes",
-				],
-			},
+			{ head: "law LAW.md", whole: lawLines(role) },
 			{
 				head: "law tick.md",
 				headings: [
@@ -182,17 +191,28 @@ function expected(role: string): Expected[] {
 	const tick = TICK_HEADINGS.filter(
 		(h) => EVERY_ROLE.includes(h) || (MORE[role] ?? []).includes(h),
 	);
-	const extra: Expected[] =
-		role === "patrol"
-			? [
-					{ head: "law markers.md", whole: file("markers.md") },
-					{ head: "law departments.md", whole: file("departments.md") },
-				]
-			: role === "response-unit"
-				? [{ head: "law markers.md", headings: ["## The `id` value"] }]
-				: [];
+	// the example in the section Precedent repeats its heading inside a fence
+	const markers: Record<string, string[]> = {
+		patrol: [
+			"## Line shape",
+			"## Fields",
+			"## The `id` value",
+			"## Defined markers",
+		],
+		"response-unit": ["## The `id` value"],
+		court: ["## Precedent", "## Precedent"],
+	};
+	const wanted = markers[role];
+	const extra: Expected[] = [
+		...(wanted === undefined
+			? []
+			: [{ head: "law markers.md", headings: wanted }]),
+		...(role === "patrol"
+			? [{ head: "law departments.md", whole: file("departments.md") }]
+			: []),
+	];
 	return [
-		{ head: "law LAW.md", whole: file("LAW.md") },
+		{ head: "law LAW.md", whole: lawLines(role) },
 		{ head: "law tick.md", headings: tick.map(heading) },
 		...extra,
 		harness,
@@ -553,18 +573,16 @@ describe("in process", () => {
 			"2",
 		]);
 		expect(second).toMatchObject({ code: 0, out: part("spec-writer", 2).out });
-		expect(
-			(
-				await inprocAsync(BASE, [
-					"tick",
-					"input",
-					"--role",
-					"spec-writer",
-					"--part",
-					"99",
-				])
-			).code,
-		).toBe(1);
+		const past = await inprocAsync(BASE, [
+			"tick",
+			"input",
+			"--role",
+			"spec-writer",
+			"--part",
+			"99",
+		]);
+		expect(past.code).toBe(1);
+		expect(past.err).toContain("part 99 is out of range; there are ");
 		expect(
 			(await inprocAsync(BASE, ["tick", "input", "--role", "spec-writer"]))
 				.code,

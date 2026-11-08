@@ -12,7 +12,7 @@ A recipe writes in this order: the actions, the read-back of each, then the mark
 
 ### Marker comment
 
-Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the "Write a comment" section of `tick.md` says.
+Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the `tick.md#write-a-comment` section of `tick.md` says.
 
 ### Source state
 
@@ -20,11 +20,11 @@ Read the state of the issue `<s>` from the host. The result is `OPEN` or `CLOSED
 
 ### Close a source
 
-Close the issue `<s>` as the "Close the issue" section of `tick.md` says, with the class that the recipe names. Read the state back. The output must be `CLOSED`.
+Close the issue `<s>` as the `tick.md#close-the-issue` section of `tick.md` says, with the class that the recipe names. Read the state back. The output must be `CLOSED`.
 
 ### Reopen a source
 
-Reopen the issue `<s>` as the end of the "Close the issue" section says. Read the state back. The output must be `OPEN`.
+Reopen the issue `<s>` as the end of the `tick.md#close-the-issue` section says. Read the state back. The output must be `OPEN`.
 
 ### Pull request state
 
@@ -36,13 +36,13 @@ Run this only when the pull request is not a draft. Return it to draft. Read its
 
 ### Hand-off comment
 
-The journal builds the whole comment. Skip step 1 of the "Write a comment" section. `<m>` is the pull request that gets the comment.
+The journal builds the whole comment. Skip step 1 of the `tick.md#write-a-comment` section. `<m>` is the pull request that gets the comment.
 
 ```
 bin/journal handoff --sources <sources> [--merged <pull>]
 ```
 
-The output is the comment. Write it unchanged as a conversation comment on pull request `<m>`. Read it back as step 3 of the "Write a comment" section says. The author must equal `<login>`. The last line must start with `<!-- lawman: role=clerk stage=handoff at=`.
+The output is the comment. Write it unchanged as a conversation comment on pull request `<m>`. Read it back as step 3 of the `tick.md#write-a-comment` section says. The author must equal `<login>`. The last line must start with `<!-- lawman: role=clerk stage=handoff at=`.
 
 ### Read the ruling
 
@@ -211,7 +211,7 @@ When the publish or the pull request landed and the comment did not, the tick en
 1. Read the pull request state. `<pull>` is the precedent pull request.
 2. `OPEN`: the cache is stale. End the tick with `silent` and the report `Order stale: pull request #<pull> is open`.
 3. `MERGED`: write the comment on the issue `<n>` in the final form for a merge. The outcome is `settled`.
-4. `CLOSED`: run the "Check the decider" section for the pull request `<pull>`.
+4. `CLOSED`: run the `tick.md#check-the-decider` section for the pull request `<pull>`.
    1. `decider=yes`: write the comment in the final form for a close. The outcome is `shut`.
    2. `decider=no`: write the comment in the kept form. The outcome is `kept`.
 

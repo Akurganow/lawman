@@ -57,14 +57,14 @@ const RULE_SETTINGS: Record<
 	},
 	npm: { allowMessageIds: ["PackageJSON_xOauthToken"] },
 };
-const SECRETLINT_RULES = recommended
+const SECRETLINT_KINDS = recommended
 	.map((rule) => ({ rule, kind: rule.meta.id.slice(RULE_PREFIX.length) }))
-	.filter(({ kind }) => !OFF.includes(kind))
-	.map(({ rule, kind }) => ({
-		id: rule.meta.id,
-		rule,
-		...RULE_SETTINGS[kind],
-	}));
+	.filter(({ kind }) => !OFF.includes(kind));
+const SECRETLINT_RULES = SECRETLINT_KINDS.map(({ rule, kind }) => ({
+	id: rule.meta.id,
+	rule,
+	...RULE_SETTINGS[kind],
+}));
 
 // The GitLab and Atlassian shapes are derived from gitleaks config/gitleaks.toml
 // at 09242ce, MIT, Copyright (c) 2019 Zachary Rice.
@@ -130,8 +130,23 @@ function merged(found: Found[]): Found[] {
 	return out;
 }
 
-const label = (kind: string) =>
-	`REMOVED ${kind.replaceAll("-", " ").toUpperCase()} SECRET`;
+const MARK_START = "REMOVED";
+const MARK_END = "SECRET";
+function label(kind: string) {
+	return `${MARK_START} ${kind.replaceAll("-", " ").toUpperCase()} ${MARK_END}`;
+}
+// only the marks the cleaner can emit, so a long run of near-miss text costs a linear scan
+export const MARK_LABELS = [
+	...new Set([
+		...SECRETLINT_KINDS.map(({ kind }) => kind),
+		...LOCAL_RULES.map(([kind]) => kind),
+	]),
+].map(label);
+const MARK = new RegExp(MARK_LABELS.map(RegExp.escape).join("|"), "g");
+
+// the law counts a mark of a removed secret as a secret
+export const countSecretMarks = (text: string) =>
+	(text.match(MARK) ?? []).length;
 
 // a block quote prefix inside a key block hides the key, so detection reads
 // the text without those prefixes and maps each finding back

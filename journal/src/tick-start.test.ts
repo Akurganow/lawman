@@ -303,7 +303,7 @@ describe("tick start with an order", () => {
 		expect(r.out).toContain("\n~~~title\nissue 3\n~~~\n~~~issue\n");
 	});
 
-	test("the stored parts join to the unsplit group, and tick input returns each part's stored bytes", () => {
+	test("the stored parts of lines join to the unsplit group, and tick input returns each part's stored bytes", () => {
 		const startAt = (size: number) => {
 			setUp(`${CONFIG}input_chars: ${size}\n`);
 			orderOf("defender", { issue: 3 });
@@ -316,6 +316,9 @@ describe("tick start with an order", () => {
 		startAt(300);
 		const stored = JSON.parse(String(ticks()[0]?.parts)) as string[];
 		expect(stored.length).toBeGreaterThan(3);
+		// the long blocks here are the constitution and the page, which split by lines;
+		// a case text above the size would be cut, so none of these is
+		expect(stored.join("\n")).not.toContain("\ncut kept=");
 		for (const [i, part] of stored.entries())
 			expect(input("1", "--part", String(i + 1)).out).toBe(`${part}\n`);
 		// a fence cut at a part's end opens again with the same label in the next part
@@ -364,7 +367,11 @@ describe("tick start with an order", () => {
 				content(part).reduce((s, l) => s + [...l].length + 1, 0),
 			).toBeLessThanOrEqual(400);
 		}
-		expect(input("1", "--part", String(n + 1)).code).toBe(1);
+		const past = input("1", "--part", String(n + 1));
+		expect(past.code).toBe(1);
+		expect(past.err).toContain(
+			`part ${n + 1} is out of range; there are ${n} parts`,
+		);
 		expect(
 			call(BASE, [
 				"tick",
@@ -1036,6 +1043,9 @@ describe("tick input usage", () => {
 			[],
 		])
 			expect([args, input(...args).code]).toEqual([args, 1]);
+		const none = input("2", "--part", "1");
+		expect(none.err).toContain("tick 2 has no part 1");
+		expect(none.err).not.toContain("there are 0 parts");
 	});
 
 	test("tick start with an order checks its arguments", () => {

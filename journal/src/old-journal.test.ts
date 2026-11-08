@@ -35,6 +35,12 @@ const SECTION = "Sync the law with an older journal";
 const OLD_SENTENCE =
 	'Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.';
 
+// The skills name the section by its link; tick.md names it in words.
+const SKILL_SENTENCE = OLD_SENTENCE.replace(
+	`"${SECTION}"`,
+	"`tick.md#sync-the-law-with-an-older-journal`",
+);
+
 const tick = readFileSync(join(LAW, "tick.md"), "utf8");
 const fixture = (name: string) =>
 	readFileSync(join(import.meta.dir, "fixtures", name), "utf8");
@@ -85,7 +91,7 @@ describe("the sign of an old journal in the law and the skills", () => {
 
 	test.each(ROLE_NAMES)("the skill of %s carries the same sentence", (role) => {
 		const skill = readFileSync(join(ROOT, "skills", role, "SKILL.md"), "utf8");
-		expect(skill.split(OLD_SENTENCE).length - 1).toBe(1);
+		expect(skill.split(SKILL_SENTENCE).length - 1).toBe(1);
 	});
 
 	test("the sentence speaks of the first line of the input and of no harness gate", () => {

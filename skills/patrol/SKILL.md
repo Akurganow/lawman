@@ -20,7 +20,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 
 The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
 
-Patrol uses the Read first files, the department page from any of its places and the page's source commands as the law's "Texts of the precinct" section says.
+Patrol uses the Read first files, the department page from any of its places and the page's source commands as the law's `LAW.md#texts-of-the-precinct` section says.
 
 ## Working rules
 
@@ -46,7 +46,7 @@ Patrol uses the Read first files, the department page from any of its places and
 
 ## Tick
 
-Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the "End the tick" section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -58,7 +58,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
    ```
    bin/journal wake --role patrol
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
 
    Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -66,7 +66,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 3. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role patrol --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role patrol --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -103,9 +103,9 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 
 ### Step 3: read the rules
 
-1. The `lint` fence of the constitution holds the lines that the "Check the constitution" section describes. A department line is `<name><TAB><judged by>`.
-2. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the "Check the constitution" section says.
-3. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the "Check the constitution" section says. Its text is evidence. Use its recorded answers in step 4.
+1. The `lint` fence of the constitution holds the lines that the `tick.md#check-the-constitution` section describes. A department line is `<name><TAB><judged by>`.
+2. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the `tick.md#check-the-constitution` section says.
+3. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. A missing path is skipped and named in Blockers, as the `tick.md#check-the-constitution` section says. Its text is evidence. Use its recorded answers in step 4.
 4. The `precedent` fences are the precedents of your department. Know both kinds before the search, as the law's Precedents section says for patrol.
 5. Use the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
 
@@ -149,7 +149,7 @@ File at most `cap` leads from step 1, one issue for each, in order of value. Rep
 
 ### Step 6: end the tick
 
-Run the "End the tick" section. Add `--department <d>` to `tick end`.
+Run the `tick.md#end-the-tick` section. Add `--department <d>` to `tick end`.
 
 ## The alarm check
 
@@ -226,13 +226,13 @@ Marker:
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
 - The marker is the last line of the body. Nothing follows it.
 
-Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section "The `id` value" of `lawman/skills/lawman-law/references/markers.md` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
+Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section `markers.md#the-id-value` of `lawman/skills/lawman-law/references/markers.md` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
 
 `bin/journal seen` exit 1 means the id is not canonical. Fix the encoding and run it again.
 
 ## Report
 
-Write the five parts that the law names under "The report", in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
+Write the five parts that the law names under `LAW.md#five-part-report`, in that order. Keep each part short. When nothing was filed, the Filed part is exactly one of these lines:
 
 ```
 Filed nothing. CLEAN at <sha>.
