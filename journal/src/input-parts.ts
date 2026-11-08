@@ -5,8 +5,8 @@ export const INPUT_FORM = 1;
 export const DEFAULT_INPUT_CHARS = 16000;
 
 // A journal line is never cut. Law lines print behind "| ". In pack a fenced
-// text keeps one fence for all its pieces; packFenced gives each part the
-// fence of its own lines. A head line goes with the first piece.
+// text takes the fence of its own lines in every piece. A head line goes with
+// the first piece.
 // A whole block is rendered lines that stay together in one part. A cut text
 // keeps the label of its fence.
 export type FencedBlock = {
@@ -157,17 +157,13 @@ const PREFIX = 2;
 
 function cut(block: Block, size: number): Block[] {
 	if ("line" in block || "whole" in block) return [block];
-	const head = block.head === undefined ? 0 : chars(block.head);
 	if ("law" in block) {
+		const head = block.head === undefined ? 0 : chars(block.head);
 		const [first = [], ...rest] = runs(block.law, size - head, PREFIX);
 		const tail = rest.length === 0 ? [] : runs(rest.flat(), size, PREFIX);
 		return [{ ...block, law: first }, ...tail.map((law) => ({ law }))];
 	}
-	const frame = cost([`${block.fence}${block.label}`, block.fence]);
-	const { head: _, ...bare } = block;
-	return runs(block.lines, size - frame - head, 0).map((lines, i) =>
-		i === 0 ? { ...block, lines } : { ...bare, lines },
-	);
+	return fencedPieces(block, size);
 }
 
 // The parts of a group: each block whole when it fits, else cut by lines.
@@ -191,10 +187,10 @@ export function pack(blocks: Block[], size: number): string[][] {
 	return parts;
 }
 
-// A fenced text in parts of at most `size` characters. Each part takes the
-// fence of its own lines, so a run of tildes lengthens no part but its own. A
-// line that fills a part alone is chopped. The head line goes with the first part.
-export function packFenced(block: FencedBlock, size: number): string[][] {
+// A fenced text in pieces of at most `size` characters. Each piece takes the
+// fence of its own lines, so a run of tildes lengthens no piece but its own. A
+// line that fills a piece alone is chopped. The head line goes with the first piece.
+function fencedPieces(block: FencedBlock, size: number): FencedBlock[] {
 	const head = block.head === undefined ? 0 : chars(block.head);
 	const label = [...block.label].length;
 	const minimum = fenceOf("").length;
@@ -246,8 +242,11 @@ export function packFenced(block: FencedBlock, size: number): string[][] {
 		}
 	}
 	if (lines.length > 0 || parts.length === 0) flush();
-	return parts.map((part) => render(part));
+	return parts;
 }
+
+export const packFenced = (block: FencedBlock, size: number): string[][] =>
+	fencedPieces(block, size).map(render);
 
 // each part between its first line, which names the form, and its last
 export function framed(

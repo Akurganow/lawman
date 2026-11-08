@@ -559,6 +559,58 @@ describe("a part smaller than the cut block", () => {
 	});
 });
 
+describe("a run of tildes in an uncut page", () => {
+	const RUN = "~".repeat(20000);
+	const stripped = (text: string) => text.replaceAll("\n", "");
+	const precedent = `---\nkind: protects\ndepartments: []\n---\n\nA rule.\n${RUN}\nEnd of the rule.\n`;
+	const texts = {
+		constitution: `${CONSTITUTION.trimEnd()}\n\n${RUN}\n`,
+		department: `${departmentPage("fixtures").trimEnd()}\n\n${RUN}\n`,
+		precedent,
+	};
+
+	test.each([16000, 15000])(
+		"it lengthens only the fence of its own part at %d, and the text rebuilds",
+		async (size) => {
+			rmSync(dir, { recursive: true, force: true });
+			mkdirSync(dir);
+			setUp(`${CONFIG}input_chars: ${size}\n`);
+			orderOf("patrol", { department: "fixtures" });
+			host({
+				tree: {
+					"LAWMAN.md": texts.constitution,
+					".lawman/departments/fixtures.md": texts.department,
+					".lawman/precedents/a.md": texts.precedent,
+				},
+			});
+			const r = await inprocAsync(BASE, [
+				"tick",
+				"start",
+				"--role",
+				"patrol",
+				"--order",
+				"1",
+			]);
+			expect(r.code).toBe(0);
+			const parts = JSON.parse(
+				String(rows("SELECT parts FROM ticks")[0]?.parts),
+			) as string[];
+			// one fence for every piece made each part cost over 40 000 characters
+			expect(parts.length).toBeLessThan(20);
+			for (const part of parts)
+				expect(cost(content(part))).toBeLessThanOrEqual(size);
+			for (const label of ["constitution", "department", "precedent"]) {
+				const body = parts
+					.flatMap((p) => events(content(p)))
+					.flatMap((e) => ("label" in e && e.label === label ? e.body : []));
+				const rebuilt = stripped(body.join("\n"));
+				expect(rebuilt).toContain(RUN);
+				expect(rebuilt.length).toBeGreaterThan(20000);
+			}
+		},
+	);
+});
+
 describe("the key of a comment", () => {
 	const seeded = (
 		comments: [id: string, at: string, body: string][],
