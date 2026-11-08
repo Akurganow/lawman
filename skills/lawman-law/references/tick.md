@@ -317,7 +317,7 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
    ```
    If `tick end` fails, answer `journal unavailable: <stderr>` and stop.
 3. Answer once per session, after its last tick. A session runs up to the role's number of ticks, one per order of its group. Print every `ALARM` line of every tick verbatim first. Then print every line of the update list that the session kept. Then:
-   - For `failed`, add the report.
+   - For `failed`, add the report of every failed tick of the session.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
    - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form alone. The journal holds the report. The `Silence` section of the role group gives the form. Without that section, the harness page names it.
 
