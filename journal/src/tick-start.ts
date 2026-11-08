@@ -170,7 +170,7 @@ function storeParts(t: Tick, blocks: Block[], size: number): string[] {
 	return parts;
 }
 
-export const withoutCaseTexts = (blocks: Block[]) =>
+const withoutCaseTexts = (blocks: Block[]) =>
 	blocks.filter((b) => !("label" in b && CASE_TEXTS.includes(b.label)));
 
 // One part, whatever its size: the journal ended the tick, the role only answers.
@@ -518,7 +518,10 @@ export async function tickInput(args: string[]): Promise<number> {
 	if (opt.part !== undefined || stored.length > 0) {
 		const k = parsePart(opt.part, TICK_INPUT_USAGE);
 		const part = stored[k - 1];
-		if (part === undefined) throw partOutOfRange(k, stored.length);
+		if (part === undefined)
+			throw stored.length === 0
+				? new Fail(EXIT.USAGE, `tick ${id} has no part ${k}`)
+				: partOutOfRange(k, stored.length);
 		out(part);
 		return EXIT.OK;
 	}

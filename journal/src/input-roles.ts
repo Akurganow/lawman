@@ -136,10 +136,15 @@ const LAW_MAP = lawMap([
 	["Hard constraints", WORKING],
 ]);
 
-export const lawSections = (role: string): string[] =>
-	LAW_MAP.filter(([, readers]) => readers.includes(role)).map(
+export function lawSections(role: string): string[] {
+	if (!LAW_ROLES.includes(role))
+		throw new Error(
+			`${JSON.stringify(role)} is not a role; the roles are ${LAW_ROLES.join(", ")}`,
+		);
+	return LAW_MAP.filter(([, readers]) => readers.includes(role)).map(
 		([section]) => section,
 	);
+}
 
 // the sections of tick.md in the order of the document
 export const TICK_ORDER = [

@@ -142,7 +142,7 @@ export const MARK_LABELS = [
 		...LOCAL_RULES.map(([kind]) => kind),
 	]),
 ].map(label);
-const MARK = new RegExp(MARK_LABELS.join("|"), "g");
+const MARK = new RegExp(MARK_LABELS.map(RegExp.escape).join("|"), "g");
 
 // the law counts a mark of a removed secret as a secret
 export const countSecretMarks = (text: string) =>

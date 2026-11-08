@@ -34,7 +34,6 @@ import {
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
-import { withoutCaseTexts } from "./tick-start";
 import {
 	CONSTITUTION,
 	departmentPage,
@@ -611,16 +610,28 @@ describe("the key of a comment", () => {
 		expect([await blockOf("more"), await blockOf("other")]).toEqual(before);
 	});
 
-	test("a cut case text in an ended tick is not printed", async () => {
-		seeded([["A", AT, rowsOf(200).join("\n")]]);
-		const blocks = await printed();
-		expect(blocks.filter((b) => "whole" in b)).toHaveLength(1);
-		expect(blocks.map((b) => "label" in b && b.label)).toEqual([
-			"issue",
-			"comment",
+	test("an ended tick prints no case text", async () => {
+		rmSync(dir, { recursive: true, force: true });
+		mkdirSync(dir);
+		setUp(CONFIG);
+		orderOf("patrol", { department: "nowhere" });
+		host({
+			tree: {
+				"LAWMAN.md": `${CONSTITUTION.trimEnd()}\n\nMarker rule of this test.\n`,
+			},
+		});
+		const r = await inprocAsync(BASE, [
+			"tick",
+			"start",
+			"--role",
+			"patrol",
+			"--order",
+			"1",
 		]);
-		const kept = withoutCaseTexts([{ line: "kept" }, ...blocks]);
-		expect(renderAll(kept)).toBe("kept");
+		expect(r.code).toBe(0);
+		expect(r.out).toContain("ended stopped-bad-department");
+		expect(r.out).not.toContain("Marker rule of this test.");
+		expect(r.out).not.toContain("~constitution");
 	});
 
 	test("an id with a newline stays inside its fence and out of the journal lines", async () => {

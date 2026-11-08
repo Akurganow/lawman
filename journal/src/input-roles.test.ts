@@ -8,6 +8,7 @@ import {
 	inputOf,
 	lawMap,
 	lawOf,
+	lawSections,
 	TICK_ORDER,
 	WHOLE,
 } from "./input-roles";
@@ -37,6 +38,11 @@ describe("the role table", () => {
 			/"patrolman", which is not a role/,
 		);
 		expect(() => lawMap([["Language", ["duty-desk"]]])).not.toThrow();
+	});
+
+	test("lawSections stops on a name that is no role", () => {
+		expect(() => lawSections("patrolman")).toThrow(/"patrolman" is not a role/);
+		expect(lawSections("patrol").length).toBeGreaterThan(0);
 	});
 
 	test("every section of LAW.md has a reader, and the whole file counts as every section", () => {

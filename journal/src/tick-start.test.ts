@@ -1043,6 +1043,9 @@ describe("tick input usage", () => {
 			[],
 		])
 			expect([args, input(...args).code]).toEqual([args, 1]);
+		const none = input("2", "--part", "1");
+		expect(none.err).toContain("tick 2 has no part 1");
+		expect(none.err).not.toContain("there are 0 parts");
 	});
 
 	test("tick start with an order checks its arguments", () => {
