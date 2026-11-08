@@ -4,8 +4,9 @@ import { fenceOf } from "./fence";
 export const INPUT_FORM = 1;
 export const DEFAULT_INPUT_CHARS = 16000;
 
-// A journal line is never cut. Law lines print behind "| ". A fenced text
-// keeps one fence for all its pieces. A head line goes with the first piece.
+// A journal line is never cut. Law lines print behind "| ". In pack a fenced
+// text keeps one fence for all its pieces; packFenced gives each part the
+// fence of its own lines. A head line goes with the first piece.
 // A whole block is rendered lines that stay together in one part. A cut text
 // keeps the label of its fence.
 export type FencedBlock = {
@@ -188,6 +189,64 @@ export function pack(blocks: Block[], size: number): string[][] {
 		else for (const piece of cut(block, size)) place(render(piece));
 	}
 	return parts;
+}
+
+// A fenced text in parts of at most `size` characters. Each part takes the
+// fence of its own lines, so a run of tildes lengthens no part but its own. A
+// line that fills a part alone is chopped. The head line goes with the first part.
+export function packFenced(block: FencedBlock, size: number): string[][] {
+	const head = block.head === undefined ? 0 : chars(block.head);
+	const label = [...block.label].length;
+	const minimum = fenceOf("").length;
+	const parts: FencedBlock[] = [];
+	let lines: string[] = [];
+	let used = 0;
+	let fence = minimum;
+	// the cost of a part: its head line, two fences, the label, two newlines, its lines
+	const total = (n: number, taken: number) =>
+		(parts.length === 0 ? head : 0) + 2 * n + label + 2 + taken;
+	const { head: _, ...bare } = block;
+	const flush = () => {
+		const part = parts.length === 0 ? block : bare;
+		parts.push({ ...part, fence: "~".repeat(fence), lines });
+		lines = [];
+		used = 0;
+		fence = minimum;
+	};
+	const add = (line: string) => {
+		lines.push(line);
+		used += chars(line);
+		fence = Math.max(fence, fenceOf(line).length);
+	};
+	const fits = (line: string) =>
+		total(Math.max(fence, fenceOf(line).length), used + chars(line)) <= size;
+	for (const line of block.lines) {
+		let rest = line;
+		for (;;) {
+			if (fits(rest) || (lines.length === 0 && rest === "")) {
+				add(rest);
+				break;
+			}
+			if (lines.length > 0) {
+				flush();
+				continue;
+			}
+			const all = [...rest];
+			const prefix = (w: number) => all.slice(0, w).join("");
+			let lo = 1;
+			let hi = all.length - 1;
+			while (lo < hi) {
+				const mid = Math.ceil((lo + hi) / 2);
+				if (fits(prefix(mid))) lo = mid;
+				else hi = mid - 1;
+			}
+			add(prefix(lo));
+			flush();
+			rest = all.slice(lo).join("");
+		}
+	}
+	if (lines.length > 0 || parts.length === 0) flush();
+	return parts.map((part) => render(part));
 }
 
 // each part between its first line, which names the form, and its last

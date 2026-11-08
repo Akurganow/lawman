@@ -169,6 +169,48 @@ describe("the text command", () => {
 		expect(all.flatMap(inside)).toEqual(lines);
 	});
 
+	test.each([
+		[16000, 20000],
+		[300, 200],
+	])(
+		"a tilde run longer than half a part keeps every part within %i characters (run of %i)",
+		async (size, run) => {
+			const tildes = "~".repeat(run);
+			const before = await cleaned(rowsOf(40));
+			const texts = {
+				start: [tildes, ...before],
+				middle: [...before, tildes, ...before],
+				end: [...before, tildes],
+				inline: [...before, `a ${tildes} b`, ...before],
+			};
+			for (const lines of Object.values(texts)) {
+				const noted = ["note head", ...lines];
+				await started(size, lines.join("\n"), [
+					{ id: "IC_a", at: AT, body: noted.join("\n") },
+				]);
+				const words = {
+					body: ["main", "issue", "3", "body"],
+					comment: ["main", "issue", "3", "comment", AT, "1"],
+				};
+				for (const [kind, w] of Object.entries(words)) {
+					const all = await parts(...w);
+					for (const [i, p] of all.entries()) {
+						const at = `part ${i + 1} of ${all.length}`;
+						expect(p.split("\n")[0]).toBe(`lawman input 1 text ${at}`);
+						expect(p.endsWith(`\nend ${at}\n`)).toBe(true);
+						expect(cost(content(p))).toBeLessThanOrEqual(size);
+					}
+					const wanted = kind === "body" ? lines : noted;
+					const inner = all.flatMap(inside);
+					const given = kind === "body" ? inner : inner.slice(1);
+					expect(given.join("")).toBe(wanted.join(""));
+					if (kind === "comment")
+						expect(inner[0]).toBe(`id="IC_a" author="${LOGIN}"`);
+				}
+			}
+		},
+	);
+
 	test("the words of a full line, given back, print the cut text", async () => {
 		const lines = await cleaned(rowsOf(300));
 		lines[40] = TILDES;

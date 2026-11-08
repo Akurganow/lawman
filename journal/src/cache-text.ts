@@ -195,13 +195,12 @@ export async function printCached(
 export async function printText(
 	db: Database,
 	key: TextKey,
-	size = Number.POSITIVE_INFINITY,
-): Promise<Block | null> {
+): Promise<FencedBlock | null> {
 	const body = bodyOf(db, key);
 	if (body === null) return null;
 	if (key.part === "body")
 		return cleaning(async () =>
-			fit(fencedBlock(key.kind, await cleanHostText(body)), key, size),
+			fencedBlock(key.kind, await cleanHostText(body)),
 		);
 	const row = db
 		.query(`${COMMENTS} AND at = ? ORDER BY id LIMIT 1 OFFSET ?`)
@@ -213,5 +212,5 @@ export async function printText(
 			key.part.j - 1,
 		) as CommentRow | null;
 	if (row === null) return null;
-	return cleaning(async () => fit(await commentBlock(row), key, size));
+	return cleaning(() => commentBlock(row));
 }

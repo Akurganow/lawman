@@ -2,7 +2,7 @@ import { parsePart, partOutOfRange, usage } from "./args";
 import { CleanFailed, parseTextWords, printText } from "./cache-text";
 import { EXIT, Fail, open, out } from "./db";
 import { inputChars, readConfig } from "./input-files";
-import { framed, pack } from "./input-parts";
+import { framed, packFenced } from "./input-parts";
 
 const TEXT_USAGE =
 	"text <p> <issue|pull> <n> body|comment <at> <j> [--part <k>]";
@@ -30,7 +30,7 @@ export async function textCommand(args: string[]): Promise<number> {
 		db.close();
 	}
 	if (block === null) throw new Fail(EXIT.USAGE, NO_TEXT);
-	const parts = framed(pack([block], size), () => "text");
+	const parts = framed(packFenced(block, size), () => "text");
 	const part = parts[k - 1];
 	if (part === undefined) throw partOutOfRange(k, parts.length);
 	out(part);
