@@ -7,8 +7,6 @@ import {
 	cachePull,
 	call,
 	later,
-	order,
-	precinct,
 	alarm as reconciled,
 	seed,
 	tempDb,
@@ -31,44 +29,37 @@ const role = (
 		[minutes, checkedAt],
 	);
 
-describe("order-untaken in process", () => {
-	test("an untaken order of any age raises nothing", () => {
+describe("the alarms in process", () => {
+	test("a tick with no end record alarms when a later tick of its role exists", () => {
 		seed((db) => {
-			precinct(db, "a");
-			order(db, "a", "patrol");
+			tick(db, "patrol", BASE, null, null);
+			tick(db, "patrol", later(1), null, null);
 		});
-		expect(alarm(later(48, 1))).toBe("");
-		expect(alarm(later(24 * 30))).toBe("");
+		expect(alarm(later(3))).toBe(`ALARM tick-hung 1 patrol started ${BASE}\n`);
 	});
 
-	test("a taken order fires 24 hours after the claim and not before, with the claim in the detail", () => {
-		seed((db) => {
-			precinct(db, "a");
-			role(db, 5760);
-			order(db, "a", "patrol", { takenAt: BASE });
-		});
-		expect(alarm(later(24))).toBe("");
-		expect(alarm(later(24, 1))).toBe(
-			`ALARM order-untaken 1 a patrol taken ${BASE}\n`,
-		);
+	test("a tick with no end record and no later tick of its role raises nothing", () => {
+		seed((db) => tick(db, "patrol", BASE, null, null));
+		expect(alarm(later(3))).toBe("");
 	});
 
-	test("a closed order never fires", () => {
+	test("--repeat prints an open alarm again at every call", () => {
 		seed((db) => {
-			precinct(db, "a");
-			order(db, "a", "judge", { takenAt: BASE, outcome: "silent" });
+			tick(db, "patrol", BASE, null, null);
+			tick(db, "patrol", later(1), null, null);
 		});
-		expect(alarm(later(72))).toBe("");
+		alarm(later(2));
+		expect(alarm(later(3), "--repeat")).toMatch(/^ALARM tick-hung 1 /);
+		expect(alarm(later(4), "--repeat")).toMatch(/^ALARM tick-hung 1 /);
+		expect(alarm(later(5))).toBe("");
 	});
 
-	test("--repeat prints an open alarm again after a day only", () => {
+	test("an alarm raised in the call is not repeated in the same call", () => {
 		seed((db) => {
-			precinct(db, "a");
-			order(db, "a", "patrol", { takenAt: BASE });
+			tick(db, "patrol", BASE, null, null);
+			tick(db, "patrol", later(1), null, null);
 		});
-		alarm(later(25));
-		expect(alarm(later(48), "--repeat")).toBe("");
-		expect(alarm(later(49, 1), "--repeat")).toMatch(/^ALARM order-untaken 1 /);
+		expect(alarm(later(2), "--repeat").trim().split("\n")).toHaveLength(1);
 	});
 
 	test("the alarm command is a usage error", () => {
@@ -124,8 +115,8 @@ describe("decision-waiting in process", () => {
 		put({ 3: handed(7) });
 		cachePull("main", 7, [3], "waiting", "ready");
 		expect(alarm(BASE)).toBe(line(WAITS_WORK));
-		expect(alarm(later(24, 1))).toBe("");
-		expect(alarm(later(24, 1), "--repeat")).toBe(line(WAITS_WORK));
+		expect(alarm(later(1))).toBe("");
+		expect(alarm(later(1), "--repeat")).toBe(line(WAITS_WORK));
 	});
 
 	test.each([

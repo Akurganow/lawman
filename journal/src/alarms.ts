@@ -1,52 +1,20 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
-import {
-	CLAIM_TTL_MS,
-	HOUR_MS,
-	isoSeconds,
-	LEAD_ORIGIN_FROM,
-	LEAD_PREFIX,
-	MINUTE_MS,
-	out,
-	withDb,
-} from "./db";
+import { LEAD_ORIGIN_FROM, LEAD_PREFIX, MINUTE_MS, out, withDb } from "./db";
 import { readConfig } from "./input-files";
 import { configValue } from "./law-sync";
 import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
 import { progressChecks } from "./settings";
 
-const TICK_HUNG_MS = 2 * HOUR_MS;
 const ROLE_SILENT_INTERVALS = 3;
 const TICK_FAILING_RUN = 3;
-const ALARM_REPEAT_MS = 24 * HOUR_MS;
 const NO_PROGRESS = "checks found a takeable order and the role took none";
 
 type Candidate = { kind: string; ref: string; detail: string };
 function ageMs(nowMs: number, since: string): number {
 	return nowMs - Date.parse(since);
-}
-
-// an order that nobody took is a queue, not a failure; a claim that expired is
-function orderUntaken(db: Database, nowMs: number): Candidate[] {
-	const taken = db
-		.query(
-			"SELECT id, precinct, role, taken_at FROM dispatches WHERE outcome IS NULL AND taken_at IS NOT NULL",
-		)
-		.all() as {
-		id: number;
-		precinct: string;
-		role: string;
-		taken_at: string;
-	}[];
-	return taken
-		.filter((o) => ageMs(nowMs, o.taken_at) > CLAIM_TTL_MS)
-		.map((o) => ({
-			kind: "order-untaken",
-			ref: String(o.id),
-			detail: `${o.precinct} ${o.role} taken ${o.taken_at}`,
-		}));
 }
 
 function noProgress(db: Database): Candidate[] {
@@ -61,21 +29,21 @@ function noProgress(db: Database): Candidate[] {
 	}));
 }
 
-function tickHung(db: Database, nowMs: number): Candidate[] {
-	const open = db
-		.query("SELECT id, role, started_at FROM ticks WHERE ended_at IS NULL")
-		.all() as {
-		id: number;
-		role: string;
-		started_at: string;
-	}[];
-	return open
-		.filter((t) => ageMs(nowMs, t.started_at) > TICK_HUNG_MS)
-		.map((t) => ({
-			kind: "tick-hung",
-			ref: String(t.id),
-			detail: `${t.role} started ${t.started_at}`,
-		}));
+// a tick is dead when it has no end record and a later tick of its role exists
+function tickHung(db: Database): Candidate[] {
+	const dead = db
+		.query(
+			`SELECT t.id, t.role, t.started_at FROM ticks t
+       WHERE t.ended_at IS NULL
+         AND EXISTS (SELECT 1 FROM ticks l WHERE l.role = t.role AND l.id > t.id)
+       ORDER BY t.id`,
+		)
+		.all() as { id: number; role: string; started_at: string }[];
+	return dead.map((t) => ({
+		kind: "tick-hung",
+		ref: String(t.id),
+		detail: `${t.role} started ${t.started_at}`,
+	}));
 }
 
 function roleSilent(db: Database, nowMs: number): Candidate[] {
@@ -210,7 +178,6 @@ function precedentWaiting(db: Database): Waiting[] {
 }
 
 const DETECTORS = [
-	orderUntaken,
 	noProgress,
 	tickHung,
 	roleSilent,
@@ -224,7 +191,6 @@ type OpenAlarm = {
 	kind: string;
 	ref: string;
 	detail: string;
-	notified_at: string;
 };
 
 // a changed detail is a new condition: the old alarm clears and the new one prints
@@ -240,7 +206,7 @@ export function reconcileAlarms(
 	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
 	const open = db
 		.query(
-			"SELECT id, kind, ref, detail, notified_at FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
 		)
 		.all() as OpenAlarm[];
 	const wantedKeys = new Set(wanted.map(alarmKey));
@@ -253,18 +219,17 @@ export function reconcileAlarms(
 	for (const w of wanted) {
 		if (openKeys.has(alarmKey(w))) continue;
 		db.run(
+			// the notified_at column is never read; it stays so the schema does not change
 			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES (?, ?, ?, ?, ?)",
 			[w.kind, w.ref, w.detail, stamp, stamp],
 		);
 		lines.push(alarmLine(w));
 	}
-	const due = isoSeconds(new Date(nowMs - ALARM_REPEAT_MS));
-	for (const o of open) {
-		if (!repeat || !wantedKeys.has(alarmKey(o)) || o.notified_at >= due)
-			continue;
-		db.run("UPDATE alarms SET notified_at = ? WHERE id = ?", [stamp, o.id]);
-		lines.push(alarmLine(o));
-	}
+	// the duty desk repeats an open alarm at each of its ticks; the alarms this
+	// call raised are printed once above and never repeated here
+	if (repeat)
+		for (const o of open)
+			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(o));
 	return lines;
 }
 

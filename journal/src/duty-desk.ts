@@ -2,16 +2,7 @@ import type { Database } from "bun:sqlite";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
 import { consents, licensesAllowed } from "./consent";
-import {
-	CLAIM_TTL_MS,
-	EXIT,
-	Fail,
-	inTransaction,
-	isoSeconds,
-	now,
-	out,
-	withDb,
-} from "./db";
+import { EXIT, Fail, inTransaction, now, out, withDb } from "./db";
 import {
 	departmentNames,
 	departmentPage,
@@ -209,25 +200,25 @@ const openPatrolOrder = (p: string) =>
 				.get(p, PATROL) !== null,
 	);
 
-// Closes the open orders that nobody holds and whose stage, from the cache, says stale.
+// Closes the open stale orders that nobody took; the role of a taken order
+// closes it on its own tick.
 function closeStale(
 	db: Database,
 	eligible: Set<string>,
 	stamp: string,
 ): Map<string, number> {
 	const closed = new Map<string, number>();
-	const cut = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
 	const close = db.query(
 		`UPDATE dispatches SET outcome = 'silent', closed_at = ?1
-     WHERE id = ?2 AND outcome IS NULL AND (taken_at IS NULL OR taken_at < ?3)`,
+     WHERE id = ?2 AND outcome IS NULL AND taken_at IS NULL`,
 	);
 	for (const [role, input] of Object.entries(ROLES)) {
 		if (input.stale === undefined) continue;
-		for (const o of takeableOrders(db, role, stamp)) {
+		for (const o of takeableOrders(db, role)) {
 			if (!eligible.has(o.precinct)) continue;
 			const stage = stageFor(db, input, o);
 			if (stage === null || !input.stale(stage)) continue;
-			if (close.run(stamp, o.id, cut).changes > 0)
+			if (close.run(stamp, o.id).changes > 0)
 				closed.set(role, (closed.get(role) ?? 0) + 1);
 		}
 	}
