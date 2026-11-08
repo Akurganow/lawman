@@ -98,7 +98,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
       ```
       bin/journal probe --schema 10
       ```
-3. Start the tick with the oldest order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <pull request|->`, oldest first. `<p>`, `<owner/repo>` and `<m>` are the precinct, the repository and the pull request of the order.
+3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <pull request|->`, in the order to take. `<p>`, `<owner/repo>` and `<m>` are the precinct, the repository and the pull request of the order.
    ```
    bin/journal tick start --role spec-writer --order <id>
    ```

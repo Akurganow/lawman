@@ -148,7 +148,7 @@ journal wake --role <r>
 
 - `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name, then the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
 
-No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk adds the open alarms that nobody mentioned for a day.
+No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk prints the open alarms again, except those it raised itself.
 
 ```
 journal status
@@ -416,7 +416,7 @@ The role entry tells whether a role has work and gives the role what it reads at
 
 ### No work and work
 
-`journal wake --role <r>` records the check of the role. A role has work when it has an order it can take. A taken order can be taken again when its claim of 24 hours has run out. An order of patrol on a precinct with weight 0 cannot be taken. The check also counts toward the alarm `no-progress`. A check that finds an order it can take adds one. A check that finds none starts the count again. `tick input --role <r> --part <k>` counts nothing.
+`journal wake --role <r>` records the check of the role. A role has work when it has an order it can take. A taken order stays takeable; orders nobody took come first. An order of patrol on a precinct with weight 0 cannot be taken. The check also counts toward the alarm `no-progress`. A check that finds an order it can take adds one. A check that finds none starts the count again. `tick input --role <r> --part <k>` counts nothing.
 
 - No work: the journal prints nothing and exits 0. The output is the same at every check, and a broken `config.yaml` does not change it.
 - Work: the journal prints the first part of the role group. The first line carries the check time, so the output changes at every check.
@@ -430,7 +430,7 @@ The role group is the local part of the input. Its blocks come in this order:
 
 1. The sections of the law that the role reads at the start. A line `law <path>` stands before the sections of each file. The path starts at `lawman/skills/lawman-law/references/`.
 2. The section `Silence` of the harness page. The key `harness` of `config.yaml` names the page. A line `harness <path>` stands before it.
-3. One line per order the role can take, up to the number of jobs of the role (`jobs` in `config.yaml`, see [configuration](configuration.md#jobs-and-progress-checks)). The oldest order comes first. Patrol lists its orders by weight: the precinct that the credit picks first, then by credit plus weight, then by name. Taking a patrol order moves the credit. Each precinct with an order that can be taken gains its weight, and the precinct taken loses the sum.
+3. One line per order the role can take, up to the number of jobs of the role (`jobs` in `config.yaml`, see [configuration](configuration.md#jobs-and-progress-checks)). Orders nobody took come first, then taken ones. Within each group the oldest order comes first; patrol lists its orders by weight: the precinct that the credit picks first, then by credit plus weight, then by name. Taking a patrol order moves the credit. Each precinct with an order that can be taken gains its weight, and the precinct taken loses the sum.
 
 Every line of a law section and of the harness page prints behind `| `, and an empty line prints as `|`. After the prefix the text follows byte for byte. So no line of the group starts with a backtick, whatever the law holds. A line without the prefix is a line of the journal.
 
@@ -480,12 +480,14 @@ A failed or empty operation prints the lines of `run` and a self line, and the s
 
 The journal ends the tick itself when the outcome follows from what it read. Before the order is taken, the tick ends without it, and the order stays open for the next start. After, the order closes with the same outcome in the same transaction.
 
+The order of a tick that never ended stays open; a later tick of its role takes it.
+
 | Outcome | Report |
 | :-- | :-- |
 | `failed` | `config.yaml is missing`, `config.yaml has no trusted_login`, `config.yaml has no law_commit` (before the order is taken) |
 | `stopped-law-drift`, `stopped-dirty-law` | The reasons of [the check of the law folder](#the-check-of-the-law-folder) (before the order is taken) |
 | `stopped-identity-changed` | `Host identity changed: <login>` (before the order is taken) |
-| `silent` | `No order.` when another run took the order first |
+| `silent` | `No order.` when the order was closed first |
 | `failed` | `The order has no issue number`, `The order has no pull request number`, `The patrol order has an issue number or no department`, `The stage check failed` |
 | `silent` | `Order stale: <stage line>` |
 | `skipped-no-constitution` | `No constitution at <revision>` |
@@ -518,13 +520,13 @@ The journal records the stop of the duty desk as an ended tick, and the answer o
 
 The start runs these steps in order.
 
-1. It writes the tick, computes the alarms and repeats the open alarms that nobody mentioned for a day. The `ALARM` lines print first.
+1. It writes the tick, computes the alarms and prints the open alarms again, except those it raised in this start. The `ALARM` lines print first.
 2. It reads `config.yaml`. A missing file or a missing `trusted_login` ends the tick `failed`.
 3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says. A stop ends the tick here, before any precinct is read.
 4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
 5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open and has written no order. On the path of `self law-version` the start has already run the host sync of item 4, so the issue cache may hold what it read.
 6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
-7. It closes the stale orders of those precincts. An order closes when nobody holds it, or its claim has run out, and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
+7. It closes the stale orders of those precincts. An order closes when nobody took it and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
 8. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get an order for every case or pull request that the cache shows as due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
 9. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers.
 
