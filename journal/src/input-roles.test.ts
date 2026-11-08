@@ -34,10 +34,10 @@ describe("the role table", () => {
 	);
 
 	test("a section that names a reader which is not a role stops the map", () => {
-		expect(() => lawMap([["Language", ["patrol", "patrolman"]]])).toThrow(
+		expect(() => lawMap([["Writing", ["patrol", "patrolman"]]])).toThrow(
 			/"patrolman", which is not a role/,
 		);
-		expect(() => lawMap([["Language", ["duty-desk"]]])).not.toThrow();
+		expect(() => lawMap([["Writing", ["duty-desk"]]])).not.toThrow();
 	});
 
 	test("lawSections stops on a name that is no role", () => {

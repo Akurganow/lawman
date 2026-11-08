@@ -4,6 +4,7 @@ import { rmSync } from "node:fs";
 import { inTransaction, open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import { inproc, inprocAsync } from "./inproc";
+import { config } from "./input-test-fixture";
 import { rotationOrder } from "./rotation";
 import {
 	BASE,
@@ -59,6 +60,24 @@ describe("wake in process", () => {
 			order(d, "main", "clerk", { at: later(1), issue: 6 });
 		});
 		const r = await wake(later(2), "clerk");
+		const listed = r.out.split("\n").filter((l) => l.startsWith("order "));
+		expect(listed.map((l) => l.split(" ")[1])).toEqual(["2", "1"]);
+	});
+
+	// patrol lists one order by default, so this pair needs the setting that lists two
+	test("an untaken patrol order comes before a taken one", async () => {
+		config("jobs: patrol=2\n");
+		seed((d) => {
+			precinct(d, "a");
+			precinct(d, "z");
+			order(d, "a", "patrol", {
+				at: BASE,
+				takenAt: BASE,
+				department: "claims",
+			});
+			order(d, "z", "patrol", { at: later(1), department: "claims" });
+		});
+		const r = await wake(later(2), "patrol");
 		const listed = r.out.split("\n").filter((l) => l.startsWith("order "));
 		expect(listed.map((l) => l.split(" ")[1])).toEqual(["2", "1"]);
 	});

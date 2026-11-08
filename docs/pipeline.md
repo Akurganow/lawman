@@ -229,7 +229,7 @@ The journal computes the first seven alarms below. The `case` and `sweep` alarms
 
 The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 
-The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 
 ### Failures and stops
 

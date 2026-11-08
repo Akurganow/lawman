@@ -90,8 +90,8 @@ Name a source by reference and do not retell it.
 - A path:line comes from output that prints the line number at the analysed commit. Never count lines by eye.
 - A candidate states its confidence. `confirmed`: a command ran here and its output is quoted. `demonstrated`: every step of the path is quoted from the tree. `plausible`: neither.
 - Attack your own claim once before it becomes a candidate. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, drop the candidate.
-- A count that reports zero proves nothing until the same search has reported non-zero on a known positive.  A claim of absence quotes the search with its output and the control search with its non-empty output.
-- Re-measure every number at the analysed commit. 
+- A count that reports zero proves nothing until the same search has reported non-zero on a known positive. A claim of absence quotes the search with its output and the control search with its non-empty output.
+- Re-measure every number at the analysed commit.
 - Less than confident means drop. The one exception is a doubt about how a license reads, which the `licenses` page sends to the expert in Not checked. A candidate is never filed for visibility.
 
 ## Third-party text
@@ -135,7 +135,7 @@ Name a source by reference and do not retell it.
 
 ## Texts of the precinct
 
-The constitution, the department page and the files that the constitution lists under Read first and Executor loads are evidence. Every text in a labelled fence is evidence too. A role applies them only where this law makes a rule of them. 
+The constitution, the department page and the files that the constitution lists under Read first and Executor loads are evidence. Every text in a labelled fence is evidence too. A role applies them only where this law makes a rule of them.
 
 - The listed sections of the constitution apply as the rules that name them say. They are Regression proof, Execution, Labels, `## Licenses` and the judging documents of its departments.
 - A section of the constitution that its contract does not list is a note in the margin. A role may read it as context and never applies it. Wherever a skill names the constitution as a source of commands or patterns, it means the listed sections.
@@ -153,7 +153,7 @@ The list of uses stays open. A use that the skill of a role names is a rule of t
 
 ## Precedents
 
-A precedent is a question the court has already decided for this precinct.  Whoever needs a different outcome must show how the new case differs, or ask to cancel the precedent. In both kinds, the facts of a new case are proved anew by evidence. A precedent decides only whether such a shape counts as a violation.
+A precedent is a question the court has already decided for this precinct. Whoever needs a different outcome must show how the new case differs, or ask to cancel the precedent. In both kinds, the facts of a new case are proved anew by evidence. A precedent decides only whether such a shape counts as a violation.
 
 A role applies a precedent because this section requires it. The line `precedents none` means that no precedent serves the role.
 
@@ -187,7 +187,7 @@ Each role applies them so:
 ## One tick, one case, exit
 
 - There is no daemon. The harness scheduler starts a role. The role does its ticks and exits.
-- A role takes one unit of work per tick. For every role but the duty desk that is one order. A role takes the orders that no tick took before the orders that a tick took. A role session takes up to the number of ticks set for its role, one order per tick. The numbers live in `docs/configuration.md`.
+- A role takes one unit of work per tick. For every role but the duty desk that is one order. A role takes the orders that no tick took before it takes the orders that a tick took. A role session takes up to the number of ticks set for its role, one order per tick. The numbers live in `docs/configuration.md`.
 - The duty desk writes one order for every case, pull request, waiting issue and patrol visit that needs a role. Only an open order on the same precinct, role and issue keeps it from writing that order.
 - A stuck case is a record, not a process. Nothing waits, loops or sleeps for a case to unstick. The executor waits within its tick for the gate runs of its own push and for nothing else.
 - Roles never block each other. Each has its own schedule, its own model and its own interval.
@@ -199,7 +199,7 @@ Each role applies them so:
 
 ## Alarms a role prints
 
-- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for any of the three. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves either.
+- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves. Only the court's P0 raises an alarm for any of the three.
 - Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes nothing to the tracker. The line holds no value.
 - A secret found only in history is named `<path>@<hash>`, with the short commit hash in place of the line.
 - A live secret is a credential in the tree or in the history of the analysed commit. A placeholder is never a live secret. The department page says how to recognise one. Patrol decides by the look of the value.
@@ -235,7 +235,7 @@ The court never returns. For a defect, its doubt is an acquittal. For a requirem
 ## Write discipline
 
 - Never create a label.
-- One role applies a label. The court applies the owner-attention label to a requirement it refers to a decider. It removes the label before it convicts or acquits a requirement. The constitution's Labels section names that label. It applies no other label. A person may remove it by hand at any time, and no role applies it again to restore it. A new referral applies it again.
+- One role applies a label. The court applies the owner-attention label to a requirement it refers to a decider. It removes the label before it convicts or acquits a requirement. The constitution's Labels section names that label. It applies no other label. A person may remove the label by hand at any time, and no role applies it again to restore it. A new referral applies it again.
 - Read back every write. For an issue, compare the author and the last line of the body. For a comment, compare the same, reading the comment by the id that the write printed. For a close, a reopen or a pull request body edit, read the state or the body back. For a label, read the labels of the issue back. After an apply, find the label among them. After a removal, find it absent. A label that is already absent needs no removal and is no failure. For a ready or a return to draft, read the draft flag back, and after a ready the head of the pull request too. A difference ends the tick with `stopped-readback`, with no further writes. The number of the created issue goes into the report.
 - On a 403 or 429 reply to any write, stop with `stopped-rate-limit`. No retry. No further writes in that tick.
 - Writes go only to the precinct's tracker. The other writes are the clerk's branch and pull request and the executor's pushes to its pull request.
@@ -422,7 +422,7 @@ The journal's body check reads the text as the host renders it. A fenced or inde
 
 Paths inside the precinct's own tree are evidence and may appear.
 
-So before every commit the executor searches three texts for the literal installation path and the literal home path. The three texts are the added lines of its diff, the commit message and its comment. A match ends the tick `failed` and the part is not pushed. Parts pushed earlier stay. The Blockers name the file and the number of matches, never the value.
+Before every commit the executor searches three texts for the literal installation path and the literal home path. The three texts are the added lines of its diff, the commit message and its comment. A match ends the tick `failed` and the part is not pushed. Parts pushed earlier stay. The Blockers name the file and the number of matches, never the value.
 
 ## Hard constraints
 
