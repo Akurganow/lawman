@@ -286,12 +286,16 @@ describe("tick start with an order", () => {
 
 	test("alarms print first", () => {
 		setUp();
-		seed((d) =>
-			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
-		);
+		// a tick with no end record while a later tick of its role exists
+		seed((d) => {
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [
+				later(1),
+			]);
+		});
 		orderOf("investigation", { issue: 3 });
 		CASES.investigation?.setup();
-		const r = start("investigation", 1, later(3));
+		const r = start("investigation", 1, later(0, 30));
 		expect(lines(r.out)[1]).toBe(`ALARM tick-hung 1 court started ${BASE}`);
 	});
 
@@ -758,19 +762,18 @@ describe("an outcome the journal writes", () => {
 		).toEqual(["~lint", "~lint"]);
 	});
 
-	test("an order another run took first ends the tick silent with no order", () => {
+	test("an order another run closed first ends the tick silent with no order", () => {
 		setUp();
 		orderOf("investigation", { issue: 3 });
 		host({ issues: { 3: withLead("fixtures") } });
-		const thief = `const { open, inTransaction } = await import(${JSON.stringify(join(JOURNAL, "src", "db"))});
-const { takeOrder } = await import(${JSON.stringify(join(JOURNAL, "src", "dispatch"))});
+		const closer = `const { open } = await import(${JSON.stringify(join(JOURNAL, "src", "db"))});
 const db = open();
-inTransaction(db, () => takeOrder(db, "investigation", 1, process.env.LAWMAN_NOW));
+db.run("UPDATE dispatches SET outcome = ?, closed_at = ? WHERE id = 1", ["silent", process.env.LAWMAN_NOW]);
 db.close();`;
 		command(
 			configs("main"),
 			"identity",
-			`${process.execPath} -e '${thief}' > /dev/null\necho ${TRUSTED}`,
+			`${process.execPath} -e '${closer}' > /dev/null\necho ${TRUSTED}`,
 		);
 		const r = start("investigation");
 		expect(lines(r.out).slice(-3)).toEqual([
@@ -781,14 +784,13 @@ db.close();`;
 		expect(rows("SELECT outcome, dispatch FROM ticks")).toEqual([
 			{ outcome: "silent", dispatch: null },
 		]);
-		expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
+		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: "silent" }]);
 	});
 });
 
 describe("an order the start cannot take", () => {
 	test.each([
 		["another role's order", { role: "court" }],
-		["a taken order", { takenAt: BASE }],
 		["a closed order", { outcome: "silent" }],
 	])("%s prints one line and starts no tick", (_, f) => {
 		setUp();
@@ -799,6 +801,21 @@ describe("an order the start cannot take", () => {
 			out: "order 1 untakeable\n",
 		});
 		expect(ticks()).toEqual([]);
+	});
+
+	test("a taken order is started like an untaken one", () => {
+		setUp();
+		seed((d) => order(d, "main", "investigation", { issue: 3, takenAt: BASE }));
+		CASES.investigation?.setup();
+		const r = start("investigation");
+		expect(r.code).toBe(0);
+		expect(r.out).not.toContain("untakeable");
+		expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
+		expect(ticks()[0]).toMatchObject({
+			role: "investigation",
+			dispatch: 1,
+			outcome: null,
+		});
 	});
 
 	test.each(["defender", "court"])(
@@ -1110,17 +1127,16 @@ describe("in process", () => {
 			out: r.out,
 		});
 		expect((await inprocAsync(BASE, ["tick", "input", "9"])).code).toBe(1);
-		expect(
-			(
-				await inprocAsync(BASE, [
-					"tick",
-					"start",
-					"--role",
-					"prosecutor",
-					"--order",
-					"1",
-				])
-			).out,
-		).toBe("order 1 untakeable\n");
+		// a taken order stays takeable: the second start takes it and starts a tick
+		const again = await inprocAsync(BASE, [
+			"tick",
+			"start",
+			"--role",
+			"prosecutor",
+			"--order",
+			"1",
+		]);
+		expect(again.code).toBe(0);
+		expect(lines(again.out)[0]).toBe(HEAD("prosecutor", 2));
 	});
 });

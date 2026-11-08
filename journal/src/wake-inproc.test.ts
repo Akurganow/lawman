@@ -4,6 +4,7 @@ import { rmSync } from "node:fs";
 import { inTransaction, open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import { inproc, inprocAsync } from "./inproc";
+import { config } from "./input-test-fixture";
 import { rotationOrder } from "./rotation";
 import {
 	BASE,
@@ -25,7 +26,7 @@ const wake = (clock = BASE, role = "patrol") =>
 const take = (clock = BASE, role = "patrol") => {
 	const d = open(dbFile);
 	try {
-		const o = takeableOrders(d, role, clock)[0];
+		const o = takeableOrders(d, role)[0];
 		if (o === undefined) return { out: "" };
 		inTransaction(d, () => takeOrder(d, role, o.id, clock));
 		return {
@@ -48,14 +49,40 @@ describe("wake in process", () => {
 		expect(r.out).toContain(`\norder ${idOf()} main o/main - -\n`);
 	});
 
-	test("a taken order shows again only after the claim limit", async () => {
+	test("a taken order shows again at the next check", async () => {
 		seed((d) => order(d, "main", "patrol", { takenAt: BASE }));
-		expect((await wake(later(24, -1))).out).toBe("");
-		expect((await wake(later(24))).out).toBe("");
-		expect((await wake(later(24, 1))).out).toContain("\norder ");
+		expect((await wake()).out).toContain("\norder ");
 	});
 
-	test("agrees with the take on every case, the boundary second included", async () => {
+	test("an untaken order comes before a taken one", async () => {
+		seed((d) => {
+			order(d, "main", "clerk", { at: BASE, takenAt: BASE, issue: 5 });
+			order(d, "main", "clerk", { at: later(1), issue: 6 });
+		});
+		const r = await wake(later(2), "clerk");
+		const listed = r.out.split("\n").filter((l) => l.startsWith("order "));
+		expect(listed.map((l) => l.split(" ")[1])).toEqual(["2", "1"]);
+	});
+
+	// patrol lists one order by default, so this pair needs the setting that lists two
+	test("an untaken patrol order comes before a taken one", async () => {
+		config("jobs: patrol=2\n");
+		seed((d) => {
+			precinct(d, "a");
+			precinct(d, "z");
+			order(d, "a", "patrol", {
+				at: BASE,
+				takenAt: BASE,
+				department: "claims",
+			});
+			order(d, "z", "patrol", { at: later(1), department: "claims" });
+		});
+		const r = await wake(later(2), "patrol");
+		const listed = r.out.split("\n").filter((l) => l.startsWith("order "));
+		expect(listed.map((l) => l.split(" ")[1])).toEqual(["2", "1"]);
+	});
+
+	test("agrees with the take on every case", async () => {
 		const cases: Record<string, (d: Database) => void> = {
 			none: () => {},
 			untaken: (d) => order(d, "main", "patrol"),
@@ -63,7 +90,7 @@ describe("wake in process", () => {
 			taken: (d) => order(d, "main", "patrol", { takenAt: BASE }),
 			other: (d) => order(d, "main", "judge"),
 		};
-		const clocks = [BASE, later(24, -1), later(24), later(24, 1)];
+		const clocks = [BASE, later(24, 1)];
 		for (const [name, body] of Object.entries(cases)) {
 			for (const clock of clocks) {
 				for (const file of [dbFile, `${dbFile}-wal`, `${dbFile}-shm`])
@@ -101,7 +128,7 @@ describe("wake in process", () => {
 });
 
 describe("the take in process", () => {
-	test("takes the oldest open order and prints its fields", () => {
+	test("takes the oldest untaken order first and a taken one stays takeable", () => {
 		seed((d) => {
 			order(d, "main", "patrol", { at: later(1), issue: 4 });
 			order(d, "main", "patrol", { at: BASE, department: "core" });
@@ -111,7 +138,8 @@ describe("the take in process", () => {
 			{ taken_at: later(2) },
 		]);
 		expect(take(later(2)).out).toBe("1\tmain\to/main\t\t4\n");
-		expect(take(later(2)).out).toBe("");
+		// a taken order stays takeable and the oldest one comes first among the taken
+		expect(take(later(2)).out).toBe("2\tmain\to/main\tcore\t\n");
 	});
 
 	test("skips closed orders and orders of another role", () => {

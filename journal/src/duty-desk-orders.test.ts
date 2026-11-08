@@ -164,7 +164,7 @@ const PULL_ROLES = ["spec-writer", "executor"];
 
 describe("the stale orders", () => {
 	test.each([...ISSUE_ROLES, ...PULL_ROLES])(
-		"%s: a stale untaken order and one whose claim expired are closed silent, a live claim and an issue the cache lacks are kept",
+		"%s: a stale untaken order is closed silent, a taken one stays open whatever its take",
 		(role) => {
 			setUp({ main: 1 });
 			hostOf("main", STALE);
@@ -184,12 +184,12 @@ describe("the stale orders", () => {
 			expect(mine.map((o) => [o.issue, o.outcome, o.closed_at])).toEqual([
 				[first, "silent", BASE],
 				[first + 1, null, null],
-				[first + 2, "silent", BASE],
+				[first + 2, null, null],
 				[99, ...absent],
 			]);
 			expect(ticks().map((t) => t.role)).toEqual(["duty-desk"]);
 			expect(reportOf(r.out, "Coverage")).toContain(
-				`closed stale: ${CLOSED_ROLES.map((x) => `${x} ${x === role ? (pulls ? 3 : 2) : 0}`).join(", ")}`,
+				`closed stale: ${CLOSED_ROLES.map((x) => `${x} ${x === role ? (pulls ? 2 : 1) : 0}`).join(", ")}`,
 			);
 		},
 	);

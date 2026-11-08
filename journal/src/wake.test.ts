@@ -2,14 +2,16 @@ import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MIGRATIONS } from "./db";
+import { MIGRATIONS, open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import {
 	BASE,
 	call,
 	cli,
+	dbFile,
 	dir,
 	later,
+	must,
 	order,
 	rows,
 	seed,
@@ -22,7 +24,7 @@ const wake = (clock = BASE, role = "patrol") =>
 	call(clock, ["wake", "--role", role]);
 const take = (clock = BASE, role = "patrol") =>
 	seed((db) => {
-		const first = takeableOrders(db, role, clock)[0];
+		const first = takeableOrders(db, role)[0];
 		if (first) takeOrder(db, role, first.id, clock);
 	});
 
@@ -50,14 +52,81 @@ describe("wake", () => {
 		expect(wake()).toMatchObject({ code: 0, out: "" });
 	});
 
-	test("prints an untaken order behind the check time, then nothing once it is taken", () => {
+	test("prints an untaken order behind the check time, and a taken order stays takeable", () => {
 		seedOrders((db) => order(db, "main", "patrol"));
 		const id = rows("SELECT id FROM dispatches")[0]?.id;
 		const r = wake();
 		expect(r.out).toStartWith(`${head()}\n`);
 		expect(r.out).toEndWith(`order ${id} main o/main - -\nend part 1 of 1\n`);
 		take();
-		expect(wake().out).toBe("");
+		expect(wake().out).toContain(`order ${id} main o/main - -\n`);
+	});
+
+	test("lists an untaken order before a taken one and keeps the old order of the untaken", () => {
+		seedOrders((db) => {
+			order(db, "main", "clerk", { at: BASE, takenAt: BASE, issue: 1 });
+			order(db, "main", "clerk", { at: later(1), issue: 2 });
+			order(db, "main", "clerk", { at: later(2), issue: 3 });
+		});
+		const ids = rows("SELECT id FROM dispatches ORDER BY id").map((r) => r.id);
+		const takenOld = ids[0];
+		const untakenFirst = ids[1];
+		const untakenSecond = ids[2];
+		expect(ordersOf(wake(later(5), "clerk").out)).toEqual([
+			`order ${untakenFirst} main o/main - 2`,
+			`order ${untakenSecond} main o/main - 3`,
+			`order ${takenOld} main o/main - 1`,
+		]);
+	});
+
+	test("keeps the old order among the taken", () => {
+		seedOrders((db) => {
+			order(db, "main", "clerk", { at: BASE, takenAt: BASE, issue: 1 });
+			order(db, "main", "clerk", { at: later(1), takenAt: later(2), issue: 2 });
+			order(db, "main", "clerk", { at: later(3), issue: 3 });
+		});
+		const ids = rows("SELECT id FROM dispatches ORDER BY id").map((r) => r.id);
+		const takenOld = ids[0];
+		const takenNew = ids[1];
+		const untaken = ids[2];
+		expect(ordersOf(wake(later(5), "clerk").out)).toEqual([
+			`order ${untaken} main o/main - 3`,
+			`order ${takenOld} main o/main - 1`,
+			`order ${takenNew} main o/main - 2`,
+		]);
+	});
+
+	test("a patrol order nobody took comes before a taken one", () => {
+		seedOrders((db) => {
+			db.run(
+				"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('other', 'o/other', 1)",
+			);
+			order(db, "main", "patrol", { at: BASE, takenAt: BASE });
+			order(db, "other", "patrol", { at: later(1) });
+		});
+		const untaken = must(
+			rows("SELECT id FROM dispatches WHERE taken_at IS NULL")[0]?.id as
+				| number
+				| undefined,
+		);
+		const taken = must(
+			rows("SELECT id FROM dispatches WHERE taken_at IS NOT NULL")[0]?.id as
+				| number
+				| undefined,
+		);
+		const db = open(dbFile);
+		try {
+			expect(takeableOrders(db, "patrol").map((o) => o.id)).toEqual([
+				untaken,
+				taken,
+			]);
+		} finally {
+			db.close();
+		}
+		// the wake lists the first patrol order only: the one nobody took
+		expect(ordersOf(wake(later(2)).out)).toEqual([
+			`order ${untaken} other o/other - -`,
+		]);
 	});
 
 	test("an order left untaken changes the output at every check, no work stays the same", () => {

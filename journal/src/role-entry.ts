@@ -1,6 +1,6 @@
 import { join } from "node:path";
 import { check, fits, parseArgs, parsePart, partOutOfRange } from "./args";
-import { EXIT, Fail, now, out, withDb } from "./db";
+import { EXIT, Fail, out, withDb } from "./db";
 import { type Taken, takeableOrders } from "./dispatch";
 import {
 	inputChars,
@@ -85,7 +85,7 @@ export function rolePartCommand(args: string[]): number {
 	if (role !== DUTY_DESK && inputOf(role) === undefined)
 		throw new Fail(EXIT.USAGE, `no input for role ${role}`);
 	const k = parsePart(opt.part, PART_USAGE);
-	const orders = withDb((db) => takeableOrders(db, role, now()));
+	const orders = withDb((db) => takeableOrders(db, role));
 	const parts = framed(
 		roleParts(role, orders, readConfig()),
 		() => `role=${role}`,

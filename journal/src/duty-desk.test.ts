@@ -494,9 +494,11 @@ describe("the self steps", () => {
 		setUp({ main: 1 });
 		hostOf("main", WORK);
 		without("main", "issues", "pulls");
-		seed((d) =>
-			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
-		);
+		// a tick with no end record while a later tick of its role exists
+		seed((d) => {
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
+		});
 		const first = startDesk(later(3));
 		expect(lines(first.out)).toContain(
 			`ALARM tick-hung 1 court started ${BASE}`,
@@ -506,7 +508,7 @@ describe("the self steps", () => {
 		);
 		syncBy("main", WORK, later(3));
 		syncBy("main", WORK, later(3), true);
-		const r = proceed(2, later(3));
+		const r = proceed(3, later(3));
 		expect(r.out).not.toContain("ALARM");
 		expect(lines(r.out)).toContain("ended ordered");
 	});
@@ -679,12 +681,14 @@ describe("the output of the start", () => {
 	test("alarms first, then the orders, then the end and the five report lines", () => {
 		setUp({ main: 1 });
 		hostOf("main", WORK);
-		seed((d) =>
-			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]),
-		);
+		// a tick with no end record while a later tick of its role exists
+		seed((d) => {
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
+		});
 		const r = startDesk(later(3));
 		const out = lines(r.out);
-		expect(out[0]).toBe("lawman input 1 role=duty-desk tick=2 part 1 of 1");
+		expect(out[0]).toBe("lawman input 1 role=duty-desk tick=3 part 1 of 1");
 		expect(out.at(-1)).toBe("end part 1 of 1");
 		const body = out.slice(1, -1);
 		const shape = body.map((l) => l.split(" ")[0]);
@@ -704,7 +708,7 @@ describe("the output of the start", () => {
 			"report Blockers",
 		]);
 		expect(body[1]).toMatch(/^order \d+ main o\/main - 1$/);
-		expect(ticks()[1]?.report).toContain("Coverage: orders: ");
+		expect(ticks().at(-1)?.report).toContain("Coverage: orders: ");
 	});
 
 	test("a start without a role or with another role is a usage error", () => {
@@ -744,20 +748,24 @@ describe("the command forms in process", () => {
 });
 
 describe("the repetition of an open alarm", () => {
-	// a tick that hangs since five hours, whose alarm the owner last heard two days ago
+	// a tick with no end record while a later tick of its role exists; the alarm
+	// an earlier call raised is open and was mentioned at the current time
 	const HUNG = `ALARM tick-hung 1 clerk started ${later(-5)}`;
 	const hungAlarm = () =>
 		seed((d) => {
 			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [
 				later(-5),
 			]);
+			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [
+				later(-4),
+			]);
 			d.run(
 				"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('tick-hung', '1', ?, ?, ?)",
-				[`clerk started ${later(-5)}`, later(-48), later(-48)],
+				[`clerk started ${later(-5)}`, later(-48), BASE],
 			);
 		});
 
-	test("the duty desk start repeats an alarm not mentioned for a day", () => {
+	test("the duty desk start repeats an open alarm at each of its ticks", () => {
 		setUp({ main: 1 });
 		hungAlarm();
 		expect(lines(startDesk().out)).toContain(HUNG);

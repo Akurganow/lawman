@@ -31,8 +31,6 @@ type Env = Record<string, string | undefined>;
 
 const BUSY_TIMEOUT_MS = 5000;
 export const MINUTE_MS = 60 * 1000;
-export const HOUR_MS = 60 * MINUTE_MS;
-export const CLAIM_TTL_MS = 24 * HOUR_MS;
 export const LEAD_PREFIX = "[Lead]";
 
 const envValue = (env: Env, name: string): string | undefined =>

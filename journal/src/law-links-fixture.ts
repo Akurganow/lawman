@@ -24,6 +24,7 @@ export const DEPARTED: string[] = [
 	"Pull requests",
 	"The report",
 	"The cache",
+	"Language",
 ];
 
 const FENCE = /^\s*(```|~~~)/;

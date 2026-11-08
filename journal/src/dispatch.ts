@@ -1,12 +1,10 @@
 import type { Database } from "bun:sqlite";
 import { check, count, parseArgs, subcommand, usage } from "./args";
 import {
-	CLAIM_TTL_MS,
 	EXIT,
 	Fail,
 	inTransaction,
 	isConstraint,
-	isoSeconds,
 	now,
 	out,
 	readStdin,
@@ -55,23 +53,21 @@ export type Taken = {
 };
 
 // Patrol takes by weight: the precinct that the credit picks comes first, and a
-// precinct of weight 0 has no takeable patrol order.
-export function takeableOrders(
-	db: Database,
-	roleName: string,
-	stamp: string,
-): Taken[] {
-	const stale = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
+// precinct of weight 0 has no takeable patrol order. An order nobody took comes
+// before an order a tick took; inside each group patrol keeps credit, weight and
+// name, the other roles come oldest first.
+export function takeableOrders(db: Database, roleName: string): Taken[] {
 	return db
 		.query(
 			`SELECT d.id, d.precinct, p.repo, d.department, d.issue FROM dispatches d
          JOIN precincts p ON p.name = d.precinct
-         WHERE d.role = ?1 AND d.outcome IS NULL AND (d.taken_at IS NULL OR d.taken_at < ?2)
+         WHERE d.role = ?1 AND d.outcome IS NULL
            AND (?1 <> '${PATROL}' OR p.weight > 0)
-         ORDER BY CASE WHEN ?1 = '${PATROL}' THEN -(p.credit + p.weight) END,
+         ORDER BY CASE WHEN d.taken_at IS NULL THEN 0 ELSE 1 END,
+           CASE WHEN ?1 = '${PATROL}' THEN -(p.credit + p.weight) END,
            CASE WHEN ?1 = '${PATROL}' THEN p.name END, d.at, d.id`,
 		)
-		.all(roleName, stale) as Taken[];
+		.all(roleName) as Taken[];
 }
 
 // Inside the caller's transaction. A patrol take moves the credit: every
@@ -82,7 +78,7 @@ export function takeOrder(
 	id: number,
 	stamp: string,
 ): boolean {
-	const orders = takeableOrders(db, roleName, stamp);
+	const orders = takeableOrders(db, roleName);
 	const order = orders.find((o) => o.id === id);
 	if (order === undefined) return false;
 	db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [stamp, id]);

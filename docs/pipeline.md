@@ -177,7 +177,7 @@ The duty desk runs first.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. The oldest order comes first. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
+Each role then starts on its own clock. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
@@ -216,9 +216,8 @@ The journal computes the first seven alarms below. The `case` and `sweep` alarms
 
 | Alarm | Raised when |
 | :-- | :-- |
-| `order-untaken` | A taken order stays open past the 24-hour claim. An order that nobody took raises nothing, whatever its age. |
 | `no-progress` | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
-| `tick-hung` | A tick has no end record 2 hours after its start. |
+| `tick-hung` | A tick has no end record while a later tick of its role exists. |
 | `role-silent` | A role that ended a tick before shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
@@ -230,7 +229,7 @@ The journal computes the first seven alarms below. The `case` and `sweep` alarms
 
 The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 
-The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 
 ### Failures and stops
 

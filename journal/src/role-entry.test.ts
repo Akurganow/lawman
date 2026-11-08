@@ -396,7 +396,7 @@ describe("parts of the role group", () => {
 		sized(300);
 		let built: string[] = [];
 		captured(BASE, () => {
-			const orders = withDb((d) => takeableOrders(d, "executor", BASE));
+			const orders = withDb((d) => takeableOrders(d, "executor"));
 			built = roleParts("executor", orders, readConfig()).map((p) =>
 				p.join("\n"),
 			);

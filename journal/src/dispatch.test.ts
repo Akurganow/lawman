@@ -6,9 +6,10 @@ import {
 	BASE,
 	call,
 	dbFile,
-	env,
-	JOURNAL,
 	later,
+	must,
+	order,
+	rows,
 	seed,
 	tempDb,
 } from "./test-helpers";
@@ -35,7 +36,7 @@ describe("dispatch", () => {
 	const take = (clock = BASE, role = "patrol") => {
 		const db = open(dbFile);
 		try {
-			const o = takeableOrders(db, role, clock)[0];
+			const o = takeableOrders(db, role)[0];
 			if (o === undefined) return { out: "" };
 			inTransaction(db, () => takeOrder(db, role, o.id, clock));
 			return {
@@ -142,49 +143,68 @@ describe("dispatch", () => {
 		addPrecincts({ a: 1, b: 1 });
 		const older = add("b", "clerk", [], later(0)).out.trim();
 		const newer = add("a", "clerk", [], later(1)).out.trim();
-		expect(take(later(2), "clerk").out.split("\t")[0]).toBe(older);
-		expect(take(later(2), "clerk").out.split("\t")[0]).toBe(newer);
-		expect(take(later(2), "clerk").out).toBe("");
+		expect(take(later(2), "clerk").out.split("	")[0]).toBe(older);
+		expect(take(later(2), "clerk").out.split("	")[0]).toBe(newer);
+		// a taken order stays takeable; among the taken the old one comes first
+		expect(take(later(2), "clerk").out.split("	")[0]).toBe(older);
 		add("b", "patrol", [], later(0));
 		const first = add("a", "patrol", [], later(1)).out.trim();
-		expect(take(later(2)).out.split("\t")[0]).toBe(first);
+		expect(take(later(2)).out.split("	")[0]).toBe(first);
 	});
 
-	test("two concurrent takes hand the single order to exactly one", async () => {
-		addPrecincts({ a: 1 });
-		add("a");
-		const script = `
-const { open, inTransaction } = await import("./src/db");
-const { takeOrder } = await import("./src/dispatch");
-const db = open();
-process.stdout.write(String(inTransaction(db, () => takeOrder(db, "patrol", 1, process.env.LAWMAN_NOW))));
-db.close();
-`;
-		const spawn = () =>
-			Bun.spawn(["bun", "-e", script], {
-				cwd: JOURNAL,
-				env: env({ LAWMAN_DB: dbFile, LAWMAN_NOW: BASE }),
-				stdout: "pipe",
-				stderr: "pipe",
-			});
-		const procs = [spawn(), spawn()];
-		const codes = await Promise.all(procs.map((p) => p.exited));
-		const outs = await Promise.all(
-			procs.map((p) => new Response(p.stdout).text()),
+	test("an untaken order is taken before a taken one and each group keeps its old order", () => {
+		addPrecincts({ a: 1, b: 1 });
+		seed((db) => {
+			order(db, "a", "clerk", { at: BASE, takenAt: BASE, issue: 1 });
+			order(db, "b", "clerk", { at: later(3), issue: 2 });
+			order(db, "a", "clerk", { at: later(1), takenAt: later(2), issue: 5 });
+			order(db, "b", "clerk", { at: later(4), issue: 6 });
+		});
+		const ids = rows("SELECT id FROM dispatches ORDER BY id").map((r) =>
+			must(r.id as number | undefined),
 		);
-		expect(codes).toEqual([0, 0]);
-		expect(outs.sort()).toEqual(["false", "true"]);
+		const takenOld = must(ids[0]);
+		const untakenFirst = must(ids[1]);
+		const takenNew = must(ids[2]);
+		const untakenSecond = must(ids[3]);
+		const db = open(dbFile);
+		try {
+			expect(takeableOrders(db, "clerk").map((o) => o.id)).toEqual([
+				untakenFirst,
+				untakenSecond,
+				takenOld,
+				takenNew,
+			]);
+		} finally {
+			db.close();
+		}
 	});
 
-	test("a taken order is reclaimed only after 24 hours", () => {
+	test("a patrol order nobody took comes before a taken one", () => {
+		addPrecincts({ a: 3, b: 2, c: 1 });
+		seed((db) => {
+			order(db, "a", "patrol", { at: BASE, takenAt: BASE });
+			order(db, "b", "patrol", { at: later(1) });
+			order(db, "c", "patrol", { at: later(2) });
+		});
+		const db = open(dbFile);
+		try {
+			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
+				"b",
+				"c",
+				"a",
+			]);
+		} finally {
+			db.close();
+		}
+	});
+
+	test("a taken order stays takeable at any time", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
 		expect(take(BASE).out).not.toBe("");
-		expect(take(later(0, 1)).out).toBe("");
-		expect(take(later(23, 3599)).out).toBe("");
-		expect(take(later(24)).out).toBe("");
-		expect(take(later(24, 1)).out.split("\t")[0]).toBe(id);
-		expect(take(later(24, 2)).out).toBe("");
+		expect(take(later(0, 1)).out.split("	")[0]).toBe(id);
+		expect(take(later(24, 1)).out.split("	")[0]).toBe(id);
 	});
 
 	test("close is a usage error and leaves the order open", () => {
@@ -200,10 +220,11 @@ db.close();
 		db.close();
 	});
 
-	test("a taken order leaves the take list and a new one is admitted after tick end closes it", () => {
+	test("an open order blocks a duplicate and a taken order stays in the take list until tick end closes it", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
 		take();
+		expect(take(later(1)).out.split("	")[0]).toBe(id);
 		expect(add("a").code).toBe(2);
 		seed((db) =>
 			db.run("INSERT INTO ticks (role, started_at) VALUES ('patrol', ?)", [
@@ -215,7 +236,37 @@ db.close();
 				.code,
 		).toBe(0);
 		const next = add("a").out.trim();
-		expect(take(later(1)).out.split("\t")[0]).toBe(next);
+		expect(take(later(1)).out.split("	")[0]).toBe(next);
+	});
+
+	test("tick end on an order another tick closed fails and leaves the tick open", () => {
+		addPrecincts({ a: 1 });
+		const id = add("a").out.trim();
+		take();
+		seed((db) =>
+			db.run("INSERT INTO ticks (role, started_at) VALUES ('patrol', ?)", [
+				BASE,
+			]),
+		);
+		// another tick closed the order while this tick worked on it
+		seed((db) =>
+			db.run(
+				"UPDATE dispatches SET outcome = 'silent', closed_at = ? WHERE id = ?",
+				[later(1), Number(id)],
+			),
+		);
+		const r = call(BASE, [
+			"tick",
+			"end",
+			"1",
+			"--outcome",
+			"filed",
+			"--dispatch",
+			id,
+		]);
+		expect(r.code).toBe(1);
+		expect(r.err).toContain(`no open order with id ${id}`);
+		expect(rows("SELECT ended_at FROM ticks")).toEqual([{ ended_at: null }]);
 	});
 
 	test("take, next and the other removed commands are usage errors", () => {

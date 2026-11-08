@@ -1,50 +1,46 @@
 import { describe, expect, test } from "bun:test";
-import {
-	alarm,
-	BASE,
-	later,
-	order,
-	precinct,
-	seed,
-	tempDb,
-	tick,
-} from "./test-helpers";
+import { alarm, BASE, later, seed, tempDb, tick } from "./test-helpers";
 
 tempDb();
 
 describe("alarm cadence", () => {
-	describe("order-untaken ignores the role's interval", () => {
-		const orderFor = (everyMinutes: number | null, takenAt?: string) =>
+	describe("tick-hung on the ticks of one role", () => {
+		test("a tick with no end record alarms when a later tick of its role exists", () => {
 			seed((db) => {
-				precinct(db, "a");
-				if (everyMinutes !== null)
-					db.run(
-						"INSERT INTO roles (name, every_minutes) VALUES ('patrol', ?)",
-						[everyMinutes],
-					);
-				order(db, "a", "patrol", takenAt ? { takenAt } : {});
+				tick(db, "patrol", BASE, null, null);
+				tick(db, "patrol", later(1), null, null);
 			});
-		const intervals: [string, number | null][] = [
-			["no roles row", null],
-			["a daily role", 1440],
-			["a four-day role", 5760],
-			["a weekly role", 10080],
-			["a short interval", 10],
-		];
-		for (const [name, minutes] of intervals) {
-			test(`${name}: a taken order fires 24 hours after the claim and not before`, () => {
-				orderFor(minutes, BASE);
-				expect(alarm(later(24)).out).toBe("");
-				expect(alarm(later(24, 1)).out).toMatch(
-					/^ALARM order-untaken 1 a patrol taken .+\n$/,
-				);
-			});
+			expect(alarm(later(3)).out).toBe(
+				`ALARM tick-hung 1 patrol started ${BASE}\n`,
+			);
+		});
 
-			test(`${name}: an untaken order of any age raises nothing`, () => {
-				orderFor(minutes);
-				expect(alarm(later(24 * 30)).out).toBe("");
+		test("a tick with no end record and no later tick of its role raises nothing", () => {
+			seed((db) => tick(db, "patrol", BASE, null, null));
+			expect(alarm(later(3)).out).toBe("");
+		});
+	});
+
+	describe("the repetition of an open alarm", () => {
+		const dead = () =>
+			seed((db) => {
+				tick(db, "patrol", BASE, null, null);
+				tick(db, "patrol", later(1), null, null);
 			});
-		}
+		const HUNG = `ALARM tick-hung 1 patrol started ${BASE}\n`;
+
+		test("--repeat prints an open alarm once at every call and nothing without --repeat", () => {
+			dead();
+			alarm(later(2));
+			expect(alarm(later(3), "--repeat").out).toBe(HUNG);
+			expect(alarm(later(4), "--repeat").out).toBe(HUNG);
+			expect(alarm(later(5)).out).toBe("");
+		});
+
+		test("an alarm raised in the call is not repeated in the same call", () => {
+			dead();
+			expect(alarm(later(2), "--repeat").out).toBe(HUNG);
+		});
 	});
 
 	describe("role-silent counts from the later of the last tick and the last check", () => {

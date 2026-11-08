@@ -319,7 +319,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		throw new Fail(EXIT.USAGE, `no tick input for role ${role}`);
 	const stamp = now();
 	const order = withDb((db) =>
-		takeableOrders(db, role, stamp).find((x) => x.id === id),
+		takeableOrders(db, role).find((x) => x.id === id),
 	);
 	if (order === undefined) {
 		out(`order ${id} untakeable`);

@@ -11,7 +11,7 @@ export function wake(args: string[]): number | Promise<number> {
 	const stamp = now();
 	// stdout is written only after every database step succeeded, so a failure prints nothing
 	const orders = withDb((db) => {
-		const orders = takeableOrders(db, roleName, stamp);
+		const orders = takeableOrders(db, roleName);
 		// a check that finds an order counts toward no-progress, one that finds none starts again
 		db.run(
 			"UPDATE roles SET checked_at = ?, checks = CASE WHEN ? THEN checks ELSE CASE WHEN ? THEN checks + 1 ELSE 0 END END WHERE name = ?",

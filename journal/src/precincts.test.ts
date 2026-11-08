@@ -4,7 +4,15 @@ import { rmSync } from "node:fs";
 import { open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import { creditVisit } from "./precincts";
-import { addPrecincts, dbFile, order, run, seed, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	dbFile,
+	must,
+	order,
+	run,
+	seed,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 
@@ -29,7 +37,7 @@ const UNEVEN_STEP_SECONDS = (i: number) => ((i * 7919) % 100003) + 1;
 
 // One patrol take as the start does it; the closed order is replaced by a new one on the precinct.
 function visit(db: Database, stamp: string): string | undefined {
-	const first = takeableOrders(db, "patrol", stamp)[0];
+	const first = takeableOrders(db, "patrol")[0];
 	if (first === undefined) return undefined;
 	takeOrder(db, "patrol", first.id, stamp);
 	db.run(
@@ -150,9 +158,9 @@ describe("precinct and role commands", () => {
 });
 
 describe("the patrol take", () => {
-	const takeable = (stamp = START) => {
+	const takeable = () => {
 		const db = open(dbFile);
-		const names = takeableOrders(db, "patrol", stamp).map((o) => o.precinct);
+		const names = takeableOrders(db, "patrol").map((o) => o.precinct);
 		db.close();
 		return names;
 	};
@@ -212,20 +220,25 @@ describe("the patrol take", () => {
 		expect(picks).not.toContain("z");
 	});
 
-	test("a precinct with a taken patrol order is skipped and the others move as if it were absent", () => {
-		const run4 = (withTaken: boolean) => {
-			addPrecincts({ ...(withTaken ? { a: 3 } : {}), b: 2, c: 1 });
-			const db = open(dbFile);
-			if (withTaken) order(db, "a", "patrol", { takenAt: START });
-			for (const name of ["b", "c"]) order(db, name, "patrol");
-			for (let i = 0; i < 4; i++) visit(db, START);
+	test("a precinct with a taken patrol order is admitted and untaken orders come first", () => {
+		addPrecincts({ a: 3, b: 2, c: 1 });
+		const db = open(dbFile);
+		try {
+			order(db, "a", "patrol", { takenAt: START });
+			order(db, "b", "patrol");
+			order(db, "c", "patrol");
+			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
+				"b",
+				"c",
+				"a",
+			]);
+			const first = must(takeableOrders(db, "patrol")[0]);
+			takeOrder(db, "patrol", first.id, START);
+		} finally {
 			db.close();
-			return credits();
-		};
-		const withOrder = run4(true);
-		rmSync(dbFile);
-		const absent = run4(false);
-		expect(withOrder).toEqual({ a: 0, ...absent });
+		}
+		// every admitted precinct gains its weight, the taken one loses the sum
+		expect(credits()).toEqual({ a: 3, b: -4, c: 1 });
 	});
 
 	test("an open order of another role does not exclude the precinct", () => {
@@ -252,11 +265,10 @@ describe("the patrol take", () => {
 		expect(takeable()).toEqual(["a", "b"]);
 	});
 
-	test("an expired claim makes the order takeable again, a live one does not", () => {
+	test("a taken order stays takeable at any time", () => {
 		addPrecincts({ a: 1 });
 		seed((db) => order(db, "a", "patrol", { takenAt: START }));
-		expect(takeable(iso(START_MS + 24 * 3600 * 1000))).toEqual([]);
-		expect(takeable(iso(START_MS + 24 * 3600 * 1000 + 1000))).toEqual(["a"]);
+		expect(takeable()).toEqual(["a"]);
 	});
 
 	test("the next command is a usage error", () => {
