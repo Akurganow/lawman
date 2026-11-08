@@ -88,13 +88,13 @@ describe("the self steps of the table in the intro of tick.md", () => {
 });
 
 describe("the check of the links", () => {
-	const reads = readBy([["LAW.md", ["Orders", "Language"]]]);
+	const reads = readBy([["LAW.md", ["Orders", "Writing"]]]);
 	const check = (text: string) =>
 		missing(linksIn(text, ["Evidence"]), text.split("\n"), reads);
 
 	test("a quoted heading or an anchor stands in the input or fails", () => {
-		expect(check('Read "Orders" and «Language».')).toEqual([]);
-		expect(check("Read LAW.md#orders and LAW.md#language.")).toEqual([]);
+		expect(check('Read "Orders" and «Writing».')).toEqual([]);
+		expect(check("Read LAW.md#orders and LAW.md#writing.")).toEqual([]);
 		expect(check('Read "Exhibits".')).toEqual(["1: Exhibits"]);
 		expect(check("Read LAW.md#exhibits.")).toEqual(["1: Exhibits"]);
 	});
@@ -126,24 +126,24 @@ describe("the check of the links", () => {
 		const text = [
 			'Intro names "Orders".',
 			"## Terms",
-			'See "Language", the "Orders" section and LAW.md#exhibits.',
+			'See "Writing", the "Orders" section and LAW.md#exhibits.',
 			'A line `self law` stands for "Exhibits".',
 			"## Pairs",
 			'See "Exhibits".',
 		].join("\n");
 		const only = (...sections: string[]) =>
 			unreached(text, "LAW.md", readBy([["LAW.md", sections]]));
-		expect(only(INTRO, "Terms", "Pairs", "Language", "Orders")).toEqual([
+		expect(only(INTRO, "Terms", "Pairs", "Writing", "Orders")).toEqual([
 			"3: Exhibits",
 			"6: Exhibits",
 		]);
-		expect(only("Terms", "Language", "Orders", "Exhibits")).toEqual([]);
-		expect(only(INTRO, "Terms", "Language", "Exhibits")).toEqual([
+		expect(only("Terms", "Writing", "Orders", "Exhibits")).toEqual([]);
+		expect(only(INTRO, "Terms", "Writing", "Exhibits")).toEqual([
 			"1: Orders",
 			"3: Orders",
 		]);
 		expect(only("Pairs")).toEqual(["6: Exhibits"]);
-		expect(only("Language")).toEqual([]);
+		expect(only("Writing")).toEqual([]);
 	});
 
 	test("a template in a fenced block is no link", () => {

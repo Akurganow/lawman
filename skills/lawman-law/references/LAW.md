@@ -79,9 +79,11 @@ A tick that succeeds or skips answers only the silence form that the harness pag
 
 The lines of the update list are delivered to the owner too. The update list is the one that the "Sync the law" section of `tick.md` names. A reply that holds a line of it is not a silence form.
 
-## Language
+## Writing
 
 Write what you say to the user in the user's language.
+Put one thought in one sentence.
+Name a source by reference and do not retell it.
 
 ## Exhibits
 

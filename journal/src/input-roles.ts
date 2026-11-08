@@ -78,7 +78,7 @@ const LAW_MAP = lawMap([
 	["Role spec writer", ["spec-writer"]],
 	["Role executor", ["executor"]],
 	["Silence is the default", EVERY],
-	["Language", WORKING],
+	["Writing", WORKING],
 	[
 		"Exhibits",
 		[
