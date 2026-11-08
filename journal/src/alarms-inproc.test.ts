@@ -59,7 +59,9 @@ describe("the alarms in process", () => {
 			tick(db, "patrol", BASE, null, null);
 			tick(db, "patrol", later(1), null, null);
 		});
-		expect(alarm(later(2), "--repeat").trim().split("\n")).toHaveLength(1);
+		expect(alarm(later(2), "--repeat")).toBe(
+			`ALARM tick-hung 1 patrol started ${BASE}\n`,
+		);
 	});
 
 	test("the alarm command is a usage error", () => {

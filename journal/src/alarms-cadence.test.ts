@@ -39,9 +39,7 @@ describe("alarm cadence", () => {
 
 		test("an alarm raised in the call is not repeated in the same call", () => {
 			dead();
-			expect(alarm(later(2), "--repeat").out.trim().split("\n")).toHaveLength(
-				1,
-			);
+			expect(alarm(later(2), "--repeat").out).toBe(HUNG);
 		});
 	});
 

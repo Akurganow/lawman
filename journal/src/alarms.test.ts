@@ -206,9 +206,7 @@ describe("alarms and status", () => {
 
 		test("--repeat prints a new alarm once, not twice", () => {
 			dead();
-			expect(alarm(later(2), "--repeat").out.trim().split("\n")).toHaveLength(
-				1,
-			);
+			expect(alarm(later(2), "--repeat").out).toBe(HUNG);
 		});
 
 		test("the alarm clears when the condition ends and returns as new if it comes back", () => {
