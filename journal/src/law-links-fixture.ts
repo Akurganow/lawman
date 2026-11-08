@@ -80,9 +80,12 @@ export function linksIn(text: string, departed: string[] = DEPARTED): Ref[] {
 			for (const quoted of [`"${name}"`, `«${name}»`])
 				if (body.includes(quoted)) refs.push({ line, name, file: null });
 		// the words `<name> section` of a heading that left the law, quoted or not
-		for (const name of departed)
-			if (new RegExp(`\\b${name} section\\b`).test(body))
+		for (const name of departed) {
+			const [first = "", ...rest] = name;
+			const head = `[${first.toLowerCase()}${first.toUpperCase()}]`;
+			if (new RegExp(`\\b${head}${rest.join("")} section\\b`).test(body))
 				refs.push({ line, name, file: null });
+		}
 		for (const m of body.matchAll(NAMED)) {
 			const file = `${m[1]}.md`;
 			const target = HEADINGS[file]?.find((h) => slug(h) === m[2]);
@@ -99,19 +102,29 @@ const SECTION_WORDS = [
 	/\bthe ("[^"\n]+") sections?(?: of `?(\w+\.md)`?)?/gi,
 ];
 
+// the unquoted form `<owner>'s <Heading> section`
+const OWNED_SECTION = /\b\w+'s ([A-Z][^."\n,;:]*?) section\b/g;
+
 // The sections that a sentence of LAW.md or tick.md names with the words
 // `the "<name>" section`, `the section "<name>"` or `the sections "<name>", ...`.
 // The file is the one the sentence names with `of <file>`, else the file itself.
+// The form `<owner>'s <Name> section` counts when <Name> is a heading of the four
+// files; it names no file, so the file of the heading decides.
 export function wordsIn(text: string, own: string): Ref[] {
-	return prose(text).flatMap(([line, body]) =>
-		SECTION_WORDS.flatMap((pattern) =>
+	return prose(text).flatMap(([line, body]) => [
+		...SECTION_WORDS.flatMap((pattern) =>
 			[...body.matchAll(pattern)].flatMap((m) =>
 				[...(m[1] ?? "").matchAll(/"([^"\n]+)"/g)].map(
 					(n): Ref => ({ line, name: n[1] ?? "", file: m[2] ?? own }),
 				),
 			),
 		),
-	);
+		...[...body.matchAll(OWNED_SECTION)].flatMap((m): Ref[] =>
+			filesOf(m[1] ?? "").length > 0
+				? [{ line, name: m[1] ?? "", file: null }]
+				: [],
+		),
+	]);
 }
 
 // The sections of the four files that the role reads, by file.

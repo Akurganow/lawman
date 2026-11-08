@@ -106,6 +106,14 @@ describe("the check of the links", () => {
 		expect(check('Read the "Evidence" section.')).toEqual(["1: Evidence"]);
 	});
 
+	test("the words of a departed heading without quotes fail, in any case of the first letter", () => {
+		expect(
+			check("A license read that the law's Evidence section names"),
+		).toEqual(["1: Evidence"]);
+		expect(check("Read the evidence section.")).toEqual(["1: Evidence"]);
+		expect(check("Read the evidence of the case.")).toEqual([]);
+	});
+
 	test("a section that the role reads by a self line, and one outside the four files, pass", () => {
 		expect(check('A line `self law` stands for "Exhibits".')).toEqual([]);
 		expect(check('Run "Sync the law with an older journal".')).toEqual([]);
@@ -159,6 +167,26 @@ describe("the check of the links", () => {
 			"1: Orders",
 			"2: Nowhere",
 		]);
+	});
+
+	test("a section named as `<owner>'s <Heading> section` is found, and an unknown name is not", () => {
+		const text = [
+			"In the order of the department contract's Name resolution section.",
+			"The role's Nowhere section holds it.",
+			"Read the law's Orders section.",
+		].join("\n");
+		expect(
+			wordsIn(text, "tick.md").map((r) => [r.line, r.name, r.file]),
+		).toEqual([
+			[1, "Name resolution", null],
+			[3, "Orders", null],
+		]);
+		const held = ["## Terms", ...text.split("\n")].join("\n");
+		const read = readBy([
+			["tick.md", ["Terms"]],
+			["LAW.md", ["Orders"]],
+		]);
+		expect(unreached(held, "tick.md", read)).toEqual(["2: Name resolution"]);
 	});
 
 	test("a link of the named form to a heading that left the law fails", () => {

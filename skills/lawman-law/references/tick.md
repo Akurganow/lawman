@@ -262,7 +262,7 @@ The role skips a path that the constitution names and the ref lacks. That covers
 
 The tick group gives patrol, the defender and the court the department page with its place, at the fetched commit. They resolve it themselves only for a self step `department`. Investigation and the prosecutor resolve the page at place 1 for a source command, at the tip of the precinct's default branch, as the "Run a source" section of `exhibits.md` says. The outcomes below belong to the self step only. The skill gives `<d>`, the department to resolve. Check it against `[a-z][a-z0-9-]*` before you build any path. A bad name gives `stopped-bad-department`.
 
-Take the first place that holds the page, in the order of the department contract's Name resolution section. A place without the page moves on. A failed check never falls through. The places are:
+Take the first place that holds the page, in the order below. A place without the page moves on. A failed check never falls through. The places are:
 
 1. `.lawman/departments/<d>.md` in the precinct, at `<ref>`.
 2. `departments/<d>.md` in the installation.

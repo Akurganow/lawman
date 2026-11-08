@@ -70,6 +70,7 @@ const CUT_TEXT_WORDS = [
 	"`of`",
 	"`secrets`",
 	"end part",
+	"lawman input 1 text part",
 	"lawman input 1 clean part",
 ];
 

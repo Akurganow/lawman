@@ -185,7 +185,7 @@ openclaw cron add --name "[lawman] <role>" --cron "<cron expression>" --tz <time
 - `add` is also `create`. The command is `openclaw cron`, alias `openclaw automations` (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
 - `--agent` picks the Lawman agent. Its workspace is the working folder of the run, as "Isolation" says.
 - `--session isolated` starts a fresh session for each run (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
-- `--tools exec,read` limits the job to the two tools that a role's steps run through. `exec` runs the journal's commands and the shell steps of the skills, and `read` loads the skill and the law files it names (as the skills' steps say). A job created with no `--tools` stores `*` (read in the harness code, openclaw/src/cron/tools-allow.ts).
+- `--tools exec,read` stores the list as the job's tool allow-list (read in the harness code, openclaw/src/cli/cron-cli/register.cron-add.ts). A run keeps the tools that the list names, plus a tool the host forces, such as `message` for delivery (read in the harness code, openclaw/src/agents/embedded-agent-runner/run/attempt-tool-construction-plan.ts). A job created with no `--tools` stores `*` (read in the harness code, openclaw/src/cron/tools-allow.ts). That a role needs only `exec` and `read` is (not verified).
 - `--trigger-script` names the role's entry. "Role entry" says what the file holds and how the assembly passes it.
 - `--light-context` keeps the start context files out of the run. "Isolation" names them.
 - `--message` carries the tick prompt. The words after it name the role's skill and tell the role to read it with the tool `read`.
@@ -484,7 +484,7 @@ The harness injects the files of the workspace into the system prompt: `AGENTS.m
 
 none: OpenClaw has no bare mode for a stored job. `--light-context` and `contextInjection` are the closest. Isolation rests on the working folder and the light context.
 
-A run's tool set is the job's `--tools`. `--tools exec,read` shrinks the surface to `exec` and `read`, the two tools that a role's steps run through (see "Scheduling").
+A run's tool set is the job's `--tools`. `--tools exec,read` shrinks the surface to `exec` and `read` (see "Scheduling"). That a role needs only these two is (not verified).
 
 The run prompt tells the agent that it may remove its own job. A run with that grant lists, reads the history of and removes only its own job (read in the harness code, openclaw/src/cron/run-prompt.ts). Whether a scheduled turn can create a job is (not verified).
 
