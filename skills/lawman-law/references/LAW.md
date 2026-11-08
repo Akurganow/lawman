@@ -115,7 +115,7 @@ Name a source by reference and do not retell it.
 
 ## Recorded reasons
 
-- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is a conversation for the owner, in the report, never a lead. A claim of fact inside a recorded reason is still judged against the tree.
+- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is a conversation for the owner, in the report, never a lead. A claim of fact inside a recorded reason is still judged against the tree. When the tree refutes that claim, the reason protects nothing and the candidate stays open.
 - No department judges a path from the Not judged section. The one page `licenses` reads there signs of foreign material and license statements, and judges nothing else.
 
 ## Requirement parts
@@ -123,7 +123,7 @@ Name a source by reference and do not retell it.
 - The need of a requirement may rest on any evidence. A role identifies it so another role can find it again. Identify a comment or issue by its URL. Identify a document or source by its address and the UTC time of the read. Identify an expert's finding by its record. The court weighs it.
 - A requirement is judged on three parts: fact, need and safety. Fact: the tree shows the absence, or the shape, that the request names. Need: the change is needed. Safety: the change breaks nothing and opens no vulnerability or defect.
 - Safety has two halves. The first half is that the change breaks nothing. The second half is that the change opens no vulnerability and no defect.
-- Each part has one status. A part is established when the evidence shows it and no evidence shows harm that stands. Fact and safety rest on an exhibit or a stated search with its output. Need may rest on any evidence. A part is refuted when the same kind of evidence shows the opposite, or when a closure class holds. A part is undecided when neither is so.
+- Each part has one status. A part is established when the evidence shows it and no evidence shows harm that stands. Fact and safety rest on an exhibit or a stated search with its output. Need may rest on any evidence. A part is refuted when the same kind of evidence shows the opposite, or when a closure class holds on a ground of that part. The other parts keep their status. A part is undecided when neither is so.
 - Safety is established when both halves are established. Safety is refuted when one half is refuted. Otherwise safety is undecided.
 - A part that nobody examined is undecided. A half of safety that nobody examined is undecided. An exposure stated as `none` with no search is undecided too.
 - No kind of exhibit is required for a part and none is excluded.
@@ -178,9 +178,9 @@ Each role applies them so:
 - Patrol knows the precedents of its department of both kinds before the search. After the search, a precedent drops no candidate. The lead of a candidate that one or both kinds fit names them.
 - The response unit names the precedents that fit in the lead, as a fact.
 - Investigation puts the precedents that fit in the `## Related` section of the case, as a fact. It closes no case on them.
-- The prosecutor and the defender write a difference and a request to cancel in their decision. A prosecutor that sees a protecting precedent of the same shape and no difference declines with the class `not confirmed` and names the precedent. A defender relies on a protecting precedent in a defence, not in a refute, and the court decides.
+- The prosecutor and the defender write one of two in their decision. They write a difference of the case or a request to cancel the precedent, following the objection they choose. A prosecutor that sees a protecting precedent of the same shape and no difference declines with the class `not confirmed` and names the precedent. A defender relies on a protecting precedent in a defence, not in a refute, and the court decides.
 - The court judges on the whole decision of each party. Its Grounds name each precedent that it follows or departs from. A protecting precedent that the court follows means that the violation is not established.
-- For a requirement, a precedent is evidence of the need, which the court weighs as any other. The name of the precedent identifies it.
+- For a requirement, a precedent is only evidence of the need, and it calls for no difference and no request to cancel. The court weighs it as any other. The name of the precedent identifies it.
 - The spec writer and the executor bring in no shape that a condemning precedent names a violation, in a spec or in code. A shape that a protecting precedent names no violation is no reason by itself to change code. A different outcome names the difference: the spec writer in the spec, the executor in its comment.
 - When both kinds fit a finding, the finding goes on with both. Each role names both, and the court chooses.
 
@@ -200,7 +200,7 @@ Each role applies them so:
 ## Alarms a role prints
 
 - A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves. Only the court's P0 raises an alarm for any of the three.
-- Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes nothing to the tracker. The line holds no value.
+- Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes no finding about the secret to the tracker. The other findings of the run are filed as usual. The line holds no value.
 - A secret found only in history is named `<path>@<hash>`, with the short commit hash in place of the line.
 - A live secret is a credential in the tree or in the history of the analysed commit. A placeholder is never a live secret. The department page says how to recognise one. Patrol decides by the look of the value.
 - Patrol never uses a found value and never checks whether it works.
@@ -276,7 +276,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 - Only the clerk opens a pull request. Only the clerk writes the link from an issue to a pull request, a `handed` marker on the issue.
 - For a conviction the clerk opens a draft pull request from a new branch off the tip. The title, the body and the hand-over comment hold fixed text. The commit holds the precedent files when the issue has no earlier pull request and the journal writes any from the ruling. The commit is empty otherwise. The marker on the issue is the last write.
 - An open pull request of the trusted login that closes an open issue is adopted at once. It happens at any stage of the funnel, with no court. Its priority is the best priority among the convictions of its sources, otherwise P2. It gets no precedent. The clerk replaces the body with fixed text, sets the pull request back to draft, and keeps the old body in the hand-over comment. An adopted pull request counts as not started, even when it holds a spec or code.
-- The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing.
+- The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing. It is not undone on the host.
   - All sources closed by a decider: the clerk closes the pull request. One source closed while others stay open is no refusal.
   - Pull request closed by a decider: the clerk closes the open sources as not planned, class `declined by the owner`.
   - Pull request merged: the clerk closes the open sources as completed, class `gone at <sha>` with the merge commit.
@@ -416,9 +416,9 @@ The issue sync ceiling is 1000 records. A list of exactly that size is rejected,
 
 ## The leak rule
 
-No installation path, home path, account name or token ever appears in a public text. Public text means a lead title, a lead body, a comment, a file, a commit message, and a pull request title and body.
+No installation path, home path, account name of the installation or the local user, or token ever appears in a public text. Public text means a lead title, a lead body, a comment, a file, a commit message, and a pull request title and body. A file counts as public text only when it is published or sent to the host.
 
-The journal's body check reads the text as the host renders it. A fenced or indented block is a quote: the check removes hidden characters from it and replaces each secret with a label. In the rest of the text, a code span included, it rejects a secret and a hidden character. Outside code it also rejects an image embed, an element that loads an address, and an HTML comment other than the marker. It rejects a body whose last line is not a valid marker outside a code block. A title and a commit message carry no marker. It exits with code 7 and prints reasons with line numbers, never the matched value. It checks no path.
+The journal's body check reads the text as the host renders it. A fenced or indented block is a quote: the check removes hidden characters from it and replaces each secret with a label. In the rest of the text, a code span included, it rejects a secret and a hidden character. Outside code it also rejects an image embed, an element that loads an address, and an HTML comment other than the marker. It rejects a body whose last line is not a valid marker outside a code block. A title and a commit message carry no marker. It exits with code 7 and prints reasons with line numbers, never the matched value. It does not walk the file system. A path in the text is checked as ordinary text.
 
 Paths inside the precinct's own tree are evidence and may appear.
 

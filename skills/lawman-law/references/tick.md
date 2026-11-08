@@ -30,7 +30,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 
 The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-version`. The line `self law-version` names no precinct. Each other self step line of the duty desk names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
 
-- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. It applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. The journal applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
@@ -66,7 +66,7 @@ bin/journal law-update <role> --revision <revision> --state <state> --tag <tag> 
 | Line | What the role does |
 | :-- | :-- |
 | `law current` | There is nothing to update. Go on. |
-| `self law-version` | Read the revision of the law folder, whether it has a local change, and the release tag of that revision. Answer `--revision <revision> --state clean` or `--state changed`, and add `--tag <tag>` when the revision has a release tag. A state that cannot be read counts as `changed`. When the revision cannot be read, answer `--revision unreadable` alone. |
+| `self law-version` | Read the revision of the law folder, whether it has a local change, and the release tag of that revision. Answer `--revision <revision> --state clean` or `--revision <revision> --state changed`, and add `--tag <tag>` when the revision has a release tag. A state that cannot be read counts as `changed`. When the revision cannot be read, answer `--revision unreadable` alone. |
 | `self release <repo> <tag> <folder> <asset>` | Put the asset, its provenance file `<asset>.sigstore.json` and the checksum file `SHA256SUMS` of the release of that tag into the folder. The folder is a path relative to the installation folder, and `<asset>` is a file name. The folder exists: never create it. Read step 3 of the section "Sync the law with an older journal" of `tick.md` yourself. Skip its creation of the folder. Answer `--release done`. When the release or a file does not exist, answer `--release missing`. Any other failure is `--release failed`. Give the result only as this option, never as a stop. |
 | `self verify <asset> <provenance> <repo> <commit>` | Check the signature of those files. `<asset>` and `<provenance>` are paths relative to the installation folder, and both files lie in the folder of `self release`, which exists: never create it. Read step 4 of the section "Sync the law with an older journal" of `tick.md` yourself. The journal has checked the checksum already. Give the result only as the option below, never as a stop. Answer `--verify passed` when the check reports success and `--verify failed` when it reports anything else. Answer `--verify not-run` when the check cannot run. Answer `--verify declined` when the host notes record that the user declined a verifier. Answer `--verify unnamed` when the notes are missing or name neither a verifier nor a refusal. |
 | `ALARM …`, then `synced <tag>` | The update is done. Keep every `ALARM` line for the answer. Your role group is stale: read it again. Apply the update list below. |
@@ -93,7 +93,7 @@ Do this section only when the first line of the output of your role entry does n
 
 Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal. When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop: the token `stopped-law-drift` and the reason "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".
 
-Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
+The commit to check is the one that the law folder holds. Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
 
 Otherwise do these steps in order. A step that fails ends the section with a stop. A stop uses the token `stopped-law-drift` unless the step names another.
 
@@ -172,7 +172,7 @@ bin/journal text <words of the full line> --part <k>
 
 ## Fetch the precinct
 
-Bring the clone `precincts/<p>` up to date with the repository on the host. Drop what the host has deleted. Update the clone's record of the host's default branch. The result is the fetched commit, the commit that the host's default branch holds. A failed step gives `stopped-git-fetch`.
+Bring the clone `precincts/<p>` up to date with the repository on the host. Drop the clone's records of the branches and tags that the host has deleted. Update the clone's record of the host's default branch. The result is the fetched commit, the commit that the host's default branch holds. A failed step gives `stopped-git-fetch`.
 
 ## Sync the tracker
 
