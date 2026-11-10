@@ -35,7 +35,7 @@ const withTimes = (over: Record<string, unknown>) => [
 
 const EMPTY_FORM = JSON.stringify(issuesForm([]));
 const OLD_FORM_REASON =
-	"the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
+	"the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
 
 describe("sync", () => {
 	const PRECINCT = "main";

@@ -402,7 +402,7 @@ export async function dutyDeskContinue(args: string[]): Promise<number> {
 				.get(id) as TickRow | null,
 	);
 	if (row === null || row.ended_at !== null || row.role !== DUTY_DESK)
-		throw new Fail(EXIT.USAGE, `no open tick with id ${id}`);
+		throw new Fail(EXIT.USAGE, `no open tick with id ${id} for this role`);
 	const t: Tick = { id, started: row.started_at };
 	// a tracker that no sync of this tick refreshed stops the tick, as a failed sync does
 	const stale = weighted().filter((p) => (p.synced_at ?? "") < t.started);

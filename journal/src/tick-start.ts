@@ -528,7 +528,7 @@ export async function tickInput(args: string[]): Promise<number> {
 	const input = inputOf(row.role);
 	const orderId = row.dispatch;
 	if (input === undefined || orderId === null)
-		throw new Fail(EXIT.USAGE, `tick ${id} took no order`);
+		throw new Fail(EXIT.USAGE, `tick ${id} has no order or input to print`);
 	const order = withDb(
 		(db) =>
 			db
@@ -538,7 +538,7 @@ export async function tickInput(args: string[]): Promise<number> {
 				)
 				.get(orderId) as Taken | null,
 	);
-	if (order === null) throw new Fail(EXIT.USAGE, `tick ${id} took no order`);
+	if (order === null) throw new Fail(EXIT.USAGE, `tick ${id} has no order or input to print`);
 	const size = inputChars(readConfig());
 	const t: Tick = { id, role: row.role };
 	const o = new Output();

@@ -471,7 +471,7 @@ describe("the self steps", () => {
 		const before = started("main").length;
 		const r = proceed(1);
 		expect(r.code).toBe(1);
-		expect(r.err).toContain("no open tick with id 1");
+		expect(r.err).toContain("no open tick with id 1 for this role");
 		expect(started("main").length).toBe(before);
 		expect(dispatches()).toEqual(written);
 		for (const id of ["9", "x"])
@@ -486,7 +486,7 @@ describe("the self steps", () => {
 		);
 		const r = proceed(1);
 		expect(r.code).toBe(1);
-		expect(r.err).toContain("no open tick with id 1");
+		expect(r.err).toContain("no open tick with id 1 for this role");
 		expect(dispatches()).toEqual([]);
 	});
 
@@ -743,7 +743,7 @@ describe("the command forms in process", () => {
 		expect(lines(r.out)).toContain("ended ordered");
 		const again = await inprocAsync(BASE, ["tick", "continue", "1"]);
 		expect(again.code).toBe(1);
-		expect(again.err).toContain("no open tick with id 1");
+		expect(again.err).toContain("no open tick with id 1 for this role");
 	});
 });
 

@@ -55,7 +55,7 @@ describe("sync in process: the issues form", () => {
 		const r = await fed(issues);
 		expect(r.code).toBe(EXIT.SYNC_INPUT);
 		expect(r.err).toContain(
-			"sync input rejected, cache untouched: the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.",
+			"sync input rejected, cache untouched: the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.",
 		);
 		expect(r.err).toContain(formText("issues"));
 		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);

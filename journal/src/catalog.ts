@@ -53,7 +53,7 @@ const numbers = (list: number[]) => (list.length > 0 ? list.join(",") : "none");
 function stateFile(tick: number): string {
 	const db = dbPath();
 	if (!statSync(db, { throwIfNoEntry: false })?.isFile())
-		throw new Fail(EXIT.USAGE, "the database is not a file");
+		throw new Fail(EXIT.USAGE, "there is no database file");
 	return join(dirname(db), "runs", String(tick), "catalog.json");
 }
 
@@ -61,7 +61,7 @@ function readState(file: string): State {
 	try {
 		return JSON.parse(readFileSync(file, "utf8")) as State;
 	} catch {
-		throw new Fail(EXIT.USAGE, "catalog has no list for this tick");
+		throw new Fail(EXIT.USAGE, "catalog has no readable list for this tick");
 	}
 }
 

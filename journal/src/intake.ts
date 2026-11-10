@@ -65,7 +65,7 @@ export function intakeStage(
 ): IntakeStage {
 	const row = candidates(db, precinct, issue)[0];
 	if (row === undefined)
-		throw new Fail(EXIT.USAGE, `unknown issue ${precinct} #${issue}`);
+		throw new Fail(EXIT.USAGE, `unknown issue ${precinct} #${issue} is missing from the cache`);
 	const need = waits(db, precinct, row) ? "intake" : "none";
 	return { need, state: row.state, line: `need=${need} state=${row.state}` };
 }
