@@ -538,7 +538,8 @@ export async function tickInput(args: string[]): Promise<number> {
 				)
 				.get(orderId) as Taken | null,
 	);
-	if (order === null) throw new Fail(EXIT.USAGE, `tick ${id} has no order or input to print`);
+	if (order === null)
+		throw new Fail(EXIT.USAGE, `tick ${id} has no order or input to print`);
 	const size = inputChars(readConfig());
 	const t: Tick = { id, role: row.role };
 	const o = new Output();

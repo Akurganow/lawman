@@ -822,7 +822,10 @@ export function oldLineToFile(o: OldLine): string {
 	const found = oldItems(text).filter((i) => i.line?.number === o.number);
 	const [item] = found;
 	if (item?.line === undefined || found.length > 1)
-		throw new Fail(EXIT.USAGE, `expected exactly one precedent line #${o.number}`);
+		throw new Fail(
+			EXIT.USAGE,
+			`expected exactly one precedent line #${o.number}`,
+		);
 	const { date, rule, link } = item.line;
 	const folder = new Folder(o.tree);
 	const name = folder.free(`${date}-${o.gist}`);

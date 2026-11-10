@@ -78,7 +78,7 @@ describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
 		prepare();
 		const r = run(first("9"));
 		expect(r.code).toBe(1);
-		expect(r.err).toContain("no list");
+		expect(r.err).toContain("no readable list");
 	});
 
 	test("a list with nothing to send prints counts only", () => {

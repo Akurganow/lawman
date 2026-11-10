@@ -400,6 +400,6 @@ describe("catalog answer usage", () => {
 		expect(readdirSync(dirname(dbFile))).not.toContain("runs");
 		const r = run(answer("9"), resultsReply([[]]));
 		expect(r.code).toBe(1);
-		expect(r.err).toContain("no list");
+		expect(r.err).toContain("no readable list");
 	});
 });
