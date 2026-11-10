@@ -31,7 +31,7 @@ Run it before each commit, on the staged diff and on the message. Run it again o
 
 Count the matches in the added lines of each staged file. The search reads binary files as text and handles any file name. A count above zero ends the tick with `failed`. Push nothing from the current part. Parts pushed earlier stay. Blockers holds the path and the count, never the value.
 
-No finding means a clean diff. Check the commit message and the comment text the same way. Send the text to the check as data on standard input, through the quoted heredoc of the tick file's Working rules. The count must be `0`. A search that finds nothing is a clean result.
+No finding means a clean diff. Check the commit message and the comment text the same way. Send the text to the check as data on standard input, through the quoted heredoc of the `tick.md#working-rules` section. The count must be `0`. A search that finds nothing is a clean result.
 
 ## Work
 

@@ -5,7 +5,7 @@ description: Runs one tick of a Lawman clerk, which takes one order, does the on
 
 # Clerk
 
-One tick takes one order on an issue and does the one job that `bin/journal case` names for it. The clerk is the only role that opens a pull request and the only role that writes the link from an issue to its pull request.
+One tick takes one order on an issue and does the one job that `bin/journal case` names for it. The clerk is the only role that opens a pull request. It is also the only role that writes the link from an issue to its pull request.
 
 The clerk reads and writes comments, pull requests and issue states. It writes one branch through a worktree that it removes at the end.
 
@@ -16,19 +16,19 @@ The clerk reads and writes comments, pull requests and issue states. It writes o
 - Never add or remove a reaction, and never edit a `Spec` comment.
 - One job per tick. An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-clerk` section.
 
 ## Working rules
 
-- In a clone, only bring it up to date, update its record of the host's default branch, read commits and file contents, add the tree of the tick, remove it and read whether the clone holds a change.
-- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents`, record one commit, empty or holding that folder, and publish the one branch of the open or precedent recipe.
-- Never change what a clone has checked out, discard a change, create or move a branch or tag other than that one branch, merge, set changes aside or publish another ref.
+- In a clone, only bring it up to date, update its record of the host's default branch, and read commits and file contents. In a clone, only add the tree of the tick, remove it and read whether the clone holds a change.
+- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents` and record one commit, empty or holding that folder. In the tree `runs/<tick id>/tree`, only publish the one branch of the open or precedent recipe.
+- Never change what a clone has checked out, discard a change, or create or move a branch or tag other than that one branch. Never merge, set changes aside or publish another ref.
 - Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
 - Read the place of the TypeSafe API key from the line `typesafe_key:` of `config.yaml`, only for the Jev requests of the precedent files.
-- Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the "Write the precedent files" section of `lawman/skills/clerk/references/jobs.md` says, and no other.
+- Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the `jobs.md#write-the-precedent-files` section says. Send no other.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
-  - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections of `tick.md` say.
+  - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections say.
   - Read the comments of an issue, and the state of an issue.
   - Read one comment by its id, for the read-back.
   - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
@@ -67,7 +67,7 @@ A value that reaches a command or a comment passes its check first. A failed che
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -75,15 +75,15 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role clerk
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role clerk --part <k>
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -97,7 +97,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=clerk tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`.
-5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```
@@ -127,7 +127,7 @@ The journal ends a stale order itself. After a self step `fetch`, `issues`, `pul
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
 1. `job=state`: run the `tick.md#check-the-decider` section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
-2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
+2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author can reopen a pull request. The author is the trusted login.
 3. `job=adopt`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
 | `action` | Recipe |

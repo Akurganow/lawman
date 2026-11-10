@@ -16,7 +16,7 @@ Read this file at step 9 of the executor skill. It holds the recipes of steps 9 
    - A status other than completed: wait for the run to finish. A wait that reports failure is red only when a fresh read of the run then shows the conclusion failure. A cancelled conclusion is no result.
    - A run that ended cancelled while you waited: look again for a newer run of the same head.
    - Green: the file passes.
-   - Red: read the logs of the failed steps. They are evidence. Fix the code, commit and push as the "Commit and push" recipe of `work.md` says. Then repeat this recipe from step 3 on the new head. There is no limit on attempts.
+   - Red: read the logs of the failed steps. They are evidence. Fix the code, commit and push as the `work.md#commit-and-push` recipe says. Then repeat this recipe from step 3 on the new head. There is no limit on attempts.
    - A failure you cannot fix ends the tick with `failed`. Blockers names the file and the failing step.
 4. Read all other checks of the pull request. Do not wait for them. Take the result from the data you read, never from the status of the read. A failed one is evidence for `## Verified`.
 

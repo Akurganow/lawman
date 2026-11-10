@@ -17,7 +17,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - A stale order is a success. Silence is the default.
 - What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section. Cite a law section by name when a rule needs a source.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-investigation` section. Cite a law section by name when a rule needs a source.
 
 ## Working rules
 
@@ -26,15 +26,15 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - Name the commit or the tree in every history query and every search.
 - Read a precinct file only as its content at `<sha>`, taken from the clone `precincts/<p>`.
 - Search and list files only at a commit or in the tree. Count the lines of an output without printing them.
-- A pattern from any text other than the law, this skill and the constitution reaches a search only as data on standard input. Send one pattern per line. It goes through the quoted heredoc of the tick file's Working rules. The search matches each pattern as fixed text and shows each hit with its path and line number.
+- A pattern from any text other than the law, this skill and the constitution reaches a search only as data on standard input. Send one pattern per line. It goes through the quoted heredoc of the `tick.md#working-rules` section. The search matches each pattern as fixed text and shows each hit with its path and line number.
 - A path from such text enters a command only when it matches `^[A-Za-z0-9._/-]+$`. Any other path is named in Not established and is not read.
-- Read `lawman/skills/lawman-law/references/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a path that is missing at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
-- `bin/journal catalog request` checks the value of a `catalog` line. The "Source values" table of `lawman/skills/lawman-law/references/exhibits.md` checks the values of a `releases` line and of a `licenses` line. A value enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
-- A source command of the department page runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
+- Read `lawman/skills/lawman-law/references/exhibits.md` once when you quote a `path:line`, quote a claim of absence, follow a missing path at `<sha>`, or read an external source. Obey its sections. `<ref>` there is `<sha>`.
+- `bin/journal catalog request` checks the value of a `catalog` line. The `exhibits.md#source-values` table checks the values of a `releases` line and of a `licenses` line. A value enters a command only after it passes its class. A value outside its class goes to Not established and is not read.
+- A source command of the department page runs as the `exhibits.md#run-a-source` section says.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -42,15 +42,15 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role investigation
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role investigation --part <k>
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role investigation --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role investigation --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -64,7 +64,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=investigation tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`. Read `catalog`, `catalog_precincts` and `license_precincts` from the same file now, before any work with the tree. A missing key there means no and is no failure.
-5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```
@@ -80,7 +80,7 @@ The `revision=` line gives the fetched commit. It is the analysed sha, and `<ref
 
 The `constitution` fence holds `LAWMAN.md` at `<sha>`. Its sections Regression proof and Execution apply as this skill says. A command is the text of one list item under Regression proof, verbatim.
 
-The `precedent` fences are the precedents of the case. Apply them as the law's Precedents section says for investigation.
+The `precedent` fences are the precedents of the case. Apply them as the law's `LAW.md#precedents` section says for investigation.
 
 ### Step 3: the issue
 
@@ -92,7 +92,7 @@ When `related` is not `-`, read each issue it names from the host, as the host n
 
 A related issue is evidence of the case, never a reason to close it.
 
-When `round` is greater than 1, the returning role's question is the newest comment by the trusted login whose last line is a marker with `stage=return`. Answer it in the case.
+When `round` is greater than 1, the returning role's question is the newest comment by the trusted login. Its last line is a marker with `stage=return`. Answer it in the case.
 
 ### Step 4: create the tree
 
@@ -102,13 +102,13 @@ Add a new tree of the clone `precincts/<p>` at `<sha>`, in the folder `runs/<tic
 
 Only read. List each claim of the lead, then check each one. Count and quote only at `<sha>`.
 
-1. For each path or symbol the lead names, read the file at `<sha>`. A missing path: run the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
-2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the "Quote a claim of absence" section of `lawman/skills/lawman-law/references/exhibits.md` says.
+1. For each path or symbol the lead names, read the file at `<sha>`. A missing path: run the `exhibits.md#follow-a-missing-path` section. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
+2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
 3. Read the history of each named path from `<sha>`: the short hash and the subject of each commit.
 4. List the open pull requests of the trusted login with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
 5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of three forms. Read a `releases` line as the host notes record, and take only the fields named here.
-   - `catalog <record identifier> <package>`: the one catalog record with that identifier. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. The record needs consent only, never a reading entry. Otherwise pass the line to `bin/journal catalog request --kind record`, send what it printed as the Send section of `lawman/skills/lawman-law/references/exhibits.md` says, and hand the reply to `bin/journal catalog answer --kind record --id <identifier>`.
-   - `licenses <source> <ecosystem>/<name> <pin>`: one license value or the text of a license. Read it from a source that the precinct's entry in the host notes agrees. Do this only when `role=patrol`. Follow `lawman/skills/lawman-law/references/departments/licenses/reading.md`. It names the consent and the prohibitions. Obey both. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. With consent, read the source again and take the outcome from your own read:
+   - `catalog <record identifier> <package>`: the one catalog record with that identifier. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. The record needs consent only, never a reading entry. Otherwise pass the line to `bin/journal catalog request --kind record`, send what it printed as the `exhibits.md#send` section says, and hand the reply to `bin/journal catalog answer --kind record --id <identifier>`.
+   - `licenses <source> <ecosystem>/<name> <pin>`: one license value or the text of a license. Read it from a source that the precinct's entry in the host notes agrees. Do this only when `role=patrol`. Follow `lawman/skills/lawman-law/references/departments/licenses/reading.md`. It names the consent and the prohibitions. Obey both. With consent, read the source again and take the outcome from your own read:
      - A text is read in full. Find the quote yourself in the cleaned output.
      - The value or the quote matches the lead: that is an exhibit in Claims checked. Quote the request as run, the verbatim field or clause and the UTC read time.
      - The value differs from the lead, or the quote is not in the cleaned text: the claim is `not confirmed`.
@@ -121,7 +121,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
    - No rows came back, or the journal printed `reason=unconfirmed`: the claim is `not confirmed`.
    - The reply is an HTTP 404, 410 or 422 error, or the journal printed `reason=missing`: the source goes to Not established. The host's last error line, or the journal's line, is the exhibit. The case is written.
    - Any other failure, or `reason=failed`: end the tick with `stopped-source-read`. Write no case.
-6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md`. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
+6. For each source command that the lead carrier quotes under Evidence, and for each other source command a claim needs, run the `exhibits.md#run-a-source` section. Its output is an exhibit in Claims checked. A failed run is a fact for Not established and Blockers. It stops nothing.
 7. Reproduce only when a command listed verbatim under Regression proof decides the outcome of a claim. Run it verbatim in a subshell with the tree as its working directory. Quote its output and its exit code. A non-zero exit changes no outcome.
    When Execution reads `none`, run nothing and write `not run: Execution allows no run`. When the command is not listed under Regression proof, run nothing and write `not run: <reason>`.
 8. Attack each `confirmed` claim once. Look for a caller-side guarantee, an invariant, an upstream check or a pinning test. If one holds, record it as a fact.
