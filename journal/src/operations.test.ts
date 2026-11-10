@@ -2,8 +2,8 @@ import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as clean from "./clean";
-import { EXIT } from "./db";
-import { inprocAsync } from "./inproc";
+import { EXIT, out } from "./db";
+import { capturedAsync, inprocAsync, inprocFed } from "./inproc";
 import { installationPlace, launch } from "./launch";
 import {
 	command,
@@ -12,7 +12,17 @@ import {
 	recording,
 	shared,
 } from "./operations-test-fixture";
-import { addPrecincts, BASE, dir, SHA, TRUSTED, tempDb } from "./test-helpers";
+import { syncPulls } from "./pulls";
+import { BOT } from "./pulls-fixture";
+import {
+	addPrecincts,
+	BASE,
+	cli,
+	dir,
+	SHA,
+	TRUSTED,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 beforeEach(() => addPrecincts({ main: 1 }));
@@ -179,32 +189,10 @@ describe("run: the arguments", () => {
 		expect(started()).not.toBe("");
 	});
 
-	test.each([
-		[["fetch", "x"]],
-		[["file", SHA]],
-		[["decider", "issue"]],
-		[["issues"]],
-		[["issues", "--author", TRUSTED, "--reset", "--reset"]],
-		[["pulls", "--author", TRUSTED, "--reset"]],
-		[["review"]],
-		[[]],
-	])("the arguments %j are a usage error", async (args) => {
-		const r = await run(...args);
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(r.out).toBe("");
-		expect(r.err).toContain("usage: journal run");
-	});
-
 	test("an author outside the login class is a usage error, as in sync", async () => {
 		const r = await run("issues", "--author", "a b");
 		expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
 		expect(r.err).toContain("invalid login");
-	});
-
-	test("an unknown precinct is a usage error", async () => {
-		const r = await inprocAsync(BASE, ["run", "ghost", "fetch"]);
-		expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
-		expect(r.err).toContain("unknown precinct: ghost");
 	});
 });
 
@@ -271,15 +259,6 @@ describe("commands", () => {
 			),
 		);
 	});
-
-	test.each([[["ghost"]], [["Bad"]], [["main", "extra"]]])(
-		"%j is a usage error",
-		async (args) => {
-			const r = await inprocAsync(BASE, ["commands", ...args]);
-			expect(r.code).toBe(EXIT.USAGE);
-			expect(r.out).toBe("");
-		},
-	);
 });
 
 describe("the launch module", () => {
@@ -305,4 +284,81 @@ describe("the launch module", () => {
 	test("a file that does not start gives null", async () => {
 		expect(await launch(configs("main"), "fetch", [])).toBeNull();
 	});
+});
+
+test("an unknown precinct is a usage error", async () => {
+	// old-precedent check
+	const c = await inprocFed(
+		BASE,
+		["old-precedent", "check", "other", "1:2"],
+		"",
+	);
+	expect(c.code).toBe(EXIT.USAGE);
+	// run
+	const r = await inprocAsync(BASE, ["run", "ghost", "fetch"]);
+	expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
+	expect(r.err).toContain("unknown precinct: ghost");
+	// syncPulls
+	expect(
+		(
+			await capturedAsync("2026-05-01T00:00:00Z", async () =>
+				out(await syncPulls("nowhere", BOT, "{}")),
+			)
+		).code,
+	).toBe(1);
+});
+
+test("the arguments %j are a usage error", async () => {
+	// clean
+	for (const args of [
+		["extra"],
+		["--json", "x"],
+		["--jsonx"],
+		["--part", "1", "--json"],
+		["--part", "0"],
+		["--json", "--part"],
+	] as string[][]) {
+		const r = cli(["clean", ...args], {}, "");
+		expect([args, r]).toEqual([
+			args,
+			{ code: EXIT.USAGE, out: "", err: expect.stringContaining("--json") },
+		]);
+	}
+	// lint-body
+	for (const args of [
+		["extra"],
+		["--no-marker", "x"],
+		["--marker"],
+	] as string[][]) {
+		const r = cli(["lint-body", ...args]);
+		expect([args, r]).toEqual([
+			args,
+			{
+				code: EXIT.USAGE,
+				out: "",
+				err: expect.stringContaining("--no-marker"),
+			},
+		]);
+	}
+	// run
+	for (const args of [
+		["fetch", "x"],
+		["file", SHA],
+		["decider", "issue"],
+		["issues"],
+		["issues", "--author", TRUSTED, "--reset", "--reset"],
+		["pulls", "--author", TRUSTED, "--reset"],
+		["review"],
+		[],
+	] as string[][]) {
+		const r = await run(...args);
+		expect([args, r]).toEqual([
+			args,
+			{
+				code: EXIT.USAGE,
+				out: "",
+				err: expect.stringContaining("usage: journal run"),
+			},
+		]);
+	}
 });

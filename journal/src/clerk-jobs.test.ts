@@ -296,13 +296,6 @@ describe("table rows", () => {
 		});
 		expect(open.job).toBe("-");
 	});
-
-	test("kept issue=open over settled gives no job", () => {
-		const r = run({
-			markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
-		});
-		expect(r.job).toBe("-");
-	});
 });
 
 describe("the precedent pull request", () => {

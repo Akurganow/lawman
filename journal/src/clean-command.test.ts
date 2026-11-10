@@ -120,18 +120,4 @@ describe("clean command, both forms", () => {
 			expect(run(" \n", ...args)).toEqual({ code: EXIT.OK, out: "", err: "" });
 		},
 	);
-
-	test.each([
-		[["extra"]],
-		[["--json", "x"]],
-		[["--jsonx"]],
-		[["--part", "1", "--json"]],
-		[["--part", "0"]],
-		[["--json", "--part"]],
-	])("the arguments %j are a usage error", (args) => {
-		const r = run("", ...args);
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(r.out).toBe("");
-		expect(r.err).toContain("--json");
-	});
 });

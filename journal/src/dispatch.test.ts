@@ -1,4 +1,6 @@
+import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
+import { mkdirSync, rmSync } from "node:fs";
 import { inTransaction, open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import {
@@ -6,6 +8,7 @@ import {
 	BASE,
 	call,
 	dbFile,
+	dir,
 	later,
 	must,
 	order,
@@ -16,37 +19,60 @@ import {
 
 tempDb();
 
-describe("dispatch", () => {
-	const add = (
-		precinct: string,
-		role = "patrol",
-		extra: string[] = [],
-		clock = BASE,
-	) =>
-		call(clock, [
-			"dispatch",
-			"add",
-			"--precinct",
-			precinct,
-			"--role",
-			role,
-			...extra,
-		]);
-	// the first takeable order of the role, taken as the start does it, in the line the old take printed
-	const take = (clock = BASE, role = "patrol") => {
-		const db = open(dbFile);
-		try {
-			const o = takeableOrders(db, role)[0];
-			if (o === undefined) return { out: "" };
-			inTransaction(db, () => takeOrder(db, role, o.id, clock));
-			return {
-				out: `${o.id}\t${o.precinct}\t${o.repo}\t${o.department ?? ""}\t${o.issue ?? ""}\n`,
-			};
-		} finally {
-			db.close();
-		}
-	};
+const add = (
+	precinct: string,
+	role = "patrol",
+	extra: string[] = [],
+	clock = BASE,
+) =>
+	call(clock, [
+		"dispatch",
+		"add",
+		"--precinct",
+		precinct,
+		"--role",
+		role,
+		...extra,
+	]);
+// the first takeable order of the role, taken as the start does it, in the line the old take printed
+const take = (clock = BASE, role = "patrol") => {
+	const db = open(dbFile);
+	try {
+		const o = takeableOrders(db, role)[0];
+		if (o === undefined) return { out: "" };
+		inTransaction(db, () => takeOrder(db, role, o.id, clock));
+		return {
+			out: `${o.id}	${o.precinct}	${o.repo}	${o.department ?? ""}	${o.issue ?? ""}\n`,
+		};
+	} finally {
+		db.close();
+	}
+};
+const wake = (clock = BASE, role = "patrol") =>
+	call(clock, ["wake", "--role", role]);
+function seedOrders(body: (db: Database) => void): void {
+	seed((db) => {
+		db.run(
+			"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('main', 'o/main', 1)",
+		);
+		body(db);
+	});
+}
+const ordersOf = (out: string) =>
+	out.split("\n").filter((line) => line.startsWith("order "));
+const takeable = () => {
+	const db = open(dbFile);
+	const names = takeableOrders(db, "patrol").map((o) => o.precinct);
+	db.close();
+	return names;
+};
+// the state one test got from the hooks: a new folder for the database
+const fresh = () => {
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir);
+};
 
+describe("dispatch", () => {
 	test("add prints an integer id and a duplicate open order exits 2 with one stderr line", () => {
 		addPrecincts({ a: 1 });
 		const first = add("a");
@@ -180,33 +206,6 @@ describe("dispatch", () => {
 		}
 	});
 
-	test("a patrol order nobody took comes before a taken one", () => {
-		addPrecincts({ a: 3, b: 2, c: 1 });
-		seed((db) => {
-			order(db, "a", "patrol", { at: BASE, takenAt: BASE });
-			order(db, "b", "patrol", { at: later(1) });
-			order(db, "c", "patrol", { at: later(2) });
-		});
-		const db = open(dbFile);
-		try {
-			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
-				"b",
-				"c",
-				"a",
-			]);
-		} finally {
-			db.close();
-		}
-	});
-
-	test("a taken order stays takeable at any time", () => {
-		addPrecincts({ a: 1 });
-		const id = add("a").out.trim();
-		expect(take(BASE).out).not.toBe("");
-		expect(take(later(0, 1)).out.split("	")[0]).toBe(id);
-		expect(take(later(24, 1)).out.split("	")[0]).toBe(id);
-	});
-
 	test("close is a usage error and leaves the order open", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
@@ -273,4 +272,74 @@ describe("dispatch", () => {
 		expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(1);
 		expect(call(BASE, ["next", "--role", "patrol"]).code).toBe(1);
 	});
+});
+
+test("a patrol order nobody took comes before a taken one", () => {
+	// dispatch
+	addPrecincts({ a: 3, b: 2, c: 1 });
+	seed((db) => {
+		order(db, "a", "patrol", { at: BASE, takenAt: BASE });
+		order(db, "b", "patrol", { at: later(1) });
+		order(db, "c", "patrol", { at: later(2) });
+	});
+	{
+		const db = open(dbFile);
+		try {
+			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
+				"b",
+				"c",
+				"a",
+			]);
+		} finally {
+			db.close();
+		}
+	}
+	// wake
+	fresh();
+	seedOrders((db) => {
+		db.run(
+			"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('other', 'o/other', 1)",
+		);
+		order(db, "main", "patrol", { at: BASE, takenAt: BASE });
+		order(db, "other", "patrol", { at: later(1) });
+	});
+	const untaken = must(
+		rows("SELECT id FROM dispatches WHERE taken_at IS NULL")[0]?.id as
+			| number
+			| undefined,
+	);
+	const taken = must(
+		rows("SELECT id FROM dispatches WHERE taken_at IS NOT NULL")[0]?.id as
+			| number
+			| undefined,
+	);
+	{
+		const db = open(dbFile);
+		try {
+			expect(takeableOrders(db, "patrol").map((o) => o.id)).toEqual([
+				untaken,
+				taken,
+			]);
+		} finally {
+			db.close();
+		}
+	}
+	// the wake lists the first patrol order only: the one nobody took
+	expect(ordersOf(wake(later(2)).out)).toEqual([
+		`order ${untaken} other o/other - -`,
+	]);
+});
+
+test("a taken order stays takeable at any time", () => {
+	// dispatch
+	addPrecincts({ a: 1 });
+	const id = add("a").out.trim();
+	expect(take(BASE).out).not.toBe("");
+	expect(take(later(0, 1)).out.split("	")[0]).toBe(id);
+	expect(take(later(24, 1)).out.split("	")[0]).toBe(id);
+	// the patrol take
+	fresh();
+	addPrecincts({ a: 1 });
+	seed((db) => order(db, "a", "patrol", { takenAt: "2026-03-01T00:00:00Z" }));
+	expect(takeable()).toEqual(["a"]);
 });

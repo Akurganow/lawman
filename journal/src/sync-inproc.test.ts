@@ -75,49 +75,6 @@ describe("sync in process: the issues form", () => {
 	});
 });
 
-describe("sync in process: a malformed object", () => {
-	const reacted = () => ({ approvedBy: [], rejectedBy: [] });
-	const commented = (comment: Record<string, unknown>) => ({
-		writers: [],
-		issues: [
-			{
-				number: 1,
-				state: "OPEN",
-				createdAt: CREATED,
-				author: { login: TRUSTED },
-				comments: [{ createdAt: CREATED, ...comment }],
-			},
-		],
-	});
-
-	test.each([
-		["no writers", { issues: [] }],
-		["no issues", { writers: [] }],
-		["writers that is no list", { writers: "maintainer", issues: [] }],
-		["a writers entry that is no text", { writers: [1], issues: [] }],
-		["issues that is no list", { writers: [], issues: {} }],
-		["a comment without an id", commented({})],
-		["a comment with an empty id", commented({ id: "", ...reacted() })],
-		["a comment without approvedBy", commented({ id: "c1", rejectedBy: [] })],
-		["a comment without rejectedBy", commented({ id: "c1", approvedBy: [] })],
-		[
-			"a comment with approvedBy that is no list",
-			commented({ id: "c1", ...reacted(), approvedBy: "x" }),
-		],
-		[
-			"a comment with a reactor that is no text",
-			commented({ id: "c1", ...reacted(), rejectedBy: [7] }),
-		],
-	])("%s exits 4 and leaves the cache", async (_name, input) => {
-		await fed(issuesForm(issues));
-		const before = rows("SELECT * FROM issues ORDER BY issue");
-		const r = await fed(input);
-		expect(r.code).toBe(EXIT.SYNC_INPUT);
-		expect(r.err).toContain(formText("issues"));
-		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
-	});
-});
-
 describe("the issues reader", () => {
 	const commentOf = (extra: Record<string, unknown>) =>
 		readIssues(

@@ -4,6 +4,8 @@ import { join } from "node:path";
 import { human, T } from "./cases-fixture";
 import * as cleanHost from "./clean-host";
 import { cleanHostText } from "./clean-host";
+import * as db from "./db";
+import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
 import { CONFIG, content } from "./input-test-fixture";
 import { configs } from "./operations-test-fixture";
@@ -340,12 +342,30 @@ describe("the text command", () => {
 		expect(r.out).toBe("");
 		expect(r.err).toContain("usage: journal text");
 	});
+});
 
-	test("an invalid input_chars exits 1 as the tick does", async () => {
-		await started(16000, "alpha");
-		writeFileSync(join(dir, "config.yaml"), `${CONFIG}input_chars: many\n`);
-		const r = await text("main", "issue", "3", "body");
-		expect(r.code).toBe(1);
+test("an invalid input_chars exits 1 as the tick does", async () => {
+	// clean
+	const cleanIn = async (input: string, ...args: string[]) => {
+		const stdin = spyOn(db, "readStdin").mockReturnValue(input);
+		try {
+			return await inprocAsync("2026-10-17T10:45:00Z", ["clean", ...args]);
+		} finally {
+			stdin.mockRestore();
+		}
+	};
+	const sized = (n: number | string) =>
+		writeFileSync(join(dir, "config.yaml"), `input_chars: ${n}\n`);
+	for (const args of [[], ["--json"]]) {
+		sized("many");
+		const r = await cleanIn('"x"', ...args);
+		expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
 		expect(r.err).toContain("invalid input_chars");
-	});
+	}
+	// text
+	await started(16000, "alpha");
+	writeFileSync(join(dir, "config.yaml"), `${CONFIG}input_chars: many\n`);
+	const r = await text("main", "issue", "3", "body");
+	expect(r.code).toBe(1);
+	expect(r.err).toContain("invalid input_chars");
 });

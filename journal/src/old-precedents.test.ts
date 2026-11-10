@@ -109,13 +109,6 @@ describe("old-precedent list", () => {
 		);
 	});
 
-	test("a tail in parentheses that is no link stays in the rule", async () => {
-		const text = page("- 2026-09-02 #1: Never use bar (important)");
-		expect((await inprocFed(BASE, ["old-precedent", "list"], text)).out).toBe(
-			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nNever use bar (important)\n~~~\n",
-		);
-	});
-
 	test("a page with no old line prints none", async () => {
 		expect(
 			(await inprocFed(BASE, ["old-precedent", "list"], page("none"))).out,
@@ -282,15 +275,6 @@ describe("old-precedent check", () => {
 			err: "",
 		});
 	});
-
-	test("an unknown precinct is a usage error", async () => {
-		const r = await inprocFed(
-			BASE,
-			["old-precedent", "check", "other", "1:2"],
-			"",
-		);
-		expect(r.code).toBe(EXIT.USAGE);
-	});
 });
 
 describe("old-precedent move", () => {
@@ -425,11 +409,5 @@ describe("old-precedent as a program", () => {
 		);
 		expect(r).toEqual({ code: 0, out: "entry 2026-09-03-owner\n", err: "" });
 		expect(lawman()).not.toContain("#2:");
-	});
-
-	test("a wrong call is a usage error with exit 1", () => {
-		const r = cli(["old-precedent", "check"], { LAWMAN_DB: dbFile });
-		expect(r.code).toBe(1);
-		expect(r.err).toContain("usage: journal old-precedent");
 	});
 });

@@ -279,15 +279,6 @@ describe("clean command in parts", () => {
 		expect(bodies.join("")).toBe(`"${"q".repeat(80)}${LABEL}"`);
 	});
 
-	test("an invalid input_chars exits 1 as the tick does", async () => {
-		for (const args of [[], ["--json"]]) {
-			sized("many");
-			const r = await cleanIn('"x"', ...args);
-			expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
-			expect(r.err).toContain("invalid input_chars");
-		}
-	});
-
 	test("without a configuration the part is 16000 characters", async () => {
 		const short = `${"x".repeat(15_998)}\n`;
 		expect(await cleanIn(short)).toEqual({

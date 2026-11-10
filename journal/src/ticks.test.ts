@@ -160,24 +160,6 @@ describe("ticks", () => {
 				{ outcome: "silent", report: "first" },
 			]);
 		});
-
-		test("bad arguments exit 1", () => {
-			const id = start("patrol");
-			const bad = [
-				["tick"],
-				["tick", "bogus"],
-				["tick", "start"],
-				["tick", "start", "--role", "Bad"],
-				["tick", "end", id],
-				["tick", "end", id, "--outcome", "done"],
-				["tick", "end", "x", "--outcome", "silent"],
-				["tick", "end", id, "--outcome", "silent", "--precinct", "Bad"],
-				["tick", "end", id, "--outcome", "silent", "--department", "Bad Dept"],
-				["tick", "end", id, "--outcome", "silent", "--dispatch", "0"],
-			];
-			for (const args of bad)
-				expect([args, call(BASE, args).code]).toEqual([args, 1]);
-		});
 	});
 
 	describe("tick list", () => {

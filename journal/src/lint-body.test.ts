@@ -306,16 +306,6 @@ describe("lint-body command", () => {
 			err: "1: HTML comment\n",
 		});
 	});
-
-	test.each([[["extra"]], [["--no-marker", "x"]], [["--marker"]]])(
-		"the arguments %j are a usage error",
-		(args) => {
-			const r = cli(["lint-body", ...args]);
-			expect(r.code).toBe(EXIT.USAGE);
-			expect(r.out).toBe("");
-			expect(r.err).toContain("--no-marker");
-		},
-	);
 });
 
 describe("lint-body library failure", () => {

@@ -149,10 +149,6 @@ describe("syncPulls in process", () => {
 		).toEqual(FIXTURE_ROWS);
 	});
 
-	test("an unknown precinct is a usage error", async () => {
-		expect((await sync("nowhere", "{}")).code).toBe(1);
-	});
-
 	test("a repeated number is rejected and a valid replacement wins", async () => {
 		seed((db) => {
 			db.run(

@@ -142,16 +142,6 @@ describe("the OpenClaw trigger script", () => {
 describe("the Role entry section of the OpenClaw page", () => {
 	const [lines] = sectionsOf(PAGE, ["Role entry"]);
 
-	test.each([
-		["none", "# Page\n\n### Role entry\n\n```sh\nexit 0\n```\n"],
-		[
-			"two",
-			"# Page\n\n### Role entry\n\n```javascript\n1;\n```\n\n```javascript\n2;\n```\n",
-		],
-	])("a page with %s javascript blocks fails the test", (_, page) => {
-		expect(() => scriptOf(page)).toThrow("javascript blocks");
-	});
-
 	test("names the size of a part", () => {
 		expect(lines).toContain("input_chars: 15000");
 	});

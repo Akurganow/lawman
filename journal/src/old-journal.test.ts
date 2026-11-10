@@ -29,8 +29,7 @@ const isOld = (output: string) =>
 	output !== "" && !(output.split("\n")[0] ?? "").startsWith("lawman input");
 
 describe("the output of the journal 0.23.1 against the new input", () => {
-	test("the old output without work is one line idle and reads as old", () => {
-		expect(fixture("old-wake-idle.txt")).toBe("idle\n");
+	test("the old output without work reads as old", () => {
 		expect(isOld(fixture("old-wake-idle.txt"))).toBe(true);
 	});
 

@@ -14,6 +14,7 @@ import {
 	T,
 	withLead,
 } from "./cases-fixture";
+import { pairs, run } from "./clerk-jobs-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -40,6 +41,8 @@ const jobOf = (n: number) => {
 	return JOBS.map((k) => f[k]).join(" ");
 };
 const tail = (n: number) => need(n).split(" ").slice(-9).join(" ");
+const pair = (stage: string, issue: string, pull = 5) =>
+	pairMark(stage, pull, issue);
 
 describe("case: the line of a clerk job", () => {
 	test("an open conviction prints the open job and its branch", () => {
@@ -164,8 +167,6 @@ describe("case: leaving the funnel", () => {
 });
 
 describe("case: states of the pair", () => {
-	const pair = (stage: string, issue: string, pull = 5) =>
-		pairMark(stage, pull, issue);
 	const states = [
 		["handed", "open", "CLOSED", "state close-pull"],
 		["handed", "open", "OPEN", "- -"],
@@ -242,13 +243,6 @@ describe("case: states of the pair", () => {
 		expectJobs(steps);
 	});
 
-	test("kept issue=open over settled gives no job", () => {
-		put({
-			1: human("OPEN", pair("settled", "closed"), pair("kept", "open")),
-		});
-		expect(`${fields(1).job} ${fields(1).action}`).toBe("- -");
-	});
-
 	test("a pull request closed outside, reopened, merged: the next draft is -2", () => {
 		const shut = pair("shut", "closed");
 		const handed = pair("handed", "open");
@@ -268,4 +262,17 @@ describe("case: states of the pair", () => {
 		put({ 1: human("OPEN", handed, shut, handed, settled) });
 		expect(jobOf(1)).toBe("state open 5 - lawman/execute-1-2");
 	});
+});
+
+test("kept issue=open over settled gives no job", () => {
+	// case
+	put({
+		1: human("OPEN", pair("settled", "closed"), pair("kept", "open")),
+	});
+	expect(`${fields(1).job} ${fields(1).action}`).toBe("- -");
+	// clerk jobs
+	const r = run({
+		markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
+	});
+	expect(r.job).toBe("-");
 });

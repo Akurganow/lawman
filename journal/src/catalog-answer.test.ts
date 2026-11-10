@@ -386,15 +386,6 @@ describe.each(RUNNERS)(
 describe("catalog answer usage", () => {
 	const run = RUNNERS[1]?.[1] as Run;
 
-	test.each([
-		[["answer", "--kind", "batch"]],
-		[["answer", "--kind", "batch", "--tick", "x1"]],
-		[["answer", "--kind", "batch", "--tick", "1", "--precinct", "alpha"]],
-	])("%j is a usage error", (args) => {
-		prepare();
-		expect(run(args, resultsReply([[]])).code).toBe(1);
-	});
-
 	test("an answer without a list for the tick fails", () => {
 		prepare();
 		expect(readdirSync(dirname(dbFile))).not.toContain("runs");

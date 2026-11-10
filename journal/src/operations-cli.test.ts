@@ -48,6 +48,9 @@ describe("commands and run as programs", () => {
 		const r = journal(["run", "main"]);
 		expect(r.code).toBe(1);
 		expect(r.err).toContain("usage: journal run");
+		const p = cli(["old-precedent", "check"], { LAWMAN_DB: dbFile });
+		expect(p.code).toBe(1);
+		expect(p.err).toContain("usage: journal old-precedent");
 	});
 
 	// the journal's own input stays open here, so an inherited input would hang the command
