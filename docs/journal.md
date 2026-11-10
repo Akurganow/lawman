@@ -588,7 +588,7 @@ The line `self law-version` of the tick group is not the line that `law-update` 
 | `constitution` | the section "Check the constitution" |
 | `precedents .lawman/precedents/` | reads the direct `.md` files of that folder at the revision, and the filter by department of its role |
 | `department <d>` | the section "Resolve the department page" |
-| `department` | the same section, for a name outside its class, which the line leaves out |
+| `department` | the same section, for a name outside its class. The line leaves the name out. The name comes from another place: the skill or the order |
 | `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
