@@ -23,9 +23,8 @@ comment, rule or document explain it?
 
 ## Where to look
 Start from the requirement, then read the code against it. Read the last 50 commits at `<sha>`. List each with its short
-hash, date, subject and changed file names. Start with the paths
-that appear most often, because a shape whose purpose moved sits where history
-is busy.
+hash, date, subject and changed file names. Start with the paths that appear
+most often.
 
 **Values and steps in automation.** A step that prepares something no later
 step uses. An environment value or input that no program reads. A declared job
@@ -148,8 +147,8 @@ Risk is the chance that the change moves behaviour or output.
 - Risk 5: the change touches a generated copy, a file that a release writes, or
   a path that no routine check runs.
 
-Threshold: value 4 or more, and risk 3 or less, or a plan that splits the risk
-into steps a reviewer can take one at a time. Value 4 is the lowest that
+Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
+splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
 qualifies. It means a whole mechanism, never a part of one. These numbers are a
 starting value, not measured.
 

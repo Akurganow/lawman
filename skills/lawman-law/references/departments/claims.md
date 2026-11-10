@@ -102,8 +102,7 @@ it in Not checked.
 
 **The listing (`broken-link`).** List the target path in the tree at the
 analysed commit. Resolve a relative link from the directory of the file that
-holds it. A heading anchor is `plausible` only, because renderers slug headings
-in different ways.
+holds it. A heading anchor is `plausible` only.
 
 **Both quotes (`two-sources`, `placeholder`).** Quote both sides as
 `path:line`. When one side is generated from the other, the stale copy is a
@@ -125,7 +124,7 @@ which you could not check.
 
 **An outside source.** The page never reads one. Name the anchor in the tree.
 Put the claim and the missing source in Not checked, in words. Add no `Source:`
-line, because that line belongs to dependencies.
+line.
 
 **History.** Date the claim by the commit that last changed its line. Find the
 commit that changed the claimed thing in the history of that path, with the

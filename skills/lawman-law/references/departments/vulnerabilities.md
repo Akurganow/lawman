@@ -17,7 +17,7 @@ tree pins at this place?
 ## Where to look
 Every place in the precinct's tree that lists dependencies, as the
 installation's record for the precinct says. The patrol takes the list by that
-record, sends it through the journal and files what the journal prints as new.
+record, sends it through the journal and files each new match the journal prints.
 A path in Not judged is not read.
 
 ## Not findings

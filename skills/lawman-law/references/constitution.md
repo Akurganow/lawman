@@ -52,7 +52,7 @@ A line names a department of this repository. It may also name the document that
 The name matches `[a-z][a-z0-9-]*`. The path is the document that judges the department's findings.
 `none` means no document judges it yet.
 
-The name `licenses` joins a rotation by either test only under two conditions. It resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
+The name `licenses` joins a rotation by either test only under two conditions. One is that the name resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
 
 ### Fence
 

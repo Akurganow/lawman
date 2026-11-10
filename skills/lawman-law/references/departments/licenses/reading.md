@@ -31,11 +31,11 @@ The `licenses` page sends you here when the precinct's entry in the host notes n
 11. A failed or refused request goes to Coverage with its code, and the tick goes on. A request counts only when it has ended with a result. With no result, it goes to Coverage as `unread`.
 12. A row may give no value or text: `no-record`, `no-field`, `rate-limited`, `unknown-host`, `status-<code>` or `unread`. Then the pin goes to the next agreed row of its ecosystem. This holds only if the pin carries the fields that the `Pin carries` line of that row names.
     - A row that gives a value or text closes the pin.
-    - A pin with no value is `no-field` when any row asked gave that answer. Otherwise it takes the class of the last row.
+    - A pin with no value is `no-field` when any row asked gave that answer. Otherwise it takes the result of the last row asked.
     - Give `unlicensed` to a lead only after every agreed row has answered. A row left unanswered by a limit leaves the pin in Coverage.
 13. A result of a row whose entry says `A finding rests on it: no` grounds no lead. It goes to Coverage by number.
 14. Take the clock before the first request to a row in a visit. Start no new request once the time limit of one command on the harness page has passed since then. The rest go to Coverage as `unread`, with the count. Start each visit at a random place in the list of pins and go round, so several visits cover the list.
-15. On the first request to a row in a visit, check the reply before you send more. The reply for the pin you sent must be a readable answer of the row's form. An honest `no-record` or `no-field` reply passes, and so does any reply the row's block maps to a result, a status such as a 404 or a 301 among them. When you find no way to send, or the reply is one you cannot read, close the row for this tick. Its pins go to Coverage as `unread` or `status-<code>`, with no retry. Write no file about the way or the check.
+15. On the first request to a row in a visit, check the reply before you send more. The reply for the pin you sent must be a readable answer of the row's form. An honest `no-record` or `no-field` reply passes. So does any reply the row's block maps to a result: a status such as a 404 or a 301 among them. When you find no way to send, or the reply is one you cannot read, close the row for this tick. Its pins go to Coverage as `unread` or `status-<code>`, with no retry. Write no file about the way or the check.
 
 ## Results
 

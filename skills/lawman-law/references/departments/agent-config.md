@@ -66,8 +66,8 @@ Beyond the law's list:
 - A reader outside the tree, such as a user level configuration or a caller.
   Name it in Not checked.
 - Wording, style and the order of sections.
-- A copy that equals its source, and the form of a vendor entry, link or copy,
-  when no rule of the precinct asks for one.
+- A copy that equals its source. The form of a vendor entry, link or copy,
+  when no rule of the precinct asks for that form.
 - A path or name that a document gives as an example, as a path that lasts one
   run, or to say it does not exist.
 

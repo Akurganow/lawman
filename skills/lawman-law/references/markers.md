@@ -42,7 +42,7 @@ id=<path>::<symbol>::<kind>
 - The value matches `^P::P::P$`, with `P = ([A-Za-z0-9._/-]|%[0-9A-F]{2})+`.
 - Parsing requires the canonical form. Decode each part to bytes, encode it again, and compare. A difference makes the marker invalid.
 - Lowercase hex (`%3a`) and an encoded safe byte (`%41`) are not canonical.
-- `-` is a safe byte and stays bare, with one exception: in a run of two or more hyphens, every hyphen after the first is encoded as `%2D`. So `a--b` is written `a-%2Db`, and `a---b` is written `a-%2D%2Db`. This keeps `--` out of every value.
+- `-` is a safe byte and stays bare, with one exception. In a run of two or more hyphens, every hyphen after the first is encoded as `%2D`. So `a--b` is written `a-%2Db`, and `a---b` is written `a-%2D%2Db`. This keeps `--` out of every value.
 - Canonical form follows the same rule. Decoding `a-%2Db` gives `a--b`, and encoding it again gives `a-%2Db`.
 
 ## When a marker counts
@@ -148,10 +148,10 @@ The section `## Precedent` of a court ruling holds its precedent lines. A ruling
 - `<gist>` matches `[a-z0-9]+(-[a-z0-9]+)*`. `<name>` matches `[A-Za-z0-9][A-Za-z0-9._-]*`. `<rule>` is non-empty text to the end of the line.
 - `<departments>` is a list of department names separated by commas, or the word `all`. It stands before the first colon, so no character of the rule reads as a name, and the rule keeps every character after `: `. The names never enter the rule.
 - A `new` line without names is a valid line.
-- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add departments it does not reject, and never removes one.
+- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add a department whose name it does not reject, and never removes one from the list.
 - `all` is reserved: it means every department and never names a department called `all`. A list that holds `all` beside names means every department too, and its other names count for nothing.
 - An empty element in `<departments>` makes a line that fits no form.
-- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds it only as the department of the case, when no other name counts.
+- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds the list only as the department of the case, when no other name counts.
 - `refine` and `cancel` carry no names.
 - A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
 - The journal writes the files. The writer never numbers, names or copies a rule into a file.
