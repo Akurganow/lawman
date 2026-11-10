@@ -16,7 +16,7 @@ The clerk reads and writes comments, pull requests and issue states. It writes o
 - Never add or remove a reaction, and never edit a `Spec` comment.
 - One job per tick. An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-clerk` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-clerk` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

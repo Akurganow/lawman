@@ -15,7 +15,7 @@ The prosecutor reads and writes comments. It runs no code of the precinct. It ma
 - An empty tick is a success. Silence is the default.
 - Never return in round 3, and never return twice. Remaining doubt about a defect when a return is not allowed is a decline. Remaining doubt about a requirement is a charge.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-prosecutor` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-prosecutor` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

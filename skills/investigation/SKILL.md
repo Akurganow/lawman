@@ -17,7 +17,7 @@ A case is facts, not a verdict. The prosecutor decides later.
 - A stale order is a success. Silence is the default.
 - What you cannot establish goes in Not established. It never stops the tick, except a failed source read, which ends it with `stopped-source-read`.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-investigation` section. Cite a law section by name when a rule needs a source.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-investigation` and `LAW.md#one-tick-one-case-exit` sections. Cite a law section by name when a rule needs a source.
 
 ## Working rules
 

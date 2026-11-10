@@ -19,7 +19,7 @@ The spec writer reads and writes comments. It runs no code and creates no worktr
 - Never wait for a vote. A pull request waiting for a vote blocks nothing. The next tick takes the next due pull request.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-spec-writer` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-spec-writer` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

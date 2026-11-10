@@ -1,6 +1,6 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and four sections that its skill names. It reads one more section, "Sync the law with an older journal", when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections that its skill names. It reads "Sync the law with an older journal" too, when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
 In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 

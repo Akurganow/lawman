@@ -15,7 +15,7 @@ The court reads and writes comments. It runs no code from the precinct. It creat
 - The court never returns. For a defect, its doubt is an acquittal. For a requirement with no answer of a decider, its doubt about an undecided part is a referral.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-court` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-court` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

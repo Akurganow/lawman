@@ -1,4 +1,4 @@
-// The settings of a role that config.yaml may change, with the defaults of this release.
+// The settings of a role that config.yaml may change, with the shipped defaults.
 // The callers read the raw value with configValue, so this module imports nothing.
 
 export const JOBS: Record<string, number> = {

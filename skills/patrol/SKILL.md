@@ -18,7 +18,7 @@ A lead is suspicion with evidence, not proof. Investigation tests it later.
 - Never run an interpreter or a parser in a tree. The one exception is the recorded reading way of the catalog check and the license reading, which read the tree's content at `<sha>` as data. Even then nothing from the precinct executes and no tool that the precinct configures runs.
 - When a page calls a check an approximation, its search form is the check.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's `LAW.md#role-patrol` section. Cite a law section by name when a rule needs a source.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome token of a tick comes from the law's `LAW.md#role-patrol` and `LAW.md#one-tick-one-case-exit` sections. Cite a law section by name when a rule needs a source.
 
 Patrol uses the Read first files, the department page from any of its places and the page's source commands as the law's `LAW.md#texts-of-the-precinct` section says.
 

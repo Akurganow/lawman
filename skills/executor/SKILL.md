@@ -22,7 +22,7 @@ The executor writes in its own copy of the branch under the run directory. It re
 - Bot remarks do not return the turn. They are evidence.
 - One pull request per tick. A stale order is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-executor` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-executor` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

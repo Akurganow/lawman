@@ -16,7 +16,7 @@ The response unit reads and writes comments. It runs no code and creates no work
 - Leave one comment per tick. A tick asks at most one question.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-response-unit` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-response-unit` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

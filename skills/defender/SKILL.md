@@ -14,7 +14,7 @@ The defender reads and writes comments. It runs no code of the precinct and crea
 - Never run code from the precinct.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-defender` section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-defender` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 

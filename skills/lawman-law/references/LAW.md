@@ -228,7 +228,7 @@ Each role applies them so:
 - A tick without an end record is unfinished, not successful.
 - Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2. A role treats that rejection as silence.
 
-The outcome of a tick is one token from this grammar, taken from the role's own report:
+The outcome of a tick is one token from the role's own section, `Role duty desk` through `Role executor`, or from the shared forms of this grammar (`LAW.md#one-tick-one-case-exit`):
 
 - `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
 - `returned`: the prosecutor or the defender returned the case.
