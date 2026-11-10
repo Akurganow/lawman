@@ -230,6 +230,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > The quiet job delivers nothing, because the harness suppresses a response that is `[SILENT]` alone (read in the harness code: `cron/scheduler.py`, `_is_cron_silence_response`).
 
+### Isolation
+
+> This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt.
+
 ### What a second harness needs
 
 > Nothing changes in the skills or in the law, because both name no harness.
