@@ -107,7 +107,7 @@ hermes cron run "[lawman] <role>"
 
 ## Commands in scheduled runs
 
-A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). The refused command does not run. Its terminal call comes back as a `tool` message whose content is `{"output": "", "exit_code": -1, "error": "BLOCKED: Command flagged as dangerous (<reason>) …"}` (seen in a scheduled run). Lawman leaves it unchanged.
+A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). The refused command does not run. Its terminal call comes back as a `tool` message whose content is `{"output": "", "exit_code": -1, "error": "BLOCKED: Command flagged as dangerous (<reason>) …"}` (seen in a scheduled run). Lawman leaves that message unchanged.
 
 Refused, seen in scheduled runs:
 
@@ -194,7 +194,7 @@ Two things bound the command that reads a source.
 
 ## Calling an expert
 
-A role calls an expert only in this form. The expert runs as the profile configures it. Local files are the user's responsibility.
+A role calls an expert only in this form. The expert runs as the profile configures it. The content of local files that influences the expert is the user's responsibility.
 
 1. Start a separate session with `hermes chat`. (read in the harness code, seen in a run)
 2. Pass `-Q`, so the session prints only the final answer to standard output. (read in the harness code, stated by `--help`, seen in a run)

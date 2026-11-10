@@ -630,7 +630,7 @@ full text <precinct> issue <number> body
 - The `cut` line starts with the word `cut` and holds `kept=`, `of=` and `secrets=`, each with its value. `kept=<head>+<tail>` gives the characters of the start and of the end. `of=` gives the characters of the whole text inside the fence, including the `id=… author=…` line of a comment. `secrets=` gives the number of secret marks in the removed middle. Numbers count characters, each line with its line break.
 - The `full` line starts with the words `full text`. After them come the precinct, `issue` or `pull`, the number, and `body` or `comment <at> <j>`. Those words are the arguments of `text`.
 - A comment is named by its time `at` and by its number `j`. `j` counts from 1 among the comments with that time, in id order. A comment added with another time does not change `j`. A comment added with the same time and a smaller id does.
-- Never cut: the title, the constitution, a department page, the precedents and the orders. They split by lines, as before, and a journal line is never cut. A text that fits in its part prints unchanged, byte for byte.
+- Never cut: the title, the constitution, a department page, the precedents and the orders. They split by lines, and a journal line is never cut. A text that fits in its part prints unchanged, byte for byte.
 - A cut block stays in one part with its two journal lines, so no part ends between a piece and its `cut` line. A part too small for even the shortest cut does not cut the text. It splits the text by lines.
 
 The command `text` prints the whole text that a `full` line names, from the cache:

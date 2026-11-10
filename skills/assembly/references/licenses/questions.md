@@ -69,7 +69,7 @@ Run this section for the open repositories. The add path of `references/precinct
 Every call is one call of the question tool. A call holds up to the limit of the tool on the harness page, and more questions split into several calls. Text that is the same for all stands once in the message before the call. A cancel in any call ends the mode and writes nothing, including the answers of the earlier calls. A timeout follows rule 16 of `SKILL.md`. The pairs and the pull requests are written once, after the last answer.
 
 1. The enable question, one for each precinct.
-2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the role takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it.
+2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the patrol takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it.
 3. The two questions of "How people get the project and what it earns", for each precinct that said yes.
 4. The first source question of each precinct that has a fitting source.
 5. After "Choose", one call for each fitting source.

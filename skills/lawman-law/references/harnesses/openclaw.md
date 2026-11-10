@@ -105,7 +105,7 @@ The skill listing commands are `openclaw skills list` and `openclaw skills check
 
 The sync's steps are in `tick.md#sync-the-law` of `tick.md`. For how a scheduled run executes them, see "Isolation" and "Commands in scheduled runs".
 
-- Update the plugin with `openclaw plugins update lawman`, after the gateway is stopped through its service owner (stated by the docs, https://docs.openclaw.ai/cli/plugins/uninstall-and-update.md; not verified). The stop commands are `openclaw gateway stop` and `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
+- Update the plugin with `openclaw plugins update lawman`, after the gateway is stopped by its service owner, a person (stated by the docs, https://docs.openclaw.ai/cli/plugins/uninstall-and-update.md; not verified). The stop commands are `openclaw gateway stop` and `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
 - No tick runs while the gateway is stopped. After the restart, overdue agent jobs are rescheduled and not replayed at once (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
 - The update installs again from the recorded source. A branch ref moves. A tag or commit ref stays (read in the harness code, openclaw/src/plugins/update-attempt.ts).
 - The update runs no `git pull`. A local edit in the installed folder is overwritten.

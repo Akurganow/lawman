@@ -70,7 +70,7 @@ The court takes one order on an issue, reads the case and the decisions of the p
 
 A missing or unknown priority reads as P2. At P0 the court prints the `ALARM case` line in the same tick. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-When the installation and the precinct allow it, the court may ask an outside model about a conviction before it chooses the priority. The court first decides alone whether the conviction is P0, and never raises that decision afterwards. For a P0 the outside model answers only whether the court's facts show a live secret, a vulnerability or a serious violation. Otherwise it grades P1 to P3. It sees only a short brief the court writes itself, in its own words. The brief holds no text of the issue, the case, the charge or the defence. The court reads the answer as evidence. It chooses the priority and may differ from the answer without a reason. A missing or failed answer changes nothing.
+When the installation and the precinct allow it, the court may ask an outside model about a conviction before it chooses the priority. The court first decides alone whether the conviction is P0. It never revisits that decision. For a P0 the outside model answers only whether the court's facts show a live secret, a vulnerability or a serious violation. Otherwise it grades P1 to P3. It sees only a short brief the court writes itself, in its own words. The brief holds no text of the issue, the case, the charge or the defence. The court reads the answer as evidence. It chooses the priority and may differ from the answer without a reason. A missing or failed answer changes nothing.
 
 - `convicted`: the court convicted and the issue stays open.
 - `acquitted`: the court acquitted and closed the issue.
@@ -230,10 +230,10 @@ Each role applies them so:
 
 The outcome of a tick is one token from the role's own section, `Role duty desk` through `Role executor`, or from the shared forms of this grammar (`LAW.md#one-tick-one-case-exit`):
 
-- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
+- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts when its stage moved on, or when the issue is closed. A closed issue makes no order stale for the clerk. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
 - `returned`: the prosecutor or the defender returned the case.
 - `failed`: the role says it could not finish, and no external cause explains it.
-- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for it, and a role that took an order closes it with this outcome. The slot is spent. Other precincts are not blocked.
+- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for the precinct or the department, and a role that took an order closes it with this outcome. The slot is the order's place. It is spent: the order does not repeat. Other precincts are not blocked.
 - `stopped-<slug>`: an external cause stopped the tick.
 
 A slug is `[a-z0-9-]+`. These are the slugs:
@@ -243,9 +243,9 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `skipped-contract-version`: a page declares a contract version the law does not support.
 - `skipped-bad-department`: the chosen department page is unavailable or fails the page check.
 - `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
-- `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or cannot be read.
+- `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or the law folder's revision cannot be read.
 - `stopped-dirty-law`: the law folder has local changes.
-- `stopped-identity-changed`: the account the host reports for the tool in the host notes differs from the trusted login.
+- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-sync`: syncing the issue or pull request cache failed.
@@ -275,7 +275,7 @@ A new slug is added to this list before any role uses it.
 
 An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed, and a lead with a broken marker are further examples. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
 
-- An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers, with no source and no `handed` marker.
+- An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers for a pull request with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. It prints once and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
 - `no-progress` is for a role whose entry finds a takeable order and no take, N checks in a row. N is `progress_checks` in `config.yaml`, 3 by default. A take, or a check that finds no takeable order, starts the count again.
 - A new alarm is printed by the tick that found it.

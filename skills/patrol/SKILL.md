@@ -46,7 +46,7 @@ Patrol uses the Read first files, the department page from any of its places and
 
 ## Tick
 
-Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
