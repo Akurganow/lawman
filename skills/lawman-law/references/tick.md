@@ -1,6 +1,6 @@
 # The tick
 
-Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and three sections that its skill names. It reads a fourth section, "Sync the law with an older journal", when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
+Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and four sections that its skill names. It reads one more section, "Sync the law with an older journal", when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
 In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
@@ -44,6 +44,18 @@ The issue roles are the response unit, investigation, the prosecutor, the defend
 The spec writer and the executor are the pull request roles. The number of an order is an issue for the issue roles and a pull request for the pull request roles. `<m>` below is a pull request number.
 
 The fetch step gives the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`.
+
+## Parts
+
+The journal prints a long output in parts. The role group and the tick group are such outputs.
+
+Each part runs between its first line and its last. The first line is `lawman input 1 … part <k> of <n>`. The last line is `end part <k> of <n>`.
+
+Read a group to its last part. The orders stand at the end of the role group. The `self` lines stand at the end of the tick group.
+
+Add `--part <k>` to the command that prints the output, and the journal prints part `<k>` alone.
+
+A part whose last line is not `end part <k> of <n>` was cut by the harness. Ask for the same part again.
 
 ## One end
 

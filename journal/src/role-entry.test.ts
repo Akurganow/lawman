@@ -81,6 +81,7 @@ const TICK_HEADINGS = [
 ];
 const EVERY_ROLE = [
 	"intro",
+	"Parts",
 	"One end",
 	"Sync the law",
 	"Working rules",
@@ -181,6 +182,7 @@ function expected(role: string): Expected[] {
 				head: "law tick.md",
 				headings: [
 					"# The tick",
+					"## Parts",
 					"## Sync the law",
 					"## Sync the tracker",
 					"## Sync the pull requests",
