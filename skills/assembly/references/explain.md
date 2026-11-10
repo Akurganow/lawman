@@ -41,7 +41,7 @@
 1. Run the time zone read command from "Schedule forms and time zone", and show the zone.
 2. Tell the developer:
 
-> Lawman works in waves. A wave starts with the duty desk. It reads every repository that has a weight above zero and finds what each role should do next. It writes an order for every case, pull request, waiting issue and patrol visit that needs a role. Then each role starts on its own clock. It takes its orders, up to the number of jobs set for the role, does the work, leaves the result on the repository host and exits. Roles never wait for each other.
+> Lawman works in waves. A wave starts with the duty desk. It reads every repository that has a weight above zero and finds what each role should do next. It writes an order for every case, pull request, waiting issue and patrol visit that needs a role. Then each role starts on its own clock. It takes its orders, up to the number of jobs set for the role. It does the work, leaves the result on the repository host and exits. Roles never wait for each other.
 >
 > A role sees only orders the duty desk already wrote. So a case moves one stage per duty desk run. Patrol files a lead. The next run orders the investigation. The run after that orders the prosecutor. A case that nobody returns passes eight stages: patrol, investigation, prosecutor, defender, court, clerk, spec writer and executor. That takes eight duty desk runs. Two steps wait for you: the vote on the spec and the review of the pull request.
 
@@ -51,7 +51,7 @@
 
 1. Tell the developer about the economy plan:
 
-> The weekly roles run on successive weekdays in stage order, and Thursday stays free for the clerk. A case charged on Monday is ruled on Wednesday. The clerk opens its pull request on Thursday, and the spec follows on Friday. The executor runs on Monday, after your vote. Each weekly role takes one case a week, so a queue grows when the stage before it delivers more.
+> The plan's roles run in stage order, one after another, and one slot stays free for the clerk. A case charged at the first stage is ruled two stages later. The clerk opens its pull request at its stage, and the spec follows. The executor runs last, after your vote. Each role of the plan takes one case a run, so a queue grows when the stage before it delivers more.
 
 ## Clock order
 
@@ -63,9 +63,9 @@
 
 1. Tell the developer:
 
-> How often a role runs sets how many cases it takes: up to its number of jobs in each run, and most roles take one by default. A role that runs weekly takes that many cases a week. An order may wait for its role. If you close the issue meanwhile, most roles end that run as stale. A run with no order still costs a short session. The role entry removes that cost.
+> How often a role runs sets how many cases it takes. It takes up to its number of jobs in each run, and most roles take one by default. A role that runs less often still takes that many cases each time it runs. An order may wait for its role. If you close the issue meanwhile, most roles end that run as stale. A run with no order still costs a short session. The role entry removes that cost.
 >
-> Lawman warns you when an order waits too long, and when a role stops running. Those limits follow the schedule you choose.
+> Lawman warns you when an order waits too long, and when a role stops running.
 
 | Role | What a lower frequency changes |
 | :-- | :-- |
@@ -86,7 +86,7 @@
 
 > The role entry is a small program the harness runs before a role's job. It asks the journal whether the role has an order it can take now. A role that has an order gets its input at once, with the law it reads, so it needs no first call of its own. A role with no order costs no session, because the harness skips it until an order comes. The duty desk always has work, so its entry always gives its input.
 
-2. Name the entry of each role as "Role entry" on the harness page names it. Say where it lives and, when it lies outside the installation, that it stays after you remove Lawman. Then tell the developer:
+2. Name the entry of each role as the harness page names it under "Role entry". Say where it lives and, when it lies outside the installation, that it stays after you remove Lawman. Then tell the developer:
 
 > The entry has no filter and no fallback. A journal that fails makes the entry fail. Every job the assembly creates uses it.
 
@@ -98,7 +98,7 @@
 
 1. Tell the developer:
 
-> A command is a small file that the journal runs for one operation: reading a repository, finding the account, listing issues and pull requests, finding who decides, reading a file, listing files, building a release, checking a release and reading the law version. The assembly proves each command on a throwaway database before it writes it. An operation with no file stays a step of the role.
+> A command is a small file that the journal runs for one operation. The operations: reading a repository, finding the account, listing issues and pull requests, finding who decides, and reading a file. Other operations: listing files, building a release, checking a release and reading the law version. The assembly proves each command on a throwaway database before it writes it. An operation with no file stays a step of the role.
 
 ## Limits
 

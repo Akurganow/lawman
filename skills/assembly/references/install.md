@@ -18,7 +18,7 @@ The install has two phases.
 4. Delivery.
 5. Models and Schedule.
 6. Role entry: the entry files and the mode of the jobs.
-7. Limits: the numbers of jobs and N. The size of a part is shown as a fact.
+7. Limits: the numbers of jobs and progress checks. The size of a part is shown as a fact.
 8. TypeSafe and Catalog.
 9. The choice of repositories.
 
@@ -26,7 +26,7 @@ Phase 1 runs as follows.
 
 1. Find the facts of every screen.
 2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, the entry files, the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
+3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
@@ -72,8 +72,8 @@ Never:
 
 The folder of the law may carry no history. A harness may place the plugin as a plain copy. Take the commit, the release tag and the release repository from these sources in this order. The list is open for sources that a later release reads.
 
-1. The history of the law folder, when it has one: the commit it holds, the origin of the history and the release tag of that commit.
-2. The developer's word. Ask in free text, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it: the command would print one value for ever, and the check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
+1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
+2. The developer's word. Ask in free text, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
 3. No history and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
@@ -94,7 +94,7 @@ Record the tag as `release_tag`.
 
 In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Never shorten the notes: the roles read each record for the steps they do themselves. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
 
-Part Host keeps every line of the section `## License reading` of an existing `host.md` too. An item of that section has nested lines for its blocks. The license questions write it.
+Part Host keeps every line of `## License reading` in an existing `host.md` too. An item of that section has nested lines for its blocks. The license questions write it.
 
 Part Host does not change the account. A run of part Host again serves a change of tool.
 
@@ -108,10 +108,10 @@ Finds:
 - Whether the version-control tool is present.
 - For each tool that reaches the host, the account the host reports.
 - Where the chosen tool keeps its credential. Learn the place and never the value.
-- How the host keeps issues and their templates, and anything particular to this host.
-- For each host action the role skills name, how this machine does it with the chosen tool. That covers handing host data to the journal in its forms.
+- How the host keeps its issues with their templates, and what is particular to it.
+- How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
-- Three actions for the old precedents: how this machine reads a file at a given revision of a pull request, how it writes to the branch of a pull request, and how it turns the link of an old precedent line into the number of an issue.
+- Three actions for the old precedents. One reads a file at a given revision of a pull request. One writes to the branch of a pull request. One turns the link of an old precedent line into the number of an issue.
 - The verifier of Lawman's release, by the paragraph above.
 
 An installation made before these actions existed has no record of one of them. The assembly finds how this machine does it, and records it in the approved Apply, as `SKILL.md` says for the merge form. It asks the user only when it cannot find a way.
@@ -201,7 +201,7 @@ Run "Part Models" and "Part Schedule" of `references/roles.md` for all roles in 
 
 ## Role entry and Limits
 
-Run "Part Role entry" and "Part Limits" of `references/roles.md` for all roles in phase 1. They write nothing before the approval of this install. The entry files and the mode of the jobs follow the harness page, in the section "Role entry". The size of a part is a fact of the page, and Limits shows it without a question. Limits asks only the numbers of jobs and N.
+Run "Part Role entry" and "Part Limits" of `references/roles.md` for all roles in phase 1. They write nothing before the approval of this install. The entry files and the mode of the jobs follow the harness page, in the section "Role entry". The size of a part is a fact of the page, and Limits shows it without a question. Limits asks only the numbers of jobs and progress checks.
 
 ## TypeSafe
 
@@ -264,7 +264,7 @@ In Apply, "the method" is the verifier or the refusal of the signature in the ap
 1. Write the host notes, with no new record about the verification of the binary. The earlier record stays.
 2. Install the verifier that the developer chose, when it is not on this machine.
 3. Get the release files. On the first install, go on: check the sum and the signature, install the binary and probe it.
-4. Where the page's "One-off run" needs the Lawman agent, find it first, or show the lines of a new agent and wait for the developer to create it, by items 1 and 8 of "Apply" in `references/roles.md`. Create no proof job before the agent exists. Then prove the commands of the installation through the journal on a throwaway base.
+4. Where the page's "One-off run" needs the Lawman agent, find it first. When it is missing, show the lines of a new agent. Wait for the developer to create it, by items 1 and 8 of "Apply" in `references/roles.md`. Create no proof job before the agent exists. Then prove the commands of the installation through the journal on a throwaway base.
 5. Write the installation: the files of `shared/`, the record of the method, `config.yaml`. Remove the files of the proof.
 6. On the first install and in the part "Roles": write and prove the entry files, and create the jobs.
 
@@ -284,11 +284,11 @@ Lawman's release carries, beside each journal binary, a signed statement of wher
 
 At install, also confirm that the verifier rejects a changed copy of the binary. Never run the copy, and remove every file of the test. A verifier that accepts the copy is a stop.
 
-1. Find the OS and the CPU of this machine, name the OS in lowercase, read `x86_64` as `x64` and `aarch64` as `arm64`, and stop on any other OS or CPU.
+1. Find the OS and the CPU of this machine, and name the OS in lowercase. Read `x86_64` as `x64` and `aarch64` as `arm64`. Stop on any other OS or CPU.
 2. Set `<asset>` to `journal-bun-<os>-<arch>`, and set `<provenance>` to `<asset>.sigstore.json`.
-3. Create `bin` and `runs/install-journal`, then fetch `<asset>`, `<provenance>` and `SHA256SUMS` of `<release_tag>` from `<release_repo>` into `runs/install-journal`, replacing files that lie there, and stop if the fetch fails.
+3. Create `bin` and `runs/install-journal`, then fetch `<asset>`, `<provenance>` and `SHA256SUMS` of `<release_tag>` from `<release_repo>` into `runs/install-journal`. Replace files that lie there, and stop if the fetch fails.
 4. Check `<asset>` against the line for it in `SHA256SUMS`, and stop unless they match.
-5. When the method names a verifier, check `<asset>` against `<provenance>` as the paragraph above says, show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
+5. When the method names a verifier, check `<asset>` against `<provenance>` as the paragraph above says. Show the signer workflow `<release_repo>/.github/workflows/release.yml` that it checked, and stop if it fails.
 6. When the method names a verifier, run its first test as the second paragraph above says.
 7. Copy `runs/install-journal/<asset>` to `bin/journal` and make it executable. Copy it only after the checks of items 4 to 6 passed. The files stay for the proof of `verify`.
 8. Run `bin/journal probe --schema <n>`, and stop if it exits non-zero. Read the number on the lines of `probe --schema` in the skills of the roles, take the largest, and keep no copy of it.
@@ -298,10 +298,10 @@ Items 4 to 9 belong to the first install. A run of part Host again does not repl
 
 ### Prove the commands of the installation
 
-Prove each command that the developer wrote or changed, through the journal on the throwaway base, as "Prove a command" and "Commands of the installation" in `references/commands.md` say. Commands that stay as they are are not proven again on a repeat. Then:
+Prove each command that the developer wrote or changed, through the journal on the throwaway base. Follow "Prove a command" and "Commands of the installation" in `references/commands.md`. Commands that stay as they are are not proven again on a repeat. Then:
 
 - With a signature chosen, run the four cases of `verify` when `verify`, the method or the verifier changed. Otherwise do not run them.
-- When the method changed to a refusal, or a refusal is written for the first time, run the pass of `law-update` on the throwaway installation.
+- Two cases run the pass of `law-update` on the throwaway installation. The method changed to a refusal. A refusal is written for the first time.
 
 A proof that fails stops Apply before any write of step 5.
 
@@ -323,7 +323,7 @@ Write in this order.
 5. Take `trusted_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe, and `catalog` from Catalog.
 6. Write `typesafe_precincts`, `catalog_precincts` and `license_precincts` as none.
 7. Write `amended_law_commit` equal to `law_commit`.
-8. Write the optional keys that Limits decided: `input_chars` when the harness page names a size, and `jobs` or `progress_checks` only when the developer changed the value.
+8. Write the optional keys that Limits decided. Write `input_chars` when the harness page names a size. Write `jobs` or `progress_checks` only when the developer changed the value.
 9. Read the file back, and stop if a required key is missing or a value is empty.
 
 ### Write the entry files and create the jobs
@@ -339,7 +339,7 @@ Write in this order.
 | Step 5 between two writes | The new files of `shared/` and maybe the record of verification stay. `config.yaml` is as before, because it is written last. A repeat of Apply is safe. | The same. |
 | Step 6 | `config.yaml` is already written. | The next start does not enter the install. The roles mode adds the missing jobs, as `SKILL.md` says. |
 
-After a run of part Host again that changed the tool, the summary names the precincts whose commands were proven for the earlier tool, and points to "Re-check a precinct".
+After a run of part Host again that changed the tool, the summary names the precincts whose commands were proven for the earlier tool. It points to "Re-check a precinct".
 
 ## Repositories
 
@@ -364,11 +364,11 @@ When the developer skipped the check, or the check is incomplete, the summary ca
 Follow "Finish" in `SKILL.md`. Name these items.
 
 - The items of "Finish" in `references/roles.md`.
-- The commands: which files were written, which were left empty, which were removed, and which are proven in the tick environment and which are not. Name the gap of each command that is not proven in it.
-- The limits: the numbers of jobs and N that are in force, and the size of a part when the page gives one.
+- The commands: which files were written, which were left empty, and which were removed. Name which are proven in the tick environment and which are not. Name the gap of each command that is not proven in it.
+- The limits: the numbers of jobs and progress checks that are in force, and the size of a part when the page gives one.
 - The delivery check: checked, not checked, failed, or did not run.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Where the page names no output folder, say that the results lie in the run records. Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
-- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account every day, and its stop arrives on the delivery routes.
+- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account in its run, and its stop arrives on the delivery routes.
 - After the refusal of the signature, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written, that the role reads the facts of the law itself.
 - When TypeSafe is on, both uses: the court's brief and the clerk's request. When the key was not found, the place to put the key and the variable it needs.
@@ -379,8 +379,8 @@ Follow "Finish" in `SKILL.md`. Name these items.
 When TypeSafe is on and the official skill was missing at install, add these items.
 
 - Show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page.
-- When the harness page gives an add-skill form under "Editing a job", give the step that attaches the skill to the court job with that form.
+- When the harness page gives an add-skill form under "Editing a job", give the step that attaches the skill to the court job. Use that form.
 
-Offer the user one manual run of the duty desk, and say that the run is paid. When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run by the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
+Offer the user one manual run of the duty desk, and say that the run is paid. When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run with the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
 
 Then tell the developer that the install is complete.
