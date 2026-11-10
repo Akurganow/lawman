@@ -1,8 +1,10 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, spyOn, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
+import * as clean from "./clean";
 import { EXIT } from "./db";
+import { inprocFed } from "./inproc";
 import { lintBody } from "./lint-body";
-import { cli, lead, PRIVATE_KEYS, ret } from "./test-helpers";
+import { cli, lead, PRIVATE_KEYS, ret, tempDb } from "./test-helpers";
 
 const HOME_MAC = ["/Us", "ers/someone"].join("");
 const TOKEN = ["gh", "p_", "a1B2c3D4e5F6g7H8i9J0k1L2"].join("");
@@ -314,4 +316,25 @@ describe("lint-body command", () => {
 			expect(r.err).toContain("--no-marker");
 		},
 	);
+});
+
+describe("lint-body library failure", () => {
+	tempDb();
+
+	test("a thrown library error gives exit 1 and quotes no input", async () => {
+		const input = `secret words ${TOKEN}\n${lead()}\n`;
+		const mask = spyOn(clean, "secretRanges").mockRejectedValue(
+			new Error(`rules failed on ${input}`),
+		);
+		try {
+			const r = await inprocFed("2026-10-17T10:45:00Z", ["lint-body"], input);
+			expect(r.code).toBe(EXIT.USAGE);
+			expect(r.out).toBe("");
+			expect(r.err).not.toBe("");
+			expect(r.err).not.toContain("secret words");
+			expect(r.err).not.toContain(TOKEN);
+		} finally {
+			mask.mockRestore();
+		}
+	});
 });

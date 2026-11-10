@@ -117,6 +117,62 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 	});
 });
 
+describe("jev request body form", () => {
+	type Ask = {
+		type: string;
+		instructions: string;
+		criteria: Record<string, string> | string[];
+	};
+	const bodyOf = (kind: string) =>
+		JSON.parse(request(kind, fixture(`brief.${kind}.txt`)).out) as {
+			model: string;
+			state: { brief: Record<string, string> };
+			questions: Record<string, Ask>;
+		};
+
+	test("the body names its brief fields and questions with instructions and criteria", () => {
+		const kinds = [
+			[
+				"p0",
+				[
+					"secret",
+					"rule",
+					"weakness",
+					"defect",
+					"established",
+					"not_established",
+				],
+				["live_secret", "vulnerability", "serious_violation"],
+			],
+			[
+				"grade",
+				["defect", "effect_today", "established", "not_established"],
+				["level", "harm_users", "harm_maintainers", "cosmetic_only"],
+			],
+		] as const;
+		for (const [kind, fields, ids] of kinds) {
+			const body = bodyOf(kind);
+			expect(Object.keys(body).sort()).toEqual(["model", "questions", "state"]);
+			expect(typeof body.model).toBe("string");
+			expect(Object.keys(body.state.brief).sort()).toEqual([...fields].sort());
+			expect(Object.keys(body.questions).sort()).toEqual([...ids].sort());
+			for (const [id, question] of Object.entries(body.questions)) {
+				expect(typeof question.instructions).toBe("string");
+				if (id === "level") {
+					expect(question.type).toBe("score");
+					expect(question.criteria).toHaveLength(3);
+				} else {
+					expect(question.type).toBe("noul");
+					expect(Object.keys(question.criteria).sort()).toEqual([
+						"false",
+						"true",
+					]);
+				}
+			}
+		}
+	});
+});
+
 describe("law consistency", () => {
 	test("the court's requirement brief example gives a body", () => {
 		const skill = readFileSync(
