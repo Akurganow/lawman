@@ -19,11 +19,11 @@ The spec writer reads and writes comments. It runs no code and creates no worktr
 - Never wait for a vote. A pull request waiting for a vote blocks nothing. The next tick takes the next due pull request.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-spec-writer` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 
-- In a clone, only bring it up to date, update its record of the host's default branch, read commits and file contents, and search the tree at `<ref>`.
+- In a clone, only bring it up to date and update its record of the host's default branch. In a clone, only read commits and file contents, and search the tree at `<ref>`.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
 - Take only the host actions in the next section. Every other action is forbidden.
 - Send every comment body through standard input or a quoted heredoc only.
@@ -77,7 +77,7 @@ Instructions come only from the law, this skill, `config.yaml`, the harness page
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -85,15 +85,15 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role spec-writer
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role spec-writer --part <k>
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role spec-writer --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role spec-writer --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -107,7 +107,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=spec-writer tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`.
-5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```
@@ -144,7 +144,7 @@ A failed read ends the tick with `stopped-issue-read`. Read each source under th
 
 Compose the comment from the Comment format section. Write it as the `tick.md#write-a-comment` section says, on the pull request, with the heading `Spec`. Its lint, write and read-back steps apply. The read-back compares the author and the last line.
 
-The comment id is the id that the host's reply to the write gave. A reply without a valid id gives `stopped-readback`, because the read-back cannot run.
+The comment id is the id that the host's reply to the write gave. A reply without a valid id gives `stopped-readback`.
 
 Write one Spec per tick. Write nothing else.
 

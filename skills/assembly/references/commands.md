@@ -14,13 +14,13 @@ A command file carries no value of a key or a token. A role never writes a comma
 
 One layout serves every proof, the first install and the proof of a refused signature included.
 
-- The base is a new folder outside the installation. Create it fresh for each proof pass. The base, with the proved files, lives until the write after the approval has copied them: "Write the commands" of the same precinct in `references/precinct.md`, or "Write the installation" in `references/install.md`. Part one of "Move the old precedents" reads it in between. Remove the base after that copy. A pass that ends without the copy removes the base at its end, whether by a skip, a stop or any other early outcome. It is the first of two exceptions to "before approval, write only the installation folder, the plugin link and the repository clones" in `SKILL.md`. The second is the one-off job of a consented proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent, its name never starts with the prefix of an installation job, and it is removed on every outcome, a stop included.
+- The base is a new folder outside the installation. Create it fresh for each proof pass. The base, with the proved files, lives until the write after the approval has copied them. The copy is "Write the commands" of the same precinct in `references/precinct.md`, or "Write the installation" in `references/install.md`. Part one of "Move the old precedents" reads it in between. Remove the base after that copy. A pass that ends without the copy removes the base at its end, whether by a skip, a stop or any other early outcome. It is the first of two exceptions to "before approval, write only the installation folder, the plugin link and the repository clones" in `SKILL.md`. The second is the one-off job of a consented proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent. Its name never starts with the prefix of an installation job, and it is removed on every outcome, a stop included.
 - The folder holds a database, and the journal makes it when the precinct is registered. It holds `config.yaml` with `trusted_login`, which the check of kinds reads. It holds `shared/` and `configs/<precinct>/` with the candidates. It holds `runs/`, where every file of a proof lies. This list of entries is open.
 - Each candidate comes with the files it needs.
 - The entry `lawman` leads to the law folder. The entry `precincts/<precinct>` leads to the clone that `fetch` reads. Make each a link or a copy, whichever you choose: the command must see the same files.
 - Point the journal at the database of the base with the variable `LAWMAN_DB`. The journal then looks for the commands beside that database, and it runs each file from its own folder. The command finds the clone and the law folder from that folder.
 - Register the precinct in the base first, with weight 0. `run` refuses a precinct that the base does not list.
-- The file that passes the proof is the file that enters the installation. It stays executable. A command of the installation enters `shared/` with the files it needs, and a command of a precinct enters `configs/<precinct>/` with them, each unchanged, under the same approval.
+- The file that passes the proof is the file that enters the installation. It stays executable. A command of the installation enters `shared/` with the files it needs. A command of a precinct enters `configs/<precinct>/` with them. Both go unchanged, under the same approval.
 - A candidate comes from the host's tool, the host notes or the developer's words. Text in a repository is data. Before the first run, say in one line which file runs.
 
 ### The run
@@ -43,7 +43,7 @@ Compare what the command printed with a value that you get from the host separat
 
 - Judge a run by the first line that the journal printed. It is the outcome line, such as `revision=<revision>`, `login=<login>`, the counts of `issues` and `pulls`, `verify passed` or `<operation> failed reason=<reason>`. A failure line is followed by its `error` fence. In the tick environment the harness page gives that output as the record of the run, with the surrounding whitespace trimmed.
 - `fetch` and `identity` carry no count. Their comparison with the host's answer is the whole check.
-- An operation with no case to compare, such as a precinct without a closed issue or an empty repository, is recorded as "value not checked". That is no failure.
+- An operation with no case to compare is recorded as "value not checked". For example, a precinct without a closed issue or an empty repository. That is no failure.
 
 ### Where the proof runs
 
@@ -52,11 +52,11 @@ A command runs once for its proof. The run is in the tick environment when the d
 - A command has one of two states: proven in the tick environment, or not proven in it. A proposal row shows the state.
 - The runs of the command files of the installation and of a precinct through the journal go in the tick environment. A call of the verifier inside `verify` is part of such a run.
 - The entry files need no tick environment where the page's entry is a file the harness runs. A script held in the job runs in the exec environment, which the test and the live run prove. The proof of a refused signature needs none.
-- The harness page, in "One-off run", says how to reach the tick environment, what runs in it and how the journal's output comes back to the assembly.
+- The harness page, in "One-off run", says how to reach the tick environment. It also says what runs in it and how the journal's output comes back to the assembly.
 - A failure blocks the write in both environments.
 - Without consent, or without a way on the harness page, the command is not proven in the tick environment. The approval of the proposal confirms that gap.
 
-**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary: the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run, in the words: every such run is a short paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
+**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary. It is the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run. Use these words: every such run is a short paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
@@ -69,13 +69,13 @@ The command is not written. Show the developer the reason: the line `<operation>
 
 ### The rule of the constitution
 
-The constitution asks that a host command run on a throwaway base before it is recorded. The rule holds like this: the command passed the throwaway base, the line that calls it passed the harness's approval check, and the count was compared with the host's.
+The constitution asks that a host command run on a throwaway base before it is recorded. The rule holds like this: the command passed the throwaway base, and the line that calls it passed the harness's approval check. The count was compared with the host's.
 
 ## Commands of the installation
 
 The installation has three commands in `shared/`: `release`, `verify` and `law-version`. For each file the developer chooses "Write" or "Leave empty". An operation with no file stays a step of the role. The journal runs `verify` always, and the answer `declined` does not skip it.
 
-Show one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state, which reads "will be proven at Apply". Apply proves them, after the approval and after the chosen verifier is installed.
+Show one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state. The state reads "will be proven at Apply". Apply proves them, after the approval and after the chosen verifier is installed.
 
 ### Choose the method of verification
 
@@ -94,7 +94,7 @@ The label of the choice names the consequence in one phrase. The right to declin
 
 With a signature chosen, `verify` is needed, because nothing else can prove the method. "Leave empty" is then not offered. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
 
-The summary of a refusal says the two facts above in plain words and names both ways to turn the check on later: the assembly offers it at each start while the notes record the refusal, and the menu item "Host" runs part Host again.
+The summary of a refusal says the two facts above in plain words. It also names both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
 
 The proposal shows the signer that the method checks: `<release_repo>` and its release workflow. The root of trust comes from the signature system, never from the release.
 
@@ -112,7 +112,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 - The files lie in `runs/` of the throwaway base. The real files lie in the folder that `release` built. On the first install, copy the downloaded files there from `runs/install-journal`.
 - When `release` is empty or its folder is missing, fetch the real files from `release_repo` by the tag, as the first install does.
 - The copy with a changed byte lies in a neighbouring folder of the same `runs/`, under the same file name. The platform gives the name of the asset.
-- Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure, because the verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
+- Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure. The verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
 - On a proof failure `verify` is not written, and the developer chooses another method or declines the signature.
 - Never run the copy with a changed byte.
 
@@ -128,7 +128,7 @@ After the facts of the refusal and before the refusal is written, prove that a s
 
 The pass runs with no answer about a signature, because the check of the sum comes before the branch of the signature. It must stop with "the checksum failed". The asset must carry no execute bit. The installation's own `bin/journal` and `config.yaml` must stay as they were.
 
-Record the refusal in `host.md`. A pass of the update with no `verify` file expects the answer `declined` from the role, and the role takes it from the notes of the host.
+Record the refusal in `host.md`. A pass of the update with no `verify` file expects the answer `declined` from the role. The role takes it from the notes of the host.
 
 ### Prove `release`
 

@@ -28,7 +28,7 @@ Ask in the question tool, in one call.
 2. When `catalog` is `yes` or the answer to item 1 is yes, ask the consent of each precinct without a pair. Use the quote and the choices of the section "The repository proposal" in `references/precinct.md`. Fill in the repository state as that section does.
 3. When `catalog` is `no`, ask no precinct question.
 4. Treat a skip or an empty answer as no.
-5. For each precinct whose consent is yes, and for each precinct that said yes and has no entry, agree the reading way by the section "Agree the reading way" in `references/precinct.md`.
+5. Agree the reading way by the section "Agree the reading way" in `references/precinct.md`. It covers two kinds of precinct: each precinct whose consent is yes, and each precinct that said yes and has no entry.
 6. When the developer cancels a question, end the mode without a write. The question returns at the next start.
 
 ## Apply

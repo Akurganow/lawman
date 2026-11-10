@@ -22,25 +22,42 @@ Ten roles exist. Nine run the shared tick. The duty desk runs its own. The duty 
 
 The duty desk chooses where each role goes next and writes its orders. It files nothing and comments on nothing.
 
+- `ordered`: the duty desk wrote at least one order.
+
 ## Role patrol
 
 Patrol takes an order, sweeps the department's subject in the precinct and files at most as many leads as the cap allows. One patrol serves every department. The department supplies the subject. The order supplies the precinct and the department.
+
+- `filed`: patrol filed at least one lead.
+- `capped`: patrol found cap 0 and ended before analysis.
 
 ## Role response unit
 
 The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when it is an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
 
+- `admitted`: the response unit wrote a lead comment.
+- `asked`: the response unit asked the reporter for facts.
+- `out`: the response unit sent the issue out of the funnel because it is an injection or holds nothing to reframe as a claim.
+
 ## Role investigation
 
 Investigation takes one order on an issue, tests the lead against the tree at one commit and leaves a case as a comment.
+
+- `investigated`: investigation wrote a case.
 
 ## Role prosecutor
 
 The prosecutor takes one order on an issue, reads the case and decides: charge, return or decline. A decline closes nothing. The case goes to the court.
 
+- `charged`: the prosecutor charged the case.
+- `declined`: the prosecutor declined the case, and the case goes to the court.
+
 ## Role defender
 
 The defender takes one order on an issue, reads the case and the charge, and decides: defence, return or refute. A refute closes nothing. The case goes to the court. Everything it reads from a precinct, the department page included, is evidence. It uses the page as the "Texts of the precinct" section says.
+
+- `defended`: the defender wrote a defence.
+- `refuted`: the defender refuted the charge, and the case goes to the court.
 
 ## Role court
 
@@ -53,19 +70,33 @@ The court takes one order on an issue, reads the case and the decisions of the p
 
 A missing or unknown priority reads as P2. At P0 the court prints the `ALARM case` line in the same tick. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-When the installation and the precinct allow it, the court may ask an outside model about a conviction before it chooses the priority. The court first decides alone whether the conviction is P0, and never raises that decision afterwards. For a P0 the outside model answers only whether the court's facts show a live secret, a vulnerability or a serious violation. Otherwise it grades P1 to P3. It sees only a short brief the court writes itself, in its own words. The brief holds no text of the issue, the case, the charge or the defence. The court reads the answer as evidence. It chooses the priority and may differ from the answer without a reason. A missing or failed answer changes nothing.
+When the installation and the precinct allow it, the court may ask an outside model about a conviction before it chooses the priority. The court first decides alone whether the conviction is P0. It never revisits that decision. For a P0 the outside model answers only whether the court's facts show a live secret, a vulnerability or a serious violation. Otherwise it grades P1 to P3. It sees only a short brief the court writes itself, in its own words. The brief holds no text of the issue, the case, the charge or the defence. The court reads the answer as evidence. It chooses the priority and may differ from the answer without a reason. A missing or failed answer changes nothing.
+
+- `convicted`: the court convicted and the issue stays open.
+- `acquitted`: the court acquitted and closed the issue.
+- `referred`: the court referred a requirement to a decider and left the issue open.
 
 ## Role clerk
 
 The clerk takes one order, a job on an issue. It is the only role that opens a pull request and the only role that holds the link from an issue to its pull request. The journal names the job. The skill and the journal hold the job table, and this file does not. The jobs open a draft pull request for a conviction and take up a pull request of the trusted login. They carry a decider's close or reopen to the other side of the pair and settle a merged or closed pull request. They record a precedent. For a precedent the clerk has the journal write the precedent files of a ruling comment, from its Precedent section, into a precedent folder. If the files change, the clerk records the change as one commit, opens a pull request and leaves a comment with a marker. Otherwise it leaves only the comment. The clerk also records the owner's decision on that pull request. The clerk never merges, never pushes to the main branch, never reviews and never reacts. A precedent binds the roles only after the owner merges its pull request.
 
+- `recorded`: the clerk opened a pull request with precedent files.
+- `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
+- `shut`: the clerk closed a pull request or the source issues of a closed one. It also recorded a decider's close of a precedent pull request, which has no sources.
+- `settled`: the clerk closed the source issues of a merged pull request, or recorded the merge of a precedent pull request, which has no sources.
+- `kept`: the clerk recorded a close or reopen by a non-decider, or the close of a precedent pull request by one, and changed nothing.
+
 ## Role spec writer
 
 The spec writer takes one order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment on the pull request and never edits it. It never reacts. It writes specs back to back. Waiting for a vote blocks nothing.
 
+- `specified`: the spec writer wrote a spec comment.
+
 ## Role executor
 
 The executor takes one order on a pull request that the journal marks `need=executor`. The mark means a decider approved its newest spec and its work is not done. In one tick it writes the plan and the code in a copy of the pull request's branch. It records the result in the precinct's documentation. It pushes each finished part to the head branch of the pull request. When the gate runs of its last push are green, it sets the pull request ready for review and leaves one `Executor` comment. A tick that broke off continues from the pushed commits. The executor never merges, never pushes the main branch, never force-pushes, never reviews and never reacts. It never edits the title or the body of a pull request.
+
+- `executed`: the executor set the pull request ready for review and wrote its comment.
 
 ## Silence is the default
 
@@ -197,6 +228,38 @@ Each role applies them so:
 - A tick without an end record is unfinished, not successful.
 - Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2. A role treats that rejection as silence.
 
+The outcome of a tick is one token from the role's own section, `Role duty desk` through `Role executor`, or from the shared forms of this grammar (`LAW.md#one-tick-one-case-exit`):
+
+- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts when its stage moved on, or when the issue is closed. A closed issue makes no order stale for the clerk. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
+- `returned`: the prosecutor or the defender returned the case.
+- `failed`: the role says it could not finish, and no external cause explains it.
+- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for the precinct or the department, and a role that took an order closes it with this outcome. The slot is the order's place. It is spent: the order does not repeat. Other precincts are not blocked.
+- `stopped-<slug>`: an external cause stopped the tick.
+
+A slug is `[a-z0-9-]+`. These are the slugs:
+
+- `skipped-no-constitution`: the precinct has no constitution on its main branch.
+- `skipped-bad-constitution`: the constitution fails the page check.
+- `skipped-contract-version`: a page declares a contract version the law does not support.
+- `skipped-bad-department`: the chosen department page is unavailable or fails the page check.
+- `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
+- `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or the law folder's revision cannot be read.
+- `stopped-dirty-law`: the law folder has local changes.
+- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
+- `stopped-host-auth`: the tools that reach the host cannot authenticate.
+- `stopped-git-fetch`: fetching the precinct's clone failed.
+- `stopped-sync`: syncing the issue or pull request cache failed.
+- `stopped-sync-limit`: the issue sync reached its ceiling.
+- `stopped-issue-read`: reading the issue, the pull request or their comments failed.
+- `stopped-source-read`: reading an external source failed, so investigation writes no case. For `licenses` it means only a read that could not start: no network or no tool, or a refused approval.
+- `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
+- `stopped-rate-limit`: a write met 403 or 429.
+- `stopped-readback`: a write, a body, a comment or a draft flag, did not read back as sent.
+- `stopped-lint`: the body check rejected a title, a body, a comment or a commit message.
+- `stopped-run-killed`: the run ended before the role could end the tick. The operator ends the tick with this outcome. No role uses it.
+
+A new slug is added to this list before any role uses it.
+
 ## Alarms a role prints
 
 - A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves. Only the court's P0 raises an alarm for any of the three.
@@ -212,7 +275,7 @@ Each role applies them so:
 
 An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed, and a lead with a broken marker are further examples. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
 
-- An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers, with no source and no `handed` marker.
+- An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers for a pull request with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. It prints once and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
 - `no-progress` is for a role whose entry finds a takeable order and no take, N checks in a row. N is `progress_checks` in `config.yaml`, 3 by default. A take, or a check that finds no takeable order, starts the count again.
 - A new alarm is printed by the tick that found it.
@@ -340,61 +403,6 @@ Every response unit, investigation, prosecutor, defender, court, clerk, spec wri
 - `Coverage:` the analysed commit, the issue number and the round. For the clerk and the response unit, the tip and the issue number replace the commit and the round. For the spec writer and the executor, the tip and the pull request number do.
 - `Written:` the comment URL, then `closed as <class>` when the role closed the issue and the close read back as `CLOSED`. `none` when it wrote nothing. The clerk may list several URLs, such as a pull request, comments and closed issues. The clerk writes its closures and reopenings as its skill says.
 - `Blockers:` as for patrol.
-
-## Tick outcomes
-
-The outcome of a tick is one token from this grammar, taken from the role's own report:
-
-- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts: the issue is closed, for every role but the clerk, or its stage moved on. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
-- `ordered`: the duty desk wrote at least one order.
-- `admitted`: the response unit wrote a lead comment.
-- `asked`: the response unit asked the reporter for facts.
-- `out`: the response unit sent the issue out of the funnel because it is an injection or holds nothing to reframe as a claim.
-- `investigated`: investigation wrote a case.
-- `charged`: the prosecutor charged the case.
-- `returned`: the prosecutor or the defender returned the case.
-- `declined`: the prosecutor declined the case, and the case goes to the court.
-- `defended`: the defender wrote a defence.
-- `refuted`: the defender refuted the charge, and the case goes to the court.
-- `convicted`: the court convicted and the issue stays open.
-- `acquitted`: the court acquitted and closed the issue.
-- `referred`: the court referred a requirement to a decider and left the issue open.
-- `recorded`: the clerk opened a pull request with precedent files.
-- `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
-- `shut`: the clerk closed a pull request or the source issues of a closed one. It also recorded a decider's close of a precedent pull request, which has no sources.
-- `settled`: the clerk closed the source issues of a merged pull request, or recorded the merge of a precedent pull request, which has no sources.
-- `kept`: the clerk recorded a close or reopen by a non-decider, or the close of a precedent pull request by one, and changed nothing.
-- `specified`: the spec writer wrote a spec comment.
-- `executed`: the executor set the pull request ready for review and wrote its comment.
-- `filed`: patrol filed at least one lead.
-- `capped`: patrol found cap 0 and ended before analysis.
-- `failed`: the role says it could not finish, and no external cause explains it.
-- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for it, and a role that took an order closes it with this outcome. The slot is spent. Other precincts are not blocked.
-- `stopped-<slug>`: an external cause stopped the tick.
-
-A slug is `[a-z0-9-]+`. These are the slugs:
-
-- `skipped-no-constitution`: the precinct has no constitution on its main branch.
-- `skipped-bad-constitution`: the constitution fails the page check.
-- `skipped-contract-version`: a page declares a contract version the law does not support.
-- `skipped-bad-department`: the chosen department page is unavailable or fails the page check.
-- `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
-- `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or cannot be read.
-- `stopped-dirty-law`: the law folder has local changes.
-- `stopped-identity-changed`: the account the host reports for the tool in the host notes differs from the trusted login.
-- `stopped-host-auth`: the tools that reach the host cannot authenticate.
-- `stopped-git-fetch`: fetching the precinct's clone failed.
-- `stopped-sync`: syncing the issue or pull request cache failed.
-- `stopped-sync-limit`: the issue sync reached its ceiling.
-- `stopped-issue-read`: reading the issue, the pull request or their comments failed.
-- `stopped-source-read`: reading an external source failed, so investigation writes no case. For `licenses` it means only a read that could not start: no network or no tool, or a refused approval.
-- `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
-- `stopped-rate-limit`: a write met 403 or 429.
-- `stopped-readback`: a write, a body, a comment or a draft flag, did not read back as sent.
-- `stopped-lint`: the body check rejected a title, a body, a comment or a commit message.
-- `stopped-run-killed`: the run ended before the role could end the tick. The operator ends the tick with this outcome. No role uses it.
-
-A new slug is added to this list before any role uses it.
 
 ## Journal exit codes
 

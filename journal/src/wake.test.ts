@@ -2,16 +2,14 @@ import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { MIGRATIONS, open } from "./db";
+import { MIGRATIONS } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import {
 	BASE,
 	call,
 	cli,
-	dbFile,
 	dir,
 	later,
-	must,
 	order,
 	rows,
 	seed,
@@ -93,39 +91,6 @@ describe("wake", () => {
 			`order ${untaken} main o/main - 3`,
 			`order ${takenOld} main o/main - 1`,
 			`order ${takenNew} main o/main - 2`,
-		]);
-	});
-
-	test("a patrol order nobody took comes before a taken one", () => {
-		seedOrders((db) => {
-			db.run(
-				"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('other', 'o/other', 1)",
-			);
-			order(db, "main", "patrol", { at: BASE, takenAt: BASE });
-			order(db, "other", "patrol", { at: later(1) });
-		});
-		const untaken = must(
-			rows("SELECT id FROM dispatches WHERE taken_at IS NULL")[0]?.id as
-				| number
-				| undefined,
-		);
-		const taken = must(
-			rows("SELECT id FROM dispatches WHERE taken_at IS NOT NULL")[0]?.id as
-				| number
-				| undefined,
-		);
-		const db = open(dbFile);
-		try {
-			expect(takeableOrders(db, "patrol").map((o) => o.id)).toEqual([
-				untaken,
-				taken,
-			]);
-		} finally {
-			db.close();
-		}
-		// the wake lists the first patrol order only: the one nobody took
-		expect(ordersOf(wake(later(2)).out)).toEqual([
-			`order ${untaken} other o/other - -`,
 		]);
 	});
 

@@ -5,10 +5,18 @@ import {
 	existsSync,
 	mkdirSync,
 	readdirSync,
+	rmSync,
 	symlinkSync,
 	writeFileSync,
 } from "node:fs";
 import { join } from "node:path";
+import {
+	entry,
+	prepare,
+	RUNNERS,
+	type Run,
+	resultsReply,
+} from "./catalog-test-run";
 import * as clean from "./clean";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
@@ -52,19 +60,13 @@ async function releasedFiles(): Promise<void> {
 const asset = `${RELEASE_FOLDER}/${ASSET}`;
 const provenance = `${asset}.sigstore.json`;
 
-describe("run-installation: the call", () => {
-	test.each([
-		[[]],
-		[["fetch"]],
-		[["release", REPO]],
-		[["verify", asset, provenance, REPO]],
-		[["law-version", "x"]],
-	])("%j is a usage error", async (args) => {
-		const r = await run(...args);
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(r.err).toContain("usage: journal run-installation");
-	});
+// the state one test got from the hooks: a new folder for the database
+const fresh = () => {
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir);
+};
 
+describe("run-installation: the call", () => {
 	test.each([
 		["release", "-x/y", TAG],
 		["release", "a/b/c", TAG],
@@ -366,4 +368,53 @@ describe("run-installation as a program", () => {
 		);
 		expect(r).toEqual({ code: 5, out: refused("verify", "exit"), err: "" });
 	});
+});
+
+test("%j is a usage error", async () => {
+	// catalog answer
+	fresh();
+	const answerRun = RUNNERS[1]?.[1] as Run;
+	for (const args of [
+		["answer", "--kind", "batch"],
+		["answer", "--kind", "batch", "--tick", "x1"],
+		["answer", "--kind", "batch", "--tick", "1", "--precinct", "alpha"],
+	] as string[][]) {
+		prepare();
+		expect([args, answerRun(args, resultsReply([[]])).code]).toEqual([args, 1]);
+	}
+	// catalog request, through both runners
+	fresh();
+	for (const [name, requestRun] of RUNNERS) {
+		for (const args of [
+			["request", "--kind", "batch"],
+			["request", "--kind", "batch", "--tick", "x1", "--precinct", "alpha"],
+			["request", "--kind", "other", "--tick", "7"],
+			["request", "--kind", "batch", "--tick", "7", "--precinct", "Alpha"],
+			["frobnicate", "--kind", "batch"],
+		] as string[][]) {
+			prepare();
+			const r = requestRun(args, entry(1));
+			expect([name, args, r.code]).toEqual([name, args, 1]);
+			expect(r.err).not.toBe("");
+		}
+	}
+	// commands
+	fresh();
+	for (const args of [["ghost"], ["Bad"], ["main", "extra"]] as string[][]) {
+		const r = await inprocAsync(BASE, ["commands", ...args]);
+		expect([args, r.code, r.out]).toEqual([args, EXIT.USAGE, ""]);
+	}
+	// run-installation
+	fresh();
+	for (const args of [
+		[],
+		["fetch"],
+		["release", REPO],
+		["verify", asset, provenance, REPO],
+		["law-version", "x"],
+	] as string[][]) {
+		const r = await run(...args);
+		expect([args, r.code]).toEqual([args, EXIT.USAGE]);
+		expect(r.err).toContain("usage: journal run-installation");
+	}
 });

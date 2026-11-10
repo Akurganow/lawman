@@ -1,6 +1,6 @@
 # Harness page: Hermes Agent
 
-This page holds everything a Lawman skill cannot know about Hermes Agent (Nous Research). The law and the skills never name a harness. Each harness gets one page with these same sections.
+This page holds everything a Lawman skill cannot know about Hermes Agent (Nous Research).
 
 Terms used below:
 
@@ -87,7 +87,7 @@ The sync's steps are in `tick.md#sync-the-law` of `tick.md`. For how a scheduled
 From an agent session, start a role's job in the background with the tool `cronjob_manage`. Call it with `action` set to `run` and `job_id` set to `"[lawman] <role>"`.
 
 - The result's `job` holds `"execution_mode": "background"` and a `delegation_id` when the run was dispatched. Do not wait or poll (read in the harness code: `tools/cronjob_tools.py`, `_action_run`).
-- The outcome arrives later as a new message in that session. It begins "Cron job '[lawman] <role>' (<job id>) finished its manual run." and gives `Result: ok` or `Result: FAILED` (read in the harness code: `tools/cronjob_tools.py`, `_manual_run_completion`, and `tools/async_delegation.py`).
+- The outcome arrives later as a new message in that session. It gives `Result: ok` or `Result: FAILED`. It begins "Cron job '[lawman] <role>' (<job id>) finished its manual run." (read in the harness code: `tools/cronjob_tools.py`, `_manual_run_completion`, and `tools/async_delegation.py`).
 - Background dispatch needs a session that takes a later message and a free slot in the background pool. Otherwise the call runs the job inline and returns when the run ends. An inline result holds no `execution_mode` (read in the harness code: `tools/cronjob_tools.py`, `_try_dispatch_background_run`).
 
 From a terminal, run the job with:
@@ -98,7 +98,7 @@ hermes cron run "[lawman] <role>"
 
 - The run executes inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
-- A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false, and the reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." Resume the job first, with the form under "Paused jobs" (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`).
+- A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false. The reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`). Resume the job first, with the form under "Paused jobs".
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
 - A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
@@ -107,7 +107,7 @@ hermes cron run "[lawman] <role>"
 
 ## Commands in scheduled runs
 
-A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). The refused command does not run. Its terminal call comes back as a `tool` message whose content is `{"output": "", "exit_code": -1, "error": "BLOCKED: Command flagged as dangerous (<reason>) …"}` (seen in a scheduled run). Lawman leaves it unchanged.
+A scheduled run has no one to approve a command. The harness refuses a command it flags as dangerous. The setting `approvals.cron_mode` decides. Its default refuses (read in the harness code). The refused command does not run. Its terminal call comes back as a `tool` message whose content is `{"output": "", "exit_code": -1, "error": "BLOCKED: Command flagged as dangerous (<reason>) …"}` (seen in a scheduled run). Lawman leaves that message unchanged.
 
 Refused, seen in scheduled runs:
 
@@ -128,11 +128,11 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 - a heredoc fed to a shell or an interpreter: `bash <<`;
 - other recursive deletes: `rm -r`, `rm --recursive`.
 
-Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the Send body. The pipe passed when a role repeated a refused command without the wrapper.
+Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the body of the Send command. The pipe passed when a role repeated a refused command without the wrapper.
 
-Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, a quoted heredoc fed to an ordinary command, and a loop. None of these was seen in a scheduled run.
+Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, and a loop. A quoted heredoc fed to an ordinary command also passed the check. None of these was seen in a scheduled run.
 
-Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter, a pipe into `sed -E` with a quoted script, and such a pipeline inside `(set -o pipefail; …)`. None of these was seen in a scheduled run.
+Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script. Such a pipeline inside `(set -o pipefail; …)` also passed the check. None of these was seen in a scheduled run.
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
@@ -182,19 +182,19 @@ bin/journal catalog request --kind record <<'<delimiter>'
 curl -s -w '\n%{http_code}' "https://api.osv.dev/v1/vulns/<identifier>" | bin/journal catalog answer --kind record --id <identifier>
 ```
 
-- The forms use only what "Commands in scheduled runs" lists as accepted: a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
-- The harness's check function accepts form 1, form 2, the batch pipeline for the first and a later part, the record request and the record read, each in the exact form a role sends (checked with the harness's check function). The floor check of the same function passes them too. None of these was seen in a scheduled run.
+- The forms use only what "Commands in scheduled runs" lists as accepted. They are a plain pipe, a quoted heredoc fed to an ordinary command and quoted arguments. They start no shell or interpreter with `-c` or `-e`, and feed no heredoc to a shell or an interpreter.
+- The harness's check function accepts form 1, form 2 and the batch pipeline for the first and a later part. It also accepts the record request and the record read, each in the exact form a role sends (checked with the harness's check function). The floor check of the same function passes them too. That check holds the unconditional blocks that run before any mode (read in the harness code: `tools/approval.py`, `_floor_block`). None of these was seen in a scheduled run.
 
 ## Sending to license sources
 
-Two things differ from the other harnesses.
+Two things bound the command that reads a source.
 
-- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) A reading command without `timeout` lives 180 seconds, and the patrol starts no new request to a row after that time.
+- The time limit of a command. On Hermes the default is 180 seconds and the cap of a call in the foreground is 600 seconds. (read in the harness code) A reading command without `timeout` lives 180 seconds. The patrol starts no new request to a row once that limit has passed.
 - The forms of a command. A scheduled run refuses some forms, as "Commands in scheduled runs" lists. The command that reads a source uses only the forms that section accepts. It starts no shell or interpreter with `-c` or `-e`.
 
 ## Calling an expert
 
-A role calls an expert only in this form. The expert runs as the profile configures it. Local files are the user's responsibility.
+A role calls an expert only in this form. The expert runs as the profile configures it. The content of local files that influences the expert is the user's responsibility.
 
 1. Start a separate session with `hermes chat`. (read in the harness code, seen in a run)
 2. Pass `-Q`, so the session prints only the final answer to standard output. (read in the harness code, stated by `--help`, seen in a run)
@@ -272,15 +272,15 @@ hermes cron edit <job id> --script lawman-<role>.sh --monitor-script ''
 ```
 
 - The call sets the entry file and clears the monitor in one update. The harness checks the rules of the modes on the merged record before it writes (read in the harness code).
-- The file must exist in the scripts folder, or the call is refused with "Script file not found", and the job stays as it was (read in the harness code).
-- The call changes no schedule, because the schedule changes only with `--schedule`. A paused job stays paused. Skills, model, provider and delivery stay (read in the harness code: each field is updated by itself).
-- Both flags go in one call. A job that keeps its monitor runs the monitor check first, and the check can end the run before the script runs (read in the harness code).
+- The file must exist in the scripts folder, or the call is refused with "Script file not found". The job then stays as it was (read in the harness code).
+- A paused job stays paused. Skills, model, provider and delivery stay (read in the harness code: each field is updated by itself).
+- Both flags go in one call. A job that keeps its monitor runs the monitor check first. The check can end the run before the script runs (read in the harness code).
 - The harness's check function accepts the line (checked with the harness's check function). Not seen in a scheduled run.
 - A refusal prints `Failed to update job:` and the reason. The job then still runs in one of its two modes (read in the harness code).
 
 ### Schedule forms and time zone
 
-Five-field cron with weekdays and days of the month (stated by the docs). Read the time zone with `hermes config get timezone` (seen in a terminal). The variable `HERMES_TIMEZONE` overrides it. Schedules match that zone's wall clock. Unset means the machine's zone (read in the harness code).
+Five-field cron with weekdays and days of the month (stated by the docs). Read the time zone with `hermes config get timezone` (seen in a terminal). The variable `HERMES_TIMEZONE` overrides it. Schedules match that zone's wall clock. When neither the variable nor the config sets a zone, the machine's zone applies (read in the harness code).
 
 ### Models
 
@@ -305,29 +305,29 @@ The role entry is a file that runs `bin/journal wake --role <role>` before the s
 A job runs the file in one of two modes, and one file serves both. `--script <file>` puts its output into the prompt. `--monitor-script <file>` compares its output with the last run. `hermes cron create` and `hermes cron edit` take both, and one job may hold both (read in the harness code).
 
 - The assembly creates every job in script mode, with the form under "Scheduling". A job that was created in monitor mode stays in it until the assembly translates it with the form under "Editing a job".
-- The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder. An absolute path is refused at create, and at run the path must lie inside that folder (seen in a terminal, read in the harness code).
+- The file sits in the `scripts` folder next to the file that `hermes config path` prints. Each profile has its own folder. An absolute path is refused at create. At run the path must lie inside that folder (seen in a terminal, read in the harness code).
 - The extension picks the interpreter: `.sh` and `.bash` run with `bash`, other files with Python. The interpreter line is ignored. The working folder is the job's `--workdir`, or else the folder of the file (read in the harness code).
 - Without work the journal prints nothing. In script mode an empty output skips the model and the delivery. In monitor mode an unchanged output skips the session (read in the harness code).
-- With work the journal prints the first part of the role's input. Its first line carries the check time, so the output changes at every check, and monitor mode never skips a role with an order (read in the journal code).
-- Script mode cuts nothing. It puts the output into the prompt inside a block of three backticks, unescaped. Every line of the law in the input starts with `| `, so no line of it closes the block (read in the harness code, read in the journal code).
-- Monitor mode shows at most 8000 characters of the output, from its start, and at most 4000 characters of the change. A change adds the new output to the role's prompt. The first run and any change start the session, a change to an empty output included, so the session starts once more when the work ends (read in the harness code).
-- If a job holds both modes, the monitor check runs first and can end the run before the script runs (read in the harness code).
+- With work the journal prints the first part of the role's input. Its first line carries the check time. The output changes at every check. Monitor mode never skips a role with an order (read in the journal code).
+- Script mode cuts nothing. It puts the output into the prompt inside a block of three backticks, unescaped. Every line of the law in the input starts with `| `. No line of the law closes the block (read in the harness code, read in the journal code).
+- Monitor mode shows at most 8000 characters of the output, from its start, and at most 4000 characters of the change. A change adds the new output to the role's prompt. The first run and any change start the session, a change to an empty output included. The session then starts once more when the work ends (read in the harness code).
+- If a job holds both modes, the monitor check runs first. The check can end the run before the script runs (read in the harness code).
 - On success the standard error of the file is dropped. A non-zero exit, a timeout or a failed start gives the session a "Script Error" block, and the model runs (read in the harness code). The fallback is the role's: it runs the entry itself as its first call.
 - A script may run 3600 seconds by default. The variable `HERMES_CRON_SCRIPT_TIMEOUT` and the key `cron.script_timeout_seconds` change the limit. The entry reads only local files (read in the harness code).
-- The output of a script passes Hermes's secret masking before it reaches the prompt. The masking covers tokens with known prefixes, `KEY=value` pairs with secret-like names, JSON and YAML fields, authorization headers, private keys, passwords in connection strings, JWTs and phone numbers. A failed masking replaces the whole output with `[REDACTED - redaction failed]`, which carries no first line of the input (read in the harness code). Whether the masking changes a line of the law: not checked.
+- The output of a script passes Hermes's secret masking before it reaches the prompt. The masking covers tokens with known prefixes, `KEY=value` pairs with secret-like names, JSON and YAML fields, and authorization headers. It also covers private keys, passwords in connection strings, JWTs and phone numbers. A failed masking replaces the whole output with `[REDACTED - redaction failed]`, which carries no first line of the input (read in the harness code). Whether the masking changes a line of the law: not checked.
 - The assembled prompt, with the skills and the script output, passes a scan for injection phrases, and a match cancels the run. The patterns live in `tools/cronjob_prompt_scan.py` (read in the harness code). The journal's tests check that the local part of no role's input matches them.
 - The script gets no job identity, no `GH_TOKEN`, no `GITHUB_TOKEN` and no keys of the model providers. The entry runs no command, so it needs none of them (read in the harness code).
 - A manual run with `hermes cron run` runs the file too (read in the harness code).
 
 The check function refuses a heredoc that writes a `.sh` file. It accepts `printf` with a redirect (checked with the harness's check function). Not seen in a scheduled run.
 
-**The size of a part.** The terminal tool returns at most 50 000 characters of a command's output, the notice of a cut included. The key `tool_output.max_bytes` sets it. A longer output keeps 40 % from the start and 60 % from the end, with a line `[OUTPUT TRUNCATED …]` between them (read in the harness code). The entry that a role runs itself and the start of the tick come through the terminal. So the safe size of a part is 49 000, which leaves room for the first and the last line of each part:
+**The size of a part.** The terminal tool returns at most 50 000 characters of a command's output. The notice of a cut adds to the output and does not count toward the limit. The key `tool_output.max_bytes` sets it. A longer output keeps 40 % from the start and 60 % from the end. A line `[OUTPUT TRUNCATED …]` sits between them (read in the harness code). The entry that a role runs itself and the start of the tick come through the terminal. So the safe size of a part is 49 000, which leaves room for the first and the last line of each part:
 
 ```
 input_chars: 49000
 ```
 
-The results of one turn add up to at most 200 000 characters. Hermes replaces the rest with a preview (read in the harness code). So take one part per call.
+The results of one turn add up to at most 200 000 characters. Hermes replaces the largest results with a preview and a path (read in the harness code). So take one part per call.
 
 The form of a role's entry file. Replace the placeholders:
 
@@ -390,7 +390,7 @@ Rules for every one-off job:
 
 The environment of a tick is the terminal of a scheduled agent session. A one-off job reaches it the same way a scheduled job does.
 
-- An agent job does not run in the process of the `hermes cron run` command. The command submits the run to the gateway of the profile and waits for it to end. The gateway starts if none runs. The scheduled run takes the same path inside the gateway, and both open a session with the platform `cron` and the job's `--workdir` as its folder (read in the harness code: `cron/scheduler.py`, `run_job`; `cron/scheduler_authority.py`, `run_canonical_job`; `gateway/session_cron.py`, `_create`).
+- An agent job does not run in the process of the `hermes cron run` command. The command submits the run to the gateway of the profile and waits for it to end. The gateway starts if none runs. The scheduled run takes the same path inside the gateway. Both open a session with the platform `cron`. Its folder is the job's `--workdir` (read in the harness code: `cron/scheduler.py`, `run_job`; `cron/scheduler_authority.py`, `run_canonical_job`; `gateway/session_cron.py`, `_create`).
 - The terminal of that session builds its environment with the function of the terminal tool. That function completes `PATH` with the standard binary directories. The environment of a job's script comes from another function and gets no such completion. So a script, a `--no-agent` job included, does not reach the environment of a tick (read in the harness code: `tools/environments/local.py`, `_make_run_env`, `_sanitize_subprocess_env`).
 - The terminal command of that session passes the approval check of the cron context. The setting `approvals.cron_mode` decides, and the default refuses what the check flags as dangerous ("Commands in scheduled runs") (read in the harness code: `tools/approval.py`, `_unattended_contexts`).
 
@@ -415,14 +415,14 @@ Read the result after the run, with the job's name:
 hermes sessions export --title "lawman-proof-<n>" --after <time before the run> --format jsonl --redact -
 ```
 
-- `--title` matches a part of the title, and the title of the run's session holds the job's name (see "Run records"). The filter matches one session when no proof name of the pass contains another and the record is read before the next proof job is created. `<time before the run>` takes the forms that "Run records" gives.
-- Take the `tool` message whose `tool_call_id` equals the `id` of the `terminal` call that holds the command. Its content is a JSON object. `output` is what the journal printed, with the surrounding whitespace trimmed, and `exit_code` is its exit code (seen in a scheduled run; read in the harness code: `tools/terminal_tool_result.py`, `output.strip()`). "Prove a command" in `references/commands.md` of the assembly judges that output.
+- `--title` matches a part of the title, and the title of the run's session holds the job's name (see "Run records"). The filter matches one session when no proof name of the pass contains another. The record must also be read before the next proof job is created. `<time before the run>` takes the forms that "Run records" gives.
+- Take the `tool` message whose `tool_call_id` equals the `id` of the `terminal` call that holds the command. Its content is a JSON object. `output` is what the journal printed, with the surrounding whitespace trimmed. `exit_code` is its exit code (seen in a scheduled run; read in the harness code: `tools/terminal_tool_result.py`, `output.strip()`). "Prove a command" in `references/commands.md` of the assembly judges that output.
 - A refused command comes back in the shape that "Commands in scheduled runs" gives. No `terminal` call with the command means that the model did not run it. Both are no proof in the environment of a tick.
 - `--deliver local` keeps the output in the harness's output folder and sends nothing to a chat.
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
 - The answer `[SILENT]` alone is the harness's silence form (see "Silence"). A model that answers otherwise changes nothing in the record of the terminal call.
 - The form holds no redirect into a file: the check refuses a redirect whose target is a system path (see "Commands in scheduled runs").
-- Each of these lines passed the harness's check function as a role would send it: the create line, the create line with the proof prompt filled in, the terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder, and the export line (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
+- Each of these lines passed the harness's check function as a role would send it. They are the create line, the create line with the proof prompt filled in, and the export line. The terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder passed too (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
 
 Run the job and remove it as the order above says.
 
@@ -446,7 +446,6 @@ hermes cron create "in 24h" "Answer with exactly the text [SILENT] and nothing e
 
 - Run each job with `hermes cron run <job id>`. A manual run delivers by the job's own target (read in the harness code: `tools/cronjob_tools.py`, `_manual_run_delivery_note`).
 - The harness reports a delivery it could not make. `hermes cron list --all` prints a `Last run:` line for the job. A delivery that failed reads `ran, but the result was not delivered` with the reason (read in the harness code: `hermes_cli/cron.py`, `_last_run_display`). Arrival is not visible to a role or to the assembly. The user confirms it (see "Delivery targets").
-- The quiet job delivers nothing, because the harness suppresses a response that is `[SILENT]` alone (read in the harness code: `cron/scheduler.py`, `_is_cron_silence_response`).
 - The harness's check function accepts all four lines: the two create lines, `hermes cron run <job id>` and `hermes cron remove <job id>` (checked with the harness's check function). None of these was seen in a scheduled run.
 
 ### Run records
@@ -487,7 +486,7 @@ Checked with the harness's check function: the export commands pass as written.
 
 The working directory of every job is the installation. It is never a precinct clone.
 
-This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt. File and terminal tools also start there. A precinct's agent files, hooks and project context must not become the session's project. So roles reach a precinct by path, through the journal's commands, and never by changing directory into it. A subshell that changes into a copy under the run directory for one command does not change the session's project.
+File and terminal tools also start there. A precinct's agent files, hooks and project context must not become the session's project. So roles reach a precinct by path, through the journal's commands, and never by changing directory into it. A subshell that changes into a copy under the run directory for one command does not change the session's project.
 
 Hermes has no equivalent of a "bare" mode that suits a Lawman tick. The docs for `hermes chat` list `--ignore-rules`, `--ignore-user-config` and `--safe-mode`. They do not describe a bare mode. `--ignore-rules` also drops preloaded skills, so it cannot be combined with `-s`. The docs state none of these flags for `hermes cron create`. Isolation rests on the working directory alone.
 
@@ -515,7 +514,7 @@ The probe measured that the host tool read a login stored in the keychain from a
 
 The key may live in any place that a scheduled session can read. The assembly records that place in `typesafe_key` of `config.yaml`.
 
-`~/.hermes/.env` is one such place. The docs say `.env` values are exported to the process environment. A scheduled session sees such a variable: a Send run in one returned a `jev model=` line (seen in scheduled runs).
+`~/.hermes/.env` is one such place. The docs say `.env` values are exported to the process environment. A scheduled session sees such a variable: a run of the court's Send step in one returned a `jev model=` line (seen in scheduled runs).
 
 Hand the key to a request on standard input, or through a process substitution that feeds a header. The page lists process substitution as accepted under "Commands in scheduled runs". Never put the key in the text of a command.
 
@@ -527,9 +526,3 @@ The question tool is `clarify` (read in the harness code).
 - A question holds up to 4 choices. The tool drops extra choices without an error (read in the harness code).
 - A question can take several choices (read in the harness code).
 - The tool adds its own free-text row (read in the harness code).
-
-## What a second harness needs
-
-A second harness needs a page with these same eight sections. They are: installing the plugin, syncing the law, running a role once, commands in scheduled runs, scheduling, isolation, budget and token, and asking the developer. It answers the same questions in its own commands. Nothing changes in the skills or in the law, because both name no harness.
-
-Its scheduling section also holds the role entry, the edit of a job that translates it, and the one-off run. A second page answers each in its own commands.

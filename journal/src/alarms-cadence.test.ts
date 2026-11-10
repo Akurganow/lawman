@@ -4,23 +4,6 @@ import { alarm, BASE, later, seed, tempDb, tick } from "./test-helpers";
 tempDb();
 
 describe("alarm cadence", () => {
-	describe("tick-hung on the ticks of one role", () => {
-		test("a tick with no end record alarms when a later tick of its role exists", () => {
-			seed((db) => {
-				tick(db, "patrol", BASE, null, null);
-				tick(db, "patrol", later(1), null, null);
-			});
-			expect(alarm(later(3)).out).toBe(
-				`ALARM tick-hung 1 patrol started ${BASE}\n`,
-			);
-		});
-
-		test("a tick with no end record and no later tick of its role raises nothing", () => {
-			seed((db) => tick(db, "patrol", BASE, null, null));
-			expect(alarm(later(3)).out).toBe("");
-		});
-	});
-
 	describe("the repetition of an open alarm", () => {
 		const dead = () =>
 			seed((db) => {

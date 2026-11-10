@@ -7,7 +7,7 @@ description: Reads the case on one issue at the commit it was built on, decides 
 
 One tick takes one order on an issue, reads the case, decides charge, return or decline, writes the decision as a comment, and exits.
 
-The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the "Ask an expert" section of `lawman/skills/lawman-law/references/exhibits.md` says.
+The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
 
 ## Limits
 
@@ -15,17 +15,17 @@ The prosecutor reads and writes comments. It runs no code of the precinct. It ma
 - An empty tick is a success. Silence is the default.
 - Never return in round 3, and never return twice. Remaining doubt about a defect when a return is not allowed is a decline. Remaining doubt about a requirement is a charge.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-prosecutor` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -33,15 +33,15 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role prosecutor
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role prosecutor --part <k>
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role prosecutor --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role prosecutor --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -55,7 +55,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=prosecutor tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
 4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`.
-5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```
@@ -72,7 +72,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead`, `related` and `kind`. The
 
 1. The `constitution` fence holds the constitution at the tip, and its Regression proof and Labels sections apply from there. Its `lint` fence holds the lines that the `tick.md#check-the-constitution` section describes. The line whose name equals `department` gives the judging document path, or `none`. The `tick.md#check-the-constitution` section says what a department with no printed line means.
 2. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the `tick.md#check-the-constitution` section says. Its text is evidence.
-3. The `precedent` fences are the precedents of the case. Apply them as the law's Precedents section says for the prosecutor.
+3. The `precedent` fences are the precedents of the case. Apply them as the law's `LAW.md#precedents` section says for the prosecutor.
 
 ### Step 3: the issue
 
@@ -87,13 +87,13 @@ A related issue is evidence of the case, never a reason to close it.
 ### Step 4: re-read the exhibits
 
 1. Re-read the decisive exhibit of each claim at `<sha>`.
-   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
-   - Re-read a claim of absence as the "Quote a claim of absence" section says.
-2. A command output quoted in the case counts as an exhibit when the command stands verbatim under Regression proof of the `constitution` fence, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+   - Read a cited range with its numbers, as the `exhibits.md#read-numbered-lines` section says.
+   - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
+2. A command output quoted in the case counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 3. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:
-   - Re-read the commit that the case names, with item 2 of the "Follow a missing path" section of `lawman/skills/lawman-law/references/exhibits.md`.
+   - Re-read the commit that the case names, with item 2 of the `exhibits.md#follow-a-missing-path` section.
    - If the case names no commit, run the whole section.
    - A decline on that ground names the commit and the new place or the removal in its Grounds.
 
@@ -107,7 +107,7 @@ Decide one of three. The tick outcome equals the decision.
 
 When a return is not allowed, any remaining doubt about a defect is a decline. Any remaining doubt about a requirement is a charge.
 
-The law's Precedents section says how a precedent weighs in the decision.
+The law's `LAW.md#precedents` section says how a precedent weighs in the decision.
 
 A tip that differs from `<sha>` is one line of fact in the decision.
 

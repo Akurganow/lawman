@@ -9,10 +9,10 @@ Lawman serves every developer who installs it, on repositories its authors have 
 - Design every change, question, migration and check for any user's installation and repositories.
 - Never focus on the repositories of a maintainer or limit a change to them. They are one installation among others and a source of measurements.
 - Keep project rules in this repository. A contributor sees nothing else.
-- Bring a change in how Lawman works to each user through the update. After the update, the tick that synced the law must tell the user what to do, from the list in the section "Sync the law", and the assembly must explain it.
+- Bring a change in how Lawman works to each user through the update. After the update, the tick that synced the law must tell the user what to do, from the list in the section "Sync the law". The assembly must explain the change.
 - Ship law before code. Put code in the journal only for what must be safe and reliable, such as the cleaning of foreign text. Do not turn a rule into code before an error of the role is measured.
 - Make the assembly explain the change and ask the user what happens to the existing data. Make it ask the same at a first install into a repository that holds the old form.
-- Let the assembly read the repository before it asks. Ask every question that has no answer in the record, and recommend the answer that a file shows, with its path and line.
+- Let the assembly read the repository before it asks. Ask every question that has no answer in the record. Recommend the answer that a file shows, and name the file's path and line.
 
 ## Develop the journal
 
@@ -33,7 +33,7 @@ bun test
 
 - `plugin.json` and `journal/package.json` hold the same version.
 - The marketplace entry named `lawman` has the source `./`.
-- No skill or department page holds a command form that scheduled runs refuse, such as `bash -c` or a heredoc fed to a shell.
+- No skill or department page holds a command form that the harness refuses, such as `bash -c` or a heredoc fed to a shell.
 
 ## Update the documentation
 
@@ -44,11 +44,11 @@ Every change updates the documentation it affects in the same pull request. A ch
 CI runs on every push and pull request, in six jobs.
 
 - `commits` runs on pull requests. It checks that every commit of the pull request is a conventional commit.
-- `test` runs in `journal/`. It installs with the frozen lockfile, runs `bun run check` and `bun test`, compiles a Linux binary, runs it with `--version`, and checks its `clean` output on a small sample.
+- `test` runs in `journal/`. It installs with the frozen lockfile, then runs `bun run check` and `bun test`. It compiles a Linux binary and runs it with `--version`. It checks its `clean` output on a small sample.
 - `fence` keeps repository-specific words out of `skills/`, except `skills/assembly` and the harness pages. The patterns sit in `fence-patterns.txt`.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
-- `hermes-scan` runs the plugin scanner of the newest Hermes on the tree. Hermes refuses an update unless the verdict is safe, so the job fails on any other verdict.
+- `hermes-scan` runs the plugin scanner on the tree. The scanner comes from the Hermes that users update to. Hermes refuses an update unless the verdict is safe, so the job fails on any other verdict.
 
 ## Release
 
@@ -76,9 +76,9 @@ Large work can gather on a working branch, and its pull requests merge into that
 - Name it `beta-<version>.<n>`, such as `beta-1.0.0.1` for the first beta of 1.0.0. cocogitto does not read this form as a version, and the bump workflow reads only `v*` tags.
 - The beta tag starts the release workflow. It builds, tests and attests the same files as for a version tag and publishes them as a pre-release.
 - On a beta tag the workflow does not check `journal --version` against the tag, and it takes no notes from `CHANGELOG.md`.
-- A beta changes no file of the branch. The manifests keep the old version, so `journal --version` of a beta prints that version, and `CHANGELOG.md` gets no section.
-- Install the beta at the commit of its tag, then fetch the tag into the plugin's clone by hand, or have the installation's `law-version` command report it. The install and the law sync need a release tag on that commit.
-- The merge of the working branch into `main` is the release. The bump counts from the last version tag, so the changelog entry lists every change since that release.
+- A beta changes no file of the branch. The manifests keep their version, so `journal --version` of a beta prints it, and `CHANGELOG.md` gets no section.
+- Install the beta at the commit of its tag. Then fetch the tag into the plugin's clone by hand, or have the installation's `law-version` command report it. The install and the law sync need a release tag on that commit.
+- The merge of the working branch into `main` is the release. The bump counts from the last version tag, so the changelog entry lists every change after that tag.
 
 ## Write law and skill text
 

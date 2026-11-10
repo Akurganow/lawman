@@ -133,8 +133,8 @@ Risk is the chance that the fix breaks something.
 - Risk 5: the fix changes a stored or published value, or touches a path that
   no routine check runs.
 
-Threshold: value 4 or more, and risk 3 or less, or a plan that splits the risk
-into steps a reviewer can take one at a time. Value 4 is the lowest that
+Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
+splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
 qualifies. It means an ordinary input, or a rare input whose wrong result lands
 in durable state. These numbers are a starting value, not measured.
 

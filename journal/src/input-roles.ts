@@ -130,7 +130,6 @@ const LAW_MAP = lawMap([
 	["The cap table", ["patrol"]],
 	["Five-part report", ["patrol"]],
 	["Three-line report", WORKING.filter((r) => r !== "patrol")],
-	["Tick outcomes", EVERY],
 	["Journal exit codes", WORKING],
 	["The leak rule", WORKING],
 	["Hard constraints", WORKING],
@@ -149,6 +148,7 @@ export function lawSections(role: string): string[] {
 // the sections of tick.md in the order of the document
 export const TICK_ORDER = [
 	INTRO,
+	"Parts",
 	"One end",
 	"Sync the law",
 	"Sync the law with an older journal",
@@ -171,6 +171,7 @@ export const TICK_ORDER = [
 ];
 const EVERY_ROLE = [
 	INTRO,
+	"Parts",
 	"One end",
 	"Sync the law",
 	"Working rules",
@@ -337,7 +338,13 @@ const DUTY_DESK_LAW: Read[] = [
 	["LAW.md", lawSections(DUTY_DESK)],
 	[
 		"tick.md",
-		[INTRO, "Sync the law", "Sync the tracker", "Sync the pull requests"],
+		[
+			INTRO,
+			"Parts",
+			"Sync the law",
+			"Sync the tracker",
+			"Sync the pull requests",
+		],
 	],
 ];
 

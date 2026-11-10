@@ -72,7 +72,7 @@ A role takes these steps for each source command:
 
 A role adds nothing, cuts nothing and changes no flag. A value outside its class is not used. It goes to Not established in a case and to Blockers in every other role.
 
-A run failed when its exit code is not 0 or when its output is not what the item says. A failed run is a fact for Blockers, and no claim rests on it. So write what a failed run looks like into the item. The internal-affairs page does this for its session commands.
+A run failed when its exit code is not 0 or when its output is not what the item says. A failed run is a fact for Blockers, and no claim rests on it. So write what a failed run looks like into the item.
 
 A role that re-reads a quoted output runs the same command again. Each quoted line must be in the new output.
 
@@ -103,20 +103,20 @@ The job asks where the department lives. Choose the place that is a page in the 
 
 ## How the duty desk rotates it
 
-A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses. [Departments](departments.md#the-rotation) gives the rotation steps, the cap rule and the `Alarm check:` skip. A new special department has never been visited, so it comes first.
+A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses. [Departments](departments.md#the-rotation) gives the rotation steps, the cap rule and the `Alarm check:` skip. A special department with no recorded visit comes first.
 
 ## Worked example: internal-affairs
 
 This repository's own page, [internal-affairs](../.lawman/departments/internal-affairs.md), is a special department. The constitution names it with the line `- internal-affairs: judged by none`.
 
-**What it watches.** The page judges the text of Lawman by what Lawman's roles did with it. Its evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. The test asks whether a line of the law, a skill or the harness page causes or allows what a source command shows. The page lists five kinds: `exhibit-error`, `wrong-closure`, `template-misread`, `tick-turns` and `outcome-gap`.
+**What it watches.** The page judges the text of Lawman by what Lawman's roles did with it. Its evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their runs. The test asks whether a line of the law, a skill or the harness page causes or allows what a source command shows. The page lists five kinds: `exhibit-error`, `wrong-closure`, `template-misread`, `tick-turns` and `outcome-gap`.
 
 **Why it is a special page.** Its evidence lies outside the clone. The page names the paths `skills/` and `journal/src/` and the tools `bin/journal`, `hermes`, `gh` and `git`. A shared page may not.
 
 **Its source commands.** They read five places:
 
 - The journal: `bin/journal tick list` in three forms, and `bin/journal precinct list`.
-- The scheduled sessions of the harness: `hermes sessions export`, to list, outline and slice a session.
+- The sessions of the harness: `hermes sessions export`, to list, outline and slice a session.
 - The trackers: `gh api` for the state of an issue and for the comments of the roles.
 - The clones of the precincts: numbered lines of a file at a commit.
 - The law clone: its reflog, to find the law commit that a tick ran under.

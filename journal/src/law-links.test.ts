@@ -65,7 +65,7 @@ describe("links from the skills to the sections of the law", () => {
 
 describe("the self steps of the table in the intro of tick.md", () => {
 	test.each(Object.entries(ROLES))(
-		"%s reads the section of each self step that it can get",
+		"%s reads the section of each self step it has",
 		(_, role) => {
 			const read = readBy(role.law);
 			const STAGE = {
@@ -82,7 +82,7 @@ describe("the self steps of the table in the intro of tick.md", () => {
 				...(role.constitution ? ["Check the constitution"] : []),
 				...(role.department === null ? [] : ["Resolve the department page"]),
 			];
-			expect(needed.filter((s) => !read.has(`tick.md#${s}`))).toEqual([]);
+			expect(needed.filter((s) => !read.has(`tick.md#${slug(s)}`))).toEqual([]);
 		},
 	);
 });
@@ -150,7 +150,7 @@ describe("the check of the links", () => {
 		expect(check('```\n"Exhibits"\n```')).toEqual([]);
 	});
 
-	test("words name sections in the same file or the file of the sentence", () => {
+	test("words name sections in the file the sentence names with `of <file>`, else in the file of the sentence", () => {
 		const text = [
 			'See the "Orders" section.',
 			'See the section "Sources", "Terms" and "Nowhere" of `LAW.md`.',
@@ -189,7 +189,7 @@ describe("the check of the links", () => {
 		expect(unreached(held, "tick.md", read)).toEqual(["2: Name resolution"]);
 	});
 
-	test("a link of the named form to a heading that left the law fails", () => {
+	test("an anchor and a heading in straight or guillemet quotes to a heading that left the law fail", () => {
 		expect(DEPARTED.length).toBeGreaterThan(0);
 		for (const name of DEPARTED) {
 			const text = `Read LAW.md#${slug(name)} and "${name}" and «${name}».`;

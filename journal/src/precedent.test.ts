@@ -12,7 +12,7 @@ import {
 import { join } from "node:path";
 import { fits } from "./args";
 import { EXIT } from "./db";
-import { inprocAsync } from "./inproc";
+import { inprocAsync, inprocFed } from "./inproc";
 import { config, references } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
@@ -728,7 +728,24 @@ describe("oldLineToFile", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("a tail in parentheses that is no link stays in the rule", () => {
+	test("a tail in parentheses that is no link stays in the rule", async () => {
+		// old-precedent list
+		const text = [
+			"# Constitution",
+			"",
+			"## Precedents",
+			"",
+			"- 2026-09-02 #1: Never use bar (important)",
+			"",
+			"## Notes",
+			"",
+			"Kept.",
+			"",
+		].join("\n");
+		expect((await inprocFed(BASE, ["old-precedent", "list"], text)).out).toBe(
+			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nNever use bar (important)\n~~~\n",
+		);
+		// oldLineToFile
 		writeFileSync(
 			page(),
 			PAGE.replace(

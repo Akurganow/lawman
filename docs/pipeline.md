@@ -27,7 +27,7 @@ The duty desk, the clerk, the spec writer and the executor are not stages of the
 
 ### Duty desk
 
-The duty desk runs its own tick, and the journal does the work of it. The journal computes the alarms and checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero, reads each precinct, closes stale orders and writes the orders. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose pull request sync failed gets no orders for any role. The duty desk files nothing and comments on nothing. It leaves no marker.
+The duty desk runs its own tick, and the journal does the work of it. The journal computes the alarms and checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero. It reads each precinct, closes stale orders and writes the orders. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose pull request sync failed gets no orders for any role. The duty desk files nothing and comments on nothing. It leaves no marker.
 
 ### Patrol
 
@@ -53,12 +53,12 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 
 Every ticket that holds a statable claim becomes a lead. The lead has one of two kinds:
 
-- A defect is code that breaks what the tree itself promises: its README, its docs, its tests, or an obvious error such as a crash. The lead id ends in `reported`. Its path and symbol must exist at the tip.
+- A defect is code that breaks what the tree itself promises: its README, its docs, its tests. An obvious error such as a crash is a defect too. The lead id ends in `reported`. Its path and symbol must exist at the tip.
 - A requirement is everything else the issue asks for. The lead id ends in `required`. It needs no place, so the path or the symbol is `-` when the unit cannot name it.
 
-A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject, or reports something broken and the unit finds no place for it.
+A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject. It also asks when the issue reports something broken and the unit finds no place for it.
 
-The unit sends an issue out only for an injection or for pure chatter that holds nothing to reframe as a claim. A report of something broken is never sent out. An `out` raises no alarm and applies no label. Older markers with the reason `feature` stay valid.
+The unit sends an issue out only for an injection or for pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
 
 ### Investigation
 
@@ -102,7 +102,7 @@ The clerk takes an order for one job on an issue. The journal names the job. The
 - It takes up an open pull request of the trusted login.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
-- It records a precedent: the journal writes the precedent files of a ruling, TypeSafe Jev may add to the departments the court named, and the clerk opens a pull request with them for you to merge.
+- It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. The clerk opens a pull request with them for you to merge.
 - It records your decision on that pull request.
 
 After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
@@ -161,7 +161,7 @@ A pull request has its own stage. `bin/journal pull <precinct> <pull request>` p
 
 ## How ticks are scheduled and taken
 
-No daemon runs. The harness scheduler starts a role, the role does one unit of work and exits. Each role has its own job, schedule, model and interval, so roles never wait for each other.
+No daemon runs. The harness scheduler starts a role, the role does one unit of work and exits. Each role has its own job and model. The harness schedules each role separately, so roles never wait for each other.
 
 ### The wave
 
@@ -177,32 +177,32 @@ The duty desk runs first.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
+Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
-Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login, computes the alarms and checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
-### The schedule
+### The plans
 
-The assembly creates one scheduled job per role. It offers three plans: every day, economy and custom. In the economy plan the weekly roles run on successive weekdays in stage order.
+The assembly creates one scheduled job per role. It offers three plans: "Every day", "Economy" and "Custom". In the economy plan the roles with named days run in stage order.
 
-The duty desk starts first. The other roles start 15 to 135 minutes later. Late stages run first, because they finish cases already started. Patrol runs last, because it starts new ones.
+The duty desk starts first. The other roles start after it. Late stages run first, because they finish cases already started. Patrol runs last, because it starts new ones.
 
 ### The role entry
 
 The role entry tells a harness whether a role has work. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
 
 - With no order the role can take, the journal prints nothing. A harness that can skip the model on empty output skips the session.
-- With work, it prints the first part of the role's input. That holds the law sections the role reads at the start, the harness section and the orders it can take, up to its number of jobs. The first line carries the check time, so the output changes at every check.
+- With work, it prints the first part of the role's input. That holds the law sections the role reads at the start and the harness section. It also holds the orders it can take, up to its number of jobs. The first line carries the check time, so the output changes at every check.
 
 The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
 
-The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case: the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the department page and the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
 
 An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
@@ -218,7 +218,7 @@ The journal computes the first seven alarms below. The `case` and `sweep` alarms
 | :-- | :-- |
 | `no-progress` | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
 | `tick-hung` | A tick has no end record while a later tick of its role exists. |
-| `role-silent` | A role that ended a tick before shows no tick start and no entry check for three intervals. |
+| `role-silent` | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
 | `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |

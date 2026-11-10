@@ -219,7 +219,10 @@ export function caseStage(
 		answer_id: string | null;
 	} | null;
 	if (row === null)
-		throw new Fail(EXIT.USAGE, `unknown issue ${name} #${asked}`);
+		throw new Fail(
+			EXIT.USAGE,
+			`unknown issue ${name} #${asked} is missing from the cache`,
+		);
 	const markers = markersOf(db, name, issue);
 	const lead = leadFields(db, name, issue, markers);
 	const { need, clerk } = caseOf(

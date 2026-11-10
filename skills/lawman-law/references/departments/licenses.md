@@ -49,7 +49,7 @@ kind may rest on such a sign or statement.
 
 ## Not findings
 Beyond what the law already excludes:
-- For `conflict`: material under the project's own license: the same license, or a later version that the project's statement accepts through an "or later" grant.
+- For `conflict`: material under the project's own license: the same license, or a later version the project's statement accepts through an "or later" grant.
 - Two statements of the project's own license that disagree, or a statement
   of the project's own license that points to a file the tree lacks: `claims`.
 - A pin that is behind, or a version that two files give differently:
@@ -78,8 +78,8 @@ pins that no lock covers.
 
 **Filing test.** File a `conflict` only when three exhibits stand together.
 
-1. The family. The license of the material, or every branch of an expression
-   that offers a choice, belongs to one family:
+1. The family. The license of the material belongs to one family. Every branch
+   of an expression that offers a choice belongs to one family of its own:
    - Copyleft: a license that asks a work which includes or builds on the
      material to be offered under the same terms, or terms it names as
      compatible. A license whose condition also arises from offering the
@@ -111,15 +111,16 @@ say which you could not check.
 - A copy of outside code whose license text was dropped.
 
 Attack your own claim once. Look for a statement of license that covers the
-place and that the census missed, a recorded answer, and a judging document
-that settles the pair. Drop the candidate when one holds.
+place and that the census missed, or a recorded answer. Look also for a judging
+document that settles the license of the material against the license of the
+project. Drop the candidate when one holds.
 
 ## Anchors
 none
 
 No value threshold applies. The Cost and risk line reads from the candidate.
 Confidence speaks to the exhibits of the tree and of the reads, not to the
-reading of a license. Order the survivors `conflict`, `unlicensed`, `unmet`,
+interpretation of the license. Order the survivors `conflict`, `unlicensed`, `unmet`,
 and inside a kind by the path of the place.
 
 ## Judged by
@@ -136,7 +137,7 @@ these sections, in this order:
 - `Why it is <kind>`: the exhibits of the filing test, one for each.
 - `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
   confirmed|demonstrated`.
-- `Not checked`: what a person must settle, such as whether the material is combined with the project in the way the condition needs. A pin that names a mutable label. The clause of the license for the funnel's expert, by license identifier, or by the quote of the clause when it has none, with no package name and no path. The hidden-reader classes not searched.
+- `Not checked`: what a person must settle, such as whether the material is combined with the project in the way the condition needs. A pin that names a mutable label. The clause of the license for the funnel's expert: by license identifier, or, when the license has none, by the quote of the clause. No package name and no path. The hidden-reader classes not searched.
 
 The marker is the last line.
 

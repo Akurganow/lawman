@@ -39,7 +39,7 @@ function dispatchAdd(db: Database, args: string[]): void {
 		if (!isConstraint(e)) throw e;
 		throw new Fail(
 			EXIT.DUPLICATE_ORDER,
-			`open order already exists: ${precinctName} ${roleName} ${issue ?? ""}`.trimEnd(),
+			`open order already exists for this precinct, role and issue: ${precinctName} ${roleName} ${issue ?? ""}`.trimEnd(),
 		);
 	}
 }

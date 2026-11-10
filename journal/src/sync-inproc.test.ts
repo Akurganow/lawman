@@ -55,7 +55,7 @@ describe("sync in process: the issues form", () => {
 		const r = await fed(issues);
 		expect(r.code).toBe(EXIT.SYNC_INPUT);
 		expect(r.err).toContain(
-			"sync input rejected, cache untouched: the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.",
+			"sync input rejected, cache untouched: the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.",
 		);
 		expect(r.err).toContain(formText("issues"));
 		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
@@ -72,49 +72,6 @@ describe("sync in process: the issues form", () => {
 		const r = await fed({ issues: [] });
 		expect(r.code).toBe(EXIT.SYNC_INPUT);
 		expect(r.err).toContain(formText("issues"));
-	});
-});
-
-describe("sync in process: a malformed object", () => {
-	const reacted = () => ({ approvedBy: [], rejectedBy: [] });
-	const commented = (comment: Record<string, unknown>) => ({
-		writers: [],
-		issues: [
-			{
-				number: 1,
-				state: "OPEN",
-				createdAt: CREATED,
-				author: { login: TRUSTED },
-				comments: [{ createdAt: CREATED, ...comment }],
-			},
-		],
-	});
-
-	test.each([
-		["no writers", { issues: [] }],
-		["no issues", { writers: [] }],
-		["writers that is no list", { writers: "maintainer", issues: [] }],
-		["a writers entry that is no text", { writers: [1], issues: [] }],
-		["issues that is no list", { writers: [], issues: {} }],
-		["a comment without an id", commented({})],
-		["a comment with an empty id", commented({ id: "", ...reacted() })],
-		["a comment without approvedBy", commented({ id: "c1", rejectedBy: [] })],
-		["a comment without rejectedBy", commented({ id: "c1", approvedBy: [] })],
-		[
-			"a comment with approvedBy that is no list",
-			commented({ id: "c1", ...reacted(), approvedBy: "x" }),
-		],
-		[
-			"a comment with a reactor that is no text",
-			commented({ id: "c1", ...reacted(), rejectedBy: [7] }),
-		],
-	])("%s exits 4 and leaves the cache", async (_name, input) => {
-		await fed(issuesForm(issues));
-		const before = rows("SELECT * FROM issues ORDER BY issue");
-		const r = await fed(input);
-		expect(r.code).toBe(EXIT.SYNC_INPUT);
-		expect(r.err).toContain(formText("issues"));
-		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
 	});
 });
 

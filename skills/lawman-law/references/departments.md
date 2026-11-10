@@ -60,8 +60,8 @@ A kind that rests on a source command names that command in its measurement.
 
 **Where to look.** The subject in terms of the tree. Cover definitions, entry
 points, indirection and near-duplicates, or whatever fits the class. A shared
-page uses no paths and no tool names of a specific repository, because it is
-read in many repositories. A shared page lives in Lawman or in the installation.
+page uses no paths and no tool names of a specific repository. A shared page
+lives in Lawman or in the installation.
 A page in a precinct's own `.lawman/departments/` may name that precinct's paths
 and tools.
 
@@ -71,7 +71,7 @@ the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed.
 
 **Proof.** The commands that show each kind. A positive control: the same
-command run on a unit known to be in use, with both outputs quoted. The classes
+command run on a unit known to be in use, with the output of both runs quoted. The classes
 of hidden callers that a plain text search misses. Describe each class by
 mechanism. Name no language. The page also tells the patrol to attack its own
 claim once and drop it when unsure.

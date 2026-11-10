@@ -14,10 +14,11 @@ export const LAW_FILES = [
 export type Ref = { line: number; name: string; file: string | null };
 
 // The headings that LAW.md had and no longer has. A link to one of them, quoted
-// or as an anchor, fails the check.
+// or as an anchor, fails the check. The one whose name held the banned time
+// words is left out: its name is a dead heading of the law, and an anchor to it
+// still fails, as an anchor to any missing heading does.
 export const DEPARTED: string[] = [
 	"The funnel",
-	"The roles of this release",
 	"Evidence",
 	"Alarms and their repetition",
 	"Dedupe and closures",
@@ -25,6 +26,7 @@ export const DEPARTED: string[] = [
 	"The report",
 	"The cache",
 	"Language",
+	"Tick outcomes",
 ];
 
 const FENCE = /^\s*(```|~~~)/;
@@ -133,7 +135,7 @@ export function readBy(reads: [string, string[]][]): Set<string> {
 	const read = new Set<string>();
 	for (const [file, wanted] of reads)
 		for (const name of wanted.includes(WHOLE) ? (HEADINGS[file] ?? []) : wanted)
-			read.add(`${file}#${name}`);
+			read.add(`${file}#${slug(name)}`);
 	return read;
 }
 
@@ -148,13 +150,13 @@ export function missing(
 		const exempt =
 			name === "Sync the law with an older journal" ||
 			(lines[line - 1] ?? "").includes("self law");
-		return files.some((f) => read.has(`${f}#${name}`)) || exempt
+		return files.some((f) => read.has(`${f}#${slug(name)}`)) || exempt
 			? []
 			: [`${line}: ${name}`];
 	});
 }
 
-// the word links into the four files whose section does not exist
+// the word links that name a section missing from the file of the link
 export const unfound = (refs: Ref[]): string[] =>
 	refs.flatMap(({ line, name, file }) =>
 		LAW_FILES.some((f) => f === file) && !HEADINGS[file ?? ""]?.includes(name)
@@ -177,7 +179,8 @@ const holders = (text: string): Map<number, string> => {
 // A sentence of a section goes to every role that reads it, so each of those roles
 // must read the sections the sentence names. A row of the table of self steps in
 // the intro of tick.md is exempt: the journal prints a `self` line only for a step
-// that the role has, and the test of the self steps checks that it reads the section.
+// that the role has, and the test of the self steps checks that the role reads
+// the section.
 // Each entry reads `line: name`.
 export function unreached(
 	text: string,
@@ -192,7 +195,7 @@ export function unreached(
 		(lines[line - 1] ?? "").startsWith("| `");
 	const refs = [...linksIn(text, []), ...wordsIn(text, own)].filter(
 		({ line, file }) =>
-			read.has(`${own}#${held.get(line)}`) &&
+			read.has(`${own}#${slug(held.get(line) ?? "")}`) &&
 			!row(line) &&
 			(file === null || LAW_FILES.some((f) => f === file)),
 	);

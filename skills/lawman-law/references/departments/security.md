@@ -214,7 +214,6 @@ The marker is the last line.
   - `install-script`: `script/<name>`.
   - `agentic-injection`: `<role or workflow>/<read point>`.
   - `rendered-output`: `render/<output>`.
-- The kind is one row of the Kinds table. `secret` has no identity, because it
-  is never filed.
+- The kind is one row of the Kinds table. `secret` has no identity.
 
 No line number, severity or commit enters the identity.

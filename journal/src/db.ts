@@ -92,7 +92,7 @@ function userVersion(db: Database): number {
 function tooNew(found: number): Fail {
 	return new Fail(
 		EXIT.SCHEMA,
-		`database schema ${found} is newer than this binary (${MIGRATIONS.length})`,
+		`database schema ${found} is newer than this binary's schema (${MIGRATIONS.length})`,
 	);
 }
 
@@ -186,7 +186,7 @@ export function requireSchema(needed: number): void {
 	if (needed > MIGRATIONS.length)
 		throw new Fail(
 			EXIT.SCHEMA,
-			`schema ${needed} is newer than this binary (${MIGRATIONS.length})`,
+			`schema ${needed} is newer than this binary's schema (${MIGRATIONS.length})`,
 		);
 }
 

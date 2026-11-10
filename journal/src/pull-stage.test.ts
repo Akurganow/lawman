@@ -6,8 +6,11 @@ import {
 	BASE,
 	cachePull,
 	call,
+	tick as insertTick,
 	mark,
+	rows,
 	SHA,
+	seed,
 	tempDb,
 } from "./test-helpers";
 
@@ -124,14 +127,6 @@ describe("pull", () => {
 		expect(pull("main", "9")).toMatchObject({ code: 0, out: stale });
 		expect(pull("nowhere", "9").out).toBe(stale);
 	});
-
-	test("bad arguments exit 1", () => {
-		expect(pull("main").code).toBe(1);
-		expect(pull("main", "7", "8").code).toBe(1);
-		expect(pull("main", "x").code).toBe(1);
-		expect(pull("main", "0").code).toBe(1);
-		expect(pull("Main", "7").code).toBe(1);
-	});
 });
 
 describe("pull in process", () => {
@@ -165,10 +160,35 @@ describe("pull in process", () => {
 			"need=none spec=- spec_id=- work=- sources=- priority=P2\n",
 		);
 	});
+});
 
-	test("bad arguments exit 1", () => {
-		expect(inPull("main").code).toBe(1);
-		expect(inPull("main", "0").code).toBe(1);
-		expect(inPull("Main", "7").code).toBe(1);
-	});
+test("bad arguments exit 1", () => {
+	const inPull = (...args: string[]) => inproc(BASE, ["pull", ...args]);
+	// pull
+	expect(pull("main").code).toBe(1);
+	expect(pull("main", "7", "8").code).toBe(1);
+	expect(pull("main", "x").code).toBe(1);
+	expect(pull("main", "0").code).toBe(1);
+	expect(pull("Main", "7").code).toBe(1);
+	// pull in process
+	expect(inPull("main").code).toBe(1);
+	expect(inPull("main", "0").code).toBe(1);
+	expect(inPull("Main", "7").code).toBe(1);
+	// tick
+	seed((db) => insertTick(db, "patrol", BASE, null, null));
+	const id = String(rows("SELECT max(id) AS id FROM ticks")[0]?.id);
+	const bad = [
+		["tick"],
+		["tick", "bogus"],
+		["tick", "start"],
+		["tick", "start", "--role", "Bad"],
+		["tick", "end", id],
+		["tick", "end", id, "--outcome", "done"],
+		["tick", "end", "x", "--outcome", "silent"],
+		["tick", "end", id, "--outcome", "silent", "--precinct", "Bad"],
+		["tick", "end", id, "--outcome", "silent", "--department", "Bad Dept"],
+		["tick", "end", id, "--outcome", "silent", "--dispatch", "0"],
+	];
+	for (const args of bad)
+		expect([args, call(BASE, args).code]).toEqual([args, 1]);
 });

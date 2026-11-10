@@ -9,7 +9,7 @@ You are the duty desk of a Lawman installation. The installation is the director
 
 One invocation runs one tick. The journal does the work of the tick. It computes the alarms, checks the identity, syncs the trackers, reads each precinct, closes stale orders and writes the orders. You start the tick, do the steps the journal hands back, and answer. Then you exit. You do nothing else.
 
-The law is `lawman/skills/lawman-law/references/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: `LAW.md#tick-outcomes`, `LAW.md#alarms-a-role-prints`, `LAW.md#alarms-the-journal-computes`, `LAW.md#silence-is-the-default` and `LAW.md#one-tick-one-case-exit`.
+The law is `lawman/skills/lawman-law/references/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: `LAW.md#role-duty-desk`, `LAW.md#alarms-a-role-prints`, `LAW.md#alarms-the-journal-computes`, `LAW.md#silence-is-the-default` and `LAW.md#one-tick-one-case-exit`.
 
 ## Instructions and evidence
 
@@ -43,15 +43,15 @@ A step before step 1 has no tick to end. Its stop or failure is answered, not re
 bin/journal wake --role duty-desk
 ```
 
-Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-Read the group to its last part. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again.
+Read the group to its last part. For a cut part, follow the `tick.md#parts` section.
 
 ```
 bin/journal tick input --role duty-desk --part <k>
 ```
 
-0.2. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again.
+0.2. Sync the law as the section `tick.md#sync-the-law` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again.
 
 0.3. Check the journal schema. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
@@ -84,8 +84,8 @@ Do the self steps right after you read the part, before any other work. The line
 | :-- | :-- | :-- |
 | `law-version` | the row `law-version` of the table of self steps in the intro of `tick.md` | `stopped-law-drift`, or `stopped-dirty-law` for a local change |
 | `identity` | the row `identity` of the table of self steps in the intro of `tick.md` | `stopped-host-auth`, or `stopped-identity-changed` for another account |
-| `issues` | the section `tick.md#sync-the-tracker` of `tick.md` | `stopped-sync`, or `stopped-sync-limit` for exit 3 |
-| `pulls` | the section `tick.md#sync-the-pull-requests` of `tick.md` | none: the tick goes on and the precinct gets no orders |
+| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync`, or `stopped-sync-limit` for exit 3 |
+| `pulls` | the section `tick.md#sync-the-pull-requests` | none: the tick goes on and the precinct gets no orders |
 
 A failed `law-version`, `identity` or `issues` step ends the tick. Go to step 3. Write no order and do no later self step.
 
@@ -127,7 +127,7 @@ Build the answer from these rules, in this order:
 4. Write every line of the update list that the sync printed, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 
-Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered, because the duty desk prints the alarms of every role.
+Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered.
 
 ## Report
 

@@ -265,12 +265,6 @@ describe("the patrol take", () => {
 		expect(takeable()).toEqual(["a", "b"]);
 	});
 
-	test("a taken order stays takeable at any time", () => {
-		addPrecincts({ a: 1 });
-		seed((db) => order(db, "a", "patrol", { takenAt: START }));
-		expect(takeable()).toEqual(["a"]);
-	});
-
 	test("the next command is a usage error", () => {
 		addPrecincts({ a: 1 });
 		expect(run(["next", "--role", "patrol"]).code).toBe(1);

@@ -41,7 +41,7 @@ export function configValue(text: string, key: string): string | undefined {
 	return text.match(lineOf(key))?.[1]?.trim() || undefined;
 }
 
-// The defaults of this release, in the order the config receives them.
+// The shipped defaults, in the order the config receives them.
 // A later release adds its own keys here. The values read the config before the rewrite.
 const DEFAULTS: Default[] = [
 	[

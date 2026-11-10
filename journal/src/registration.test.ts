@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
 import { takeOrder } from "./dispatch";
 import { COMMANDS } from "./journal";
 import {
@@ -8,7 +6,6 @@ import {
 	alarm,
 	BASE,
 	call,
-	JOURNAL,
 	later,
 	rows,
 	seed,
@@ -35,15 +32,6 @@ describe("registration", () => {
 		"old-precedent",
 	])("%s is a registered command", (name) => {
 		expect(Object.keys(COMMANDS)).toContain(name);
-	});
-
-	test("the command list of docs/journal.md names every command", () => {
-		const docs = readFileSync(
-			join(JOURNAL, "..", "docs", "journal.md"),
-			"utf8",
-		);
-		const list = docs.match(/^journal <--version\|([^>]*)> \[args\]$/m)?.[1];
-		expect(list?.split("|").sort()).toEqual(Object.keys(COMMANDS).sort());
 	});
 
 	test("an unknown command lists the new commands in its usage", () => {

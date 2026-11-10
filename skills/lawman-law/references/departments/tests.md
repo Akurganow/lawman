@@ -11,7 +11,7 @@ and a cluster that outgrew its contracts. A test is a test file, or an
 automation step whose only job is to refuse something. File only the few that
 matter. Test: does
 this test fail only when the product is wrong, and is what it costs in
-proportion to what only it protects?
+proportion to what no other test protects?
 
 ## Kinds
 | kind | meaning | measurement |
@@ -23,7 +23,7 @@ proportion to what only it protects?
 | `disproportionate` | Its machinery outweighs its contract, and a cheaper point already makes the decision: a rendered result, parsed source text, a wall clock, a real service, a job on several systems for what a validator decides | The contract in one sentence, the line that makes the decision, the smallest check that would guard it written out, and the ways the test fails with the product unchanged |
 | `bloat` | A file or a cluster grew without a matching contract: more tests, assertions, helpers or setup than the contracts they pin | Two columns: the cost (tests, assertions, lines, helpers) and the protection that only these tests provide |
 
-One finding gets one kind: the one whose alternative is the fix.
+One finding gets one kind: the kind that the fix replaces.
 
 ## Where to look
 Sweep wide with cheap reads first. Then go deep on the best suspects.
@@ -109,7 +109,7 @@ and traced, and the lead says it was not run. Confidence stops at
 - **The protection ledger.** For every removal, list each mutation the test
   catches, written out as an edit of the product. Pair each with the test that
   still catches it as `path:line`. Redundancy counts mutations caught, never
-  lines executed, because a line can run with nothing checked.
+  lines executed.
 - **Where the protection lives.** A plain text search misses these classes.
   Check each and say which you could not check.
   - A gate or a validator in automation that refuses the same thing.

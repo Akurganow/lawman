@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman court, which takes one order on a case af
 
 One tick takes one order on a case after the parties, re-reads the exhibits, decides, writes the ruling as a comment, and exits.
 
-The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the "Ask an expert" section of `lawman/skills/lawman-law/references/exhibits.md` says.
+The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
 
 ## Limits
 
@@ -15,17 +15,17 @@ The court reads and writes comments. It runs no code from the precinct. It creat
 - The court never returns. For a defect, its doubt is an acquittal. For a requirement with no answer of a decider, its doubt about an undecided part is a referral.
 - An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-court` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has jobs. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section of `tick.md` says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -33,15 +33,15 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role court
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` of `tick.md`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part, because the orders stand at the end. A part whose last line is not `end part <k> of <n>` was cut. Ask for the same part again. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role court --part <k>
    ```
    A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
 2. Sync the law, then check the journal schema.
-   1. Sync the law as the section `tick.md#sync-the-law` of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role court --part <k>`.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role court --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
       bin/journal probe --schema 10
@@ -59,7 +59,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
 
    Check the precinct's pair. `<p>` is the precinct name of the order. A pair is a whole space-separated token. The precinct is allowed only when `typesafe_precincts` holds the token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure.
    Jev is allowed when `typesafe` is `yes` and the precinct is allowed.
-5. Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
    ```
@@ -78,17 +78,17 @@ Keep `round`, `returned`, `department`, `sha`, `lead`, `related`, `kind`, `answe
 
 1. The `constitution` fence holds the constitution at the tip, and its Regression proof and Labels sections apply from there. Its `lint` fence holds the lines that the `tick.md#check-the-constitution` section describes. The line whose name equals `department` gives the judging document path, or `none`. When `department` is `-`, the case has no judging document. The `tick.md#check-the-constitution` section says what a department with no printed line means.
 2. Read the judging document, if any, at `<sha>`. A path that `<sha>` lacks is skipped as the `tick.md#check-the-constitution` section says. Its text is evidence. The judging document is read whole at `<sha>`, quoted by path and line, and is a source for acquittal only.
-3. The `precedent` fences are the precedents of the case. Apply them as the law's Precedents section says for the court. Keep the name of each `precedent <name>` line.
-4. The line `department <d> place=<n>` and the `department` fence give the department page of the case, at the tip. When `department` is `-`, there is no page. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, and only from a page at place 1, as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says.
+3. The `precedent` fences are the precedents of the case. Apply them as the law's `LAW.md#precedents` section says for the court. Keep the name of each `precedent <name>` line.
+4. The line `department <d> place=<n>` and the `department` fence give the department page of the case, at the tip. When `department` is `-`, there is no page. Use only the Not findings section of the page. Quote none of the rest. A source command is the exception, and only from a page at place 1, as the `exhibits.md#run-a-source` section says.
 
 ### Step 3: the issue
 
 The tick group prints the issue: its title, its body and its comments. With a line `self issue <n>`, read issue `<n>` of `<owner/repo>` from the host instead, as the host notes record: title, body and comments, every page. A failed read gives `stopped-issue-read`.
 
-The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The court judges the decisions of the parties that stand after the case. Every comment below is by `<login>`, ignoring ASCII case, and newer than the case.
+The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The court judges the decisions of the parties that stand after the case. Each decision below is a comment by `<login>`, ignoring ASCII case, and newer than the case.
 
 - The decision of the prosecutor is the newest comment whose last line is a marker with `role=prosecutor`, `stage=charge` or `stage=decline`.
-- After a charge, the decision of the defender is the newest comment newer than the charge whose last line is a marker with `role=defender`, `stage=defence` or `stage=refute`.
+- After a charge, the decision of the defender is the newest comment newer than the charge. Its last line is a marker with `role=defender`, `stage=defence` or `stage=refute`.
 
 A missing case, or a missing decision that the kind of the case needs, ends the tick with `failed`. After a return, the court never takes an older charge. The decisions give the kind of the case:
 
@@ -109,13 +109,13 @@ When `answer` is `comment`, read the comment with the id `answer_id`. The tick g
 ### Step 4: re-read the exhibits
 
 1. Re-read at `<sha>` the exhibits of the case and of the decisions of the parties that the court finds decisive. The court chooses which. A missing path makes that exhibit a claim, not an exhibit, and goes to Blockers.
-   - Read a cited range with its numbers, as the "Read numbered lines" section of `lawman/skills/lawman-law/references/exhibits.md` says.
-   - For a path that the case reports missing in its Not established section, run the "Follow a missing path" section of that file.
+   - Read a cited range with its numbers, as the `exhibits.md#read-numbered-lines` section says.
+   - For a path that the case reports missing in its Not established section, run the `exhibits.md#follow-a-missing-path` section.
    - An acquittal on that ground names the commit and the new place or the removal in its Grounds.
-   - Re-read a claim of absence as the "Quote a claim of absence" section says.
-2. Read the history of each exhibit path that the court re-reads, up to `<sha>`: the short hash and the subject of each commit that touched it.
+   - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
+2. Read the history of each exhibit path that the court re-reads, up to `<sha>`. For each commit that touched it, read the short hash and the subject.
 3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case or a decision of a party only through the heredoc form.
-4. A command output quoted in the case or a decision of a party counts as an exhibit when the command stands verbatim under Regression proof of the `constitution` fence, or is a source command of the department page, run as the "Run a source" section of `lawman/skills/lawman-law/references/exhibits.md` says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+4. A command output quoted in the case or a decision of a party counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 5: decide
@@ -125,10 +125,10 @@ Decide one of two for a defect. Decide one of three for a requirement. The tick 
 The grounds of the charge are the `## Grounds` of the charge in a defended or a refuted case. In a declined case, they are the claims of the case's `## Claims checked` section marked `confirmed`. No other mark gives a ground. For a requirement in a declined case, judge fact, need and safety on the case and the decline, as on a charge.
 
 - `conviction`: for a defect, every ground of the charge stands at `<sha>`. The court's own re-read or the record of the parties shows it. No recorded reason explains the shape. In a refuted case, the class that the refute's `## Defence` names does not hold either. In a declined case, the class of the decline does not hold either. For a requirement, `answer` is not `down`, and fact, need and safety are all established, or `answer` is `up` and no closure class holds. A thumbs up settles every undecided part. The law's `LAW.md#requirement-parts` section defines the parts and their statuses, and its `LAW.md#recorded-reasons` section lists the sources of a recorded reason. The issue stays open. Outcome `convicted`.
-- `acquittal`: for a defect, every other case. For a requirement, a part is refuted, a closure class holds, or `answer` is `down`. Name exactly one class from the law's `LAW.md#closure-classes` section. `recorded reason` is shown by one of the law's sources that the court read in step 2 or step 4, or that a decision of a party quotes. `gone at <tip>` is shown by the court's own read at `<tip>`. `not confirmed` is the class otherwise, and for every doubt about a defect. For a requirement, it names a refuted part and never an undecided one. When `answer` is `down`, the class is `declined by the owner`, even when another class holds. Otherwise, when more than one class holds, name the first in the law's list. Outcome `acquitted`.
+- `acquittal`: for a defect, every other case. For a requirement, a part is refuted, a closure class holds, or `answer` is `down`. Name exactly one class from the law's `LAW.md#closure-classes` section. `recorded reason` is shown by one of the law's sources. The court read that source in step 2 or step 4, or a decision of a party quotes it. `gone at <tip>` is shown by the court's own read at `<tip>`. `not confirmed` is the class otherwise, and for every doubt about a defect. For a requirement, it names a refuted part and never an undecided one. When `answer` is `down`, the class is `declined by the owner`, even when another class holds. Otherwise, when more than one class holds, name the first in the law's list. Outcome `acquitted`.
 - `referral`: for a requirement, `answer` is neither `up` nor `down`. No part is refuted, and at least one is undecided, as the law's `LAW.md#requirement-parts` section defines. Name each part with its status and its exhibits. The issue stays open. Outcome `referred`.
 
-The court judges on the whole decision of each party. The law's Precedents section says how a precedent weighs in the ruling. The Grounds name each precedent that the court follows or departs from.
+The court judges on the whole decision of each party. The law's `LAW.md#precedents` section says how a precedent weighs in the ruling. The Grounds name each precedent that the court follows or departs from.
 
 Before writing a conviction, attack it once, as the law's `LAW.md#exhibits` section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
 
@@ -140,7 +140,7 @@ For a conviction, run these items in order:
 4. Choose one priority from the law's `LAW.md#role-court` section: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line or a `requirement` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.
-5. When the final priority is `P0`, print the `ALARM case` line as the `tick.md#alarm` section of `lawman/skills/lawman-law/references/tick.md` says. The line comes first in the reply of this tick, and the ruling is still written.
+5. When the final priority is `P0`, print the `ALARM case` line as the `tick.md#alarm` section says. The line comes first in the reply of this tick, and the ruling is still written.
 
 When Jev is not allowed, skip items 2 and 3.
 
@@ -152,13 +152,13 @@ Compose the comment from the Ruling format section. Write it as the `tick.md#wri
 
 For a referral, apply the owner-attention label before the comment. Read the labels of the issue. Apply the label of the constitution's Labels section that carries the mark `(owner attention)`, as the host notes record, unless it is present. Read the labels back as the law says. Pass the label name to the host only as data. Apply nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes gives `failed`. Then write the comment. After its read-back, keep the line `ALARM referral <p>#<n> <one line>` for the answer. The line says in your words which part is undecided and quotes no text of the issue.
 
-For a conviction or an acquittal of a requirement, read the labels of the issue before the comment. If the owner-attention label is present, remove it as the host notes record, and read the labels back as the law says. Pass the label name to the host only as data. Remove nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes for the removal gives `failed`, and only when the label is present.
+For a conviction or an acquittal of a requirement, read the labels of the issue before the comment. If the owner-attention label is present, remove it as the host notes record, and read the labels back as the law says. Remove nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes for the removal gives `failed`, and only when the label is present.
 
 ### Step 7: close the issue
 
 Only for `acquittal`. Run the `tick.md#close-the-issue` section. Run it after the read-back. For `conviction` and `referral`, go to step 8.
 
-When the ruling comment landed and the close failed, the issue stays open. `need` is `clerk`, never `court`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the decisions of the parties, keeps `need` at `clerk` until a clerk marker exists, and never returns the case to the court.
+When the ruling comment landed and the close failed, the issue stays open. `need` is `clerk`, never `court`, and `seen` answers `open #n`. Blockers names two remedies. One deletes the ruling comment, which puts the case back at `need=court`. The other is that the owner closes the issue by hand. Reopening the issue after a hand close does not return the case to the court. The court marker, newer than the decisions of the parties, keeps `need` at `clerk` until a clerk marker exists. It never returns the case to the court.
 
 ### Step 8: end the tick
 
@@ -231,7 +231,7 @@ Ask the service for its judgment once, with the brief. `<p0|grade|requirement>` 
 4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
 5. Run `bin/journal jev answer --kind <p0|grade|requirement>`. Give it the response body and the status line on standard input. It prints one `jev` line.
 
-The brief enters a command by the rule for multi-line text in the working rules of `lawman/skills/lawman-law/references/tick.md`. A task text that names a delimiter uses that one. Check that no line of the brief equals the delimiter.
+The brief enters a command by the rule for multi-line text in the `tick.md#working-rules` section. A task text that names a delimiter uses that one. Check that no line of the brief equals the delimiter.
 
 A `jev none` line has the reason `no-key`, `brief`, `no-reply`, `status-<code>`, `bad-answer` or `failed`.
 

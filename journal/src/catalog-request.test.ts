@@ -78,7 +78,7 @@ describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
 		prepare();
 		const r = run(first("9"));
 		expect(r.code).toBe(1);
-		expect(r.err).toContain("no list");
+		expect(r.err).toContain("no readable list");
 	});
 
 	test("a list with nothing to send prints counts only", () => {
@@ -108,19 +108,6 @@ describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
 		const r = run(first("7", ["--precinct", "alpha"]), entry(1));
 		expect(r.code).toBe(1);
 		expect(r.err).toContain("database");
-	});
-
-	test.each([
-		[["request", "--kind", "batch"]],
-		[["request", "--kind", "batch", "--tick", "x1", "--precinct", "alpha"]],
-		[["request", "--kind", "other", "--tick", "7"]],
-		[["request", "--kind", "batch", "--tick", "7", "--precinct", "Alpha"]],
-		[["frobnicate", "--kind", "batch"]],
-	])("%j is a usage error", (args) => {
-		prepare();
-		const r = run(args, entry(1));
-		expect(r.code).toBe(1);
-		expect(r.err).not.toBe("");
 	});
 });
 

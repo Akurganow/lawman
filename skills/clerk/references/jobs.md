@@ -12,7 +12,7 @@ A recipe writes in this order: the actions, the read-back of each, then the mark
 
 ### Marker comment
 
-Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the `tick.md#write-a-comment` section of `tick.md` says.
+Write a comment on the issue `<s>`. Compose it from the "Comment format" section of the skill, with the heading `Clerk`. Write it as the `tick.md#write-a-comment` section says.
 
 ### Source state
 
@@ -20,7 +20,7 @@ Read the state of the issue `<s>` from the host. The result is `OPEN` or `CLOSED
 
 ### Close a source
 
-Close the issue `<s>` as the `tick.md#close-the-issue` section of `tick.md` says, with the class that the recipe names. Read the state back. The output must be `CLOSED`.
+Close the issue `<s>` as the `tick.md#close-the-issue` section says, with the class that the recipe names. Read the state back. The output must be `CLOSED`.
 
 ### Reopen a source
 
@@ -165,7 +165,7 @@ Leave out the last line when there is no ruling. The title is `Execute #<n>`.
 
 1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`. `<k>` is the digits after the last hyphen.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
-   The first skeleton carries the precedent files. It is the skeleton with `<k>` equal to 1, when a conviction exists.
+   When a conviction exists, the first skeleton carries the precedent files. It is the skeleton with `<k>` equal to 1.
 3. Create the tree.
 4. First skeleton only: write the precedent files. Without a `none` or `no-entry` line, record the precedent files as the first commit of the pull request, then go to step 6.
 5. Otherwise record one commit with no change and the message `Open execution of #<n>`.
@@ -204,7 +204,7 @@ Taken up by the clerk as a draft that counts as not started.
 6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Precedents of #<n>`. The body is `Records the precedents of the court ruling <ruling URL>. Merge it to make them binding.` The body holds no closing word and no fingerprint line. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 6 and the no-entry form after a `none` or `no-entry` line.
 
-When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish, because the branch exists. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
+When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
 
 ## decision
 

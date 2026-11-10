@@ -8,7 +8,7 @@ const STATE_REASON = /^[A-Z_]+$/;
 // The case line prints the id as answer_id=<id> among space-separated fields.
 const COMMENT_ID = /^[A-Za-z0-9_=-]+$/;
 const OLD_FORM =
-	"the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
+	"the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
 
 export type SyncComment = GhIssue["comments"][number] & {
 	id: string;
@@ -102,7 +102,7 @@ export function readIssues(input: string): IssuesInput {
 	if (issues.length === SYNC_LIMIT) {
 		throw new Fail(
 			EXIT.SYNC_LIMIT,
-			`${SYNC_LIMIT} issues reached the limit: the list may be truncated, cache untouched`,
+			`${SYNC_LIMIT} issues reached the limit: the list may be truncated at the source, cache untouched`,
 		);
 	}
 	return { writers, issues };

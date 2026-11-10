@@ -12,7 +12,7 @@ hackage.haskell.org
 
 ## Limits and terms
 
-Serves JSON, and the API page lists the resources. No terms of use. robots.txt closes the host to a long list of named bots, Claude-Code, Cursor, Code, opencode, Scrapy and Spider among them, so the User-Agent must not match. No limits published
+Serves JSON, and the API page lists the resources. No terms of use. robots.txt closes the host to a long list of named bots. Claude-Code, Cursor, Code, opencode, Scrapy and Spider are among them. The User-Agent must not match. No limits published
 
 ## Traps
 
