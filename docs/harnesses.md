@@ -2,7 +2,7 @@
 
 Lawman runs inside an agent harness, on that harness's own schedule. This page records the layout that lets one package serve every harness. It also records the facts that shaped the layout and the steps that add a harness.
 
-Lawman supports every harness of the set. Hermes Agent is the first one run, because the project is in development, and that is a stage and not a goal. Seven more follow. This page keeps their facts so that a change made for one harness does not break another.
+Lawman supports every harness of the set. Seven more harnesses follow.
 
 ## How to read the marks
 
@@ -23,7 +23,7 @@ One package serves every harness. The root of the repository holds no file that 
 
 - A file that one harness needs and the others do not read stays out of the root.
 - The law and the skills name no harness and no tool. They say what must happen.
-- A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine is recorded in `host.md` and not on a page. A page records only how its harness differs from the others.
+- A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine is recorded in `host.md` and not on a page. A page describes only what its own harness needs.
 - The setup is the skill `assembly` on every harness. The user starts it from a chat. The package adds no command, hook or install script that runs it.
 
 ## The layout that serves the set
@@ -74,7 +74,7 @@ LICENSE
 
 - The installation folder holds `config.yaml`, `host.md`, `bin/journal`, `journal.sqlite`, the precinct clones and the runs. It sits outside the plugin folder.
 - Its entry `lawman` links to the folder of the installed plugin. The harness page gives the link form.
-- The journal binary sits in `bin/` of the installation. A release provides it, with a provenance file beside it. The assembly checks the checksum at install, and the journal checks it at an update. The signature in the provenance file is checked with the verifier the user chose, which is a `verify` command or the verifier that the host notes name. A declined verifier leaves only a checksum from the same release, which proves no origin.
+- The journal binary sits in `bin/` of the installation. A release provides it, with a provenance file beside it. The assembly checks the checksum at install, and the journal checks it at an update. The signature in the provenance file is checked with the verifier the user chose. That verifier is a `verify` command or the verifier that the host notes name. A declined verifier leaves only a checksum from the same release, which proves no origin.
 
 ## The harnesses
 
@@ -152,7 +152,7 @@ The page for Hermes holds the rest, among it the send forms for the catalog chec
   4. `openclaw.plugin.json`
   5. a root `plugin.json` with the exact schema
 - The detection returns native when `package.json` declares `openclaw.extensions` and `openclaw.plugin.json` sits at the root. It returns native too when the root holds a default plugin entry file and no bundle manifest (read in the harness code, openclaw/src/plugins/bundle-manifest.ts).
-- Discovery treats a package whose `package.json` declares `openclaw.extensions` as a native package, before it looks for a bundle manifest (read in the harness code, openclaw/src/plugins/discovery.ts).
+- Discovery treats a package whose `package.json` declares `openclaw.extensions` as a native package. It does so before it looks for a bundle manifest (read in the harness code, openclaw/src/plugins/discovery.ts).
 - Plugin skills load at low precedence. A same-named workspace, agent, managed or bundled skill overrides them (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/tools/skills.md).
 - A plugin skill appears under its bare name (stated by the docs, https://docs.openclaw.ai/plugins/bundles.md; not verified).
 - `openclaw cron` registers the automation commands. `openclaw cron add` creates a job (stated by the docs, https://github.com/openclaw/openclaw/blob/main/docs/cli/cron.md).
@@ -250,7 +250,7 @@ A new harness needs four things:
 - a row in the table above
 - a live install proof
 
-The page answers every section of the Hermes page except the last, "What a second harness needs". The sections are installing the plugin, syncing the law, running a role once, commands in scheduled runs, sending to the catalog, sending to license sources, calling an expert, scheduling with its subsections, isolation, budget and token, and asking the developer. A test takes the headings from `hermes.md` and checks every other page.
+A page describes only the facts its own harness needs. It holds no description of another harness. Facts that serve every harness live in this file. The page answers each question in the commands of its own harness. Its scheduling section also holds the role entry, the edit of a job and the one-off run, each answered in those commands.
 
 Every heading must stand. Its body is a fact with its source, the word none with its consequence, or a fact marked `(not verified)`. A page that has no send form or no expert call says none. A harness that adds a form gains the check or the experts with no change to the law or the skills.
 
@@ -262,7 +262,7 @@ Follow these steps.
 2. Check each root file of the layout against what the harness reads. Record every conflict in the list above.
 3. Add no root file unless every harness reads it by the standard.
 4. When the harness needs its own manifest, put it where the harness looks and mirror the root fields.
-5. Write the page with every section of the Hermes page.
+5. Write the page with the sections its own harness needs.
 6. Write the five things of "Choose the installation" and the scheduler check on the page.
 7. Mark every fact on the page by its source.
 8. Run each command that a scheduled session sends through the harness's own approval check.
@@ -273,7 +273,7 @@ Follow these steps.
 
 A harness is done when all of these hold.
 
-- The page exists, answers every section of the Hermes page and gives the six things above.
+- The page exists, answers the questions of its own harness and gives the six things above.
 - The README subsection holds the real steps. Only its Uninstall part may hold TBD until the assembly can uninstall.
 - The table row says Supported.
 - A clean harness profile installs the plugin by the README steps alone.
