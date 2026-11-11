@@ -150,15 +150,19 @@ const MORE: Record<string, string[]> = {
 const heading = (name: string) =>
 	name === "intro" ? "# The tick" : `## ${name}`;
 
-// LAW.md has no fenced block, so a heading at the start of a line starts a section
-const LAW_PARTS = new Map(
-	readFileSync(join(LAW, "LAW.md"), "utf8")
-		.split(/^(?=## )/m)
-		.map((part) => [
-			part.startsWith("# ") ? "intro" : (/^## (.+)\n/.exec(part)?.[1] ?? ""),
-			part.replace(/\n$/, "").split("\n"),
-		]),
-);
+// a heading at the start of a line outside a fenced block starts a section
+const LAW_PARTS = new Map<string, string[]>();
+{
+	let name = "intro";
+	let fence = false;
+	for (const line of readFileSync(join(LAW, "LAW.md"), "utf8")
+		.replace(/\n$/, "")
+		.split("\n")) {
+		if (/^\s*(```|~~~)/.test(line)) fence = !fence;
+		if (!fence && line.startsWith("## ")) name = line.slice(3);
+		LAW_PARTS.set(name, [...(LAW_PARTS.get(name) ?? []), line]);
+	}
+}
 // the map is the one in the journal; the file is read here, not copied
 const lawLines = (role: string): string[] =>
 	lawSections(role).flatMap(

@@ -181,37 +181,13 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 
 Title: `[Lead] <department>: <symbol>: <what>`
 
-Body, in this order:
-
-```
-Analysed commit: <sha>
-Department: <department>
-
-## What
-<the defect, where it lives, and why it matters. For a fixed candidate, name the closed issue.>
-
-## Evidence
-<each command with its verbatim output in a fenced block, the positive control, and every site as path:line at <sha>>
-
-## Why it is <kind>
-<the page's symptom in its own words, what the unit was meant to buy, the recorded answers you checked, and each precedent that fits, by name and kind>
-
-## Cost and risk
-Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
-
-## Not checked
-<the hidden-caller classes and the checks you did not run>
-<Source: lines, when the kind has an external source>
-<!-- lawman: role=patrol stage=lead department=<department> id=<id> sha=<sha> at=<UTC> -->
-```
+The body holds every part of the law's `LAW.md#the-lead-body` section, with these additions:
 
 - Put any extra section the page's Lead body names before `## Not checked`.
+- For a fixed candidate, `## What` names the closed issue.
 - For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
 - Put every `@` inside a code span or a fenced block.
-- Write no image, no home path, no installation path and no token.
-- Keep the body under 64 KB. Quote only the lines the claim needs.
-- Not checked names what investigation must verify.
 - A kind with an external source puts one `Source:` line per source in Not checked, inside one fenced block, in one of three shapes:
   ```
   Source: catalog <record identifier> <package>
@@ -220,11 +196,14 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
   ```
   Take each `releases` value from the tree. Take the `catalog` line as the journal printed it.
 
-Marker:
+Marker, the last line of the body. Nothing follows it:
+
+```
+<!-- lawman: role=patrol stage=lead department=<department> id=<id> sha=<sha> at=<UTC> -->
+```
 
 - `at` is the current time in UTC at filing, written `YYYY-MM-DDTHH:MM:SSZ`.
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
-- The marker is the last line of the body. Nothing follows it.
 
 Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section `markers.md#the-id-value` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
 

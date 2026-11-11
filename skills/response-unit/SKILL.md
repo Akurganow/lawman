@@ -121,16 +121,16 @@ Choose the kind first. Write `reported` when the code breaks what the tree itsel
 
 A question, a discussion or a request for help that names a subject is `required`. A subject is what the person tries to do, know or change. Reframe it as what the repository lacks, such as an answer in the documentation. "How do I configure the proxy?" names what the person tries to do, so write `required`. A report that something is broken, with no path and symbol found, is ask. So is "Doesn't work" with an empty body.
 
-Write the body as patrol's "Lead format" section says for its body, with these differences:
+Write the body as the law's `LAW.md#the-lead-body` section says, with these differences:
 
 - Leave out the `Department:` line.
 - Leave out `## Why it is <kind>`. `## Evidence` names each precedent that fits, by name and kind.
 - Keep `Analysed commit:`, `## What`, `## Evidence`, `## Cost and risk` and `## Not checked`.
 - For a requirement, `## What` says what the repository lacks or which thing has the wrong shape. `## Evidence` holds the claim of absence with its control search, or the lines of the shape. A request with no place quotes the search for its own terms.
-- The Cost and risk line has patrol's form: Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible. The unit has no page Anchors. It sets each value from its own evidence in `## Evidence`.
+- The Cost and risk line has the form of the law's lead body: Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible. The unit has no page Anchors. It sets each value from its own evidence in `## Evidence`.
 - Apply no department threshold.
 
-The comment starts with the heading line `Lead`. The rest follows patrol's body with the differences above.
+The comment starts with the heading line `Lead`. The rest follows the law's lead body with the differences above.
 
 Marker, the last line of the comment. Nothing follows it:
 

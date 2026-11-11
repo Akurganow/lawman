@@ -114,6 +114,35 @@ Write what you say to the user in the user's language.
 Put one thought in one sentence.
 Name a source by reference and do not retell it.
 
+## The lead body
+
+A lead has one body, whether patrol files it as an issue or the response unit writes it as a comment. The body holds these parts in this order. The marker of the role is its last line, and nothing follows it. A role's skill names the parts it leaves out.
+
+```
+Analysed commit: <sha>
+Department: <department>
+
+## What
+<the defect or the missing thing, where it lives, and why it matters>
+
+## Evidence
+<each command with its verbatim output in a fenced block, the positive control, and every site as path:line at <sha>>
+
+## Why it is <kind>
+<the page's symptom in its own words, what the unit was meant to buy, the recorded answers you checked, and each precedent that fits, by name and kind>
+
+## Cost and risk
+Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
+
+## Not checked
+<the hidden-caller classes and the checks you did not run>
+<marker>
+```
+
+- Not checked names what investigation must verify.
+- Keep the body under 64 KB. Quote only the lines the claim needs.
+- Write no image, no home path, no installation path and no token.
+
 ## Exhibits
 
 - An exhibit is a path and line quoted at the analysed commit, or a command with its verbatim output. Where nothing can run, a path traced with every step quoted is the exhibit for "this can happen".

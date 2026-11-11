@@ -79,6 +79,7 @@ const LAW_MAP = lawMap([
 	["Role executor", ["executor"]],
 	["Silence is the default", EVERY],
 	["Writing", WORKING],
+	["The lead body", ["patrol", "response-unit"]],
 	[
 		"Exhibits",
 		[
