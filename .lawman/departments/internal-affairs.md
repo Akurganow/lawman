@@ -5,7 +5,7 @@ contract_version: 1
 
 ## Mission
 
-This department judges the text of Lawman by what Lawman's roles did with it. The evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. Five defects count. A role's comment misleads a reader. A role closed a case wrongly. A line of a template reads as something other than what happened. A run spent turns on what a line of Lawman text causes. A tick ended with an outcome that the law's Tick outcomes list does not hold. A defect of the tree alone belongs to the other departments. Test: does a line of the law, a skill or the harness page, read at the law commit the tick ran under, cause or allow the behaviour that a source command shows?
+This department judges the text of Lawman by what Lawman's roles did with it. The evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. Five defects count. A role's comment misleads a reader. A role closed a case wrongly. A line of a template reads as something other than what happened. A run spent turns on what a line of Lawman text causes. A tick ended with an outcome token that the law does not name. A defect of the tree alone belongs to the other departments. Test: does a line of the law, a skill or the harness page, read at the law commit the tick ran under, cause or allow the behaviour that a source command shows?
 
 ## Kinds
 
@@ -15,7 +15,7 @@ This department judges the text of Lawman by what Lawman's roles did with it. Th
 | wrong-closure | A role closed an issue by a class that the facts do not support. | The closure comment (`gh api` comments read), the state of the issue (`gh api` issue read), the report of the tick that closed it (`bin/journal tick list`), the fact that contradicts the class, and the line of the law that allows the closure. |
 | template-misread | A line that a skill's template produces reads as something other than what happened. | The produced line from a comment (`gh api` comments read) or a report (`bin/journal tick list`), and the template line that produces it. |
 | tick-turns | A tick spent turns on what a line of Lawman text causes: a read of a law file that the skill does not tell the role to read at that step, a search of Lawman's own source for a format, a command the harness refused, a command the journal does not have. | The outline of the session (`hermes sessions export` outline read) with its calls and tools counts, the call lines, the tool messages that show the refusal or the error (`hermes sessions export` slice read), and the line of text that causes the turns. |
-| outcome-gap | A tick ended with an outcome that the law's Tick outcomes list does not hold. | The outcome of the tick (`bin/journal tick list`), and the search of the law for it, with its control. |
+| outcome-gap | A tick ended with an outcome token that the law does not name. | The outcome of the tick (`bin/journal tick list`), and the search of the law for it, with its control. |
 
 ## Where to look
 
