@@ -163,16 +163,14 @@ Ruling: <ruling URL>
 
 Leave out the last line when there is no ruling. The title is `Execute #<n>`.
 
-1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`. `<k>` is the digits after the last hyphen.
+1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
-   When a conviction exists, the first skeleton carries the precedent files. It is the skeleton with `<k>` equal to 1.
 3. Create the tree.
-4. First skeleton only: write the precedent files. Without a `none` or `no-entry` line, record the precedent files as the first commit of the pull request, then go to step 6.
-5. Otherwise record one commit with no change and the message `Open execution of #<n>`.
-6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-7. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
-8. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
-9. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
+4. Record one commit with no change and the message `Open execution of #<n>`.
+5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
+6. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+7. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
+8. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
 
 A publish that fails because the branch exists means an earlier tick published it and stopped before the pull request. Blockers names the remedy: delete the remote branch.
 
@@ -196,7 +194,7 @@ Taken up by the clerk as a draft that counts as not started.
 
 ## precedent
 
-1. Read the ruling. It must be an acquittal. Otherwise the tick ends with `failed`.
+1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
 2. Create the tree.
 3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
 4. Record the precedent files.

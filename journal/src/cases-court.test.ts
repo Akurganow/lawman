@@ -6,6 +6,7 @@ import {
 	expectNeed,
 	expectRoundKept,
 	fields,
+	lined,
 	needOnly,
 	put,
 	referral,
@@ -44,7 +45,7 @@ describe("case: court stage", () => {
 		["a defence after the charge needs the court", defended(), "court"],
 		[
 			"an acquittal after a decline needs the clerk",
-			withLead(caseMark(), decline(), acquittal()),
+			withLead(caseMark(), decline(), lined(acquittal)()),
 			"clerk",
 		],
 		[
@@ -74,7 +75,7 @@ describe("case: court stage", () => {
 		],
 		[
 			"an acquittal on an open issue needs the clerk",
-			defended(acquittal()),
+			defended(lined(acquittal)()),
 			"clerk",
 		],
 		[
@@ -186,7 +187,7 @@ describe.each([
 	});
 
 	test("a ruling after an answered referral needs the clerk", () => {
-		for (const ruling of [conviction(), acquittal()]) {
+		for (const ruling of [conviction(), lined(acquittal)()]) {
 			put({ 1: referred(ruling) });
 			answer(1, "up");
 			expect(need(1)).toBe("need=clerk");
