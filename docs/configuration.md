@@ -32,7 +32,7 @@ A command reads only and never writes to the host. The assembly writes each comm
 
 A command carries the facts it reads, such as the repository on the host, the tool, the place of the tracker and the account. The issues and the pull requests of a precinct may live in another tracker than its repository host, or in a source without a host. A command must not send the host a request beyond the host's limits, and a request that the host refuses for its size fails the proof.
 
-Each command is either proved in the scheduler's environment or not. A proof there is a short paid run of the harness's default model, and the assembly asks your consent once for each pass. Without it, the command is proved in the environment of the assembly's session, and the summary names it as not proved in the scheduler's environment.
+Each command is either proved in the scheduler's environment or not. A proof there is a paid run of the harness's default model, and the assembly asks your consent once for each pass. Without it, the command is proved in the environment of the assembly's session, and the summary names it as not proved in the scheduler's environment.
 
 ## What it never holds
 
