@@ -413,7 +413,7 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 			return ended(
 				t,
 				alarms,
-				issues.code === EXIT.SYNC_LIMIT ? "stopped-sync-limit" : "stopped-sync",
+				"stopped-sync",
 				`Tracker sync failed at ${p.name}: ${firstLine(issues)}`,
 			);
 		// a failed pull request sync keeps the old time, so the precinct gets no orders

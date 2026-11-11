@@ -19,7 +19,6 @@ describe("exit codes", () => {
 			OK: 0,
 			USAGE: 1,
 			DUPLICATE_ORDER: 2,
-			SYNC_LIMIT: 3,
 			SYNC_INPUT: 4,
 			COMMAND: 5,
 			SCHEMA: 6,

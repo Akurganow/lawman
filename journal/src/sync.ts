@@ -23,8 +23,6 @@ import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
-export { SYNC_LIMIT } from "./sync-issues";
-
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
 
 type SyncStats = {

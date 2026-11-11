@@ -8,7 +8,6 @@ import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
 import { renderAll } from "./input-parts";
 import { command, configs } from "./operations-test-fixture";
-import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
 	BASE,
@@ -164,16 +163,11 @@ describe("the texts in the cache", () => {
 		expect(r.err).not.toContain("repeated number");
 	});
 
-	test("the issue ceiling gives form with code 3, an empty list over a cache code 4", async () => {
-		feeding(
-			"a",
-			"issues",
-			JSON.stringify(issuesForm(minimalIssues(SYNC_LIMIT, AT))),
-		);
-		const limit = await run("a", "issues", "--author", TRUSTED);
-		expect(limit.code).toBe(EXIT.SYNC_LIMIT);
-		expect(limit.out).toStartWith("issues failed reason=form\n~~~error\n");
-		expect(limit.out).toContain("the list may be truncated");
+	test("a list of 1000 issues is read, and an empty list over a cache is code 4", async () => {
+		feeding("a", "issues", JSON.stringify(issuesForm(minimalIssues(1000, AT))));
+		const big = await run("a", "issues", "--author", TRUSTED);
+		expect(big.code).toBe(EXIT.OK);
+		expect(big.out).toStartWith("issues=1000 ");
 		feeding("a", "issues", issuesInput());
 		await run("a", "issues", "--author", TRUSTED);
 		feeding("a", "issues", JSON.stringify(issuesForm([])));

@@ -31,7 +31,6 @@ const WHY = [
 	"no-ruling",
 	"mixed",
 	"form",
-	"ceiling",
 ] as const;
 type Why = (typeof WHY)[number];
 type Verdict = { kind: string } | { why: Why };
@@ -105,7 +104,7 @@ async function issuesForm(precinct: string): Promise<Issues> {
 		return { issues: readIssues(text) };
 	} catch (e) {
 		if (!(e instanceof Fail)) throw e;
-		return { why: e.code === EXIT.SYNC_LIMIT ? "ceiling" : "form" };
+		return { why: "form" };
 	}
 }
 
