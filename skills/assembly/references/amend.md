@@ -47,5 +47,4 @@ When the developer skipped a precinct, skip item 1 and name the skipped precinct
 
 1. Set `contract_version` to `<n>` and `amended_law_commit` to `law_commit`. Keep the other keys. Write `config.yaml`, and read it back.
 2. Tell the developer the new contract version, the pull requests that the amendment opened and the pull requests that moved old precedents. Say the rest only when it occurred in this run. When this run opened an amendment and a move or a pull request of the old form also edits `LAWMAN.md`, say that no order stands between them and that a conflict shows in the pull request itself.
-3. If a folder under `lawman/skills/` other than `assembly` and `lawman-law` has no scheduler job `[lawman] <role>`, tell the developer to run the assembly again. That enters the roles mode.
-4. Append to `host.md` the label rows and the host actions of the move that Step 1 item 5 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.
+3. Append to `host.md` the label rows and the host actions of the move that Step 1 item 5 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.
