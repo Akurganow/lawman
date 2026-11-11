@@ -252,7 +252,7 @@ The funnel runs without you until a decision needs a person. On a pull request, 
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
 - **Close a pull request to decline it.** The clerk then closes its open source issues as not planned.
 - **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing.
-- **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A conviction's precedent comes in its draft pull request, unless no draft carries it. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
+- **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A conviction's precedent comes in its draft pull request. Without such a draft it gets a precedent pull request of its own. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live
 

@@ -110,14 +110,14 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
 | `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
-| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair; a `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue`, and `adopted` on the `handed` of the adopt job |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair; a `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
 | `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 | `executor` | `ready` | the `Executor` comment on a pull request | `sha` |
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` follow a ruling whose precedent no draft pull request of the clerk carries. That is an acquittal, a conviction on a closed issue, or a conviction with an adopted pull request.
-- `adopted` is `yes` on the `handed` marker that the adopt job writes. It says that the pull request is no draft of the clerk and carries no precedent files.
+- `entry` and `no-entry` follow an acquittal. They also follow a conviction whose first pull request is no draft of the clerk, or that has none.
+- `adopted` is `yes` on the `handed` marker that the adopt job writes for a pull request that is no draft of the clerk. A `handed` marker without it counts as a draft of the clerk.
 - `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.

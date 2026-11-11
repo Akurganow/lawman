@@ -65,11 +65,11 @@ A non-zero exit ends the tick with `failed`. The output has one line per change:
 - `entry<TAB><name>[<TAB><reason>]`: the file `<name>` is written. A reason is `name-taken`, `refine-missing` or `bad-line`.
 - `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
 - `none`: the ruling adds no precedent, and the folder does not change.
-- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section`, `no-change` or `answered`. `answered` means that a comment of the clerk on the issue already records this ruling.
+- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section`, `no-change` or `answered`. `answered` means that a clerk comment on the issue, whose marker is `entry` or `no-entry` and is newer than the ruling, already records this ruling.
 - `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, so the name counts for nothing. The file `<name>` holds it only as the department of the case. `-` stands for a name outside the department class. It is no change of its own.
 - `ask<TAB><name>`: send one Jev request for the file `<name>`, as the steps below say. It is no change of its own.
 
-A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output, every `cancel` line with `missing` and every `drop` line. A reason never goes to the owner.
+A `none` or `no-entry` line means no folder change to record. Blockers names every reason of the output except `answered`, every `cancel` line with `missing` and every `drop` line. A reason never goes to the owner.
 
 Then ask Jev once for each `ask` line, in order. `<name>` is the name that the line printed. Pass it unchanged.
 
@@ -167,7 +167,7 @@ Leave out the last line when there is no ruling. The title is `Execute #<n>`.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
    When a conviction exists, the first skeleton carries the precedent files. It is the skeleton with `<k>` equal to 1.
 3. Create the tree.
-4. First skeleton only: write the precedent files. Without a `none` or `no-entry` line, record the precedent files as the first commit of the pull request, then go to step 6.
+4. First skeleton only: write the precedent files. Without a `none` or `no-entry` line, record the precedent files as the first commit of the pull request, then go to step 6. A `no-entry` line, `answered` included, means no file is written: go to step 5.
 5. Otherwise record one commit with no change and the message `Open execution of #<n>`.
 6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
 7. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
@@ -192,7 +192,7 @@ Taken up by the clerk as a draft that counts as not started.
 3. Replace the body with the fixed body on the host. Send it as Working rules says for multi-line text.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.
 5. Make the pull request a draft.
-6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>`, `issue=<that state>` and `adopted=yes` on it.
+6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it. Add `adopted=yes`, unless the old body read in step 2 holds the line `Draft opened by the clerk to carry out the court ruling.`
 
 ## precedent
 
