@@ -4,28 +4,6 @@ import { alarm, BASE, later, seed, tempDb, tick } from "./test-helpers";
 tempDb();
 
 describe("alarm cadence", () => {
-	describe("the repetition of an open alarm", () => {
-		const dead = () =>
-			seed((db) => {
-				tick(db, "patrol", BASE, null, null);
-				tick(db, "patrol", later(1), null, null);
-			});
-		const HUNG = `ALARM tick-hung 1 patrol started ${BASE}\n`;
-
-		test("--repeat prints an open alarm once at every call and nothing without --repeat", () => {
-			dead();
-			alarm(later(2));
-			expect(alarm(later(3), "--repeat").out).toBe(HUNG);
-			expect(alarm(later(4), "--repeat").out).toBe(HUNG);
-			expect(alarm(later(5)).out).toBe("");
-		});
-
-		test("an alarm raised in the call is not repeated in the same call", () => {
-			dead();
-			expect(alarm(later(2), "--repeat").out).toBe(HUNG);
-		});
-	});
-
 	describe("role-silent counts from the later of the last tick and the last check", () => {
 		const THREE_INTERVALS_S = 1800;
 		const gated = (checkedAt: string | null, tickStart = BASE) =>

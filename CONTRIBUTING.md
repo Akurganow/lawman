@@ -27,7 +27,7 @@ bun run test
 
 - `bun run check` runs the strict type check, then Biome with warnings as errors.
 - `bun run fix` applies the Biome fixes.
-- Use the Bun version that `.github/workflows/ci.yml` installs.
+- Use the Bun version that `.github/workflows/ci.yml` installs; an older one can hang a parallel run.
 
 `bun run test` also checks the links from the skills to the law. A red result there means a skill names a section that its role does not read, or that left the law.
 

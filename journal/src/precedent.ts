@@ -134,8 +134,8 @@ class Folder {
 		if (this.state.has(name) || entryKind(this.path(name)) !== "file")
 			return false;
 		const held = this.disk(name) ?? "";
-		const departments = headerOf(held).departments;
-		return departments !== null && held === withDepartments(text, departments);
+		const d = headerOf(held).departments;
+		return d !== null && withDepartments(held, d) === withDepartments(text, d);
 	};
 
 	free(base: string): string {

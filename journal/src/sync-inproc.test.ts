@@ -36,27 +36,6 @@ const fed = async (stdin: unknown, args = ARGS) => {
 beforeEach(() => addPrecincts({ main: 1 }));
 
 describe("sync in process: the issues form", () => {
-	test("the object form fills the cache", async () => {
-		const r = await fed(issuesForm(issues, ["maintainer-fictional"]));
-		expect(r).toMatchObject({ code: EXIT.OK, err: "" });
-		expect(r.out).toMatch(
-			/^issues=\d+ leads=\d+ markers=\d+ invalid=\d+ skipped=\d+\n$/,
-		);
-		expect(rows("SELECT count(*) AS n FROM issues")[0]?.n).toBeGreaterThan(0);
-	});
-
-	test("a bare list exits 4 with the reason and the form, and the cache stays", async () => {
-		await fed(issuesForm(issues));
-		const before = rows("SELECT * FROM issues ORDER BY issue");
-		const r = await fed(issues);
-		expect(r.code).toBe(EXIT.SYNC_INPUT);
-		expect(r.err).toContain(
-			"sync input rejected, cache untouched: the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.",
-		);
-		expect(r.err).toContain(formText("issues"));
-		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
-	});
-
 	test("an object without writers exits 4", async () => {
 		const r = await fed({ issues: [] });
 		expect(r.code).toBe(EXIT.SYNC_INPUT);

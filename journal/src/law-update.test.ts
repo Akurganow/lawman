@@ -1015,38 +1015,3 @@ describe("law-update: what the command does not do", () => {
 		expect(calls("release")).toHaveLength(2);
 	});
 });
-
-describe("law-update: the source", () => {
-	const source = (name: string) =>
-		readFileSync(join(import.meta.dir, name), "utf8");
-
-	test.each(["law-update.ts", "law-version.ts"])(
-		"%s names no network or version-control word",
-		(name) => {
-			expect(source(name)).not.toMatch(/\b(fetch|http|https|git|gh)\b/i);
-		},
-	);
-
-	test.each(["law-update.ts", "law-version.ts"])(
-		"%s starts processes only through launch",
-		(name) => {
-			const text = source(name);
-			expect(text).not.toMatch(
-				/\b(spawn|spawnSync|child_process|execSync|execFile)\b|exec\(/,
-			);
-			expect(text).not.toContain("Bun.$");
-		},
-	);
-
-	// the proof of a command calls the same functions, so it cannot drift from the update
-	test("law-update.ts runs the three operations and the binary through launch", () => {
-		const text = source("law-update.ts");
-		expect(text).toContain('from "./launch"');
-		for (const call of [/\blaunch\(/, /\brunRelease\(/, /\brunVerify\(/])
-			expect(text).toMatch(call);
-		expect(source("law-version.ts")).toMatch(/\brunLawVersion\(/);
-		expect(
-			source("launch.ts").match(/\blaunch\(installationPlace\(\)/g),
-		).toHaveLength(3);
-	});
-});

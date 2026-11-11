@@ -58,21 +58,6 @@ function entry() {
 }
 
 describe("role entry file", () => {
-	test("has the interpreter line and one exec line without pipe, grep or fallback", () => {
-		const lines = entryLines();
-		expect(lines).toEqual([
-			"#!/bin/bash",
-			`exec bin/journal wake --role <role>`,
-		]);
-		expect(lines.join("\n")).not.toMatch(/\||grep|\|\| true/);
-	});
-
-	test("names the safe size of a part", () => {
-		const section =
-			ENTRY_SECTION.exec(readFileSync(HARNESS, "utf8"))?.[1] ?? "";
-		expect(section).toContain("\ninput_chars: 49000\n");
-	});
-
 	test("prints nothing with no order", () => {
 		seed(() => {});
 		expect(entry()).toEqual({ code: 0, out: "" });

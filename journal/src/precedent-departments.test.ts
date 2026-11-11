@@ -1091,11 +1091,12 @@ describe("the adding step", () => {
 		expect((await answer(reply(values))).out).toBe(
 			"jev model=jev-1.14.0 departments=core,gamma\n",
 		);
-		expect(text()).toBe(
+		// Bun.YAML.stringify leaves a space after `departments:` before Bun 1.4.3
+		expect(text().replace(/^departments: $/m, "departments:")).toBe(
 			[
 				"---",
 				"kind: protects",
-				"departments: ",
+				"departments:",
 				"  - core",
 				"  - gamma",
 				"issue: 1",
@@ -1209,6 +1210,9 @@ describe("the request lines of the write", () => {
 
 	test("a repeated call finds the file standing and asks for neither file", async () => {
 		await written();
+		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
+		// a file an older runtime wrote has a space after the empty key
+		writeFileSync(file(), text().replace("departments:\n", "departments: \n"));
 		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
 		// the adding step changed its departments, and the standing file is still it
 		writeFileSync(file(), withDepartments(text(), ["core", "beta"]));

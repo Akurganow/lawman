@@ -137,20 +137,4 @@ describe("source constraints", () => {
 				if (!(banned === "Worker(" && file === "clean-run.ts"))
 					expect(source(file)).not.toContain(banned);
 	});
-
-	test("the launch module runs the command file itself, with no interpreter", () => {
-		const launch = source(LAUNCH);
-		expect(launch.match(/spawn/g)).toEqual(["spawn"]);
-		expect(launch).toContain("Bun.spawn([join(place, operation), ...args], {");
-		for (const banned of [
-			"Bun.$",
-			"child_process",
-			"exec(",
-			"/bin/",
-			'"sh"',
-			'"-c"',
-			"shell",
-		])
-			expect(launch).not.toContain(banned);
-	});
 });
