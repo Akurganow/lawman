@@ -125,6 +125,7 @@ The why line for the login: every role writes as this account, and only its mark
 Decides: ask in the question tool.
 
 - The tool, when several reach the host. The user chooses.
+- The host, when the finds do not show it.
 - The verifier, as "Choose the method of verification" in `references/commands.md` says.
 
 Stops:

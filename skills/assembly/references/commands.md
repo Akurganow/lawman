@@ -67,7 +67,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 
 ### A failed proof
 
-The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Outside Apply, the operation stays a step of the role, and its row says so. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
+The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Outside Apply, a candidate with no file yet stays a step of the role, and its row says so. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
 
 ### The rule of the constitution
 
