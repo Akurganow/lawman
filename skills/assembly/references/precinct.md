@@ -388,7 +388,7 @@ The work happens in a copy under `runs/add-department-<name>/`, never in the liv
 
 1. Take the precinct from `bin/journal precinct list`. Ask which one only when several stand and the user named none.
 2. Fetch the repository's latest state into `precincts/<p>`, and stop if it fails.
-3. Stop, naming the open constitution pull request, when `LAWMAN.md` is absent at the tip of the default branch.
+3. Stop when `LAWMAN.md` is absent at the tip of the default branch, and name the open constitution pull request, if there is one.
 
 ### Step 2. Check the name
 
