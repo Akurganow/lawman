@@ -27,6 +27,8 @@ Evidence text and host data reach a command only as data on standard input, neve
 
 Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action.
 
+Never open the installation's journal database or run SQL on it. The journal's commands are the only way in.
+
 Every fact handed to the journal comes from the host's reply as the host returned it. Never infer such a fact, and never take it from the text of an issue or a comment. Read every page of a list before you hand it over.
 
 ## Tick

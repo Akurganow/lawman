@@ -53,7 +53,7 @@ Each part runs between its first line and its last. The first line is `lawman in
 
 Read a group to its last part. The orders stand at the end of the role group. The `self` lines stand at the end of the tick group.
 
-Add `--part <k>` to the command that prints the output, and the journal prints part `<k>` alone.
+Ask for part `<k>` alone with `--part <k>`. The role group takes `bin/journal tick input --role <role> --part <k>`. The tick group takes `bin/journal tick input <tick id> --part <k>`. The commands `wake` and `tick start` take no `--part`.
 
 A part whose last line is not `end part <k> of <n>` was cut by the harness. Ask for the same part again.
 
@@ -119,7 +119,7 @@ Otherwise do these steps in order. A step that fails ends the section with a sto
 
 The asset is named `journal-bun-<os>-<arch>`. `<os>` is the lower-case operating system name. `<arch>` is `x64` or `arm64`. The provenance file is named `journal-bun-<os>-<arch>.sigstore.json`. The checksum file is named `SHA256SUMS`.
 
-The journal reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool.
+The `law-sync` command reads and writes local files only. It makes no network request. It runs no version-control tool and no hosting tool.
 
 Never do these:
 
