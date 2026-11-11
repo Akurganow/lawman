@@ -112,7 +112,7 @@ The rows for an absent constitution:
 - Repository: `<owner>/<repo>`, private or public (found).
 - Access: the account's access level on the repository (found).
 - Constitution: the draft as a table, one row for each of its eight sections, and one for `## Licenses` when item 40c asked. Show each line with the file it came from (recommended).
-- Departments: each shared department with its first sentence, and its judging document or none, with the reason for each missing path (recommended).
+- Departments: the lines with a judging document, the count of the other departments, which run with no line, and the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).
 - Weight: 0. The duty desk does not cover a precinct of weight 0. No role gets an order there, and no patrol visits it. That holds until the constitution merges and you raise the weight (default).
@@ -135,7 +135,7 @@ The rows for a constitution that passes lint:
 - Weight: 1. The constitution is already in place (default).
 - TypeSafe, Catalog and Reading way: as in the rows above.
 - Commands of version control, Commands of the tracker and Facts to copy: as in the rows above.
-- Old precedents: shown only when the repository has old lines or open pull requests of the old form. Give the answer to the question of "Move the old precedents". For an answer "Move", give one line for each file to write. The line holds the date, the kind and its source, the gist, and `departments: []` (all departments). Name the lines that stay notes, the pull requests that get files and the ones that cannot be written, each with its link. Name the branch `lawman/move-precedents` with the title "Move the precedents to files" (found, recommended or yours).
+- Old precedents: shown only when the repository has old lines or open pull requests of the old form. Give the answer to the question of "Move the old precedents". For an answer "Move", give the number of lines to move, to ask about and to keep as notes, and the link of each pull request that gets files and of each that cannot be written. The files are in the pull request. Name the branch `lawman/move-precedents` with the title "Move the precedents to files" (found, recommended or yours).
 - Issue templates and Recommended documents: as in the rows above.
 
 Then decide.
@@ -305,7 +305,7 @@ On "Move", find the kind of each line, the lines that `old-precedent added` prin
 10. Run `bin/journal old-precedent check <precinct name> <line>[:<issue>]...` for the lines. It writes nothing and reads no cache. It reads the issues form from the `issues` command of the precinct. For a precinct whose `issues` command is empty, put the form on stdin, taken from the host action that the notes record for it. For a precinct that is not in the journal yet, or whose `issues` command is still a candidate, run the check on the proof database. It is the database of "Prove a command", where the candidate stands. That base still exists here, as "The throwaway base" in `references/commands.md` says.
 11. Take `line <n> kind=<protects|condemns>` as the kind of that line.
 12. For `line <n> ask reason=<reason>`, ask about that line alone. Offer "Protects: such a shape is no violation", "Condemns: such a shape is a violation" and "Leave as a note". Name the reason in plain words in the why line: no issue for the line, or the issue is not in the form. The issue may stand twice in the form, or have no ruling of the court. The rulings may give different kinds, the form may be out of its shape. Batch the questions of several lines in one call, up to the limit of the tool.
-13. Propose a gist for the name of each file to write, in lowercase words joined by single hyphens, from the words of the rule. The user sees it in the proposal and may change it there. Ask no separate question for it. The journal checks the class.
+13. Propose a gist for the name of each file to write, in lowercase words joined by single hyphens, from the words of the rule. Ask no separate question for it. The journal checks the class.
 
 ### Propose
 
