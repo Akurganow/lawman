@@ -106,12 +106,9 @@ findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
 constitution. A department with no line is judged by none.
 
-**Lead body.** The sections of a filed lead's body, in order. The two first
-lines, `Analysed commit` and `Department`, belong to the law. The sections
-always include `Analysed commit`, `Department`, `What`, `Evidence`,
-`Why it is <kind>`, `Cost and risk` and `Not checked`. The marker is the last
-line. A page may add sections before `Not checked`. It may say how the `Cost and
-risk` line reads.
+**Lead body.** The sections that a page adds to a filed lead's body, before
+`Not checked`. The law's `LAW.md#the-lead-body` section holds the other parts and
+their order. A page may say how the `Cost and risk` line reads.
 
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
@@ -143,7 +140,7 @@ A department name resolves in this order. The first hit wins. Pages are never me
 Rules:
 
 - The name is checked against `[a-z][a-z0-9-]*` before any path is built.
-- A precinct-local page is trusted by the review that merged it into the main branch.
+- A precinct-local page is evidence. A role applies it only as the law's `LAW.md#texts-of-the-precinct` section says.
 - A page found at an earlier place hides the later ones, even when it is incomplete.
 
 ## Incomplete pages

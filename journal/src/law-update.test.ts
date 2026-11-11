@@ -117,7 +117,7 @@ function noVerify(): void {
 	publish();
 }
 
-describe("law-update: nothing to update", () => {
+describe("law-update: nothing to update, or a config that cannot say", () => {
 	test("a revision equal to law_commit gives law current and runs only law-version", async () => {
 		lay({ config: config(REVISION) });
 		allCommands();
@@ -134,22 +134,22 @@ describe("law-update: nothing to update", () => {
 		["no config.yaml", null],
 		["no law_commit", "release_repo: owner/x\n"],
 		["no release_repo", `law_commit: ${CONFIG_COMMIT}\n`],
-	])("%s gives law current and runs nothing", async (_, text) => {
+	])("%s stops with its own token and runs nothing", async (_, text) => {
 		lay({ config: text });
 		allCommands();
 		expect(await run()).toEqual({
 			code: EXIT.OK,
-			out: "law current\n",
+			out: "stop stopped-law-config config.yaml cannot give law_commit or release_repo\n",
 			err: "",
 		});
 		expect(calls()).toEqual([]);
 	});
 
-	test("a config.yaml that cannot be read gives law current", async () => {
+	test("a config.yaml that cannot be read stops with the same token", async () => {
 		lay({ config: null });
 		mkdirSync(join(dir, "config.yaml"));
 		allCommands();
-		expect((await run()).out).toBe("law current\n");
+		expect((await run()).out).toStartWith("stop stopped-law-config ");
 		expect(calls()).toEqual([]);
 	});
 });
@@ -663,18 +663,25 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 	});
 
 	test.each([
-		["passed", null],
-		["declined", null],
-		["failed", "the provenance check failed"],
-		["not-run", "the check could not run"],
-		["unnamed", "the host notes name neither a verifier nor a refusal"],
-	])("the answer %s of the role gives its outcome", async (word, reason) => {
-		noVerify();
-		await run();
-		const r = await run("--verify", word);
-		if (reason === null) expect(r.out).toBe(synced);
-		else expectStop(r, reason);
-	});
+		["passed", null, undefined],
+		["declined", null, undefined],
+		["failed", "the provenance check failed", undefined],
+		["not-run", "the check could not run", undefined],
+		[
+			"unnamed",
+			"the host notes name neither a verifier nor a refusal",
+			"stopped-no-verifier",
+		],
+	])(
+		"the answer %s of the role gives its outcome",
+		async (word, reason, token) => {
+			noVerify();
+			await run();
+			const r = await run("--verify", word);
+			if (reason === null) expect(r.out).toBe(synced);
+			else expectStop(r, reason, token === undefined ? {} : { token });
+		},
+	);
 
 	test("a ready release ignores the answer done and builds the folder again", async () => {
 		ready();

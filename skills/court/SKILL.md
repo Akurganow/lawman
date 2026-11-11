@@ -22,10 +22,11 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
 - A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
+- Your input holds the sections of `exhibits.md` that every run applies. The others stand in `lawman/skills/lawman-law/references/exhibits.md`. Read each once in a session, and only when a rule or step that names it applies to the case. Reading `Run a source` includes `Source values`.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
 ### Step 0: the input and the order
 
@@ -33,7 +34,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role court
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -136,7 +137,7 @@ For a conviction, run these items in order:
 
 1. Decide alone whether the conviction is `P0`. Never raise this decision later.
 2. When Jev is allowed, write the brief by the "Brief" section. Use kind `p0` for the court's own `P0`. Otherwise use kind `grade` for a defect and kind `requirement` for a requirement. For a requirement at `P0`, `defect` in the `p0` brief says what the repository lacks and what the lack exposes.
-3. Follow the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
+3. Follow the Send section of this skill once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
 4. Choose one priority from the law's `LAW.md#role-court` section: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line or a `requirement` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.
@@ -226,7 +227,7 @@ not_established: How many users want the option. Nothing was run.
 Ask the service for its judgment once, with the brief. `<p0|grade|requirement>` is the kind. Write it the same way in both places.
 
 1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, print `jev none reason=no-key` and stop this step.
-2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a process substitution that feeds a header. Read the section "The TypeSafe key" of the harness page for the form. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
 3. Run `bin/journal jev request --kind <p0|grade|requirement>`. Give it the brief on standard input, one `name: value` line per field. It prints the request body. When it fails, print `jev none reason=brief` and stop this step.
 4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
 5. Run `bin/journal jev answer --kind <p0|grade|requirement>`. Give it the response body and the status line on standard input. It prints one `jev` line.
@@ -245,7 +246,7 @@ Rules:
 - Run the request once. Do not retry it. Set no timeout.
 - A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.
 - Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
-- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps.
+- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps. When it is not attached, go on without it.
 - Make no other request to the service in a tick. Only this section uses the key.
 
 ## Ruling format

@@ -10,6 +10,8 @@ Every command runs through the journal on a throwaway base before it enters the 
 
 A command file carries no value of a key or a token. A role never writes a command.
 
+A command of `issues` or `pulls` returns `url` for each issue and pull request, the address that opens it on the host, when the tool gives one. The journal puts it into the alarms that the owner must act on. The proof compares nothing with it.
+
 ### The throwaway base
 
 One layout serves every proof, the first install and the proof of a refused signature included.
@@ -120,7 +122,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 
 After the facts of the refusal and before the refusal is written, prove that a swapped binary is still rejected by the checksum. Run one pass of `journal law-update` on a throwaway installation of the same layout, in the session's environment. The commands in the pass are stand-ins, so the pass needs no tick environment. The installation of the pass holds:
 
-- `config.yaml` with a `law_commit` that differs from the revision, and `release_repo` in its class. Without both, the pass returns "law current".
+- `config.yaml` with a `law_commit` that differs from the revision, and `release_repo` in its class. Without both, the pass stops with `stopped-law-config`.
 - The entry `lawman`.
 - `shared/law-version` with another revision and a tag.
 - `shared/release`, which puts into the release folder the real `SHA256SUMS`, an asset with one changed byte and an ordinary provenance file.
@@ -161,7 +163,7 @@ For each screen, run this cycle: find, propose, prove, decide.
 - Another tracker, which the developer names with its tool.
 - A source with no host, such as a local file.
 
-Whatever the answer, write the commands `issues`, `pulls` and `decider`. For a source with no actor and no rights, `decider` stays empty and the role does that step itself. The agent and the records of `host.md` still do the writes to the tracker. The roles on a tracker outside the repository's host are not verified. Say that in the proposal.
+Whatever the answer, write the commands `issues`, `pulls` and `decider`. For a source with no actor and no rights, `decider` stays empty and the role does that step itself. For a source with rights and no actor, the command hands the journal `lastActor` as null with the writers. The journal then prints `decider=no actor=-`, so no close counts as a decider's. The agent and the records of `host.md` still do the writes to the tracker. The roles on a tracker outside the repository's host are not verified. Say that in the proposal.
 
 ## Host limits
 
@@ -176,8 +178,8 @@ A request that the host refuses to accept for its size, its limit or its complex
 A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives and the account. Write them into the command file when you write the command.
 
 - `host.md` and `config.yaml` hold the same facts as lines for the whole installation, and the roles and the journal read those lines. Copy the fact into the command and keep the line.
-- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to move it in the same call of approval.
-- `law-sync` moves nothing.
+- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to copy it in the same call of approval. The line stays where it is.
+- `law-sync` copies nothing.
 - The keys `typesafe` and `typesafe_key` lie in `config.yaml`, which belongs to the whole installation. They stay there.
 
 ## Leave empty

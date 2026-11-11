@@ -114,6 +114,37 @@ Write what you say to the user in the user's language.
 Put one thought in one sentence.
 Name a source by reference and do not retell it.
 
+## The lead body
+
+A lead has one body, whether patrol files it as an issue or the response unit writes it as a comment. The body holds these parts in this order. The marker of the role is its last line. Parts marked (patrol) are written by patrol only.
+
+```
+Analysed commit: <sha>
+Department: <department>   (patrol)
+
+## What
+<the defect or the missing thing, where it lives, and why it matters>
+
+## Evidence
+<each command with its verbatim output in a fenced block, the positive control, and every site as path:line at <sha>>
+
+## Why it is <kind>   (patrol)
+<the page's symptom in its own words, what the unit was meant to buy, the recorded answers you checked, and each precedent that fits, by name and kind>
+
+<extra sections that the page names>   (patrol)
+
+## Cost and risk
+Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
+
+## Not checked
+<the hidden-caller classes and the checks you did not run>
+<Source: lines, when the kind has an external source>   (patrol)
+<marker>
+```
+
+- Not checked names what investigation must verify.
+- Keep the body under 64 KB. Quote only the lines the claim needs.
+
 ## Exhibits
 
 - An exhibit is a path and line quoted at the analysed commit, or a command with its verbatim output. Where nothing can run, a path traced with every step quoted is the exhibit for "this can happen".
@@ -245,6 +276,8 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `skipped-merge-conflict`: merging the main branch into the pull request branch left a conflict that the executor may not resolve.
 - `stopped-law-drift`: the law folder's revision differs from the one the installation recorded, or the law folder's revision cannot be read.
 - `stopped-dirty-law`: the law folder has local changes.
+- `stopped-law-config`: `config.yaml` cannot give `law_commit` or `release_repo`.
+- `stopped-no-verifier`: the host notes name neither a verifier nor a refusal of the signature check.
 - `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
@@ -432,7 +465,7 @@ Before every commit the executor searches three texts for the literal installati
 
 ## Hard constraints
 
-- Reading roles never edit a file in the precinct or alter its clone in any other way.
+- Reading roles never edit a file in the precinct. They alter its clone in two ways only. They bring it up to date with the host. They add and remove the tree that their skill names.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor file no issue.

@@ -79,6 +79,7 @@ const LAW_MAP = lawMap([
 	["Role executor", ["executor"]],
 	["Silence is the default", EVERY],
 	["Writing", WORKING],
+	["The lead body", ["patrol", "response-unit"]],
 	[
 		"Exhibits",
 		[
@@ -189,6 +190,26 @@ const law = (role: string, tick: string[], extra: Read[] = []): Read[] => [
 	...extra,
 ];
 
+// The sections of exhibits.md that every run of the judging roles applies. A role
+// reads the others itself, when a case needs them. The link check counts those as read.
+const EXHIBITS: Read = [
+	"exhibits.md",
+	[INTRO, "Read numbered lines", "Quote a claim of absence"],
+];
+const ON_CASE: Read[] = [
+	[
+		"exhibits.md",
+		["Follow a missing path", "Run a source", "Source values", "Ask an expert"],
+	],
+];
+export const SELF_READS: Record<string, Read[]> = {
+	patrol: [["exhibits.md", [WHOLE]]],
+	investigation: [["exhibits.md", [WHOLE]]],
+	prosecutor: ON_CASE,
+	defender: ON_CASE,
+	court: ON_CASE,
+};
+
 const closed = (s: StageFields) => s.state === "CLOSED";
 const notOpen = (s: StageFields) => s.state !== "OPEN";
 const needNot = (need: string) => (s: StageFields) => s.need !== need;
@@ -290,18 +311,18 @@ export const ROLES: Record<string, RoleInput> = {
 	},
 	prosecutor: {
 		...ISSUE_ROLE,
-		law: law("prosecutor", JUDGING_STEPS),
+		law: law("prosecutor", JUDGING_STEPS, [EXHIBITS]),
 		stale: either(needNot("prosecutor"), closed),
 	},
 	defender: {
 		...ISSUE_ROLE,
-		law: law("defender", JUDGING_STEPS),
+		law: law("defender", JUDGING_STEPS, [EXHIBITS]),
 		stale: either(needNot("defender"), notOpen),
 		department: "stage",
 	},
 	court: {
 		...ISSUE_ROLE,
-		law: law("court", JUDGING_STEPS, [["markers.md", ["Precedent"]]]),
+		law: law("court", JUDGING_STEPS, [["markers.md", ["Precedent"]], EXHIBITS]),
 		stale: either(needNot("court"), notOpen),
 		department: "stage",
 	},

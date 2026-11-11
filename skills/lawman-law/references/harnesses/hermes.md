@@ -128,7 +128,7 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 - a heredoc fed to a shell or an interpreter: `bash <<`;
 - other recursive deletes: `rm -r`, `rm --recursive`.
 
-Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the body of the Send command. The pipe passed when a role repeated a refused command without the wrapper.
+Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the command that sends the TypeSafe request. The pipe passed when a role repeated a refused command without the wrapper.
 
 Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, and a loop. A quoted heredoc fed to an ordinary command also passed the check. None of these was seen in a scheduled run.
 
@@ -239,7 +239,7 @@ Schedule forms:
 
 - A five-field cron expression, such as `0 * * * *`, recurs until removed.
 - A bare duration such as `2m` recurs. It means every 2 minutes, not once in 2 minutes.
-- A one-shot job needs `--repeat 1` on this harness (probe). The docs show repeat only as the `repeat` tool parameter and do not state a CLI flag. The docs also list `in 30m` as a one-shot form.
+- A one-shot job needs `--repeat 1` on this harness (seen in a run). The docs show repeat only as the `repeat` tool parameter and do not state a CLI flag. The docs also list `in 30m` as a one-shot form.
 
 Manage jobs with these commands:
 
@@ -345,8 +345,6 @@ Same-minute jobs run in parallel. A job still running skips its next slot. The C
 
 `cron.catch_up_missed` is `true` by default. After an outage the scheduler runs a missed job once, not once per missed slot. With `false`, a late job skips to its next slot.
 
-Every tick must be idempotent under a catch-up run. The law already requires this. The journal rejects a repeated order.
-
 ### Silence
 
 A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
@@ -354,8 +352,6 @@ A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the o
 Hermes suppresses delivery when `[SILENT]` is the whole response, or its own first line or last line, trimmed and ignoring case. A token inside a sentence is delivered (read in the harness code).
 
 Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). A report written before the token once led the model to drop the token, and the report was delivered (seen in a run). So the skills answer the token alone. Skills do not repeat the explanation.
-
-An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 
 ### Delivery targets
 
@@ -367,7 +363,7 @@ An alarm line in an answer defeats silence. The answer is then delivered, as the
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-A role cannot see whether a message arrived.
+A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked.
 
 ### One-off run
 
@@ -383,7 +379,7 @@ Rules for every one-off job:
 - The name never starts with `[lawman] `. The assembly finds the installation by the first job with that prefix.
 - The schedule `in 24h` is a one-shot form that fires once, a day after the create (read in the harness code: `cron/jobs.py`, `parse_schedule`). The job is meant to run by the `run` call before that. `--repeat 1` makes the single run explicit.
 - The job runs a model, so each run is paid. With no `--model` the job follows `cron.model`, then the main model (stated by `hermes cron create --help`).
-- The prompt passes the same scan as any prompt. The prompts below match none of the patterns (checked with the harness's scan function).
+- The prompt passes the same scan as any prompt. The prompts below match none of the patterns of that scan (read in the harness code, tools/cronjob_prompt_scan.py).
 - A paused job is refused by `run`. Do not create a one-off job paused.
 
 #### Proof of a command
@@ -422,7 +418,7 @@ hermes sessions export --title "lawman-proof-<n>" --after <time before the run> 
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
 - The answer `[SILENT]` alone is the harness's silence form (see "Silence"). A model that answers otherwise changes nothing in the record of the terminal call.
 - The form holds no redirect into a file: the check refuses a redirect whose target is a system path (see "Commands in scheduled runs").
-- Each of these lines passed the harness's check function as a role would send it. They are the create line, the create line with the proof prompt filled in, and the export line. The terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder passed too (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
+- Each of these lines passed the harness's check function as a role would send it. They are the create line, the create line with the proof prompt filled in, and the export line. The terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder passed too (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (read in the harness code, tools/cronjob_prompt_scan.py).
 
 Run the job and remove it as the order above says.
 
@@ -503,8 +499,6 @@ Cron sessions cannot create cron jobs. The docs say cron management tools are di
 The model is chosen per job with `--model`. Each role has its own model. The docs state no spend cap in money, for cron or for config, so only the model choice and the interval limit spend.
 
 ### The token
-
-Every role uses one identity: the account that the installation's host tool signs in, or one token the developer adds at setup.
 
 A variable in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
 

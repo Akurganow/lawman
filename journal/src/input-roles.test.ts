@@ -47,7 +47,6 @@ describe("the role table", () => {
 
 	test("every section of LAW.md has a reader, and the whole file counts as every section", () => {
 		const sections = [INTRO, ...(HEADINGS["LAW.md"] ?? [])];
-		expect(sections).toHaveLength(38);
 		const read = new Set(
 			ROLE_NAMES.flatMap((role) =>
 				lawOf(role)

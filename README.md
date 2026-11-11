@@ -16,13 +16,13 @@ Each role is an Agent Skill. The scheduler starts a role. The role takes a few o
 
 ### Harnesses
 
-Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Two harnesses have a page today. Lawman installs on Hermes Agent. OpenClaw has a page and install steps that no live run has proved yet. The other harnesses are TBD.
+Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Only Hermes Agent is Supported. Every other harness in the table of the harnesses page is TBD. OpenClaw has a page and install steps that no live run has proved yet.
 
 [Harnesses and layout](docs/harnesses.md)
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds fifteen keys, among them the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds, among others, the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -42,7 +42,7 @@ A department is a page, not an agent. One generic patrol reads the page and swee
 
 ### The constitution
 
-A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings. The file also names the labels that mean something, among them the one that marks an issue for a person. The court applies that label when it refers a requirement to a decider, and removes it when it rules.
+A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner, and from the assembly when the contract version moves. The file also names the labels that mean something, among them the one that marks an issue for a person. The court applies that label when it refers a requirement to a decider, and removes it when it rules.
 
 [Writing a constitution](docs/constitution.md)
 
@@ -92,9 +92,9 @@ Update the plugin in a terminal with the harness update command:
 hermes plugins update lawman
 ```
 
-The next tick of any role completes the update. It downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
+The next tick of any role completes the update, and so does the assembly when you run it first. The sync downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
 
-After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
+After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md and write the commands of the installation. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
 
 After an update, the tick that synced the law tells you to run the assembly. You answer the license question for each precinct without an answer. A yes or a no removes that line.
 
@@ -118,7 +118,7 @@ OpenClaw runs each role as a scheduled job with an entry script. It needs its ga
    openclaw plugins install lawman --marketplace Akurganow/lawman
    ```
 
-2. In an OpenClaw chat, run the skill `assembly`. The docs name the forms `$assembly` and `/assembly`.
+2. In an OpenClaw chat, run the skill `assembly`. The OpenClaw docs name the forms `$assembly` and `/assembly` (not verified).
 
 3. The assembly asks you to create one OpenClaw agent whose workspace is the installation folder. It shows the lines and waits, because creating an agent changes OpenClaw's settings. You apply them:
 
@@ -126,7 +126,7 @@ OpenClaw runs each role as a scheduled job with an entry script. It needs its ga
    openclaw agents add <agent id> --workspace "<installation>" --non-interactive
    ```
 
-The assembly then goes on as it does on Hermes Agent. It writes one paused job for each role, with the entry script of that role and the model you chose. A job holds a copy of its script. A change to the script reaches a job only when the assembly writes the job again.
+The assembly then goes on as it does on Hermes Agent. The OpenClaw page has no send form for the catalog check, so that check cannot run on OpenClaw. The assembly writes one paused job for each role, with the entry script of that role and the model you chose. A job holds a copy of its script. A change to the script reaches a job only when the assembly writes the job again.
 
 #### Update
 

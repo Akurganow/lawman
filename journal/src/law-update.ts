@@ -256,7 +256,11 @@ async function update(
 			];
 		} else {
 			const stop = VERIFY_STOPS[opt.verify];
-			if (stop !== undefined) throw new Stopped(stop);
+			if (stop !== undefined)
+				throw new Stopped(
+					stop,
+					opt.verify === "unnamed" ? "stopped-no-verifier" : DRIFT,
+				);
 		}
 		return await swap(folder, asset, f.tag, f.revision);
 	} catch (e) {
@@ -273,7 +277,11 @@ async function pass(
 	const config = readConfig() ?? "";
 	const commit = configValue(config, "law_commit");
 	const repo = configValue(config, "release_repo");
-	if (commit === undefined || repo === undefined) return ["law current"];
+	if (commit === undefined || repo === undefined)
+		throw new Stopped(
+			"config.yaml cannot give law_commit or release_repo",
+			"stopped-law-config",
+		);
 	const f = await facts(opt);
 	if (f === "self") return ["self law-version"];
 	if (!COMMIT.test(f.revision) || !COMMIT.test(commit))

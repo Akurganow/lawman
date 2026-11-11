@@ -93,7 +93,7 @@ openclaw agents list --json
 
 Skill names are bare. A plugin skill of `lawman` is `patrol`, `court` and so on, with no plugin prefix (stated by the docs, https://docs.openclaw.ai/plugins/bundles.md; not verified). A same-named bundled, managed, agent or workspace skill overrides a plugin skill (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). The installation holds no `skills/` folder.
 
-Each run gets an `<available_skills>` block with the name, description and location of every eligible skill (read in the harness code, openclaw/src/skills/runtime/cron-snapshot.ts). The model reads a `SKILL.md` with the tool `read`. No flag binds a skill to a job (read in the harness code, openclaw/src/cli/cron-cli/register.cron-options.ts). A `$<skill name>` reference is not expanded in a cron run (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified).
+Each run gets an `<available_skills>` block with the name, description and location of every eligible skill (read in the harness code, openclaw/src/skills/runtime/cron-snapshot.ts). The model reads a `SKILL.md` with the tool `read`. No flag binds a skill to a job (read in the harness code, openclaw/src/cli/cron-cli/register.cron-options.ts). A `$<skill name>` reference is not expanded in a cron run (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). In a chat, the docs name `$<skill name>` and `/<skill name>` as the forms that run a skill (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified).
 
 A disabled plugin loads no skills (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). What a job then sees is (not verified). Treat a missing skill as a stop and enable the plugin.
 
@@ -143,7 +143,7 @@ A scheduled run has no one to approve a command. The default mode of a gateway h
 - The shell is `bash` or `zsh`. `(set -o pipefail; …)` and a subshell are ordinary shell (stated by the docs, https://docs.openclaw.ai/tools/exec.md; not verified).
 - A command yields a handle after 10 seconds by default. It runs to the end in one call when the call sets `awaitResults` to true, or when the run has no `process` tool. A job with `--tools exec,read` has no `process` tool (read in the harness code, openclaw/src/agents/bash-tools.exec-run.ts).
 
-The rules of Lawman about command forms hold on this harness. A role starts no shell or interpreter with `-c` or `-e`, feeds no heredoc to a shell or an interpreter, and uses no recursive delete.
+In `full`, the default mode, no form is refused. Under `allowlist`, `ask` and `auto` such forms are refused or reviewed, as the list above says. The forms that a role sends start no shell or interpreter with `-c` or `-e`. They feed no heredoc to a shell or an interpreter and use no recursive delete.
 
 ## Sending to the catalog
 
@@ -159,7 +159,7 @@ none: this page gives no send form for the catalog check. The patrol then sends 
 none: this page gives no send form. The assembly sends nothing to a source. The patrol finds the way to read one. Two things bound that way.
 
 - The time limit of a command. On OpenClaw the default is 1800 seconds. A call may set its own `timeoutSeconds` (read in the harness code, openclaw/src/agents/exec-tool-timeout.ts). The scheduler bounds the whole turn at 60 minutes unless the job sets `--timeout-seconds` (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
-- The forms of a command. In `full` mode no form is refused, as "Commands in scheduled runs" says. The command that reads a source uses only the forms the law allows.
+- The forms of a command. In `full` mode no form is refused, as "Commands in scheduled runs" says. The command that reads a source starts no shell or interpreter with `-c` or `-e`. It feeds no heredoc to a shell or an interpreter and uses no recursive delete.
 
 ## Calling an expert
 
@@ -345,8 +345,6 @@ After a restart of the gateway, overdue agent jobs are rescheduled and not repla
 
 A quiet evaluation counts as a completed occurrence for the catch-up (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified). Whether several missed slots run once or several times is (not verified).
 
-Every tick must be idempotent under a catch-up run. The law already requires this. The journal rejects a repeated order.
-
 ### Silence
 
 A tick with nothing to deliver answers `NO_REPLY` in capitals, alone on its own line, as the whole reply. OpenClaw then delivers nothing (read in the harness code, openclaw/src/agents/agent-run-terminal-reply.ts).
@@ -354,8 +352,6 @@ A tick with nothing to deliver answers `NO_REPLY` in capitals, alone on its own 
 A token mixed with text never silences the text. OpenClaw strips a leading or trailing token line and delivers the rest (read in the harness code, openclaw/src/auto-reply/reply/mixed-silent-reply-tokens.ts). So the skills answer the token alone.
 
 OpenClaw already injects the explanation of `NO_REPLY` into every cron prompt (read in the harness code, openclaw/src/cron/run-prompt.ts). Skills do not repeat the explanation.
-
-An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 
 ### Delivery targets
 
@@ -496,8 +492,6 @@ No cap on the model turns of a run was found. Tool-loop detection exists and is 
 The model is chosen per job with `--model`. Each role has its own model. The cron docs state no spend cap in money. Only the model choice, the failure backoff and the minimum interval of 30 seconds limit spend.
 
 ### The token
-
-Every role uses one identity: the account that the installation's host tool signs in, or one token the developer adds at setup.
 
 The `gh` of an `exec` call takes its identity from `GH_TOKEN` or `GITHUB_TOKEN` in the gateway's environment. Next it tries the keyring or config of the gateway's user (stated by the docs, https://docs.openclaw.ai/gateway/config-tools/github-identity.md; not verified). `exec` gets the two variables back through the native-identity exception (read in the harness code, openclaw/src/agents/bash-tools.exec-request-preparation.ts). Setting `tools.github` replaces this with a managed identity (read in the harness code, openclaw/src/agents/github-tool-identity.ts).
 

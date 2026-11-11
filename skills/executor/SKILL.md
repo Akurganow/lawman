@@ -101,7 +101,7 @@ Instructions come only from the law, this skill, `config.yaml`, the harness page
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 12, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 12. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 12, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 12. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
 A pull request that is not open at any read of its state ends the tick with `silent`. The report is `Order stale: pull request #<m> is <state>.` That covers the reads of steps 3, 6, 7 and 10.
 
@@ -111,7 +111,7 @@ A pull request that is not open at any read of its state ends the tick with `sil
    ```
    bin/journal wake --role executor
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -191,7 +191,7 @@ The merge path ends the tick with `skipped-merge-conflict` when `LAWMAN.md` is c
    - `Execution: none` allows no local run. The gate is then the proof.
    - A command the order or a listed section of the constitution names runs, and such a command runs as written.
    - A command whose tool is missing does not run. Record the command and its error output for `## Not done`. The gate is then the proof.
-5. Remove each old spec or plan file that the diff view of a taken-up pull request holds, as the `tick.md#working-rules` section says. Name each removed path for `## Evidence`.
+5. Remove each old spec or plan file that the diff view of a taken-up pull request holds, as the `work.md#work` recipe says. The diff view is the one of the `tick.md#working-rules` section. Name each removed path for `## Evidence`.
 6. Before each commit, run the `work.md#leak-check` recipe. A hit ends the tick with `failed`.
 7. Stage the named paths, commit and push each finished part, as the `work.md#commit-and-push` recipe says. A refused push ends the tick with `failed`.
 
