@@ -12,9 +12,9 @@ Terms used below:
 
 ## Installing the plugin
 
-Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to detect this harness.
+Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to find the harnesses that are installed.
 
-Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway.
+Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway. The start instruction is `hermes gateway restart` (stated by `hermes gateway --help`).
 
 Install and enable the plugin from its repository.
 
@@ -96,11 +96,10 @@ From a terminal, run the job with:
 hermes cron run "[lawman] <role>"
 ```
 
-- The run executes inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false. The reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`). Resume the job first, with the form under "Paused jobs".
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
-- A run killed that way leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
+- A killed run leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The session that started the run ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
@@ -114,12 +113,12 @@ Refused, seen in scheduled runs:
 - a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
 - an interpreter started with `-c`: `python3 -c`;
 - a recursive delete: `rm -rf`;
+- the tool `execute_code`, which runs local Python and is blocked because no user is present (seen in a job's run);
 - a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
 
 A role removes a folder without a recursive delete. Each form below passed the harness's check function as a role sends it. Removing the files with `rm -f` and then the folder with `rmdir` was seen in scheduled runs.
 
 - A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rmdir runs/<tick id>`.
-- A folder that holds only files, such as the folder of the law sync: `rm -f <folder>/*`, then `rmdir <folder>`.
 
 Refused, checked with the harness's check function and not seen in a scheduled run:
 
@@ -130,9 +129,11 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 
 Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the command that sends the TypeSafe request. The pipe passed when a role repeated a refused command without the wrapper.
 
-Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, and a loop. A quoted heredoc fed to an ordinary command also passed the check. None of these was seen in a scheduled run.
+Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, and a loop. A quoted heredoc fed to an ordinary command also passed the check.
 
-Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script. Such a pipeline inside `(set -o pipefail; …)` also passed the check. None of these was seen in a scheduled run.
+Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script. Such a pipeline inside `(set -o pipefail; …)` also passed the check.
+
+A session started with `hermes chat -q` and no terminal refused `python3 -c`, `find` with `-delete` and a redirect into a file named `config.yaml` (seen in a run). `gh attestation verify` prints nothing on success without a terminal: exit 0 with no output is success (seen in a run).
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
@@ -261,9 +262,9 @@ Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown fil
 
 ### Editing a job
 
-`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort`, `--script` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model.
+`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort`, `--script` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. The job store `jobs.json` sits in the same `cron` folder as the run output above. Its fields `model`, `provider` and `reasoning_effort` hold the model, provider and effort of each job (read in the harness code, seen in a run). Read it. Change a job only with `hermes cron edit`.
 
-A job shows its entry mode in the list (read in the harness code). A job in script mode prints a `Script:` line. A job in monitor mode prints a `Monitor:` line. A job with neither line has no entry file.
+A job shows its entry mode in the list (read in the harness code). A job in script mode prints a `Script:` line. A job in monitor mode prints a `Monitor:` line. A job with neither line has no entry file. Give it one with `hermes cron edit <job id> --script lawman-<role>.sh`. The file must exist in the scripts folder (stated by `hermes cron edit --help`, not probed).
 
 Translate a job from monitor mode to script mode with one call:
 
@@ -363,7 +364,7 @@ Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ba
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked.
+A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked. A session that runs in a messenger chat has that chat as `origin`, so that route can deliver now.
 
 ### One-off run
 
@@ -446,7 +447,7 @@ hermes cron create "in 24h" "Answer with exactly the text [SILENT] and nothing e
 
 ### Run records
 
-A scheduled run leaves two records. The output file named above holds the prompt and the final answer. The session store holds every turn. Read the store only with the harness's own commands. Never open its file.
+A scheduled run leaves two records. The output file named above holds the prompt and the final answer. The session store holds every turn. Read the session store only with the harness's own commands. Never open its file.
 
 Stated by `hermes sessions export --help`:
 
@@ -474,7 +475,7 @@ Seen when the commands ran in a terminal, read only:
 - A window whose `--after` is not earlier than `--before` prints `Error: Empty start-time window` and exits with code 0. A window that holds no session prints `Would export 0 session(s)` and exits with code 0. An unknown `--session-id` prints `No session` and exits with code 1.
 - A pipeline exits with the code of its last command. A failed `hermes` before `sed` gives code 0 and no data. Under `set -o pipefail` the same pipeline exits with a code other than 0.
 
-Not established: whether a scheduled session finds `hermes` and `jq` on its `PATH`, and whether the terminal of a scheduled session sees the session id. The journal stores no session id. A tick is matched to its session by the role and a time window.
+`gh` and `jq` are on the `PATH` of a scheduled session (seen in a job's run). Not established: whether it finds `hermes`, and whether the terminal of a scheduled session sees the session id. The journal stores no session id. A tick is matched to its session by the role and a time window.
 
 Checked with the harness's check function: the export commands pass as written.
 

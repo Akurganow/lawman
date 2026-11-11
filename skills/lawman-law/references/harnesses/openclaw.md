@@ -15,9 +15,9 @@ Terms used below:
 
 ## Installing the plugin
 
-Detection: `openclaw --version` prints the installed version. The assembly runs it to detect this harness. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
+Detection: `openclaw --version` prints the installed version. The assembly runs it to find the harnesses that are installed. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
 
-Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers.
+Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers. The start instruction is `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
 
 - The command is an alias of `openclaw automations status`. It asks the gateway for `cron.status`, and the reply holds `enabled` (read in the harness code, openclaw/src/cli/cron-cli/register.cron-add.ts).
 - Every cron command needs a running gateway (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
@@ -127,7 +127,7 @@ openclaw cron run <job id> --wait
 - Read the result with `openclaw cron runs <job id> --run-id <run id>` (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
 - From an agent session, the tool `automations` starts a run with `action` set to `run` and `runMode` set to `force`. The default `runMode` is `due`, which honors the entry script (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified). A run aimed at the requesting conversation starts after that turn ends (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
 - The run is recorded like a scheduled one. `openclaw cron runs <job id>` lists it, and its output lands in the run history.
-- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
+- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The session that started the run ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 
 `openclaw agent exec` runs one embedded turn in the foreground and records no job (stated by the docs, https://docs.openclaw.ai/cli/agent.md; not verified). Use it only while developing a skill.
 
@@ -306,7 +306,7 @@ How the entry works:
 
 - The role does not start. The run is recorded with the status `error` and the text "cron trigger evaluation failed" (read in the harness code, openclaw/src/cron/service/timer-execution.ts).
 - Each error adds to a count of consecutive errors. The retry backoff is 30 seconds, 1 minute, 5 minutes, 15 minutes and 60 minutes (read in the harness code, openclaw/src/cron/service/jobs-scheduling.ts).
-- An alert goes out after 2 consecutive failures, with a cooldown of one hour. It goes only when the job has a failure route or an announce route (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/delivery.md; not verified). Tell the user to set a failure route.
+- An alert goes out after 2 consecutive failures, with a cooldown of one hour. It goes only when the job has a failure route or an announce route (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/delivery.md; not verified).
 - A recurring job is disabled after 10 consecutive failures. Re-enable it with `openclaw cron enable <job id>` (read in the harness code, openclaw/src/cron/service/auto-disable.ts). The conditions of the alert and the disable are (not verified).
 - A script that outlives 30 seconds fails the same way, so a slow journal ends in an error.
 - No fallback exists for a failure by schedule. The failure is loud. The fallback is a manual run, or a job with no entry script.

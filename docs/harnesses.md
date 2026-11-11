@@ -113,9 +113,7 @@ The assembly asks the developer through the harness's question tool. Each row na
 | Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
 | Pi | none built in (read in the harness code) | (not verified) | (not verified) |
 
-A harness page names the question tool in its own section. When the section says none, the model finds the tool itself.
-
-A harness without a question tool uses the plain numbered message. The plain message does not serve messengers.
+A harness page names the question tool in its own section. When the section says none, or the session holds no such tool, the assembly uses the plain numbered message.
 
 ## What each harness does
 
@@ -255,7 +253,7 @@ A page describes only the facts its own harness needs. It holds no description o
 
 Every heading must stand. Its body is a fact with its source, the word none with its consequence, or a fact marked `(not verified)`. The page needs a section `Silence`, which role entry prints. A page that has no send form or no expert call says none. A harness that adds a form gains the check or the experts with no change to the law or the skills.
 
-The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list commands that show each job's working directory. A page may give two commands in series, as the OpenClaw page does: the list of jobs, then the list of agents. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
+The assembly step "Choose the installation" needs five things from the page. They are the detection command, which shows that the harness is installed, and the job-list commands that show each job's working directory. A page may give two commands in series, as the OpenClaw page does: the list of jobs, then the list of agents. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 
 Follow these steps.
 
