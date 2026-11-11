@@ -49,13 +49,13 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
 - It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the eight headings.
 - It fills each section except Departments and Labels with paths and short facts.
-- It asks which label tells a person that an issue waits for them, unless the constitution or the host already names one. It asks which other labels matter when the host has others. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
+- It asks which label tells a person that an issue waits for them, unless the host already names one. It asks which other labels matter when the host has others. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
 - It writes `none` where nothing applies.
 - It adds the section `## Licenses` to the same draft when you answer yes to the license question for the precinct.
 - It drops each line whose path is missing.
 - It proposes the sections and the judging documents of the shared departments in one proposal. You keep, change or add lines. The proposal notes that "Add a department" follows the merge.
 - It checks the draft with `bin/journal lint-page constitution`.
-- It shows you the draft as a table of its eight sections, each line with the file it came from, and waits for your approval: open the pull request, change or skip.
+- It shows you the draft as a table of its eight sections, each line with the file it came from. It waits for your approval: open the pull request, change or skip.
 - It commits, pushes and opens the pull request "Add the Lawman constitution".
 
 The commands of the precinct are no part of the constitution. The assembly proves them and writes them into the installation, as [configuration](configuration.md#the-commands) says.

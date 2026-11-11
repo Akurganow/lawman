@@ -97,7 +97,7 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 
 The summary names "Add a department" as the step after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch.
 
-The place follows from the name: a name that no shared department has gets a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
+[Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
 
 ## How the duty desk rotates it
 

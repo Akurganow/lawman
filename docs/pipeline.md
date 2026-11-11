@@ -223,7 +223,7 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
 | `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
 | `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
-| `contract-changed` | [law update](journal.md#updates) | The update prints it once, when the new law's constitution contract differs from the version in `config.yaml`. It is not stored and does not repeat. Run the assembly to amend. |
+| `contract-changed` | [law update](journal.md#updates) | The update prints it while the new law's constitution contract differs from the version in `config.yaml`. It is not stored, and the duty desk does not repeat it. Run the assembly to amend. |
 | `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | a role | Patrol finds a live secret in the tree or the history. |
 | `referral` | a role | The court refers a requirement to a decider. |
