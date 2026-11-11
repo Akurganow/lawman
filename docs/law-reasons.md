@@ -22,6 +22,8 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Its purpose is that the same dispute is not argued again in every case: the parties and the court rely on the decision already made.
 
+> Because something else may be found there.
+
 ### Alarms the journal computes
 
 > An owner hears about a broken installation even when every precinct is busy.
@@ -63,6 +65,12 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Working rules
 
 > A line of the text equal to the delimiter would end the heredoc early and run the rest as commands.
+
+## markers.md
+
+### Defined markers
+
+> So an older `feature` stays valid.
 
 ## skills/clerk/SKILL.md
 
@@ -233,6 +241,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Isolation
 
 > This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt.
+
+### Silence
+
+> A report written before the token once led the model to drop the token, and the report was delivered (seen in a run).
 
 ## skills/lawman-law/references/harnesses/openclaw.md
 

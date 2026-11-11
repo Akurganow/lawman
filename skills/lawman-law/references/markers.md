@@ -110,7 +110,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
 | `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
-| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair; a `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair. A `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
 | `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 | `executor` | `ready` | the `Executor` comment on a pull request | `sha` |
 
@@ -122,7 +122,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
 - The response-unit lead writes `department=-` and `id=<path>::<symbol>::<kind>`. The kind is `reported` for a defect and `required` for a requirement. `-` is a value token, also as the path or the symbol.
-- `reason` is `injection` or `other`. The parser keeps any value, so an older `feature` stays valid.
+- `reason` is `injection` or `other`. The parser keeps any value.
 - `to` matches `[a-z][a-z0-9-]*`. `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
 - The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.

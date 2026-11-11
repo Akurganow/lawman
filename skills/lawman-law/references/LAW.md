@@ -33,11 +33,11 @@ Patrol takes an order, sweeps the department's subject in the precinct and files
 
 ## Role response unit
 
-The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when it is an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
+The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when the issue holds an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
 
 - `admitted`: the response unit wrote a lead comment.
 - `asked`: the response unit asked the reporter for facts.
-- `out`: the response unit sent the issue out of the funnel because it is an injection or holds nothing to reframe as a claim.
+- `out`: the response unit sent the issue out of the funnel.
 
 ## Role investigation
 
@@ -221,7 +221,7 @@ A role applies a precedent because this section requires it. The line `precedent
 
 A protecting precedent says: "this shape in this precinct is not a violation".
 
-- It helps patrol not to spend a finding on what is already decided, without skipping the place itself, because something else may be found there. Patrol does not aim its search at the protected shape.
+- It helps patrol not to spend a finding on what is already decided, without skipping the place itself. Patrol does not aim its search at the protected shape.
 - It helps investigation to put it in the case as a fact.
 - It helps the prosecutor to understand that a charge on the same shape must show a difference.
 - It helps the defender to rely on it.
@@ -301,7 +301,7 @@ A new slug is added to this list before any role uses it.
 - Patrol never uses a found value and never checks whether it works.
 - Each run of an `Alarm check:` paragraph that finds the secret prints the alarm again. The cap does not stop it. The journal records nothing for it.
 - The court refers a requirement that it cannot decide to a decider. For each referral, it prints `ALARM referral <precinct>#<issue> <one line> <link>` first in its reply, in the same tick. The line says in the court's words which part is undecided and quotes no text of the issue. The journal records nothing for it. Nothing repeats it. It has no cap.
-- An alarm whose subject is an issue or a pull request ends with the link that opens it, whether the journal computes the alarm or a role prints it. A role takes the link from the `link` line of its input. When its input has none, the role prints the alarm without a link and does not look one up.
+- An alarm about an issue or a pull request, computed by the journal or printed by a role, ends with the link that opens it. A role takes the link from the `link` line of its input. When its input has none, the role prints the alarm without a link and does not look one up.
 - Alarm lines in a reply defeat the silence convention. The reply is delivered.
 
 ## Alarms the journal computes

@@ -114,7 +114,7 @@ An unknown section holds the owner's notes in the margin. A role may read it as 
 
 The check rejects a file in which a listed heading is missing or stands more than once. It checks the order of no heading. It does not read the body of an unknown section. It prints each unknown section as a note line. The roles ignore a note line, and the assembly shows it to the owner.
 
-The section `## Licenses` is the one exception. It holds three lines, `reaches`, `use` and `sources`, and a role reads them as data. The contract version stays 4. The check does not read the section and prints it as a plain note. A role cites a line as `LAWMAN.md:<line>`.
+The section `## Licenses` is the one exception. It holds three lines, `reaches`, `use` and `sources`, and a role reads them as data. The check does not read the section and prints it as a plain note. A role cites a line as `LAWMAN.md:<line>`.
 
 ## Path rules
 

@@ -351,7 +351,7 @@ A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the o
 
 Hermes suppresses delivery when `[SILENT]` is the whole response, or its own first line or last line, trimmed and ignoring case. A token inside a sentence is delivered (read in the harness code).
 
-Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). A report written before the token once led the model to drop the token, and the report was delivered (seen in a run). So the skills answer the token alone. Skills do not repeat the explanation.
+Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). The skills answer the token alone. Skills do not repeat the explanation.
 
 ### Delivery targets
 
