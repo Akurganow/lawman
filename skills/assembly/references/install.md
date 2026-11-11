@@ -44,7 +44,7 @@ Finds:
 - Whether the plugin is enabled, by the checks that the harness page names under "Installing the plugin", in the page's order.
 - The law commit, the release tag and the release repository, by "Find the facts of the law" below.
 
-Proposes: nothing of its own. The approval shows the folder (current, default or yours), the harness (found) and the release, its tag and repository (found, or yours).
+Proposes: nothing of its own. The approval shows the folder (current, default or yours). It shows the harness (found) and the release, its tag and repository (found, or yours).
 
 A release repository that is read from the origin is found, and the developer does not edit it. A release repository that the developer named is yours, and the developer may change it.
 
@@ -67,8 +67,8 @@ Never:
 The folder of the law may carry no history. A harness may place the plugin as a plain copy. Take the commit, the release tag and the release repository from these sources in this order. The list is open for sources that a later release reads.
 
 1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
-2. With no history, the plugin's manifest and the host's tool, then the developer's word. Read the repository and the version from `plugin.json` in the law folder, and get the release tag and its commit from the host's tool. Ask in free text only for what they cannot give, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
-   With no history, the role cannot read them, and every tick ends `stopped-law-drift` without a `law-version` command, because the law folder gives no facts. Write an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. Prove it by "Prove `law-version`" in `references/commands.md`. When no such place exists or the proof fails, say so in the proposal and the summary. The install goes on.
+2. With no history, the plugin's manifest and the host's tool, then the developer's word. Read the repository and the version from `plugin.json` in the law folder. Get the release tag and its commit from the host's tool. Ask in free text only for what they cannot give, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
+   With no history, the role cannot read them. Without a `law-version` command, every tick then ends `stopped-law-drift`, because the law folder gives no facts. Write an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. Prove it by "Prove `law-version`" in `references/commands.md`. When no such place exists or the proof fails, say so in the proposal and the summary. The install goes on.
 3. No history, no value from the manifest or the tool, and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
