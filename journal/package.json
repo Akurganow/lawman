@@ -4,7 +4,7 @@
 	"private": true,
 	"type": "module",
 	"scripts": {
-		"test": "bun test --timeout=30000",
+		"test": "bun test --timeout=30000 --parallel=4",
 		"check": "tsc -p . && biome ci --error-on-warnings .",
 		"fix": "biome check --write ."
 	},
