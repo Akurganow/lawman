@@ -152,22 +152,20 @@ A reopen that fails because the head branch is gone ends the tick with `failed`.
 
 ## open
 
-The journal prints the body. Leave out `--source` when there is no ruling.
-
-```
-bin/journal pull-body <p> --issue <n> [--source <ruling URL>]
-```
-
 The title is `Execute #<n>`. With a ruling, `: ` and the first words of its Disposition follow, from the ruling only, never from the issue. Cut them at a word to one short line, never inside a code span.
 
 1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`.
 2. Read the ruling. A ruling whose stage is not `conviction` counts as none. Send the title to the body check with `--no-marker`. When the check refuses it, the title is `Execute #<n>` alone.
-3. Create the tree.
-4. Record one commit with no change and the message `Open execution of #<n>`.
-5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a draft pull request from `<branch>` on the host, with the title of step 2 and the body. The title and the body reach the host only as data, as Working rules says. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
-7. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
-8. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
+3. Get the body from the journal. Leave out `--source` when there is no ruling.
+   ```
+   bin/journal pull-body <p> --issue <n> [--source <ruling URL>]
+   ```
+4. Create the tree.
+5. Record one commit with no change and the message `Open execution of #<n>`.
+6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
+7. Open a draft pull request from `<branch>` on the host, with the title of step 2 and the body of step 3. The title and the body reach the host only as data, as Working rules says. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+8. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
+9. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
 
 A publish that fails because the branch exists means an earlier tick published it and stopped before the pull request. Blockers names the remedy: delete the remote branch.
 
