@@ -106,6 +106,7 @@ describe("the check of the links", () => {
 		expect(check("Read LAW.md#orders and LAW.md#writing.")).toEqual([]);
 		expect(check('Read "Exhibits".')).toEqual(["1: Exhibits"]);
 		expect(check("Read LAW.md#exhibits.")).toEqual(["1: Exhibits"]);
+		expect(check("Run exhibits.md#run-a-source.")).toEqual(["1: Run a source"]);
 	});
 
 	test("an anchor to a missing section and a heading that left the law fail", () => {
@@ -129,22 +130,6 @@ describe("the check of the links", () => {
 		expect(check('Read the "Nowhere" section of `constitution.md`.')).toEqual(
 			[],
 		);
-	});
-
-	test("an anchor into exhibits.md stands in the input or fails", () => {
-		const failing = missing(
-			linksIn("Run exhibits.md#run-a-source."),
-			["Run exhibits.md#run-a-source."],
-			reads,
-		);
-		expect(failing).toEqual(["1: Run a source"]);
-		expect(
-			missing(
-				linksIn("Run exhibits.md#run-a-source."),
-				["Run exhibits.md#run-a-source."],
-				readBy([["exhibits.md", ["Run a source"]]]),
-			),
-		).toEqual([]);
 	});
 
 	test("a reader of a section reads the sections that it names", () => {

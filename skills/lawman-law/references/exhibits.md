@@ -1,6 +1,6 @@
 # Reading an exhibit
 
-A role reads this file when it quotes a line or a claim of absence. It reads the file as well when it meets a path that is missing at `<ref>`, reads an external source, or sends to one. It also reads it when it asks an expert. The file says what each rule of `LAW.md#exhibits` needs an exhibit to show. `<ref>` is the commit at which the skill reads the precinct. Investigation uses its analysed commit.
+The file says what each rule of `LAW.md#exhibits` needs an exhibit to show. `<ref>` is the commit at which the skill reads the precinct. Investigation uses its analysed commit.
 
 An exhibit records the exact command the role ran, so another role can repeat it. A role repeats a recorded command only when the command reads the precinct at the recorded ref and writes nothing. A source command of a department page that passes its check stays allowed, as the "Run a source" section says. Every value in a repeated command keeps the protections of the law.
 

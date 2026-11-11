@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman court, which takes one order on a case af
 
 One tick takes one order on a case after the parties, re-reads the exhibits, decides, writes the ruling as a comment, and exits.
 
-The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the `exhibits.md#ask-an-expert` section says. Read that section in `lawman/skills/lawman-law/references/exhibits.md` only when you ask.
+The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
 
 ## Limits
 
@@ -21,7 +21,8 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` when the case quotes such a command. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
+- Your input holds the sections of `exhibits.md` that every run applies. The others stand in `lawman/skills/lawman-law/references/exhibits.md`. Read one once, and only when a rule or step that names it applies to the case. `Run a source` also needs `Source values`.
 
 ## Tick
 
@@ -115,7 +116,7 @@ When `answer` is `comment`, read the comment with the id `answer_id`. The tick g
    - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
 2. Read the history of each exhibit path that the court re-reads, up to `<sha>`. For each commit that touched it, read the short hash and the subject.
 3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case or a decision of a party only through the heredoc form.
-4. A command output quoted in the case or a decision of a party counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` now, unless you read them already. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+4. A command output quoted in the case or a decision of a party counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 5: decide

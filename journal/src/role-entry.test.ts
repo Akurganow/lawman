@@ -221,7 +221,7 @@ function expected(role: string): Expected[] {
 			.map(([, wanted]) => ({
 				head: "law exhibits.md",
 				headings: wanted.map((n) =>
-					n === "intro" ? "# Reading an exhibit" : `## ${n}`,
+					n === "intro" ? (file("exhibits.md")[0] ?? "") : `## ${n}`,
 				),
 			})),
 	];

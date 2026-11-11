@@ -7,7 +7,7 @@ description: Reads the case on one issue at the commit it was built on, decides 
 
 One tick takes one order on an issue, reads the case, decides charge, return or decline, writes the decision as a comment, and exits.
 
-The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the `exhibits.md#ask-an-expert` section says. Read that section in `lawman/skills/lawman-law/references/exhibits.md` only when you ask.
+The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
 
 ## Limits
 
@@ -21,7 +21,8 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` when the case quotes such a command. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
+- Your input holds the sections of `exhibits.md` that every run applies. The others stand in `lawman/skills/lawman-law/references/exhibits.md`. Read one once, and only when a rule or step that names it applies to the case. `Run a source` also needs `Source values`.
 
 ## Tick
 
@@ -89,7 +90,7 @@ A related issue is evidence of the case, never a reason to close it.
 1. Re-read the decisive exhibit of each claim at `<sha>`.
    - Read a cited range with its numbers, as the `exhibits.md#read-numbered-lines` section says.
    - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
-2. A command output quoted in the case counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` now, unless you read them already. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+2. A command output quoted in the case counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 3. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:

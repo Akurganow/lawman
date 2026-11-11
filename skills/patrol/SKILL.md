@@ -183,7 +183,6 @@ Title: `[Lead] <department>: <symbol>: <what>`
 
 The body holds every part of the law's `LAW.md#the-lead-body` section. These rules fill its patrol slots:
 
-- The extra sections come from the page section Lead body.
 - For a fixed candidate, `## What` names the closed issue.
 - For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
