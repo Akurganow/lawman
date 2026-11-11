@@ -2,7 +2,6 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { human, T } from "./cases-fixture";
-import * as cleanHost from "./clean-host";
 import { cleanHostText } from "./clean-host";
 import * as db from "./db";
 import { EXIT } from "./db";
@@ -121,13 +120,8 @@ describe("the text command", () => {
 		expect(await text("main", "issue", "3", "body", "--part", "1")).toEqual(r);
 	});
 
-	test("cleans the cached text again", async () => {
-		await started(16000, "short");
-		seed((d) =>
-			d.run("UPDATE issues SET body = ? WHERE issue = 3", [
-				`first ${TOKEN}\nsecond​ line`,
-			]),
-		);
+	test("prints the text as the sync cleaned it", async () => {
+		await started(16000, `first ${TOKEN}\nsecond​ line`);
 		const r = await text("main", "issue", "3", "body");
 		expect(r.out).not.toContain(TOKEN);
 		expect(inside(r.out)).toEqual([`first ${LABEL}`, "second line"]);
@@ -138,12 +132,12 @@ describe("the text command", () => {
 		seed((d) =>
 			d.run(
 				"INSERT INTO pulls (precinct, number, issues, spec, body) VALUES ('main', 8, '', '', ?)",
-				[`pull ${TOKEN}\nbody`],
+				["pull text\nbody"],
 			),
 		);
 		const r = await text("main", "pull", "8", "body");
 		expect(r.out.split("\n")[1]).toBe("~~~pull");
-		expect(inside(r.out)).toEqual([`pull ${LABEL}`, "body"]);
+		expect(inside(r.out)).toEqual(["pull text", "body"]);
 	});
 
 	test("prints a comment under its header, the id line first inside the fence", async () => {
@@ -242,9 +236,6 @@ describe("the text command", () => {
 		const lines = rowsOf(200);
 		lines[100] = `middle ${TOKEN}`;
 		await started(2000, lines.join("\n"));
-		seed((d) =>
-			d.run("UPDATE issues SET body = ? WHERE issue = 3", [lines.join("\n")]),
-		);
 		const all = await parts("main", "issue", "3", "body");
 		expect(all.join("\n")).not.toContain(TOKEN);
 		expect(all.flatMap(inside)).toContain(`middle ${LABEL}`);
@@ -281,39 +272,6 @@ describe("the text command", () => {
 		}
 	});
 
-	test("cleans only the selected text, so a failure on another comment does not block it", async () => {
-		await started(16000, "the body", [
-			{ id: "IC_a", at: AT, body: "bad comment" },
-			{ id: "IC_b", at: AT, body: "good comment" },
-		]);
-		const seen: string[] = [];
-		const spy = spyOn(cleanHost, "cleanHostText").mockImplementation(
-			async (t) => {
-				seen.push(t);
-				if (t.includes("bad")) throw new Error("the library quotes the input");
-				return t;
-			},
-		);
-		try {
-			const r = await text("main", "issue", "3", "comment", AT, "2");
-			expect(r.code).toBe(0);
-			expect(inside(r.out)).toEqual([
-				`id="IC_b" author="${LOGIN}"`,
-				"good comment",
-			]);
-			expect(seen).toEqual(["good comment"]);
-			seen.length = 0;
-			expect((await text("main", "issue", "3", "body")).code).toBe(0);
-			expect(seen).toEqual(["the body"]);
-			const failed = await text("main", "issue", "3", "comment", AT, "1");
-			expect(failed.code).toBe(1);
-			expect(failed.err).toContain("a library failed while cleaning");
-			expect(failed.err).not.toContain("quotes the input");
-		} finally {
-			spy.mockRestore();
-		}
-	});
-
 	test("exits 1 for a part out of range", async () => {
 		await started(16000, "alpha");
 		const r = await text("main", "issue", "3", "body", "--part", "2");
@@ -344,7 +302,7 @@ describe("the text command", () => {
 	});
 });
 
-test("an invalid input_chars reads as the default, as the tick does", async () => {
+test("an invalid input_chars exits 1 as the tick does", async () => {
 	// clean
 	const cleanIn = async (input: string, ...args: string[]) => {
 		const stdin = spyOn(db, "readStdin").mockReturnValue(input);
@@ -359,13 +317,13 @@ test("an invalid input_chars reads as the default, as the tick does", async () =
 	for (const args of [[], ["--json"]]) {
 		sized("many");
 		const r = await cleanIn('"x"', ...args);
-		expect(r).toMatchObject({ code: EXIT.OK });
-		expect(r.err).toBe("");
+		expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
+		expect(r.err).toContain("invalid input_chars");
 	}
 	// text
 	await started(16000, "alpha");
 	writeFileSync(join(dir, "config.yaml"), `${CONFIG}input_chars: many\n`);
 	const r = await text("main", "issue", "3", "body");
-	expect(r.code).toBe(0);
-	expect(r.err).toBe("");
+	expect(r.code).toBe(1);
+	expect(r.err).toContain("invalid input_chars");
 });

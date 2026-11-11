@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { fits } from "./args";
+import { EXIT, Fail } from "./db";
 import type { Taken } from "./dispatch";
 import { DEFAULT_INPUT_CHARS } from "./input-parts";
 import { commandFolder } from "./launch";
@@ -18,12 +19,16 @@ export function readText(path: string): string | null {
 
 export const readConfig = () => readText(join(commandFolder(), "config.yaml"));
 
-// a value that is no whole number above zero reads as the default, as `jobs` does
+// read only when there is something to print, so a bad value never touches an idle check
 export function inputChars(config: string | null): number {
 	const value = configValue(config ?? "", "input_chars");
-	return value !== undefined && fits("number", value)
-		? Number(value)
-		: DEFAULT_INPUT_CHARS;
+	if (value === undefined) return DEFAULT_INPUT_CHARS;
+	if (!fits("number", value))
+		throw new Fail(
+			EXIT.USAGE,
+			`invalid input_chars in config.yaml: ${JSON.stringify(value)}`,
+		);
+	return Number(value);
 }
 
 export const orderLine = (o: Taken) =>

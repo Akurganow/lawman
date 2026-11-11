@@ -100,6 +100,8 @@ describe("a command that finishes later", () => {
 
 describe("source constraints", () => {
 	const LAUNCH = "launch.ts";
+	// the cleaning runs in a child that it can end at its time budget
+	const CLEAN_RUN = "clean-run.ts";
 	const sources = readdirSync(join(JOURNAL, "src")).filter(
 		(f) => f.endsWith(".ts") && !f.includes("test"),
 	);
@@ -124,9 +126,9 @@ describe("source constraints", () => {
 				expect(source(file)).not.toContain(banned);
 	});
 
-	test("only the launch module starts a process", () => {
+	test("only the launch module and the cleaning start a process", () => {
 		expect(sources).toContain(LAUNCH);
-		for (const file of sources.filter((f) => f !== LAUNCH))
+		for (const file of sources.filter((f) => f !== LAUNCH && f !== CLEAN_RUN))
 			for (const banned of [
 				"spawn",
 				"Bun.$",
@@ -135,6 +137,14 @@ describe("source constraints", () => {
 				"Worker(",
 			])
 				expect(source(file)).not.toContain(banned);
+	});
+
+	test("the cleaning starts only the journal itself, with no shell", () => {
+		const run = source(CLEAN_RUN);
+		expect(run.match(/spawn/g)).toEqual(["spawn"]);
+		expect(run).toContain("Bun.spawn(workerCommand(), {");
+		for (const banned of ["Bun.$", "child_process", "exec(", '"sh"', '"-c"'])
+			expect(run).not.toContain(banned);
 	});
 
 	test("the launch module runs the command file itself, with no interpreter", () => {

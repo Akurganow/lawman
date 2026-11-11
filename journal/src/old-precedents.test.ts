@@ -103,14 +103,14 @@ describe("old-precedent list", () => {
 		});
 	});
 
-	test("a failed cleaning exits 1 as sync and text do, because no command ran", async () => {
+	test("a failed cleaning exits as a failed command", async () => {
 		const failing = spyOn(clean, "cleanCharacters").mockRejectedValue(
 			new Error("the library quotes the input"),
 		);
 		try {
 			const r = await inprocFed(BASE, ["old-precedent", "list"], PAGE);
 			expect(r).toEqual({
-				code: EXIT.USAGE,
+				code: EXIT.COMMAND,
 				out: "",
 				err: "journal: the cleaning library failed\n",
 			});

@@ -1197,12 +1197,11 @@ describe("tick input usage", () => {
 		expect(ticks()).toEqual([]);
 	});
 
-	test("an input_chars outside the class reads as the default size", () => {
+	test("an input_chars outside the class exits 1 before a tick starts", () => {
 		setUp(`${CONFIG}input_chars: -5\n`);
 		orderOf("investigation", { issue: 3 });
-		CASES.investigation?.setup();
-		expect(start("investigation").code).toBe(0);
-		expect(ticks()).toHaveLength(1);
+		expect(start("investigation")).toMatchObject({ code: 1, out: "" });
+		expect(ticks()).toEqual([]);
 	});
 });
 

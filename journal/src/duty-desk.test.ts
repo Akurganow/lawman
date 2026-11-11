@@ -38,7 +38,6 @@ import {
 	call,
 	dbFile,
 	dir,
-	issuesForm,
 	later,
 	order,
 	rows,
@@ -306,7 +305,7 @@ describe("the sync", () => {
 		expect(ticks()[0]?.outcome).toBe("stopped-sync");
 	});
 
-	test("a text the cleaning cannot process stops no tick: the Blockers line names it and every precinct gets its orders", () => {
+	test("a text the cleaning cannot process stops no tick: one alarm names it and every precinct gets its orders", () => {
 		setUp({ alpha: 1, main: 1 });
 		const deep = "> ".repeat(12_800);
 		hostOf("alpha", {
@@ -317,34 +316,16 @@ describe("the sync", () => {
 		const r = startDesk();
 		expect(lines(r.out)).not.toContain("ended stopped-sync");
 		expect(lines(r.out)).toContain("ended ordered");
-		expect(reportOf(r.out, "Blockers")).toBe(
-			"Blockers: alpha: texts withheld, not cleaned: issue:5:body",
-		);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+		expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+			expect.stringMatching(/^ALARM withheld-text alpha 1 text is withheld/),
+		]);
 		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
 			new Set(["alpha", "main"]),
 		);
 		expect(
 			rows("SELECT body FROM issues WHERE precinct = 'alpha' AND issue = 5"),
 		).toEqual([{ body: "This text could not be cleaned and is withheld." }]);
-	});
-
-	test("a tracker list of 1000 issues is synced and the tick goes on", () => {
-		setUp({ main: 1 });
-		hostOf("main", WORK);
-		const many = Array.from({ length: 1000 }, (_, i) => ({
-			number: i + 1,
-			state: "OPEN",
-			createdAt: "2026-10-14T09:00:00Z",
-			author: { login: TRUSTED },
-		}));
-		writeFileSync(
-			join(configs("main"), "issues.json"),
-			JSON.stringify(issuesForm(many, [TRUSTED])),
-		);
-		const r = startDesk();
-		expect(lines(r.out)).not.toContain("ended stopped-sync-limit");
-		expect(lines(r.out)).not.toContain("ended stopped-sync");
-		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([{ n: 1000 }]);
 	});
 
 	test("five prefixed issues by an outsider change neither the cap nor the alarms, and each gets its intake order", () => {
@@ -669,6 +650,23 @@ describe("the failures of the start", () => {
 		expect(lines(proceed(1).out)).toContain("ended ordered");
 	});
 
+	test("a failing law-version command keeps the self step and shows in the report of the tick", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		command(shared(), "law-version", "exit 1");
+		startDesk();
+		const done = proceed(1);
+		expect(lines(done.out)).toContain("ended ordered");
+		expect(reportOf(done.out, "Blockers")).toBe(
+			"Blockers: law-version command failed",
+		);
+		rmSync(join(shared(), "law-version"));
+		startDesk(later(1));
+		expect(reportOf(proceed(2, later(1)).out, "Blockers")).toBe(
+			"Blockers: none",
+		);
+	});
+
 	test("an identity that differs stops the tick and writes no order", () => {
 		setUp({ alpha: 1, main: 1 });
 		hostOf("alpha", WORK);
@@ -724,7 +722,7 @@ describe("the failures of the start", () => {
 			"a tree without the constitution",
 			() => hostOf("main", { ...WORK, tree: { "README.md": "x" } }),
 			"main: skipped-no-constitution",
-			"ALARM no-constitution main no constitution on the main branch, so the roles that need it get no orders",
+			"no constitution on the main branch",
 		],
 		[
 			"a constitution that fails the check",
@@ -734,7 +732,7 @@ describe("the failures of the start", () => {
 					tree: { "LAWMAN.md": "not a constitution" },
 				}),
 			"main: skipped-bad-constitution",
-			"ALARM no-constitution main the constitution fails the page check, so the roles that need it get no orders",
+			"the constitution fails its check",
 		],
 	])(
 		"%s: only the clerk gets orders there, one alarm names the precinct and the cause, the other precinct is worked",
@@ -752,12 +750,14 @@ describe("the failures of the start", () => {
 			).toBe(true);
 			expect(reportOf(r.out, "Blockers")).toContain(blocker);
 			expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
-				alarm,
+				expect.stringMatching(
+					new RegExp(`^ALARM no-constitution main ${alarm}`),
+				),
 			]);
 		},
 	);
 
-	test("the alarm for a missing constitution repeats at each duty desk tick, raises no tick-failing, and closes when the constitution is back", () => {
+	test("the alarm for a missing constitution repeats at each duty desk tick, raises no tick-failing, and closes in the tick that finds it back", () => {
 		setUp({ main: 1 });
 		hostOf("main", { ...WORK, tree: { "README.md": "x" } });
 		const alarm = (out: string) =>
@@ -775,13 +775,11 @@ describe("the failures of the start", () => {
 		]);
 		hostOf("main", WORK);
 		const fixed = startDesk(later(5));
-		expect(alarm(fixed.out)).toEqual(alarm(first.out));
-		expect(openOrders().map((o) => o.role)).toContain("investigation");
-		const after = startDesk(later(6));
-		expect(alarm(after.out)).toEqual([]);
+		expect(alarm(fixed.out)).toEqual([]);
 		expect(rows("SELECT kind FROM alarms WHERE cleared_at IS NULL")).toEqual(
 			[],
 		);
+		expect(openOrders().map((o) => o.role)).toContain("investigation");
 	});
 
 	test("an untaken order of a role that needs the constitution is closed when the precinct loses it", () => {

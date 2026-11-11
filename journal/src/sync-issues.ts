@@ -1,11 +1,5 @@
-import {
-	inputRejected,
-	isRecord,
-	linkOrNull,
-	loginList,
-	text,
-	timeOf,
-} from "./form";
+import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { linkOrNull } from "./link";
 import type { GhIssue } from "./markers";
 
 const STATE_REASON = /^[A-Z_]+$/;

@@ -2,6 +2,8 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as clean from "./clean";
+import * as cleanHost from "./clean-host";
+import { WITHHELD } from "./clean-run";
 import * as db from "./db";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
@@ -75,7 +77,7 @@ describe("clean command in process", () => {
 	});
 
 	test.each([[[]], [["--json"]]])(
-		"a thrown cleaner error gives exit 1 and quotes no input %j",
+		"a cleaner that fails on every text is a failed command and quotes no input %j",
 		async (args) => {
 			const input = `"secret words ${TOKEN}"`;
 			const mask = spyOn(clean, "maskSecrets").mockRejectedValue(
@@ -83,7 +85,7 @@ describe("clean command in process", () => {
 			);
 			try {
 				const r = await cleanIn(input, ...args);
-				expect(r.code).toBe(EXIT.USAGE);
+				expect(r.code).toBe(EXIT.COMMAND);
 				expect(r.out).toBe("");
 				expect(r.err).toContain("clean:");
 				expect(r.err).not.toContain("secret words");
@@ -288,5 +290,23 @@ describe("clean command in parts", () => {
 		});
 		const r = await cleanIn(`${"x".repeat(16_000)}\n`);
 		expect(framesOf(r.out).first).toBe("lawman input 1 clean part 1 of 2");
+	});
+
+	test("a text that fails prints as the withheld text", async () => {
+		const real = cleanHost.cleanHostText;
+		const some = spyOn(cleanHost, "cleanHostText").mockImplementation((t) =>
+			t.includes("FAULT")
+				? Promise.reject(new Error("quotes the input"))
+				: real(t),
+		);
+		try {
+			expect(await cleanIn('["FAULT", "fine"]', "--json")).toEqual({
+				code: EXIT.OK,
+				out: `["${WITHHELD}","fine"]\n`,
+				err: "",
+			});
+		} finally {
+			some.mockRestore();
+		}
 	});
 });

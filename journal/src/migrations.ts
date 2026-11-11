@@ -110,6 +110,12 @@ export const MIGRATIONS: string[] = [
 	`
   ALTER TABLE precincts ADD COLUMN constitution_cause TEXT;
   ALTER TABLE issues ADD COLUMN url TEXT;
+  ALTER TABLE issues ADD COLUMN raw_sha TEXT;
+  ALTER TABLE issues ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
   ALTER TABLE pulls ADD COLUMN url TEXT;
+  ALTER TABLE pulls ADD COLUMN raw_sha TEXT;
+  ALTER TABLE pulls ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE comments ADD COLUMN raw_sha TEXT;
+  ALTER TABLE comments ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
   `,
 ];

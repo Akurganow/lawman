@@ -145,6 +145,8 @@ describe("sync", () => {
 			answer_id: null,
 			body: issueOf(17).body,
 			url: null,
+			raw_sha: expect.any(String),
+			withheld: 0,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },

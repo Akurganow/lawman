@@ -5,20 +5,19 @@ import { asciiLower } from "./markers";
 
 export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 
-// the link the host reports for an issue or a pull request; anything else is no link
-const LINK = /^https?:\/\/[\x21-\x7e]{1,2000}$/;
-export const linkOrNull = (v: unknown): string | null =>
-	typeof v === "string" && LINK.test(v) ? v : null;
-
 const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
+const WHOLE =
+	"The command returns the whole list and exits non-zero when it cannot.";
+
 const TEXTS: Record<FormKind, string> = {
 	issues: `issues, for sync. One object.
 ${COMMON}
+${WHOLE}
 
 Fields:
   writers: the logins that may write to the repository, access inherited from a group included
@@ -46,6 +45,7 @@ Each comment:
   Both lists matter only on comments written by the trusted login on open issues. Leave them empty elsewhere.`,
 	pulls: `pulls, for sync --pulls. One object.
 ${COMMON}
+${WHOLE}
 
 Fields:
   writers: the logins that may write to the repository, access inherited from a group included

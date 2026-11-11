@@ -1,21 +1,15 @@
 import type { Database } from "bun:sqlite";
 import {
-	type Cleaned,
 	cleanTexts,
 	dropComments,
 	type HostText,
 	storeComments,
-	uncleanedField,
+	type TextDone,
+	withheldCount,
 } from "./cache-text";
 import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
-import {
-	inputRejected,
-	isRecord,
-	linkOrNull,
-	loginList,
-	text,
-	timeOf,
-} from "./form";
+import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { linkOrNull } from "./link";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
@@ -180,6 +174,7 @@ function workOf(
 }
 
 export type ReadPull = { row: PullRow; text: HostText; url: string | null };
+type StoredPull = Omit<ReadPull, "text"> & { text: TextDone };
 
 const pullText = (pull: Pull): HostText => ({
 	body: pull.body,
@@ -215,12 +210,12 @@ export function readPulls(input: string, login: string): ReadPull[] {
 	return read;
 }
 
-function replacePulls(db: Database, name: string, read: ReadPull[]): void {
+function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
 	dropComments(db, name, "pull");
 	for (const { row, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[
 				name,
 				row.number,
@@ -228,15 +223,17 @@ function replacePulls(db: Database, name: string, read: ReadPull[]): void {
 				row.spec,
 				row.work,
 				row.spec_id,
-				text.body,
+				text.body.text,
 				url,
+				text.body.sha,
+				Number(text.body.withheld),
 			],
 		);
 		storeComments(db, name, "pull", row.number, text.comments, reject);
 	}
 }
 
-// Each text is cleaned before the transaction, alone. A text that fails is stored as a placeholder and named in the line.
+// Each text is cleaned before the transaction, alone, and only when it changed. A text that fails is stored withheld.
 export async function syncPulls(
 	name: string,
 	login: string,
@@ -247,11 +244,12 @@ export async function syncPulls(
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
 	});
 	const parsed = readPulls(input, login);
-	const cleaned = await cleanTexts(parsed.map((p) => p.text));
-	const read = parsed.map((p, i) => ({
-		...p,
-		text: (cleaned[i] as Cleaned).text,
-	}));
+	const cleaned = await cleanTexts(
+		name,
+		"pull",
+		parsed.map((p) => ({ item: p, number: p.row.number, text: p.text })),
+	);
+	const read = cleaned.map(({ item, done }) => ({ ...item, text: done }));
 	return withDb((db) => {
 		try {
 			inTransaction(db, () => {
@@ -265,10 +263,7 @@ export async function syncPulls(
 			if (!isConstraint(e)) throw e;
 			throw reject("a pull request number repeats");
 		}
-		const held = parsed.map((p, i) => ({
-			number: p.row.number,
-			failed: (cleaned[i] as Cleaned).failed,
-		}));
-		return `pulls=${read.length}${uncleanedField("pull", held)}`;
+		const held = withheldCount(cleaned);
+		return `pulls=${read.length}${held > 0 ? ` withheld=${held}` : ""}`;
 	});
 }

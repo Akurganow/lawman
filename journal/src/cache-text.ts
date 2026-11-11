@@ -1,8 +1,9 @@
 import type { Database } from "bun:sqlite";
+import pkg from "../package.json";
 import { fits } from "./args";
 import { cleanCharacters, countSecretMarks } from "./clean";
-import { cleanHostText } from "./clean-host";
-import { type Fail, isConstraint } from "./db";
+import { type Cleaned, CleanFailed, cleanEach } from "./clean-run";
+import { type Fail, isConstraint, withDb } from "./db";
 import {
 	type Block,
 	cutToFit,
@@ -19,50 +20,91 @@ export type CommentText = {
 };
 export type HostText = { body: string; comments: CommentText[] };
 
-// a library error can quote the input, so each caller prints its own message
-export class CleanFailed extends Error {}
+// A cleaned text with the hash of the raw text it came from, so the same raw text is cleaned once.
+export type Done = { text: string; sha: string; withheld: boolean };
+export type CommentDone = Omit<CommentText, "body"> & { done: Done };
+export type TextDone = { body: Done; comments: CommentDone[] };
 
-// what a role reads in place of a text that could not be cleaned
-export const WITHHELD = "This text could not be cleaned and is withheld.";
+export { CleanFailed } from "./clean-run";
 
-export type Part = "body" | "comment";
-// a text held back: which of its parts failed, as the sync line names them
-export type Cleaned = { text: HostText; failed: Part[] };
+// the hash covers the journal version, so a new cleaning cleans again what the old one cleaned
+const shaOf = (raw: string) =>
+	new Bun.CryptoHasher("sha256").update(`${pkg.version}\n${raw}`).digest("hex");
 
-// A text that the cleaning cannot process is replaced whole, never kept raw or part cleaned.
-async function cleanPart(text: string): Promise<string | null> {
-	try {
-		return await cleanHostText(text);
-	} catch {
-		return null;
-	}
-}
+type Prior = { sha: string | null; text: string; withheld: number };
 
-async function cleanText(text: HostText): Promise<Cleaned> {
-	const failed = new Set<Part>();
-	const one = async (body: string, part: Part) => {
-		const cleaned = await cleanPart(body);
-		if (cleaned !== null) return cleaned;
-		failed.add(part);
-		return WITHHELD;
-	};
-	const body = await one(text.body, "body");
-	const comments: CommentText[] = [];
-	for (const c of text.comments)
-		comments.push({ ...c, body: await one(c.body, "comment") });
-	return { text: { body, comments }, failed: [...failed] };
-}
-
-// the sync line's field for the texts held back, empty when none failed
-export const uncleanedField = (
+// what the cache holds now, by issue or pull number and by comment id
+function priorTexts(
+	db: Database,
+	precinct: string,
 	kind: TextKind,
-	held: { number: number; failed: Part[] }[],
-) => {
-	const names = held.flatMap((h) =>
-		h.failed.map((part) => `${kind}:${h.number}:${part}`),
+): Map<string, Prior> {
+	const prior = new Map<string, Prior>();
+	const table = kind === "issue" ? "issues" : "pulls";
+	const number = kind === "issue" ? "issue" : "number";
+	for (const r of db
+		.query(
+			`SELECT ${number} AS n, raw_sha AS sha, body AS text, withheld FROM ${table} WHERE precinct = ?`,
+		)
+		.all(precinct) as (Prior & { n: number })[])
+		prior.set(String(r.n), r);
+	for (const r of db
+		.query(
+			"SELECT number AS n, id, raw_sha AS sha, body AS text, withheld FROM comments WHERE precinct = ? AND kind = ?",
+		)
+		.all(precinct, kind) as (Prior & { n: number; id: string })[])
+		prior.set(`${r.n}\0${r.id}`, r);
+	return prior;
+}
+
+// The texts of one kind, each cleaned alone and only when it changed since the cache holds it.
+// A text that cannot be cleaned, or does not finish in time, comes back withheld.
+export async function cleanTexts<I>(
+	precinct: string,
+	kind: TextKind,
+	items: { item: I; number: number; text: HostText }[],
+): Promise<{ item: I; done: TextDone }[]> {
+	const prior = withDb((db) => priorTexts(db, precinct, kind));
+	type Unit = { key: string; raw: string };
+	const units = items.flatMap(({ number, text }): Unit[] => [
+		{ key: String(number), raw: text.body },
+		...text.comments.map((c) => ({ key: `${number}\0${c.id}`, raw: c.body })),
+	]);
+	const fresh = units.filter((u) => prior.get(u.key)?.sha !== shaOf(u.raw));
+	const cleaned = await cleanEach([...new Set(fresh.map((u) => u.raw))]);
+	const done = new Map<string, Done>();
+	for (const u of units) {
+		const sha = shaOf(u.raw);
+		const old = prior.get(u.key);
+		if (old?.sha === sha)
+			done.set(u.key, { text: old.text, sha, withheld: old.withheld === 1 });
+		else {
+			const c = cleaned.get(u.raw) as Cleaned;
+			done.set(u.key, { text: c.text, sha, withheld: c.withheld });
+		}
+	}
+	return items.map(({ item, number, text }) => ({
+		item,
+		done: {
+			body: done.get(String(number)) as Done,
+			comments: text.comments.map((c) => ({
+				id: c.id,
+				author: c.author,
+				at: c.at,
+				done: done.get(`${number}\0${c.id}`) as Done,
+			})),
+		},
+	}));
+}
+
+export const withheldCount = (cleaned: { done: TextDone }[]) =>
+	cleaned.reduce(
+		(n, { done }) =>
+			n +
+			Number(done.body.withheld) +
+			done.comments.filter((c) => c.done.withheld).length,
+		0,
 	);
-	return names.length === 0 ? "" : ` uncleaned=${names.join(",")}`;
-};
 
 export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 	try {
@@ -71,10 +113,6 @@ export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 		throw new CleanFailed();
 	}
 }
-
-// each text is cleaned alone, so one that fails stops nothing else
-export const cleanTexts = (texts: HostText[]) =>
-	Promise.all(texts.map(cleanText));
 
 export function dropComments(db: Database, precinct: string, kind: TextKind) {
 	db.run("DELETE FROM comments WHERE precinct = ? AND kind = ?", [
@@ -88,14 +126,24 @@ export function storeComments(
 	precinct: string,
 	kind: TextKind,
 	number: number,
-	comments: CommentText[],
+	comments: CommentDone[],
 	reject: (why: string) => Fail,
 ): void {
 	for (const c of comments) {
 		try {
 			db.run(
-				"INSERT INTO comments (precinct, kind, number, id, author, at, body) VALUES (?, ?, ?, ?, ?, ?, ?)",
-				[precinct, kind, number, c.id, c.author, c.at, c.body],
+				"INSERT INTO comments (precinct, kind, number, id, author, at, body, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				[
+					precinct,
+					kind,
+					number,
+					c.id,
+					c.author,
+					c.at,
+					c.done.text,
+					c.done.sha,
+					Number(c.done.withheld),
+				],
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
@@ -179,7 +227,7 @@ const bodyOf = (db: Database, k: Omit<TextKey, "part">) =>
 async function commentBlock(c: CommentRow): Promise<FencedBlock> {
 	return fencedBlock(
 		"comment",
-		`${await header(c)}\n${await cleanHostText(c.body)}`,
+		`${await header(c)}\n${c.body}`,
 		`comment at=${c.at}`,
 	);
 }
@@ -188,7 +236,7 @@ async function commentBlock(c: CommentRow): Promise<FencedBlock> {
 const fit = (block: FencedBlock, k: TextKey, size: number) =>
 	cutToFit(block, size, fullLine(k), countSecretMarks);
 
-// Every cached text is cleaned again, so a text an older cleaning stored prints clean.
+// A cached text was cleaned when the sync stored it, so it prints as stored.
 // Null when the cache holds no such issue or pull request.
 export async function printCached(
 	db: Database,
@@ -205,11 +253,7 @@ export async function printCached(
 		.all(precinct, kind, number) as CommentRow[];
 	return cleaning(async () => {
 		const blocks = [
-			fit(
-				fencedBlock(kind, await cleanHostText(body)),
-				{ ...key, part: "body" },
-				size,
-			),
+			fit(fencedBlock(kind, body), { ...key, part: "body" }, size),
 		];
 		let j = 0;
 		let at: string | null = null;
@@ -232,9 +276,7 @@ export async function printText(
 	const body = bodyOf(db, key);
 	if (body === null) return null;
 	if (key.part === "body")
-		return cleaning(async () =>
-			fencedBlock(key.kind, await cleanHostText(body)),
-		);
+		return cleaning(async () => fencedBlock(key.kind, body));
 	const row = db
 		.query(`${COMMENTS} AND at = ? ORDER BY id LIMIT 1 OFFSET ?`)
 		.get(

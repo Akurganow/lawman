@@ -1,9 +1,11 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
+import { lackText } from "./constitution";
 import { LEAD_ORIGIN_FROM, MINUTE_MS, out, withDb } from "./db";
 import { readConfig } from "./input-files";
 import { configValue } from "./law-sync";
+import { type Subject, urlOf } from "./link";
 import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
 import { progressChecks } from "./settings";
@@ -87,7 +89,7 @@ function tickFailing(db: Database): Candidate[] {
 			`WITH ranked AS (
          SELECT role, COALESCE(precinct, '-') AS precinct, outcome,
                 ROW_NUMBER() OVER (PARTITION BY role, COALESCE(precinct, '-') ORDER BY ended_at DESC, id DESC) AS n
-         FROM ticks WHERE ended_at IS NOT NULL)
+         FROM ticks WHERE ended_at IS NOT NULL AND (precinct IS NOT NULL OR role = 'duty-desk'))
        SELECT role, precinct FROM ranked WHERE n <= ${TICK_FAILING_RUN}
        GROUP BY role, precinct
        HAVING count(*) = ${TICK_FAILING_RUN}
@@ -102,18 +104,7 @@ function tickFailing(db: Database): Candidate[] {
 	}));
 }
 
-// the link the host reported for an issue or a pull request ends the alarm line
-const linked = (detail: string, url: string | null) =>
-	url === null ? detail : `${detail} ${url}`;
-
-export const NO_CONSTITUTION: Record<string, string> = {
-	"skipped-no-constitution": "no constitution on the main branch",
-	"skipped-bad-constitution": "the constitution fails the page check",
-	"skipped-contract-version":
-		"the constitution declares a contract version the law does not support",
-};
-
-// the duty desk records the cause at each read of a precinct; the roles that need the constitution get no orders
+// the duty desk records the cause at each read of a precinct
 function noConstitution(db: Database): Candidate[] {
 	const rows = db
 		.query(
@@ -123,8 +114,45 @@ function noConstitution(db: Database): Candidate[] {
 	return rows.map((r) => ({
 		kind: "no-constitution",
 		ref: r.name,
-		detail: `${NO_CONSTITUTION[r.cause] ?? r.cause}, so the roles that need it get no orders`,
+		detail: lackText(r.cause),
 	}));
+}
+
+// How many texts the cache withholds on a precinct, and the first of them with their links.
+const NAMED = 3;
+const COMMENT_ID = /^[A-Za-z0-9_=-]+$/;
+function withheldTexts(db: Database): Candidate[] {
+	const precincts = db
+		.query("SELECT name FROM precincts WHERE weight > 0 ORDER BY name")
+		.all() as { name: string }[];
+	return precincts.flatMap(({ name }) => {
+		const found = db
+			.query(
+				`SELECT 'issue' AS kind, issue AS number, NULL AS id FROM issues WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT 'pull', number, NULL FROM pulls WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT kind, number, id FROM comments WHERE precinct = ?1 AND withheld = 1
+         ORDER BY 2, 1, 3`,
+			)
+			.all(name) as { kind: Subject; number: number; id: string | null }[];
+		if (found.length === 0) return [];
+		const named = found.slice(0, NAMED).map((t) => {
+			const url = urlOf(db, name, t.kind, t.number);
+			const what =
+				t.id === null
+					? `${t.kind} #${t.number}`
+					: `comment ${COMMENT_ID.test(t.id) ? `${t.id} ` : ""}on ${t.kind} #${t.number}`;
+			return url === null ? what : `${what} ${url}`;
+		});
+		const more =
+			found.length > NAMED ? `, and ${found.length - NAMED} more` : "";
+		return [
+			{
+				kind: "withheld-text",
+				ref: name,
+				detail: `${found.length} text${found.length === 1 ? " is" : "s are"} withheld, because the journal could not clean ${found.length === 1 ? "it" : "them"}: ${named.join("; ")}${more}. Edit or delete each on the host. The next sync cleans it again.`,
+			},
+		];
+	});
 }
 
 const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
@@ -136,7 +164,7 @@ function decisionWaiting(db: Database): Candidate[] {
 	// a precinct of weight 0 is never synced, so its cached rows go stale
 	const waiting = db
 		.query(
-			`SELECT p.precinct, p.number, p.issues, p.work, p.url FROM pulls p
+			`SELECT p.precinct, p.number, p.issues, p.work FROM pulls p
        WHERE (p.spec = 'waiting' OR p.work = 'ready')
          AND EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)
        ORDER BY p.precinct, p.number`,
@@ -146,7 +174,6 @@ function decisionWaiting(db: Database): Candidate[] {
 		number: number;
 		issues: string;
 		work: string;
-		url: string | null;
 	}[];
 	const pairs = waiting
 		.filter((p) => isHanded(sourceMarkers(db, p.precinct, p.issues), p.number))
@@ -154,30 +181,33 @@ function decisionWaiting(db: Database): Candidate[] {
 			...p,
 			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
 		}));
+	// a pull request that both lists name has one alarm: the handed one wins
+	const seen = new Set<string>();
 	return [...pairs, ...precedentWaiting(db)]
+		.filter((p) => {
+			const ref = `${p.precinct}#${p.number}`;
+			if (seen.has(ref)) return false;
+			seen.add(ref);
+			return true;
+		})
 		.sort((a, b) => byText(a.precinct, b.precinct) || a.number - b.number)
 		.map((p) => ({
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
-			detail: linked(p.detail, p.url),
+			detail: p.detail,
 		}));
 }
 
-type Waiting = {
-	precinct: string;
-	number: number;
-	detail: string;
-	url: string | null;
-};
+type Waiting = { precinct: string; number: number; detail: string };
 
 // a precedent pull request has no sources: the clerk's entry marker names it
 function precedentWaiting(db: Database): Waiting[] {
 	const open = db
 		.query(
-			`SELECT p.precinct, p.number, p.url FROM pulls p
+			`SELECT p.precinct, p.number FROM pulls p
        WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)`,
 		)
-		.all() as { precinct: string; number: number; url: string | null }[];
+		.all() as { precinct: string; number: number }[];
 	const waiting = new Map(
 		[...new Set(open.map((p) => p.precinct))].map((precinct) => [
 			precinct,
@@ -198,6 +228,7 @@ const DETECTORS = [
 	tickFailing,
 	decisionWaiting,
 	noConstitution,
+	withheldTexts,
 ] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
@@ -209,29 +240,46 @@ type OpenAlarm = {
 
 // a changed detail is a new condition: the old alarm clears and the new one prints
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
-const alarmLine = (a: Candidate) => `ALARM ${a.kind} ${a.ref} ${a.detail}`;
+
+// The alarm kinds whose truth the duty desk settles during its tick, so it repeats them at
+// the end of the tick and not at the start.
+const SETTLED_AT_END = ["no-constitution", "withheld-text"];
+
+// An alarm about an issue or a pull request ends with its link. The address is looked up
+// from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
+const SUBJECTS: Record<string, Subject> = { "decision-waiting": "pull" };
+
+function alarmLine(db: Database, a: Candidate): string {
+	const subject = SUBJECTS[a.kind];
+	const [precinct = "", number = ""] = a.ref.split("#");
+	const url =
+		subject === undefined ? null : urlOf(db, precinct, subject, Number(number));
+	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
+}
+
+// "none": no repeat. "start": the duty desk's start repeats the open alarms except those it
+// settles at its end. "end": its end repeats those.
+export type Repeat = "none" | "start" | "end";
 
 export function reconcileAlarms(
 	db: Database,
 	stamp: string,
-	repeat: boolean,
+	repeat: Repeat,
 ): string[] {
 	const nowMs = Date.parse(stamp);
-	// one open alarm holds a kind and a ref, so a second condition on the same key adds nothing
-	const seen = new Set<string>();
-	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs)).filter(
-		(a) => {
-			const key = `${a.kind} ${a.ref}`;
-			if (seen.has(key)) return false;
-			seen.add(key);
-			return true;
-		},
+	// the duty desk settles two kinds at the end of its tick, after its own sync and reads
+	const mine = (kind: string) =>
+		repeat !== "start" || !SETTLED_AT_END.includes(kind);
+	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs)).filter((a) =>
+		mine(a.kind),
 	);
-	const open = db
-		.query(
-			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
-		)
-		.all() as OpenAlarm[];
+	const open = (
+		db
+			.query(
+				"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+			)
+			.all() as OpenAlarm[]
+	).filter((o) => mine(o.kind));
 	const wantedKeys = new Set(wanted.map(alarmKey));
 	const openKeys = new Set(open.map(alarmKey));
 	const lines: string[] = [];
@@ -246,13 +294,15 @@ export function reconcileAlarms(
 			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES (?, ?, ?, ?, ?)",
 			[w.kind, w.ref, w.detail, stamp, stamp],
 		);
-		lines.push(alarmLine(w));
+		lines.push(alarmLine(db, w));
 	}
 	// the duty desk repeats an open alarm at each of its ticks; the alarms this
 	// call raised are printed once above and never repeated here
-	if (repeat)
-		for (const o of open)
-			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(o));
+	const repeated = (kind: string) =>
+		repeat === "end" ? SETTLED_AT_END.includes(kind) : repeat === "start";
+	for (const o of open)
+		if (wantedKeys.has(alarmKey(o)) && repeated(o.kind))
+			lines.push(alarmLine(db, o));
 	return lines;
 }
 

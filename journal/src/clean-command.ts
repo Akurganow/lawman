@@ -1,5 +1,6 @@
 import { parsePart, partOutOfRange, usage } from "./args";
-import { cleanHostText } from "./clean-host";
+import { CleanFailed } from "./cache-text";
+import { cleanEach } from "./clean-run";
 import { EXIT, Fail, out, readStdin } from "./db";
 import { inputChars, readConfig } from "./input-files";
 import { framed, runs } from "./input-parts";
@@ -11,14 +12,17 @@ const PART_FLAG = "--part";
 const NOT_JSON =
 	"clean: the input does not parse as JSON values; read the host reply again";
 const CLEAN_FAILED =
-	"clean: a library failed while cleaning the text; run the command again";
+	"clean: the cleaning failed on a text that is known to be good; the installation needs repair";
 
-// a library error can quote the input, so its message never reaches stderr
-async function cleaned(text: string): Promise<string> {
+// A text that cannot be cleaned prints as the withheld text, as it does in the cache. A
+// cleaning that fails for a good text too is a failed command.
+async function cleanedTexts(texts: string[]): Promise<Map<string, string>> {
 	try {
-		return await cleanHostText(text);
-	} catch {
-		throw new Fail(EXIT.USAGE, CLEAN_FAILED);
+		const done = await cleanEach(texts);
+		return new Map([...done].map(([text, r]) => [text, r.text]));
+	} catch (e) {
+		if (e instanceof CleanFailed) throw new Fail(EXIT.COMMAND, CLEAN_FAILED);
+		throw e;
 	}
 }
 
@@ -38,15 +42,23 @@ function parsedValues(text: string): unknown[] {
 	return values;
 }
 
+const stringsOf = (value: unknown): string[] =>
+	typeof value === "string"
+		? [value]
+		: Array.isArray(value)
+			? value.flatMap(stringsOf)
+			: value !== null && typeof value === "object"
+				? Object.values(value).flatMap(stringsOf)
+				: [];
+
 // fromEntries defines own properties, so a __proto__ key stays plain data
-async function cleanedValue(value: unknown): Promise<unknown> {
-	if (typeof value === "string") return cleaned(value);
-	if (Array.isArray(value)) return Promise.all(value.map(cleanedValue));
+function replaced(value: unknown, by: Map<string, string>): unknown {
+	if (typeof value === "string") return by.get(value);
+	if (Array.isArray(value)) return value.map((v) => replaced(v, by));
 	if (value === null || typeof value !== "object") return value;
-	const entries = Object.entries(value).map(
-		async ([key, inner]) => [key, await cleanedValue(inner)] as const,
+	return Object.fromEntries(
+		Object.entries(value).map(([k, v]) => [k, replaced(v, by)]),
 	);
-	return Object.fromEntries(await Promise.all(entries));
 }
 
 const lineList = (text: string) => (text.trim() === "" ? [] : text.split("\n"));
@@ -68,11 +80,11 @@ export async function cleanCommand(args: string[]): Promise<number> {
 	const { json, part } = options(args);
 	const size = inputChars(readConfig());
 	const input = readStdin();
+	const values = json ? parsedValues(input) : [];
+	const by = await cleanedTexts(json ? values.flatMap(stringsOf) : [input]);
 	const lines = json
-		? (await Promise.all(parsedValues(input).map(cleanedValue))).map((v) =>
-				JSON.stringify(v),
-			)
-		: lineList((await cleaned(input)).replace(/\n$/, ""));
+		? values.map((v) => JSON.stringify(replaced(v, by)))
+		: lineList((by.get(input) ?? "").replace(/\n$/, ""));
 	const pieces = runs(lines, size, 0);
 	const wanted = part ?? 1;
 	if (wanted > pieces.length) throw partOutOfRange(wanted, pieces.length);

@@ -2,12 +2,13 @@ import type { Database } from "bun:sqlite";
 import { answerOf, hasMarkerLine, MARKER_PREFIX } from "./answer";
 import { check, parseArgs, usage } from "./args";
 import {
-	type Cleaned,
+	CleanFailed,
 	cleanTexts,
 	dropComments,
 	type HostText,
 	storeComments,
-	uncleanedField,
+	type TextDone,
+	withheldCount,
 } from "./cache-text";
 import {
 	EXIT,
@@ -23,6 +24,8 @@ import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
+const CLEAN_FAILED =
+	"sync: the cleaning library failed on a text that is known to be good, so the cache is untouched; the installation needs repair";
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
 
 type SyncStats = {
@@ -105,13 +108,13 @@ function storeIssue(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
-	text: HostText,
+	text: TextDone,
 	trust: Trust,
 	stats: SyncStats,
 ): void {
 	const answer = answerOf(issue, trust.login, trust.writers);
 	db.run(
-		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		[
 			name,
 			issue.number,
@@ -123,8 +126,10 @@ function storeIssue(
 			repliedAt(issue),
 			answer?.answer ?? null,
 			answer?.id ?? null,
-			text.body,
+			text.body.text,
 			issue.url,
+			text.body.sha,
+			Number(text.body.withheld),
 		],
 	);
 	storeComments(db, name, "issue", issue.number, text.comments, syncInput);
@@ -137,7 +142,7 @@ function replaceCache(
 	name: string,
 	trust: Trust,
 	issues: SyncIssue[],
-	texts: Map<SyncIssue, HostText>,
+	texts: Map<SyncIssue, TextDone>,
 	reset: boolean,
 ): SyncStats {
 	const stats: SyncStats = {
@@ -173,7 +178,7 @@ function takeFlag(args: string[], flag: string): [string[], boolean] {
 	return [rest, rest.length < args.length];
 }
 
-// Each text is cleaned before the transaction, alone. A text that fails is stored as a placeholder and named in the line.
+// Each text is cleaned before the transaction, alone, and only when it changed. A text that fails is stored withheld.
 export async function syncIssues(
 	name: string,
 	login: string,
@@ -182,10 +187,16 @@ export async function syncIssues(
 ): Promise<string> {
 	const { writers, issues } = readIssues(input);
 	const stored = issues.filter(isHuman);
-	const cleaned = await cleanTexts(stored.map(issueText));
-	const texts = new Map(
-		stored.map((issue, i) => [issue, (cleaned[i] as Cleaned).text]),
+	const cleaned = await cleanTexts(
+		name,
+		"issue",
+		stored.map((issue) => ({
+			item: issue,
+			number: issue.number,
+			text: issueText(issue),
+		})),
 	);
+	const texts = new Map(cleaned.map(({ item, done }) => [item, done]));
 	return withDb((db) => {
 		let stats: SyncStats;
 		try {
@@ -198,11 +209,8 @@ export async function syncIssues(
 				"the issues break a cache constraint, for example a repeated number",
 			);
 		}
-		const held = stored.map((issue, i) => ({
-			number: issue.number,
-			failed: (cleaned[i] as Cleaned).failed,
-		}));
-		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}${uncleanedField("issue", held)}`;
+		const held = withheldCount(cleaned);
+		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}${held > 0 ? ` withheld=${held}` : ""}`;
 	});
 }
 
@@ -214,10 +222,15 @@ export async function sync(args: string[]): Promise<number> {
 	const name = check("precinct", pos[0]);
 	const login = check("login", opt.author);
 	const input = readStdin();
-	out(
-		pulls
-			? await syncPulls(name, login, input)
-			: await syncIssues(name, login, input, reset),
-	);
+	try {
+		out(
+			pulls
+				? await syncPulls(name, login, input)
+				: await syncIssues(name, login, input, reset),
+		);
+	} catch (e) {
+		if (e instanceof CleanFailed) throw new Fail(EXIT.COMMAND, CLEAN_FAILED);
+		throw e;
+	}
 	return EXIT.OK;
 }

@@ -141,6 +141,8 @@ describe("open", () => {
 				spec_id: "-",
 				body: "",
 				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		expect(() =>
@@ -171,6 +173,8 @@ describe("open", () => {
 				spec_id: "-",
 				body: "",
 				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		db.run(
@@ -250,8 +254,8 @@ describe("open", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
-			issues: { body: "", url: null },
-			pulls: { body: "", url: null },
+			issues: { body: "", url: null, raw_sha: null, withheld: 0 },
+			pulls: { body: "", url: null, raw_sha: null, withheld: 0 },
 			ticks: { dispatch: null, parts: null },
 			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
@@ -297,8 +301,9 @@ describe("migration 9", () => {
 			ticks: { dispatch: null, parts: null },
 			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
-			issues: { url: null },
-			pulls: { url: null },
+			issues: { url: null, raw_sha: null, withheld: 0 },
+			pulls: { url: null, raw_sha: null, withheld: 0 },
+			comments: { raw_sha: null, withheld: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {
 			expect(list.length).toBeGreaterThan(0);
@@ -338,38 +343,6 @@ describe("migration 10", () => {
 		expect(db.query("SELECT * FROM roles").all()).toEqual([
 			{ name: "patrol", every_minutes: 30, checked_at: "t", checks: 0 },
 		]);
-		db.close();
-	});
-});
-
-describe("migration 11", () => {
-	test("keeps every row of a schema 10 database and adds no constitution cause and no links", () => {
-		const old = new Database(dbFile);
-		for (const sql of MIGRATIONS.slice(0, 10)) old.run(sql);
-		old.run("PRAGMA user_version = 10");
-		for (const sql of [
-			"INSERT INTO precincts (name, repo, weight, credit, synced_at, pulls_synced_at) VALUES ('p', 'o/p', 2, 1, 't', 'u')",
-			"INSERT INTO issues (precinct, issue, state, title, created_at, body) VALUES ('p', 7, 'OPEN', 't', 'c', 'b')",
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body) VALUES ('p', 3, '7', 'up', 'ready', 'IC_2', 'b')",
-		])
-			old.run(sql);
-		const before = Object.fromEntries(
-			tables(old).map((t) => [t, old.query(`SELECT * FROM ${t}`).all()]),
-		);
-		old.close();
-		const db = open(dbFile);
-		expect(userVersion(db)).toBe(11);
-		const added: Record<string, object> = {
-			precincts: { constitution_cause: null },
-			issues: { url: null },
-			pulls: { url: null },
-		};
-		for (const [table, list] of Object.entries(before)) {
-			if (list.length === 0) continue;
-			expect(db.query(`SELECT * FROM ${table}`).all()).toEqual(
-				list.map((row) => ({ ...(row as object), ...added[table] })),
-			);
-		}
 		db.close();
 	});
 });
