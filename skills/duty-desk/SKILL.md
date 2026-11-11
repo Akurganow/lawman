@@ -84,7 +84,7 @@ Do the self steps right after you read the part, before any other work. The line
 | :-- | :-- | :-- |
 | `law-version` | the row `law-version` of the table of self steps in the intro of `tick.md` | `stopped-law-drift`, or `stopped-dirty-law` for a local change |
 | `identity` | the row `identity` of the table of self steps in the intro of `tick.md` | `stopped-host-auth`, or `stopped-identity-changed` for another account |
-| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync`, or `stopped-sync-limit` for exit 3 |
+| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync` |
 | `pulls` | the section `tick.md#sync-the-pull-requests` | none: the tick goes on and the precinct gets no orders |
 
 A failed `law-version`, `identity` or `issues` step ends the tick. Go to step 3. Write no order and do no later self step.

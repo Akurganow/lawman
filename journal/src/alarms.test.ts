@@ -147,44 +147,21 @@ describe("alarms and status", () => {
 			alarmsOnce(later(3), /^ALARM tick-failing patrol\/- .+\n$/);
 		});
 
-		test("broken-lead fires for a [Lead] issue without a lead marker", () => {
+		test("an issue with the lead prefix and no marker raises no alarm, and a left-over broken-lead row clears", () => {
 			seed((db) => {
-				const issue = (n: number, title: string) =>
-					db.run(
-						"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', ?, 'OPEN', ?, ?)",
-						[n, title, BASE],
-					);
-				const marker = (n: number, stage: string) =>
-					db.run(
-						"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('a', ?, '1', 'patrol', ?, '{}', 'raw')",
-						[n, stage],
-					);
-				issue(7, "[Lead] broken");
-				issue(8, "[Lead] fine");
-				marker(8, "lead");
-				issue(9, "ordinary issue about [Lead]");
-				issue(10, "[Lead] only a later stage");
-				marker(10, "verify");
-			});
-			const r = alarm(BASE);
-			expect(
-				r.out
-					.trim()
-					.split("\n")
-					.map((l) => l.split(" ").slice(0, 3).join(" ")),
-			).toEqual(["ALARM broken-lead a#7", "ALARM broken-lead a#10"]);
-		});
-
-		test("broken-lead ends with the link of the issue when the cache holds one", () => {
-			seed((db) =>
 				db.run(
-					"INSERT INTO issues (precinct, issue, state, title, created_at, url) VALUES ('a', 7, 'OPEN', '[Lead] broken', ?, 'https://git.example/o/a/issues/7')",
+					"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', 7, 'OPEN', '[Lead] broken', ?)",
 					[BASE],
-				),
-			);
-			expect(alarm(BASE).out).toBe(
-				"ALARM broken-lead a#7 title starts with [Lead] but no lead marker https://git.example/o/a/issues/7\n",
-			);
+				);
+				db.run(
+					"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('broken-lead', 'a#7', 'title starts with [Lead] but no lead marker', ?, ?)",
+					[BASE, BASE],
+				);
+			});
+			expect(alarm(BASE).out).toBe("");
+			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
+				{ cleared_at: BASE },
+			]);
 		});
 	});
 

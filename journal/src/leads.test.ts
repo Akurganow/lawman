@@ -4,8 +4,7 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import { open } from "./db";
 import { CAP_TABLE } from "./leads";
-import { SYNC_LIMIT } from "./sync";
-import { addPrecincts, dbFile, LAW, must, run, tempDb } from "./test-helpers";
+import { addPrecincts, dbFile, LAW, run, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -243,15 +242,13 @@ describe("leads, seen, cap and last", () => {
 			expect(cap("idle")).toBe("cap=3 open=0");
 		});
 
-		test("an open broken lead without a marker counts by its title", () => {
+		test("an open issue without a marker counts for no department, whatever its title", () => {
 			fill(2);
 			put(400, "OPEN", null, undefined, "[Lead] core: broken");
-			expect(cap("core")).toBe("cap=1 open=3");
-			put(401, "CLOSED", null, undefined, "[Lead] core: closed broken");
 			put(402, "OPEN", null, undefined, "[Lead] web: other department");
-			put(403, "OPEN", null, undefined, "[Lead] corex: prefix only");
 			put(404, "OPEN", null, undefined, "core: no prefix");
-			expect(cap("core")).toBe("cap=1 open=3");
+			expect(cap("core")).toBe("cap=3 open=2");
+			expect(cap("web")).toBe("cap=3 open=0");
 		});
 
 		test("a lead with no department does not count for any department", () => {
@@ -274,13 +271,6 @@ describe("leads, seen, cap and last", () => {
 			const r = cmd("cap", PRECINCT, "--department", "Bad Dept");
 			expect(r.code).toBe(1);
 			expect(r.err).toContain("department");
-		});
-
-		test("the sync ceiling equals the number in the law", () => {
-			const law = readFileSync(join(LAW, "LAW.md"), "utf8");
-			const m = law.match(/^The issue sync ceiling is (\d+) records\./m);
-			expect(m).not.toBeNull();
-			expect(SYNC_LIMIT).toBe(Number(must(m)[1]));
 		});
 
 		test("the code table equals the table in the law", () => {

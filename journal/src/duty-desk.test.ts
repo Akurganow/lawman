@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { convicted, human, T } from "./cases-fixture";
+import { convicted, human, issuesJson, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
@@ -328,7 +328,7 @@ describe("the sync", () => {
 		).toEqual([{ body: "This text could not be cleaned and is withheld." }]);
 	});
 
-	test("a tracker list at the limit stops the tick as stopped-sync-limit", () => {
+	test("a tracker list of 1000 issues is synced and the tick goes on", () => {
 		setUp({ main: 1 });
 		hostOf("main", WORK);
 		const many = Array.from({ length: 1000 }, (_, i) => ({
@@ -342,8 +342,41 @@ describe("the sync", () => {
 			JSON.stringify(issuesForm(many, [TRUSTED])),
 		);
 		const r = startDesk();
-		expect(lines(r.out)).toContain("ended stopped-sync-limit");
-		expect(dispatches()).toEqual([]);
+		expect(lines(r.out)).not.toContain("ended stopped-sync-limit");
+		expect(lines(r.out)).not.toContain("ended stopped-sync");
+		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([{ n: 1000 }]);
+	});
+
+	test("five prefixed issues by an outsider change neither the cap nor the alarms, and each gets its intake order", () => {
+		setUp({ main: 1 });
+		hostOf("main", { ...WORK, issues: {} });
+		const cap = () =>
+			call(BASE, ["cap", "main", "--department", "abstraction"]).out;
+		const first = startDesk();
+		expect(cap()).toBe("cap=3 open=0\n");
+		const issues = JSON.parse(
+			issuesJson(
+				Object.fromEntries(
+					[1, 2, 3, 4, 5].map((n) => [n, { body: ["please look"] }]),
+				),
+			),
+		);
+		for (const issue of issues.issues) {
+			issue.title = `[Lead] abstraction: outsider ${issue.number}`;
+			issue.author = { login: "outsider", is_bot: false };
+		}
+		writeFileSync(join(configs("main"), "issues.json"), JSON.stringify(issues));
+		const second = startDesk(later(1));
+		expect(cap()).toBe("cap=3 open=0\n");
+		expect(lines(second.out).filter((l) => l.startsWith("ALARM"))).toEqual(
+			lines(first.out).filter((l) => l.startsWith("ALARM")),
+		);
+		expect(
+			openOrders()
+				.filter((o) => o.role === "response-unit")
+				.map((o) => o.issue)
+				.sort(),
+		).toEqual([1, 2, 3, 4, 5]);
 	});
 
 	test("a failed pull request sync leaves that precinct without orders of any role, the others go on", () => {

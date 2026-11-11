@@ -249,7 +249,6 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-sync`: syncing the issue or pull request cache failed.
-- `stopped-sync-limit`: the issue sync reached its ceiling.
 - `stopped-issue-read`: reading the issue, the pull request or their comments failed.
 - `stopped-source-read`: reading an external source failed, so investigation writes no case. For `licenses` it means only a read that could not start: no network or no tool, or a refused approval.
 - `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
@@ -274,7 +273,7 @@ A new slug is added to this list before any role uses it.
 
 ## Alarms the journal computes
 
-An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed, and a lead with a broken marker are further examples. A pull request whose newest spec or finished work waits for a decider is an example too. A precinct whose constitution is missing or fails its check is one more. The journal computes these alarms.
+An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed is a further example. A pull request whose newest spec or finished work waits for a decider is an example too. A precinct whose constitution is missing or fails its check is one more. The journal computes these alarms.
 
 - An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers for a pull request with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. It prints once and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
@@ -378,7 +377,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 
 - The count is of open leads whose origin belongs to the department, at any stage. The origin is the earliest trusted lead marker. Later markers by other roles do not displace it.
 - Patrol asks for the cap after the sync and before any analysis.
-- An open issue whose title carries the lead prefix but holds no lead marker counts toward the department named in its title. The journal does the same.
+- An issue with no lead marker of the trusted login counts toward no department, whoever wrote it and whatever its title says.
 - At cap 0 the patrol tick ends with outcome `capped`. Apart from the page's `Alarm check:` paragraph, there is no sweep and no candidate report. Patrol runs that paragraph when the page has one. The tick report states the cap and the count.
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.
@@ -416,14 +415,11 @@ Skills cite these codes by number.
 | 0 | success |
 | 1 | usage, argument or input error |
 | 2 | duplicate open order |
-| 3 | issue sync ceiling reached |
 | 4 | invalid sync input |
 | 5 | a command of the installation or of a precinct failed |
 | 6 | database newer than the binary, or a schema version above the supported one was requested |
 | 7 | body check rejection |
 | 8 | page check rejection |
-
-The issue sync ceiling is 1000 records. A list of exactly that size is rejected, never truncated. Patrol's read limit equals this number. The pull request sync has no ceiling.
 
 ## The leak rule
 

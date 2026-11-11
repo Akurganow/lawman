@@ -194,7 +194,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`, and ends with `uncleaned=<list>` when the journal withheld a text it could not clean. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
+The output is `issues= leads= markers= invalid= skipped=`, and ends with `uncleaned=<list>` when the journal withheld a text it could not clean. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
 
 ## Sync the pull requests
 

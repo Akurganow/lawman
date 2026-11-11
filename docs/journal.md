@@ -150,7 +150,7 @@ journal wake --role <r>
 
 No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk prints the open alarms again, except those it raised itself. The duty desk also computes the alarms at its end, so a constitution it found missing raises its alarm in the same tick.
 
-An alarm about an issue or a pull request ends with the link that the host reported for it. The journal reads the link from the field `url` of the issues form and the pulls form. A host command that leaves the field out gives an alarm without a link. The alarms `broken-lead` and `decision-waiting` carry the link.
+An alarm about an issue or a pull request ends with the link that the host reported for it. The journal reads the link from the field `url` of the issues form and the pulls form. A host command that leaves the field out gives an alarm without a link. The alarm `decision-waiting` carries the link.
 
 The alarm `no-constitution` names a precinct and the cause. The cause is no constitution on the main branch, a constitution that fails the page check, or a contract version the law does not support. The duty desk records the cause at each visit of the precinct. A visit that finds a usable constitution clears it, and the alarm clears with it. A visit that fails before the constitution is read leaves the cause as it was.
 
@@ -200,7 +200,7 @@ journal form <issues|pulls|decider|catalog>
 - `old-precedent`: moves the numbered lines of an old `## Precedents` section of `LAWMAN.md` into precedent files.
   - `list` reads a page on stdin. It prints `line <n> date=<date> link=<yes|no> position=<p>` and the rule in a `rule` fence for each numbered line, and `outside position=<p>` for an item outside the form. `<n>` is the number of the precedent in the section, not an issue. A page with no item prints `none`.
   - `added` prints the same lines for the numbered lines of the page at `--head` whose number the page at `--base` lacks. The base is the page at the merge base of a pull request. For that reason a pull request that is stale after a move gets no moved line. An edited line keeps its number and is not added. A free note is no old line.
-  - `check` reads the issues form, without the cache. The precinct's `issues` command gives it. A precinct without that command takes the form on stdin. For each `<line>:<issue>` it prints `line <n> kind=<protects|condemns>` when every counted court ruling on the issue gives one kind. Otherwise it prints `line <n> ask reason=<reason>`. The reasons are `no-issue`, `absent`, `repeated`, `no-ruling`, `mixed`, `form` and `ceiling`. A marker of another stage is no ruling.
+  - `check` reads the issues form, without the cache. The precinct's `issues` command gives it. A precinct without that command takes the form on stdin. For each `<line>:<issue>` it prints `line <n> kind=<protects|condemns>` when every counted court ruling on the issue gives one kind. Otherwise it prints `line <n> ask reason=<reason>`. The reasons are `no-issue`, `absent`, `repeated`, `no-ruling`, `mixed`, and `form`. A marker of another stage is no ruling.
   - `move` takes the kind the same way, or the user's `--kind` when the rulings give none. It writes the file `<date>-<gist>.md` into `.lawman/precedents/` of the tree, or `<date>-<gist>-<k>.md` with the next free number `<k>` from 2 when that name is taken. It also takes the line out of `LAWMAN.md` of the tree: both stand, or neither does. A page that is not UTF-8 is refused. The rest of the page keeps its bytes, and a section with no item left reads `none`. The file holds `kind`, `departments: []`, `date` and `ruling`, the link of the line. A tail in parentheses that fails the link class is no link: it stays part of the rule, in the list and in the file. It prints `entry <name>` or `ask reason=<reason>`. A link or a folder in the place of `LAWMAN.md`, `.lawman` or `.lawman/precedents` gives a non-zero exit and no write.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
 - `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
@@ -397,10 +397,10 @@ The reasons are `argument`, `start`, `exit`, `form` and `clean`.
 | `argument` | an argument is outside its class, and the command did not run | nothing | 5 |
 | `start` | the file did not start | nothing, because the system message carries the installation path | 5 |
 | `exit` | a non-zero exit or a signal | the command's standard error | 5 |
-| `form` | the output is outside the operation's form, or a reader refused it | the journal's message, with the form for a reader's refusal | 4, or 3 for the ceiling of 1000 issues |
+| `form` | the output is outside the operation's form, or a reader refused it | the journal's message, with the form for a reader's refusal | 4 |
 | `clean` | a cleaning library failed on the output of `file` or `files` | nothing, because the library's message can quote the input | 5 |
 
-The text inside the `error` fence passes the character layer of the cleaning. Every refusal of the readers of `issues`, `pulls` and `decider` prints as `form` inside the fence. The refusals are the ceiling, an empty list over a filled cache without `--reset`, and a broken cache constraint. A comment id that repeats has its own message.
+The text inside the `error` fence passes the character layer of the cleaning. Every refusal of the readers of `issues`, `pulls` and `decider` prints as `form` inside the fence. The refusals are an empty list over a filled cache without `--reset`, and a broken cache constraint. A comment id that repeats has its own message.
 
 ### Fences
 
@@ -527,7 +527,7 @@ The start runs these steps in order.
 1. It writes the tick, computes the alarms and prints the open alarms again, except those it raised in this start. The `ALARM` lines print first.
 2. It reads `config.yaml`. A missing file or a missing `trusted_login` ends the tick `failed`.
 3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says. A stop ends the tick here, before any precinct is read.
-4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
+4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`. A failed pull request sync leaves the precinct without orders for every role.
 5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open and has written no order. On the path of `self law-version` the start has already run the host sync of item 4, so the issue cache may hold what it read.
 6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads. It records, for each precinct, whether the constitution is missing, fails its check or is usable.
 7. It closes the stale orders of those precincts. An order closes when nobody took it and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. An issue that left the cache needs no role, as a pull request that left it needs none, so its untaken orders close. Patrol has no stale rule. On a precinct whose constitution is missing or fails its check, it also closes the untaken orders of the roles that need the constitution.
@@ -720,14 +720,13 @@ When no record can be shown, the journal prints `catalog none reason=<reason>`:
 | 0 | Success |
 | 1 | Usage, argument or input error |
 | 2 | Duplicate open order |
-| 3 | Issue sync ceiling reached |
 | 4 | Invalid sync input |
 | 5 | A command of the installation or of a precinct failed |
 | 6 | Database newer than the binary, or a schema version above the supported one was requested |
 | 7 | Body check rejection |
 | 8 | Page check rejection |
 
-`law-update` adds no code. A stop is an answer and exits 0, and a usage error exits 1. Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
+`law-update` adds no code. A stop is an answer and exits 0, and a usage error exits 1. Code 4 covers `run` too, as the table of failure reasons says. It prints the form that the input broke, with an example. Neither sync has a ceiling on the size of its list. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
 
 A role treats exit 2 as silence. Skills cite the other codes by number.
 

@@ -212,7 +212,7 @@ Silence is the default. A tick that succeeds, skips or stops answers only the si
 
 ### Alarms
 
-The journal computes the first seven alarms below and `no-constitution`. The `case` and `sweep` alarms name a path and a line, never a value.
+The journal computes the first seven alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
 
 | Alarm | Raised when |
 | :-- | :-- |
@@ -220,7 +220,6 @@ The journal computes the first seven alarms below and `no-constitution`. The `ca
 | `tick-hung` | A tick has no end record while a later tick of its role exists. |
 | `role-silent` | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
 | `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
 | `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
 | `no-constitution` | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no orders there, and the clerk goes on. The alarm clears when the constitution is usable. |
 | `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
@@ -228,7 +227,7 @@ The journal computes the first seven alarms below and `no-constitution`. The `ca
 | `sweep` | Patrol finds a live secret in the tree or the history. |
 | `referral` | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral`, `broken-lead` and `decision-waiting` do. The link is the address that the host reports. A host command that leaves out the field `url` gives no link to the alarms the journal computes. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. A host command that leaves out the field `url` gives no link to the alarms the journal computes. An alarm line defeats the silence form, so the reply is delivered.
 
 The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 

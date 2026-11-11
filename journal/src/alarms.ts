@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
-import { LEAD_ORIGIN_FROM, LEAD_PREFIX, MINUTE_MS, out, withDb } from "./db";
+import { LEAD_ORIGIN_FROM, MINUTE_MS, out, withDb } from "./db";
 import { readConfig } from "./input-files";
 import { configValue } from "./law-sync";
 import { byText } from "./markers";
@@ -127,26 +127,6 @@ function noConstitution(db: Database): Candidate[] {
 	}));
 }
 
-function brokenLead(db: Database): Candidate[] {
-	const broken = db
-		.query(
-			`SELECT precinct, issue, url FROM issues i
-       WHERE substr(title, 1, ${LEAD_PREFIX.length}) = '${LEAD_PREFIX}' AND state = 'OPEN'
-         AND NOT EXISTS (
-           SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead')
-       ORDER BY precinct, issue`,
-		)
-		.all() as { precinct: string; issue: number; url: string | null }[];
-	return broken.map((b) => ({
-		kind: "broken-lead",
-		ref: `${b.precinct}#${b.issue}`,
-		detail: linked(
-			`title starts with ${LEAD_PREFIX} but no lead marker`,
-			b.url,
-		),
-	}));
-}
-
 const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
 const WAITS_FOR_VOTE = "pull request waits for a vote on its newest spec";
 const WAITS_FOR_PRECEDENT =
@@ -216,7 +196,6 @@ const DETECTORS = [
 	tickHung,
 	roleSilent,
 	tickFailing,
-	brokenLead,
 	decisionWaiting,
 	noConstitution,
 ] as ((db: Database, nowMs: number) => Candidate[])[];

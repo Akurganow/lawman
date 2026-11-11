@@ -1,6 +1,6 @@
 import type { Database } from "bun:sqlite";
 import { check, parseArgs } from "./args";
-import { EXIT, Fail, LEAD_ORIGIN_FROM, LEAD_PREFIX, out, withDb } from "./db";
+import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { canonicalId } from "./markers";
 
 export const CAP_TABLE: { upTo: number | null; cap: number }[] = [
@@ -97,19 +97,6 @@ function capFor(open: number): number {
 	return row.cap;
 }
 
-// a broken lead has the title prefix but no lead marker, so it has no origin department
-function brokenCount(db: Database, name: string, department: string): number {
-	const prefix = `${LEAD_PREFIX} ${department}:`;
-	const row = db
-		.query(
-			`SELECT count(*) AS n FROM issues i
-       WHERE precinct = ? AND state = 'OPEN' AND substr(title, 1, length(?)) = ?
-         AND NOT EXISTS (SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead')`,
-		)
-		.get(name, prefix, prefix) as { n: number };
-	return row.n;
-}
-
 export function capOf(
 	db: Database,
 	name: string,
@@ -118,7 +105,7 @@ export function capOf(
 	const origins = leadOrigins(db, name).filter(
 		(o) => o.state === "OPEN" && o.department === department,
 	);
-	const open = origins.length + brokenCount(db, name, department);
+	const open = origins.length;
 	return { cap: capFor(open), open };
 }
 
