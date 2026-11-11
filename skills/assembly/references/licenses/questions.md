@@ -23,8 +23,6 @@ Send one message for all open precincts. Give each open precinct a block of rows
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Constitution: found and passes lint, or the reason it does not (found).
-- License statements: each as `path:line`, or none (found).
-- Questions to ask: the questions this mode will ask (found).
 
 ## Decide
 
@@ -32,9 +30,9 @@ For each open precinct whose constitution passes, ask the questions of "The lice
 
 ## Apply
 
-Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer or a cancel as no, and write nothing.
+Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". After "Change", ask both questions of each precinct that has answers, with the sign shown. Treat a skip, an empty answer or a cancel as no, and write nothing.
 
-Show the whole entry for `host.md` of each precinct in the Apply question. Show the values of `reaches` and `use` too. After the approval, run "Write the answers" for each precinct that has answers.
+Show for each precinct the rows chosen and the rows refused, by id and recipient, and the values of `reaches` and `use`. Name the sign of each value that no question asked. After the approval, run "Write the answers" for each precinct that has answers.
 
 ## Summary
 
@@ -70,7 +68,7 @@ Every call is one call of the question tool. A call holds up to the limit of the
 
 1. The enable question, one for each precinct.
 2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the patrol takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it.
-3. The two questions of "How people get the project and what it earns", for each precinct that said yes.
+3. The questions of "How people get the project and what it earns" that no sign answers, for each precinct that said yes.
 4. The first source question of each precinct that has a fitting source.
 5. After "Choose", one call for each fitting source.
 
@@ -97,7 +95,7 @@ A skip and an empty answer mean "No". A "No" writes the outcome `no` and asks no
 
 ### How people get the project and what it earns
 
-Ask the two questions of each precinct in the same call. Put the recommended answer of each question first. Map the answer to the value in backticks by the label of the choice, not its position. Ask again on a free-text answer that fits no choice. End the question with the sign that recommends the answer. With no sign, end it with "I found nothing that settles this" and recommend nothing. The sign reads like this: "I found <what the line does> (`path:line`)."
+Ask a question only when no sign recommends its answer. Where a sign recommends it, write that answer and show it in Apply with its sign. Ask the questions of one precinct in the same call. Put the recommended answer of each question first. Map the answer to the value in backticks by the label of the choice, not its position. Ask again on a free-text answer that fits no choice. End a question with the sign that points to an answer. With no sign, end it with "I found nothing that settles this" and recommend nothing. The sign reads like this: "I found <what the line does> (`path:line`)."
 
 > How do other people get <owner>/<repo>? Lawman reports a license clash only for material that reaches other people.
 
@@ -169,7 +167,7 @@ Where the harness has no question tool, follow the numbered message of `SKILL.md
 
 ### Write the answers
 
-Run this after the last answer, with the approval of the caller. The mode asks that approval in Apply. The add path holds it from its own call, and shows the whole entry in a message before the write.
+Run this after the last answer, with the approval of the caller. The mode asks that approval in Apply. The add path holds it from its own call, and shows the rows and the values that "Apply" names in a message before the write.
 
 1. Set the pairs by the table. Replace `none`, replace an existing pair of that name, and never append a second one. Read `config.yaml` again just before the write, so pairs of other modes stay. Write it, and read it back.
 
@@ -188,7 +186,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
     - the rows refused, apart, so that the question does not return;
     - the word `none` when nothing is agreed.
 3. The entry takes from the tree only values that passed their class. These are a path by the path rules and the id of a row from the index. It holds no free phrase from the tree or from a reply. It holds no token and no key. The words of the author of the assembly stay out of it.
-4. Show the entry whole before the write. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
+4. Write the entry whole. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
 5. Write the section `## Licenses` with these lines and no free phrase:
     - `reaches <internal|copies|service|copies,service>`
     - `use <commercial|non-commercial|unknown>`

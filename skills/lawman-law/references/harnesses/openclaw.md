@@ -17,7 +17,7 @@ Terms used below:
 
 Detection: `openclaw --version` prints the installed version. The assembly runs it to detect this harness. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
 
-Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers.
+Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers. The start instruction is `openclaw gateway start` (stated by `openclaw gateway --help`).
 
 - The command is an alias of `openclaw automations status`. It asks the gateway for `cron.status`, and the reply holds `enabled` (read in the harness code, openclaw/src/cli/cron-cli/register.cron-add.ts).
 - Every cron command needs a running gateway (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
@@ -226,7 +226,7 @@ There is no output folder. The result of each run lies in the run history, which
 
 `openclaw cron show <job id> --json` prints one job, with the field `trigger.script` holding the stored script (read in the harness code, openclaw/src/cli/cron-cli/register.cron-simple.ts, openclaw/src/cron/job-read-view.ts, openclaw/src/cron/public-job.ts and openclaw/packages/gateway-protocol/src/schema/cron.ts). A job with a `trigger.script` has an entry. A job without one has none. The live output is (not verified).
 
-none: OpenClaw has one kind of entry. No job holds a monitor, so there is nothing to translate. The assembly skips that step.
+none: OpenClaw has one kind of entry. No job holds a monitor. A job with no entry stays as it is, because adding an entry to such a job is (not verified).
 
 ### Schedule forms and time zone
 
@@ -306,7 +306,7 @@ How the entry works:
 
 - The role does not start. The run is recorded with the status `error` and the text "cron trigger evaluation failed" (read in the harness code, openclaw/src/cron/service/timer-execution.ts).
 - Each error adds to a count of consecutive errors. The retry backoff is 30 seconds, 1 minute, 5 minutes, 15 minutes and 60 minutes (read in the harness code, openclaw/src/cron/service/jobs-scheduling.ts).
-- An alert goes out after 2 consecutive failures, with a cooldown of one hour. It goes only when the job has a failure route or an announce route (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/delivery.md; not verified). Tell the user to set a failure route.
+- An alert goes out after 2 consecutive failures, with a cooldown of one hour. It goes only when the job has a failure route or an announce route (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/delivery.md; not verified).
 - A recurring job is disabled after 10 consecutive failures. Re-enable it with `openclaw cron enable <job id>` (read in the harness code, openclaw/src/cron/service/auto-disable.ts). The conditions of the alert and the disable are (not verified).
 - A script that outlives 30 seconds fails the same way, so a slow journal ends in an error.
 - No fallback exists for a failure by schedule. The failure is loud. The fallback is a manual run, or a job with no entry script.
