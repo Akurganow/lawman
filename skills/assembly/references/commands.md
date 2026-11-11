@@ -161,7 +161,7 @@ For each screen, run this cycle: find, propose, prove, decide.
 - Another tracker, which the developer names with its tool.
 - A source with no host, such as a local file.
 
-Whatever the answer, write the commands `issues`, `pulls` and `decider`. For a source with no actor and no rights, `decider` stays empty and the role does that step itself. The agent and the records of `host.md` still do the writes to the tracker. The roles on a tracker outside the repository's host are not verified. Say that in the proposal.
+Whatever the answer, write the commands `issues`, `pulls` and `decider`. For a source with no actor and no rights, `decider` stays empty and the role does that step itself. For a source with rights and no actor, the command hands the journal `lastActor` as null with the writers. The journal then prints `decider=no actor=-`, so no close counts as a decider's. The agent and the records of `host.md` still do the writes to the tracker. The roles on a tracker outside the repository's host are not verified. Say that in the proposal.
 
 ## Host limits
 

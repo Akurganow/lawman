@@ -344,6 +344,8 @@ Same-minute jobs run in parallel. They share the lanes `cron` and `cron-nested` 
 
 A running job is tracked so the scheduler avoids a duplicate run (read in the harness code, openclaw/src/cron/active-jobs.ts). Whether a slot that arrives during a run is skipped or deferred is (not verified). The CLI has no chaining, so order comes from the clock.
 
+What a manual run does over a job that is still running is (not verified). The live run must show whether the manual run starts beside the running tick, and whether both ticks work the same order.
+
 ### Catch-up
 
 After a restart of the gateway, overdue agent jobs are rescheduled and not replayed at once (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified). The setting `cron.skipMissedJobs: true` skips missed slots of recurring jobs. Its default is `false` (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/managing-jobs.md; not verified).

@@ -341,6 +341,8 @@ printf '%s\n' '#!/bin/bash' 'exec bin/journal wake --role <role>' > "<scripts di
 
 Same-minute jobs run in parallel. A job still running skips its next slot. The CLI has no chaining, so order comes from the clock (read in the harness code).
 
+What a manual run does over a job that is still running is (not verified). The live run must show whether the manual run starts beside the running tick, and whether both ticks work the same order.
+
 ### Catch-up
 
 `cron.catch_up_missed` is `true` by default. After an outage the scheduler runs a missed job once, not once per missed slot. With `false`, a late job skips to its next slot.
@@ -367,7 +369,7 @@ An alarm line in an answer defeats silence. The answer is then delivered, as the
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-A role cannot see whether a message arrived.
+A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked.
 
 ### One-off run
 
