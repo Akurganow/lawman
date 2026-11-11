@@ -28,7 +28,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
     3. Record a page as a match when its command exits 0.
     4. Stop if a page names no detection command, and tell the developer the page needs one.
     5. Stop if no page matches, and tell the developer to install a harness first.
-    6. When two pages match, ask in the question tool which one to use.
+    6. When two pages match, take the page of the harness that runs this session.
     7. Record `harness` as the page's file name without `.md`.
 2. Find the default installation.
     1. Run the list command the harness page gives for the scheduler's jobs.
@@ -96,7 +96,7 @@ Tell the developer the mode and the reason in one sentence. Then say one line th
 
 Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend, catalog, licenses and each menu job.
 
-- **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
+- **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
 - **Decide.** Ask only the real decisions.
 - **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. Two exceptions hold. The first is the throwaway folder of a proof, which `references/commands.md` describes. It lies outside the installation, is made fresh and is removed on every outcome, a stop included. The second is the one-off job of a proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent to paid runs. Its name never starts with the prefix of an installation job, and it is removed the same way. A third exception is the sync of the law in "Choose the mode", which waits for its own yes. After approval, run the writes in a fixed order.
