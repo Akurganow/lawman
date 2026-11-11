@@ -50,6 +50,8 @@ export const COMMANDS: Record<string, Handler> = {
 	"department-line": departmentLineCommand,
 	precedent: async (args) =>
 		(await import("./precedent")).precedentCommand(args),
+	"pull-body": async (args) =>
+		(await import("./precedent")).pullBodyCommand(args),
 	"old-precedent": async (args) =>
 		(await import("./old-precedents")).oldPrecedentCommand(args),
 	pull: pullCommand,

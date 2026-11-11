@@ -9,7 +9,7 @@ import {
 	unlinkSync,
 	writeFileSync,
 } from "node:fs";
-import { dirname, join } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
 import { caseStage, rulingComment } from "./cases";
@@ -57,9 +57,18 @@ import {
 	splitPrecedent,
 	withDepartments,
 } from "./precedent-file";
+import {
+	type Change,
+	convictionBody,
+	plainWords,
+	precedentBody,
+} from "./pull-body";
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
+const BODY_USAGE =
+	"pull-body <precinct> --issue <n> [--source <ruling comment URL>]";
+const BODY_FILE = "pull-body.md";
 const CONSTITUTION = "LAWMAN.md";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
@@ -146,16 +155,17 @@ class Folder {
 		}
 	}
 
-	// the names whose final text differs from the disk, written only when all are safe
-	commit(): string[] {
-		const changed = [...this.state].filter(
-			([name, text]) => text !== this.disk(name),
-		);
+	// the names whose final text differs from the disk, with both texts, written only when all are safe
+	commit(): Change[] {
+		const changed = [...this.state].flatMap(([name, now]) => {
+			const was = this.disk(name);
+			return now === was ? [] : [{ name, was, now }];
+		});
 		if (changed.length > 0) mkdirSync(this.dir, { recursive: true });
-		for (const [name, text] of changed)
-			if (text === null) unlinkSync(this.path(name));
-			else writeFileSync(this.path(name), text);
-		return changed.map(([name]) => name);
+		for (const { name, now } of changed)
+			if (now === null) unlinkSync(this.path(name));
+			else writeFileSync(this.path(name), now);
+		return changed;
 	}
 }
 
@@ -231,6 +241,7 @@ type Ruling = {
 // every file a new line created that exists after the commit, with the court's names.
 type Applied = {
 	lines: string[];
+	changes: Change[];
 	fresh: { name: string; original: string[] }[];
 	kept: { name: string; named: Named }[];
 };
@@ -295,7 +306,8 @@ function apply(
 			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
 		} else if (line.type === "bad") create(keep, item.text, null, "bad-line");
 	}
-	const written = folder.commit();
+	const changes = folder.commit();
+	const written = changes.map(({ name }) => name);
 	for (const name of written) {
 		const reason = reasons.get(name);
 		lines.push(
@@ -306,6 +318,7 @@ function apply(
 	}
 	return {
 		lines,
+		changes,
 		fresh: written.flatMap((name) => {
 			const original = fresh.get(name);
 			return original === undefined ? [] : [{ name, original }];
@@ -336,14 +349,15 @@ function rulingText(
 	precinct: string,
 	issue: number,
 	ord: string,
+	lenient = false,
 ): string {
 	const body = rulingComment(db, precinct, issue, ord);
-	if (body === undefined)
+	if (body === undefined && !lenient)
 		throw new Fail(
 			EXIT.USAGE,
 			`no cached comment carries the court ruling of ${precinct} #${issue}`,
 		);
-	return body;
+	return body ?? "";
 }
 
 export function trustedLogin(): string {
@@ -368,12 +382,12 @@ function summary(sections: Item[][], lines: string[]): string[] {
 	return [...lines, end];
 }
 
-// the newest ruling of the case and its cached comment
-function rulingOf(precinct: string, issue: number) {
+// the newest ruling of the case and its cached comment, an empty text when `lenient` and none is cached
+function rulingOf(precinct: string, issue: number, lenient = false) {
 	trustedLogin();
 	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
-		return { marker: m, text: rulingText(db, precinct, issue, m.ord) };
+		return { marker: m, text: rulingText(db, precinct, issue, m.ord, lenient) };
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	return {
@@ -587,6 +601,13 @@ const needsCandidates = (lines: Line[], allowed: boolean) =>
 			(Array.isArray(l.named) || (allowed && l.named !== ALL)),
 	);
 
+// The body of the precedent pull request stands next to the tree, never in it.
+function bodyPath(tree: string): string {
+	const path = join(dirname(resolve(tree)), BODY_FILE);
+	if (!["absent", "file"].includes(entryKind(path))) throw unsafe(path);
+	return path;
+}
+
 // The write call. Every read comes before the first write, so a read fault
 // writes nothing; the ask lines come from what the write did.
 async function writePrecedents(
@@ -611,12 +632,15 @@ async function writePrecedents(
 		theCase ??= withDb((db) => caseListOf(db, precinct, issue));
 		return theCase;
 	};
-	const { lines, fresh, kept } = apply(
+	const body = bodyPath(tree);
+	const { lines, changes, fresh, kept } = apply(
 		items,
 		{ precedentKind, date, issue, source },
 		new Folder(tree),
 		(named) => originalList(named, candidateNames, caseOf),
 	);
+	if (changes.length > 0)
+		writeFileSync(body, await precedentBody(source, changes));
 	for (const line of summary(sections, lines)) out(line);
 	for (const { name, named } of kept)
 		for (const d of droppedNames(named, candidateNames, (n) =>
@@ -627,6 +651,27 @@ async function writePrecedents(
 	if (allowed)
 		for (const f of fresh)
 			if (asksJev(f.original, candidateNames)) out("ask", f.name);
+}
+
+// The body of the clerk's pull request for a conviction, in every case: with no
+// source it is the closing line alone. A ruling that is not a conviction, or is not
+// cached, or whose Disposition is refused, leaves the text out. Other faults fail as in `precedent`.
+export async function pullBodyCommand(args: string[]): Promise<number> {
+	const { pos, opt } = parseArgs(args, 1, ["issue"], BODY_USAGE, ["source"]);
+	const precinct = check("precinct", pos[0]);
+	const issue = Number(check("number", opt.issue));
+	const source = opt.source === undefined ? undefined : checkLink(opt.source);
+	let disposition: string | null = null;
+	if (source !== undefined) {
+		const ruling = rulingOf(precinct, issue, true);
+		const words =
+			ruling.precedentKind === KIND_OF.get("conviction")
+				? sectionWords(ruling.text, "Disposition")
+				: null;
+		disposition = words === null ? null : await plainWords(words, issue);
+	}
+	process.stdout.write(convictionBody(issue, source, disposition));
+	return EXIT.OK;
 }
 
 export async function precedentCommand(args: string[]): Promise<number> {
