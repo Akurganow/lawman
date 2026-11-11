@@ -28,7 +28,7 @@ Before the first part, stop if "Schedule forms and time zone" names no schedule 
 
 ## The defaults table
 
-One table holds the defaults of every role, in clock order. The roles form that table, never a list of choices. Parts Models, Schedule, Role entry and Limits show their columns of it in one message, as one proposal. Apply holds its one approval.
+One table holds the defaults of every role, in clock order. The roles form that table, never a list of choices. Each part below shows its columns of it as the proposal.
 
 | Role | Tier | Model | Days | Economy | Start | Entry |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
@@ -55,13 +55,13 @@ One table holds the defaults of every role, in clock order. The roles form that 
 - The default model and provider of scheduled jobs, as "Models" gives them. An unset value shows as unset.
 - The providers that hold a credential, by name only.
 - The effort levels, when "Models" names them.
-- On a rerun, the model that each job uses, from the place that "Editing a job" names.
+- On a rerun, the model, provider and effort of each job, from the place that "Editing a job" names. Where it names none, they stay unknown.
 
 When "Models" names no way to read the default, say so. Then ask for model names only, with no provider and no effort.
 
-**Proposes.** Show the Role, Tier and Model columns of the defaults table. State the meaning of the tiers in one line: light runs fixed commands, medium reads and writes text, strong decides. Put every role on the harness default. State that one model serves all roles. Name the default model and the providers found. When "Models" names a condition on the window of a model, state it in one line with the models offered, and reject no model. On a rerun, show the model of each job as current.
+**Proposes.** Send the Role, Tier and Model columns of the defaults table. Put every role on the harness default. State that one model serves all roles. Name the default model and the providers found. When "Models" names a condition on the window of a model, state it in one line with the models offered, and reject no model. On a rerun, show the model, provider and effort of each job as current, or as unknown.
 
-**Decides.** Ask nothing before Apply. The developer changes this part by "change" in Apply, or by a typed edit of the proposal. After "change", ask in the question tool.
+**Decides.** Ask in the question tool. Give the meaning of the tiers in the question, in one line: light runs fixed commands, medium reads and writes text, strong decides.
 
 1. Offer the choice "Use the harness default", as the recommendation.
 2. Offer the choice "Name models per tier".
@@ -94,18 +94,19 @@ Why: the model sets the quality and the cost of every run.
 
 **Finds.**
 
-- The time zone, as "Schedule forms and time zone" gives it. When the page names no way to read it, use the machine's zone, shown by the shell, and mark it default.
+- The time zone, as "Schedule forms and time zone" gives it. When the page names no way to read it, ask the developer in the question tool. Offer the machine's zone, shown by the shell, as the first option.
 - The schedule of each existing job, and the plan it matches.
 - The start time of the existing duty desk job, when one exists.
 
-**Proposes.** Show the Role, Days, Economy and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. Refuse a start later than 21:44, so that every role runs on the same day.
+**Proposes.** Send the Role, Days, Economy and time columns of the defaults table. Propose a start of 09:00 in the found time zone. When the duty desk job exists, propose its start time as current. Show each role's time as `<S>` plus its Start minutes. The duty desk starts first because it must finish before the others take their orders. Refuse a start later than 21:44, so that every role runs on the same day.
 
-**Decides.** Ask nothing before Apply. The developer changes this part by "change" in Apply, or by a typed edit of the proposal, such as a new start time, a time zone or one role's days. After "change", ask in the question tool.
+**Decides.** Ask in the question tool.
 
 1. Offer the choice "Every day", as the recommendation.
 2. Offer the choice "Economy", which uses the Economy column.
 3. Offer the choice "Custom", with the days named in free text, in the forms of "Day forms".
 4. In the menu, put the choice "Keep as is" first, and move the recommendation to it.
+5. Take a new start time or one role's days as a typed edit of the proposal.
 
 Why: a run takes up to its role's number of jobs (`jobs` in `config.yaml`, see `docs/configuration.md`), so its days set the speed and the cost.
 
@@ -171,7 +172,7 @@ Where the page puts the entry files outside the installation, the approval names
 4. Show the content of each different file.
 5. Say each of these only where the page's "Role entry" says it. A job keeps a copy of the entry. Editing the entry file does not change the copy. The entry first runs at a scheduled slot. A failure shows in the run history. A manual run skips the entry.
 6. When the approval carries the lines of a new agent, say three things. A job has no folder of its own. Creating the agent changes the harness settings. The installation gains the start-context files that the page names.
-7. Ask for one approval. Ask in the question tool, and offer apply and change. After change, ask which of Models and Schedule to change, with several-choice, and ask the questions of each part chosen. Take any other change as a typed edit. Then show the proposal and ask the approval again.
+7. Ask for one approval. Ask in the question tool, and offer apply and change.
 8. After approval, when the approval carried the lines of a new agent, wait for the developer to run them and to say so. Then find the agent again. When none is found, stop and name the lines.
 9. Then run "Write and prove".
 10. Then run "Create or edit".
