@@ -180,7 +180,7 @@ The precedent comment is written on the issue. Its sentence and marker:
 | Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
 
-The pair comment is written on a source issue. The `kept` of the pair carries `issue`, the `kept` of a precedent pull request does not. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
+The pair comment is written on a source issue. The `kept` of the pair carries `issue`, the `kept` of a precedent pull request does not. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue. The adopt job adds `adopted=yes` after `issue`.
 
 | Stage | Sentence |
 | :-- | :-- |

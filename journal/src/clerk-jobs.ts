@@ -54,6 +54,15 @@ const pairMarkers = (markers: CaseMarker[]) =>
 
 export const hasPair = (markers: CaseMarker[]) => markers.some(isPairMarker);
 
+// The adopt job marks the pair it writes, so the journal knows that the pull
+// request of the pair is no draft of the clerk and carries no precedent files.
+export const ADOPTED_FIELD = "adopted";
+
+// A clerk marker newer than the ruling that answers it: the entry of a precedent
+// pull request, or the comment that says there is none.
+export const answers = (m: CaseMarker, rulingOrd: string) =>
+	m.role === "clerk" && ANSWERS.includes(m.stage) && m.ord > rulingOrd;
+
 // the precedent pull requests of an issue whose newest entry, final or kept marker is entry, ascending
 export function awaitingDecision(markers: CaseMarker[]): number[] {
 	const newest = new Map<string, CaseMarker>();
@@ -116,6 +125,7 @@ function tableRow(
 	k: CaseMarker | undefined,
 	base: string | undefined,
 	pull: CachedPull | undefined,
+	carried: boolean,
 ): Row {
 	const open = i.state === "OPEN";
 	const points = pull !== undefined && Number(k?.fields.pull) === pull.number;
@@ -128,30 +138,33 @@ function tableRow(
 	);
 	if (decided !== undefined)
 		return { ...job("decision"), pull: String(decided) };
-	if (k !== undefined || i.ruling === undefined) return NO_JOB;
-	if (i.ruling.stage === "conviction") return open ? job("open") : NO_JOB;
-	const answered = i.markers.some(
-		(m) =>
-			m.role === "clerk" &&
-			ANSWERS.includes(m.stage) &&
-			m.ord > (i.ruling?.ord ?? ""),
-	);
-	return answered ? NO_JOB : { ...job("precedent"), pull: NONE };
+	const ruling = i.ruling;
+	if (ruling === undefined) return NO_JOB;
+	const conviction = ruling.stage === "conviction";
+	if (conviction && k === undefined && open) return job("open");
+	// the draft pull request of the clerk holds the files of a conviction
+	if (conviction && carried) return NO_JOB;
+	return i.markers.some((m) => answers(m, ruling.ord))
+		? NO_JOB
+		: { ...job("precedent"), pull: NONE };
 }
 
 function rowOf(
 	i: ClerkInput,
-	k: CaseMarker | undefined,
-	base: string | undefined,
+	pairs: CaseMarker[],
 	pull: CachedPull | undefined,
 ): Row {
+	const [first] = pairs;
+	const k = pairs.at(-1);
+	const base = baseOf(pairs);
 	const closed = i.state === "CLOSED";
 	if (k !== undefined && k.fields.issue !== i.state.toLowerCase()) {
 		const closePull =
 			pull?.issues.includes(i.issue) === true && pull.issues.every(i.isClosed);
 		return job("state", stateAction(base, closed, closePull));
 	}
-	return tableRow(i, k, base, pull);
+	const carried = first !== undefined && first.fields[ADOPTED_FIELD] !== "yes";
+	return tableRow(i, k, base, pull, carried);
 }
 
 function branchOf(i: ClerkInput, pairs: CaseMarker[], row: Row) {
@@ -204,7 +217,7 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 		i.pulls
 			.filter((p) => p.issues.includes(i.issue))
 			.sort((a, b) => a.number - b.number)[0];
-	const row = rowOf(i, k, baseOf(pairs), pull);
+	const row = rowOf(i, pairs, pull);
 	const found = pull === undefined ? NONE : String(pull.number);
 	return {
 		priority: priorityOf(i.markers),

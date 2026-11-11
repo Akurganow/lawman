@@ -132,6 +132,34 @@ describe("precedent: a new precedent", () => {
 		expect(header(`${DATE}-no-panics`)).toMatchObject({ kind: "condemns" });
 	});
 
+	test.each([
+		["entry", " pull=5"],
+		["no-entry", ""],
+	])(
+		"a ruling the clerk already answered with %s writes nothing",
+		async (stage, extra) => {
+			await cache([
+				ruling(precedentSection("- new no-panics: Never panic."), CONVICTION),
+				["Clerk", "", mark("clerk", stage, extra)].join("\n"),
+			]);
+			const r = await record();
+			expect([r.err, r.code, r.out]).toEqual([
+				"",
+				EXIT.OK,
+				"no-entry\tanswered\n",
+			]);
+			expect(names()).toEqual([]);
+		},
+	);
+
+	test("an entry older than the ruling does not answer it", async () => {
+		await cache([
+			["Clerk", "", mark("clerk", "entry", " pull=5")].join("\n"),
+			ruling(precedentSection("- new no-panics: Never panic."), CONVICTION),
+		]);
+		expect((await record()).out).toBe(`entry\t${DATE}-no-panics\n`);
+	});
+
 	test("the rule is the text the cache holds after cleaning", async () => {
 		await written(precedentSection("- new bold: keep <b>this</b> rule"));
 		expect(body(`${DATE}-bold`)?.trim()).toBe("keep **this** rule");

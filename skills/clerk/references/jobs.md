@@ -65,7 +65,7 @@ A non-zero exit ends the tick with `failed`. The output has one line per change:
 - `entry<TAB><name>[<TAB><reason>]`: the file `<name>` is written. A reason is `name-taken`, `refine-missing` or `bad-line`.
 - `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
 - `none`: the ruling adds no precedent, and the folder does not change.
-- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
+- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section`, `no-change` or `answered`. `answered` means that a comment of the clerk on the issue already records this ruling.
 - `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, so the name counts for nothing. The file `<name>` holds it only as the department of the case. `-` stands for a name outside the department class. It is no change of its own.
 - `ask<TAB><name>`: send one Jev request for the file `<name>`, as the steps below say. It is no change of its own.
 
@@ -192,11 +192,11 @@ Taken up by the clerk as a draft that counts as not started.
 3. Replace the body with the fixed body on the host. Send it as Working rules says for multi-line text.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.
 5. Make the pull request a draft.
-6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it.
+6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>`, `issue=<that state>` and `adopted=yes` on it.
 
 ## precedent
 
-1. Read the ruling. It must be an acquittal. Otherwise the tick ends with `failed`.
+1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
 2. Create the tree.
 3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
 4. Record the precedent files.

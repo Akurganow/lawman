@@ -22,6 +22,8 @@ import {
 	charge,
 	conviction,
 	defence,
+	mark,
+	noEntry,
 	tempDb,
 } from "./test-helpers";
 
@@ -65,10 +67,41 @@ describe("case: the line of a clerk job", () => {
 		expect(due("clerk")).toBe("main\t2\n");
 	});
 
-	test("a closed conviction gives no job and no clerk", () => {
+	test("a closed conviction with no pair prints the precedent job", () => {
 		put({ 1: closed(ruled(conviction)) });
-		expect(jobOf(1)).toBe("- - - - -");
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+		expect(needOnly(1)).toBe("need=clerk");
+		expect(due("clerk")).toBe("main\t1\n");
+	});
+
+	test("a conviction whose issue is closed and answered needs nobody", () => {
+		put({ 1: closed(ruled(conviction, noEntry())) });
 		expect(needOnly(1)).toBe("need=none");
+	});
+
+	test("an adopted pull request does not carry the precedent of a conviction", () => {
+		put({
+			1: ruled(
+				conviction,
+				mark("clerk", "handed", " pull=7 issue=open adopted=yes"),
+			),
+		});
+		cache([7, [1]]);
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+		put({
+			1: ruled(
+				conviction,
+				noEntry(),
+				mark("clerk", "handed", " pull=7 issue=open adopted=yes"),
+			),
+		});
+		expect(needOnly(1)).toBe("need=none");
+	});
+
+	test("a draft of the clerk carries the precedent of a conviction", () => {
+		put({ 1: ruled(conviction, pairMark("handed", 7, "open")) });
+		cache([7, [1]]);
+		expect(jobOf(1)).toBe("- - 7 1 -");
 	});
 
 	test("an open pull request of an open issue is adopted from any stage", () => {
@@ -139,9 +172,16 @@ describe("case: leaving the funnel", () => {
 		expect(jobOf(1)).toBe("- - 7 1 -");
 	});
 
-	test("a pair after an acquittal leaves the funnel, even without a pull request", () => {
-		put({ 1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))) });
+	test("a pair after an answered acquittal leaves the funnel, even without a pull request", () => {
+		put({
+			1: closed(ruled(acquittal, noEntry(), pairMark("settled", 7, "closed"))),
+		});
 		expect(needOnly(1)).toBe("need=none");
+	});
+
+	test("a pair after an unanswered acquittal leaves the precedent to the clerk", () => {
+		put({ 1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))) });
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
 	});
 
 	test("a human issue has the line of a clerk without a lead", () => {

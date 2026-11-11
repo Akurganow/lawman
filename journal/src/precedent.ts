@@ -12,8 +12,9 @@ import {
 import { dirname, join } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
-import { caseStage } from "./cases";
+import { caseStage, markersOf } from "./cases";
 import { cleanCharacters } from "./clean";
+import { answers } from "./clerk-jobs";
 import { consents, jevAllowed, licensesAllowed } from "./consent";
 import { EXIT, Fail, out, readStdin, withDb } from "./db";
 import {
@@ -59,6 +60,7 @@ const CONSTITUTION = "LAWMAN.md";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
 const NONE = "none";
+const ANSWERED = "answered";
 const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // the names stand before the first colon, so no character of the rule reads as a name
 const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
@@ -325,13 +327,13 @@ function apply(
 	};
 }
 
-type Stored = { stage: string; fields: string; raw: string };
+type Stored = { stage: string; fields: string; raw: string; ord: string };
 
 // the newest court marker of the case, which must be a ruling
 function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	const row = db
 		.query(
-			"SELECT stage, fields, raw FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
+			"SELECT stage, fields, raw, ord FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
 		)
 		.get(precinct, issue) as Stored | null;
 	if (row === null || !KIND_OF.has(row.stage))
@@ -400,15 +402,20 @@ function summary(sections: Item[][], lines: string[]): string[] {
 // the newest ruling of the case and its cached comment
 function rulingOf(precinct: string, issue: number) {
 	const login = trustedLogin();
-	const { marker, text } = withDb((db) => {
+	const { marker, text, answered } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
-		return { marker: m, text: rulingText(db, precinct, issue, m.raw, login) };
+		return {
+			marker: m,
+			text: rulingText(db, precinct, issue, m.raw, login),
+			answered: markersOf(db, precinct, issue).some((c) => answers(c, m.ord)),
+		};
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	return {
 		precedentKind: KIND_OF.get(marker.stage) ?? NO_VALUE,
 		date: at.slice(0, 10),
 		text,
+		answered,
 	};
 }
 
@@ -624,7 +631,12 @@ async function writePrecedents(
 	tree: string,
 	source: string,
 ): Promise<void> {
-	const { precedentKind, date, text } = rulingOf(precinct, issue);
+	const { precedentKind, date, text, answered } = rulingOf(precinct, issue);
+	// the clerk has already recorded this ruling, so no file is written a second time
+	if (answered) {
+		out("no-entry", ANSWERED);
+		return;
+	}
 	const sections = itemsOfRuling(text);
 	const items = sections.flat();
 	const config = readConfig();

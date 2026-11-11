@@ -31,7 +31,11 @@ describe("case: clerk stage", () => {
 		["an open conviction needs the clerk", ruled(conviction), "clerk"],
 		["an open acquittal needs the clerk", ruled(acquittal), "clerk"],
 		["a closed acquittal needs the clerk", closed(ruled(acquittal)), "clerk"],
-		["a closed conviction needs nobody", closed(ruled(conviction)), "none"],
+		[
+			"a closed conviction needs the clerk for its precedent",
+			closed(ruled(conviction)),
+			"clerk",
+		],
 		[
 			"an entry does not answer an open conviction",
 			ruled(conviction, entry()),
