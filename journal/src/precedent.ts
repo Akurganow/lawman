@@ -12,7 +12,7 @@ import {
 import { dirname, join } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
-import { caseStage } from "./cases";
+import { caseStage, rulingComment } from "./cases";
 import { cleanCharacters } from "./clean";
 import { consents, jevAllowed, licensesAllowed } from "./consent";
 import { EXIT, Fail, out, readStdin, withDb } from "./db";
@@ -25,10 +25,15 @@ import {
 import { readConfig } from "./input-files";
 import { jevNone, replyOf } from "./jev";
 import { utf8 } from "./launch";
-import { sectionNodes, sectionWords, sliceOf } from "./law-sections";
+import {
+	type Item,
+	itemsOf,
+	sectionNodes,
+	sectionWords,
+	sliceOf,
+} from "./law-sections";
 import { configValue } from "./law-sync";
 import { lintPage } from "./lint";
-import { extractMarkers, stripCr } from "./markers";
 import {
 	ALL,
 	asksJev,
@@ -65,38 +70,14 @@ const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
 const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
 const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
+// the marker of a list item, with any spaces after it
+const LIST_PREFIX = /^(?:[-*+]|\d+[.)])\s+/;
 const OLD_SOURCE = /^(.+) \((\S+)\)$/;
 // a Map, so a stage named like an object member gives no kind
 export const KIND_OF = new Map([
 	["conviction", "condemns"],
 	["acquittal", "protects"],
 ]);
-
-// an underlined heading never applies as written
-type Item = { text: string; bad: boolean };
-
-function itemsOf(text: string, nodes: RootContent[]): Item[] {
-	return nodes.flatMap((node): Item[] => {
-		if (node.type === "html" || node.type === "thematicBreak") return [];
-		if (node.type === "list")
-			return node.children.flatMap((li) => {
-				const t = sliceOf(text, li.children[0], li.children.at(-1));
-				return t === "" ? [] : [{ text: t, bad: false }];
-			});
-		if (
-			node.type === "heading" &&
-			text[node.position?.start.offset ?? 0] !== "#"
-		)
-			return [
-				{
-					text: sliceOf(text, node.children[0], node.children.at(-1)),
-					bad: true,
-				},
-			];
-		const t = sliceOf(text, node, node);
-		return t === "" ? [] : [{ text: t, bad: false }];
-	});
-}
 
 type EntryKind = "absent" | "file" | "dir" | "other";
 
@@ -147,6 +128,15 @@ class Folder {
 	set(name: string, text: string | null): void {
 		this.state.set(name, text);
 	}
+
+	// the file stands as the command would write it, up to the departments the adding step set
+	stands = (name: string, text: string) => {
+		if (this.state.has(name) || entryKind(this.path(name)) !== "file")
+			return false;
+		const held = this.disk(name) ?? "";
+		const departments = headerOf(held).departments;
+		return departments !== null && held === withDepartments(text, departments);
+	};
 
 	free(base: string): string {
 		for (let k = 1; ; k++) {
@@ -263,22 +253,23 @@ function apply(
 		named: Named,
 		reason?: string,
 	) => {
+		const original = originalOf(named);
+		const content = buildPrecedent(
+			{
+				kind: ruling.precedentKind,
+				departments: original,
+				issue: ruling.issue,
+				date: ruling.date,
+				ruling: ruling.source,
+			},
+			text,
+		);
+		// a precedent that already stands is no change
+		if (reason === undefined && folder.stands(base, content))
+			return { name: base, original };
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		const original = originalOf(named);
-		folder.set(
-			name,
-			buildPrecedent(
-				{
-					kind: ruling.precedentKind,
-					departments: original,
-					issue: ruling.issue,
-					date: ruling.date,
-					ruling: ruling.source,
-				},
-				text,
-			),
-		);
+		folder.set(name, content);
 		if (why !== undefined) reasons.set(name, why);
 		created.set(name, named);
 		return { name, original };
@@ -325,13 +316,13 @@ function apply(
 	};
 }
 
-type Stored = { stage: string; fields: string; raw: string };
+type Stored = { stage: string; fields: string; ord: string };
 
 // the newest court marker of the case, which must be a ruling
 function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	const row = db
 		.query(
-			"SELECT stage, fields, raw FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
+			"SELECT stage, fields, ord FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
 		)
 		.get(precinct, issue) as Stored | null;
 	if (row === null || !KIND_OF.has(row.stage))
@@ -339,40 +330,20 @@ function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	return row;
 }
 
-// the counted marker on the last non-empty line of the text, if any
-function markerAtEnd(text: string, author: string | null, login: string) {
-	const at = text
-		.split("\n")
-		.map(stripCr)
-		.findLastIndex((l) => l.trim() !== "");
-	return extractMarkers(
-		{ text, createdAt: "", rank: 1, author: author ?? "" },
-		login,
-	).find((f) => f.line === at + 1)?.marker;
-}
-
-// the cached ruling comment: its last line is the newest ruling marker of the case
+// the cached comment that holds the newest ruling marker of the case
 function rulingText(
 	db: Database,
 	precinct: string,
 	issue: number,
-	raw: string,
-	login: string,
+	ord: string,
 ): string {
-	const comments = db
-		.query(
-			"SELECT author, body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at DESC, rowid DESC",
-		)
-		.all(precinct, issue) as { author: string | null; body: string }[];
-	const ruling = comments.find(
-		(c) => markerAtEnd(c.body, c.author, login)?.raw === raw,
-	);
-	if (ruling === undefined)
+	const body = rulingComment(db, precinct, issue, ord);
+	if (body === undefined)
 		throw new Fail(
 			EXIT.USAGE,
 			`no cached comment carries the court ruling of ${precinct} #${issue}`,
 		);
-	return ruling.body;
+	return body;
 }
 
 export function trustedLogin(): string {
@@ -399,10 +370,10 @@ function summary(sections: Item[][], lines: string[]): string[] {
 
 // the newest ruling of the case and its cached comment
 function rulingOf(precinct: string, issue: number) {
-	const login = trustedLogin();
+	trustedLogin();
 	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
-		return { marker: m, text: rulingText(db, precinct, issue, m.raw, login) };
+		return { marker: m, text: rulingText(db, precinct, issue, m.ord) };
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	return {
@@ -705,6 +676,17 @@ function oldLine(text: string): OldItem["line"] {
 		: { date, number: Number(number), rule, link };
 }
 
+// A line of the old form that an HTML block holds is part of that block, so the
+// block stands in its place as an item that the move cannot take.
+function oldItemsOf(page: string, node: RootContent): Item[] {
+	if (node.type !== "html") return itemsOf(page, [node]);
+	const text = sliceOf(page, node, node);
+	const holds = text
+		.split(/\r\n|\r|\n/)
+		.some((l) => OLD_LINE.test(l.trim().replace(LIST_PREFIX, "")));
+	return holds ? [{ text, bad: true }] : [];
+}
+
 // every item of the old sections except `none`, numbered from 1 in page order
 export function oldItems(page: string): OldItem[] {
 	const parts = sectionNodes(page, OLD_SECTION).flatMap((nodes, section) =>
@@ -715,7 +697,7 @@ export function oldItems(page: string): OldItem[] {
 						node: li,
 						item: itemsOf(page, [{ ...node, children: [li] }]),
 					}))
-				: [{ section, node, item: itemsOf(page, [node]) }],
+				: [{ section, node, item: oldItemsOf(page, node) }],
 		),
 	);
 	return parts

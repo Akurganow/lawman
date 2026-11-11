@@ -5,6 +5,8 @@ import {
 	due,
 	fields,
 	human,
+	issuesJson,
+	lined,
 	need,
 	needOnly,
 	pairMark,
@@ -18,10 +20,14 @@ import { pairs, run } from "./clerk-jobs-fixture";
 import {
 	acquittal,
 	addPrecincts,
+	BASE,
+	call,
 	caseMark,
 	charge,
 	conviction,
 	defence,
+	lead,
+	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -53,14 +59,14 @@ describe("case: the line of a clerk job", () => {
 	});
 
 	test("an unanswered acquittal prints the precedent job", () => {
-		put({ 1: ruled(acquittal) });
+		put({ 1: ruled(lined(acquittal)) });
 		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
 	});
 
 	test("of two open precedent cases of one priority the older goes first", () => {
 		put({
-			1: { ...ruled(acquittal), createdAt: T(8) },
-			2: { ...ruled(acquittal), createdAt: T(7) },
+			1: { ...ruled(lined(acquittal)), createdAt: T(8) },
+			2: { ...ruled(lined(acquittal)), createdAt: T(7) },
 		});
 		expect(due("clerk")).toBe("main\t2\n");
 	});
@@ -69,6 +75,21 @@ describe("case: the line of a clerk job", () => {
 		put({ 1: closed(ruled(conviction)) });
 		expect(jobOf(1)).toBe("- - - - -");
 		expect(needOnly(1)).toBe("need=none");
+	});
+
+	// a marker row exists only for the trusted login, so only its comment is the ruling
+	test("a copy of the ruling marker by an outsider changes nothing", () => {
+		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
+		const asOutsider = (spec: Spec, at: number) => {
+			const form = JSON.parse(issuesJson({ 1: spec }));
+			form.issues[0].comments[at].author = { login: "outsider" };
+			call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
+			expect(jobOf(1)).toBe("- - - - -");
+		};
+		asOutsider(closed(ruled(conviction, copy)), 4);
+		// a ruling marker in the issue body has no comment, whoever comments first
+		const body = [lead(), caseMark(), charge(), defence(), conviction()];
+		asOutsider({ state: "CLOSED", body, comments: [[T(10), copy]] }, 0);
 	});
 
 	test("an open pull request of an open issue is adopted from any stage", () => {
@@ -140,7 +161,9 @@ describe("case: leaving the funnel", () => {
 	});
 
 	test("a pair after an acquittal leaves the funnel, even without a pull request", () => {
-		put({ 1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))) });
+		put({
+			1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))),
+		});
 		expect(needOnly(1)).toBe("need=none");
 	});
 
