@@ -2,19 +2,15 @@
 
 Use this reference when the constitution contract in the law differs from `contract_version` in `config.yaml`. A plugin update moved the law, and a tick recorded it. Amend brings each precinct's constitution to the new contract. It does not move the law and does not touch the journal.
 
-Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Step 2 proposes, decides and applies for each precinct. Step 3 records and summarizes.
+Amend follows the shape in `SKILL.md`. Step 1 finds the change. Step 2 proposes, decides and applies for each precinct. Step 3 records and summarizes.
 
-## Step 1. Show the change
+## Step 1. Find the change
 
 1. Note `contract_version` (it may be absent), `amended_law_commit`, `law_commit` and `journal_sha256` from `config.yaml`.
 2. Compute the SHA-256 of `bin/journal`. Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
-3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`. Read the `Contract version` line in `lawman/skills/lawman-law/references/departments.md`.
-4. Read the current `constitution.md` of the law folder. Read the older text at `amended_law_commit` from the history of the law folder. Compare the two texts. Show the developer the differences. When the folder has no history, or its history lacks `amended_law_commit`, there is no older text. Show the developer the whole current text as changed. That is a path, not a stop.
-5. Ask in the question tool. Offer "Amend now" (recommended) and "Later".
-6. Label "Later" so that it says the next start enters amend again.
-7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
-8. Stop on "Later", an empty answer or a cancel.
-9. On "Amend now", read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them. Three more host actions serve the move of the old precedents. They turn a line's link into an issue number, read a file at a pull request revision and write to its branch. Find a missing one the same way when a precinct holds old lines, and let Step 3 append it too.
+3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`.
+4. Read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them. Three more host actions serve the move of the old precedents. They turn a line's link into an issue number, read a file at a pull request revision and write to its branch. Find a missing one the same way when a precinct holds old lines, and let Step 3 append it too.
+5. Read the current `constitution.md` of the law folder. Read the older text at `amended_law_commit` from the history of the law folder. When the folder has no such history, read the file at `amended_law_commit` in `release_repo`, read-only, with the tool the notes name, after both values pass their class checks. Compare the two texts, and keep the differences for the rows of Step 2. Show no whole text. When no older text can be had, or it equals the current text, there is no comparison. The lint of each precinct in Step 2 then says what the precinct lacks. That is a path, not a stop.
 
 ## Step 2. Amend the precincts
 
@@ -24,10 +20,10 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 3. When the file's `contract_version` is lower than `<n>`, draft an amendment. Skip a precinct that already has an open pull request from `lawman/constitution-v<n>`, and name it as waiting for that merge.
 4. Draft the amendment from the precinct's current `LAWMAN.md`. It never redrafts a section from the files alone. Follow these items in order.
    1. Create and switch to the branch `lawman/constitution-v<n>` from the origin's head in the precinct, and stop if that fails.
-   2. Use the comparison of step 1 item 4 to see what the new contract version requires.
-   3. Carry every section of `LAWMAN.md` over as it is, and change only what that comparison requires. Set `contract_version` to `<n>`. A section that the new contract names and that the file holds as an unknown section is a collision. That section becomes the listed one and keeps its lines. Write no second heading.
+   2. Use the comparison of step 1 item 5, or the lint of item 2 when there is none, to see what the new contract version requires.
+   3. Carry every section of `LAWMAN.md` over as it is, and change only what the new contract requires. Set `contract_version` to `<n>`. A section that the new contract names and that the file holds as an unknown section is a collision. That section becomes the listed one and keeps its lines. Write no second heading.
    4. Make one row of the proposal for each section that the new contract added or changed. The Labels section is one: its questions come from the section "Pick the labels" in `references/precinct.md`. A file with no Labels heading gets one. The place is no rule.
-   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` in the current folder and, from the history of the law folder, at `amended_law_commit`. List only the files whose name ends in `.md`, because a folder beside a page is no page. The names present only in the current folder are the shared departments added since, except `licenses`. Write no line for `licenses`. With no older list, a department that the precinct's `LAWMAN.md` already lists is not new. Every other name is new, except `licenses`.
+   5. List the files of the folder `lawman/skills/lawman-law/references/departments/` in the current folder and, list the same folder with the same tool, read-only, at `amended_law_commit` in `release_repo`. List only the files whose name ends in `.md`, because a folder beside a page is no page. The names present only in the current folder are the shared departments added since, except `licenses`. Write no line for `licenses`. With no such list, no department is new.
    6. For those departments only, make one row each, with its pair from the section "Departments" in `references/precinct.md`.
    7. Write the department lines that those pairs describe.
    8. Run the section "Lint the draft" of the add path.
@@ -35,9 +31,9 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    10. Show only these rows: the changed sections, the new departments, the branch and title, and the lint result. When the user answered "Move" in item 2a, the rows include "Old precedents" of "The repository proposal".
    11. Leave out the weight, TypeSafe, Catalog, consent, reading-way and own-department rows, and the consent question. Installation facts never go into a precinct's repository.
    12. Ask in the question tool, in one call for the precinct. The call covers the amendment and, when the proposal holds the row "Old precedents", the move.
-   13. Offer "Open the pull request" (recommended), "Change" and "Skip".
+   13. Offer "Open the pull request" (recommended), "Change" and "Skip". Label "Skip" with its consequence: the next start enters amend again, and roles and the menu stay out of reach until an amendment runs.
    14. On "Change", follow the change items of "The repository proposal".
-   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path. Then run part two of "Move the old precedents" when the proposal holds its row. After the pull request opens, set the description of the label on the host when the proposal holds that row. Use the way that the host notes record, or that item 9 of Step 1 found. Read the labels back and find the new description. If the write or the read-back fails, tell the developer and go on.
+   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path. Then run part two of "Move the old precedents" when the proposal holds its row. After the pull request opens, set the description of the label on the host when the proposal holds that row. Use the way that the host notes record, or that item 4 of Step 1 found. Read the labels back and find the new description. If the write or the read-back fails, tell the developer and go on.
    16. Use the branch lawman/constitution-v<n> in place of lawman/constitution.
    17. Use "Amend the Lawman constitution to version <n>" as the commit message and the pull request title.
    18. On "Skip", write nothing for the precinct, the move included.
@@ -50,6 +46,5 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 When the developer skipped a precinct, skip item 1 and name the skipped precinct in item 2. Say that the next start enters amend again.
 
 1. Set `contract_version` to `<n>` and `amended_law_commit` to `law_commit`. Keep the other keys. Write `config.yaml`, and read it back.
-2. Tell the developer the new contract version, the pull requests that the amendment opened and the pull requests that moved old precedents. Say that a move, an amendment and a pull request of the old form all edit `LAWMAN.md`. Say that no order stands between them and that a conflict shows in the pull request itself. Say that a job in monitor mode can move to the entry file with the part "Roles". Say that two of its features stay until it moves. They are the 8000-character cut of its display and its extra run at the change from `idle` to an empty output.
-3. If a folder under `lawman/skills/` other than `assembly` and `lawman-law` has no scheduler job `[lawman] <role>`, tell the developer to run the assembly again. That enters the roles mode.
-4. Append to `host.md` the label rows and the host actions of the move that Step 1 item 9 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.
+2. Tell the developer the new contract version, the pull requests that the amendment opened and the pull requests that moved old precedents. When this run opened an amendment and a move or a pull request of the old form also edits `LAWMAN.md`, say that no order stands between them and that a conflict shows in the pull request itself.
+3. Append to `host.md` the label rows and the host actions of the move that Step 1 item 4 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.

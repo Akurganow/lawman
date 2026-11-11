@@ -96,7 +96,7 @@ The label of the choice names the consequence in one phrase. The right to declin
 
 With a signature chosen, `verify` is needed, because nothing else can prove the method. "Change" in the approval does not leave it empty. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
 
-The summary of a refusal says the two facts above in plain words. It also names both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
+The summary of a refusal says the two facts above in plain words. It also names the way to turn the check on later: the menu item "Host" runs part Host again.
 
 The proposal shows the signer that the method checks: `<release_repo>` and its release workflow. The root of trust comes from the signature system, never from the release.
 

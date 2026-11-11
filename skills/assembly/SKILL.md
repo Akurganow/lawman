@@ -28,7 +28,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
     3. Record a page as a match when its command exits 0.
     4. Stop if a page names no detection command, and tell the developer the page needs one.
     5. Stop if no page matches, and tell the developer to install a harness first.
-    6. When two pages match, ask in the question tool which one to use.
+    6. When two pages match, take the page of the harness that runs this session.
     7. Record `harness` as the page's file name without `.md`.
 2. Find the default installation.
     1. Run the list command the harness page gives for the scheduler's jobs.
@@ -53,42 +53,43 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read `law_commit`, `release_repo` and the commit that the law folder holds, and take the first case that fits.
 
-- `law_commit` or `release_repo` is missing. Take the row `stop stopped-law-config` of the table below. Ask no question about the sync first.
+- `law_commit` or `release_repo` is missing. Take the row `stop stopped-law-config` of the table below.
 - The commit cannot be read, because the folder has no history. Compare nothing. Say in one line that no comparison was made. Say what "Find the facts of the law" in `references/install.md` says about a folder with no history, and whether `shared/law-version` exists. Go on to the modes.
 - The commit equals `law_commit`. Go on to the modes.
 - The commit differs from `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
 
-When the host notes record the refusal of the signature, look for a verifier on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
-
-**The sync of the law.** The sync downloads the release of the new law, checks it, replaces `bin/journal` and rewrites the sync keys of `config.yaml`. It is no tick and no model run of a role. Say that in one line and ask once, in the question tool, whether to run it. On a no, end the assembly run.
+**The sync of the law.** The sync downloads the release of the new law, checks it, replaces `bin/journal` and rewrites the sync keys of `config.yaml`. It is no tick and no model run of a role. Say that in one line, then run it.
 
 Run `bin/journal law-update assembly`. For each `self` line, do the step as the row of that name in the table of `lawman/skills/lawman-law/references/tick.md#sync-the-law` says. The assembly takes no other row of that table. Where the journal has no such command, it is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` with `assembly` as the role name. Read its stop as a stop below. The assembly keeps no update list, because mode 4 asks the license question.
 
 | Last line | Tell the developer | Then |
 | :-- | :-- | :-- |
 | `synced <tag>` | Each `ALARM` line of the sync. | Read `config.yaml` again. Go on to the modes. |
-| `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and where its value comes from. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit of the tag in `release_tag` of `config.yaml`, in the release repository, as the host tool reports it. When it cannot be had, 40 zeros are a placeholder that the sync replaces. The sync then also fills `amended_law_commit` from the value that `law_commit` held, so say that the zeros reach it when that key is absent. | Offer to write the line. On a yes, write it, read `config.yaml` back, and go on with the cases above. On a no, end the assembly run. |
+| `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and where its value comes from. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit of the tag in `release_tag` of `config.yaml`, in the release repository, as the host tool reports it. When it cannot be had, 40 zeros are a placeholder that the sync replaces. The sync then also fills `amended_law_commit` from the value that `law_commit` held, so say that the zeros reach it when that key is absent. | Write the line, read `config.yaml` back, and go on with the cases above. End the assembly run only when a value cannot be had and no placeholder stands for it. |
 | `stop stopped-no-verifier` | The host notes name neither a verifier nor a refusal of the signature check. | Run part Host of `references/install.md` once, then run the sync again. End the assembly run when the same stop comes back. |
 | any other `stop` | The reason, and the action of its row under "The stops" in `lawman/docs/journal.md`. | End the assembly run. |
 | a non-zero exit | `journal unavailable: <stderr>` | End the assembly run. |
 
-Take the first mode that holds.
+Take the first mode that holds. After amend, catalog, licenses or roles ends with its answers written, take a later mode that holds, and end at the menu job. A mode that ends with a skip or a cancel ends the run.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`.
 3. Answer the catalog by reading `references/catalog.md` when one of these holds: `catalog` is absent from `config.yaml`. `catalog` is `yes` and a precinct has no pair in `catalog_precincts`. A precinct that said yes has no reading entry in `host.md`.
-4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel or a constitution that fails its check writes nothing. Then go on to the next mode that holds and to the menu in the same run.
+4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel or a constitution that fails its check writes nothing. The run goes on.
 5. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
 6. Otherwise, run the menu job.
-    - Before the menu, for each precinct that said yes to the license department, run `references/licenses/update.md`. An answer or a skip does not block the menu.
-    - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
-    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
-    - For "Keep as is", end the mode with the words "Nothing changed".
-    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
+    - Find `config.yaml`, the job list, the precincts, the paused jobs and the output of `bin/journal commands`. Propose only what the choice needs.
+    - Say in one line each of these cases that an earlier release left behind, with the choice that mends it:
+        - A scheduled job that "Translation" in `references/roles.md` would change, found as "Entry mode" there says: "Roles".
+        - An installation with every command empty in `bin/journal commands`: "Host".
+        - A precinct with every command empty in `bin/journal commands <precinct>`: "Precincts".
+    - One empty command among others is the person's choice. Offer nothing for it.
+    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". "Keep as is" stays first. While a case remains, the choice that mends the first case carries the recommendation in its place. After that part ends, ask again. A case that the part left unmended is said again.
+    - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
+    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
     - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `trusted_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
-    - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, role entry, commands and limits. Name also these topics in the same line: delivery check, old precedents, constitution sections, weight, own department and license department.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
 
@@ -96,10 +97,10 @@ Tell the developer the mode and the reason in one sentence. Then say one line th
 
 Every mode has five parts, in this order: find, propose, decide, apply and summary. This holds for install, roles, amend, catalog, licenses and each menu job.
 
-- **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
+- **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
 - **Decide.** Ask only the real decisions.
-- **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. Two exceptions hold. The first is the throwaway folder of a proof, which `references/commands.md` describes. It lies outside the installation, is made fresh and is removed on every outcome, a stop included. The second is the one-off job of a proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent to paid runs. Its name never starts with the prefix of an installation job, and it is removed the same way. A third exception is the sync of the law in "Choose the mode", which waits for its own yes. After approval, run the writes in a fixed order.
+- **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. Two exceptions hold. The first is the throwaway folder of a proof, which `references/commands.md` describes. It lies outside the installation, is made fresh and is removed on every outcome, a stop included. The second is the one-off job of a proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent to paid runs. Its name never starts with the prefix of an installation job, and it is removed the same way. A third exception is the sync of the law in "Choose the mode". Every tick runs it unasked. After approval, run the writes in a fixed order.
 - **Summary.** Follow the section "Finish". Add how to change each item later.
 
 Explain a topic only when the developer asks. The explanations sit in `references/explain.md`.
@@ -126,8 +127,8 @@ Read the section "Asking the developer" of the harness page, when the page has o
 16. When the developer cancels a question, end the mode without a write. A timeout means nobody answered and refuses nothing. Send the open questions once in one message, as item 17 says, wait for the reply, and keep the answers of the earlier calls.
 17. When the harness has no question tool, or the tool is off, send the same questions in one message.
 18. In that message, number the questions, letter the choices and mark the recommended one.
-19. When the harness cannot list a value, say so.
-20. Ask for it in free text, with one example and the default, if the value has one.
+19. When no command lists a value, read it from the harness's own state, as the page names it. When no source holds it, say so.
+20. Then ask for it in free text, with one example and the default, if the value has one.
 
 ### Bulk edits
 
@@ -151,7 +152,7 @@ The developer may answer a proposal with a list or with free text. Treat that an
   | a proof run of a command | the user accepted its price |
 - Ask the developer to confirm that anything arrived. The one exception is the confirmation of receipt during the delivery check that the user chose.
 
-Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, ask whether the key already lies somewhere the developer knows. Offer "the page's place" as the other choice. The developer writes the value there.
+Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, say that the developer writes the value in the page's place.
 
 ## Rules
 
@@ -159,7 +160,7 @@ Check for a secret only after the developer chooses the feature that needs it. L
 - Before you run or write anything, here or on the host, tell the user in one line what you are about to do.
 - Write what you say to the user in the user's language.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.
-- Never edit the harness configuration. Show the lines. The developer applies them and confirms.
+- Never edit the harness configuration. Show the lines. The developer applies them.
 - Merge a pull request of the assembly only when the user explicitly asks the assembly to merge its pull requests. When the host notes record no merge form, find it as part Host finds other host actions, and record it. A refused merge leaves the pull request open: say so.
 - Never resolve or close a reviewer's thread. Before a merge, show the user each open thread with what it says. The user decides.
 - Never write a local path, a key, an account name, a token or a machine detail into a precinct, pull request, issue or commit.
