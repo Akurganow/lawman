@@ -200,7 +200,7 @@ Run this section once for a precinct, when its catalog consent is "Yes" or its l
 79. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
 79a. Add to `host.md` the host actions that the approval named as found, such as these. One turns a link into an issue number. One reads a file at the revision of a pull request. One writes to its branch. Keep every other line, write no credential value, and read the file back.
 79b. When the user answered "Move", run part two of the section "Move the old precedents".
-80. When `<w>` is above zero, run steps 10 to 15 of "Raise a weight".
+80. When `<w>` is above zero, run steps 9 to 14 of "Raise a weight".
 81. When the job opened a pull request, tell the developer that the next start of the assembly sees the merged file and offers to raise the weight.
 82. Tell the developer that the job "add a department" also follows the merge, for a department of the repository's own.
 83. Name the commands that were written, the ones left empty and the ones that are not proven in the tick environment. Name the pull request of the move, if one opened, and the lines that stayed notes.
@@ -374,16 +374,15 @@ Ask in the question tool.
 3. Ask in the question tool, and offer "Keep as is" first.
 4. Take a precinct name with its new weight as free text.
 5. Show the changed rows, marked.
-6. Ask in the question tool to apply or change.
-7. Run the next step for each changed row.
-8. Run `bin/journal precinct set <precinct name> --weight <n>`, and stop if it fails.
-9. Skip the rest unless an edit sets a weight above zero.
-10. Run the list command from the harness page, and take the `[lawman]` jobs that it shows as paused. Skip the rest when none is paused.
-11. Show the paused jobs as rows. Add the line that the page's "Paused jobs" gives for the first run of a job created paused, marked as the page marks it.
-12. Ask in the question tool which jobs resume, with several-choice.
-13. Offer "All" first, then the paused jobs, up to the tool's limit.
-14. Take the jobs beyond the limit as free text, and resume nothing on an empty answer.
-15. Run the resume command from the harness page for each chosen job, and touch no other job.
+6. Run the next step for each changed row.
+7. Run `bin/journal precinct set <precinct name> --weight <n>`, and stop if it fails.
+8. Skip the rest unless an edit sets a weight above zero.
+9. Run the list command from the harness page, and take the `[lawman]` jobs that it shows as paused. Skip the rest when none is paused.
+10. Show the paused jobs as rows. Add the line that the page's "Paused jobs" gives for the first run of a job created paused, marked as the page marks it.
+11. Ask in the question tool which jobs resume, with several-choice.
+12. Offer "All" first, then the paused jobs, up to the tool's limit.
+13. Take the jobs beyond the limit as free text, and resume nothing on an empty answer.
+14. Run the resume command from the harness page for each chosen job, and touch no other job.
 
 ## Add a department
 
