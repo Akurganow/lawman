@@ -16,6 +16,17 @@ import {
 } from "./law-links-fixture";
 import { LAW, ROOT } from "./test-helpers";
 
+// Patrol and investigation do not get exhibits.md in their input. Their skills tell
+// them to read the file themselves, so every section of it counts as read.
+const READS_EXHIBITS_ITSELF = ["patrol", "investigation"];
+const readOf = (role: string): Set<string> => {
+	const read = readBy(lawOf(role));
+	if (READS_EXHIBITS_ITSELF.includes(role))
+		for (const name of HEADINGS["exhibits.md"] ?? [])
+			read.add(`exhibits.md#${slug(name)}`);
+	return read;
+};
+
 // the skill of a role and its references
 const filesOf = (role: string): string[] => {
 	const refs = join(ROOT, "skills", role, "references");
@@ -33,7 +44,7 @@ describe("links from the skills to the sections of the law", () => {
 	test.each(ROLE_NAMES)(
 		"every section that %s names stands in its input, and no heading that left the law is named",
 		(role) => {
-			const read = readBy(lawOf(role));
+			const read = readOf(role);
 			const failed = filesOf(role).flatMap((path) => {
 				const text = readFileSync(path, "utf8");
 				return missing(linksIn(text), text.split("\n"), read).map(
@@ -54,8 +65,10 @@ describe("links from the skills to the sections of the law", () => {
 	test.each(ROLE_NAMES)(
 		"%s reads every section that a section it reads in LAW.md or tick.md names",
 		(role) => {
-			const read = readBy(lawOf(role));
-			for (const file of ["LAW.md", "tick.md"]) {
+			for (const file of ["LAW.md", "tick.md", "exhibits.md"]) {
+				// a role that reads exhibits.md itself follows its pointers itself
+				const read =
+					file === "exhibits.md" ? readBy(lawOf(role)) : readOf(role);
 				const text = readFileSync(join(LAW, file), "utf8");
 				expect([file, unreached(text, file, read)]).toEqual([file, []]);
 			}
@@ -114,12 +127,28 @@ describe("the check of the links", () => {
 		expect(check("Read the evidence of the case.")).toEqual([]);
 	});
 
-	test("a section that the role reads by a self line, and one outside the four files, pass", () => {
+	test("a section that the role reads by a self line, and one outside the five files, pass", () => {
 		expect(check('A line `self law` stands for "Exhibits".')).toEqual([]);
 		expect(check('Run "Sync the law with an older journal".')).toEqual([]);
-		expect(check('Run the "Run a source" section of `exhibits.md`.')).toEqual(
+		expect(check('Read the "Nowhere" section of `constitution.md`.')).toEqual(
 			[],
 		);
+	});
+
+	test("an anchor into exhibits.md stands in the input or fails", () => {
+		const failing = missing(
+			linksIn("Run exhibits.md#run-a-source."),
+			["Run exhibits.md#run-a-source."],
+			reads,
+		);
+		expect(failing).toEqual(["1: Run a source"]);
+		expect(
+			missing(
+				linksIn("Run exhibits.md#run-a-source."),
+				["Run exhibits.md#run-a-source."],
+				readBy([["exhibits.md", ["Run a source"]]]),
+			),
+		).toEqual([]);
 	});
 
 	test("a reader of a section reads the sections that it names", () => {
@@ -202,7 +231,7 @@ describe("the check of the links", () => {
 		}
 	});
 
-	test("no heading on the list of departed headings stands in the four files", () => {
+	test("no heading on the list of departed headings stands in the five files", () => {
 		const standing = Object.values(HEADINGS).flat();
 		expect(DEPARTED.filter((name) => standing.includes(name))).toEqual([]);
 	});

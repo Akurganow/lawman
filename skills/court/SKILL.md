@@ -136,7 +136,7 @@ For a conviction, run these items in order:
 
 1. Decide alone whether the conviction is `P0`. Never raise this decision later.
 2. When Jev is allowed, write the brief by the "Brief" section. Use kind `p0` for the court's own `P0`. Otherwise use kind `grade` for a defect and kind `requirement` for a requirement. For a requirement at `P0`, `defect` in the `p0` brief says what the repository lacks and what the lack exposes.
-3. Follow the "Send" section once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
+3. Follow the Send section of this skill once. A `jev none reason=brief` line is a rejected brief and does not count as a send. Fix the line or the field that the journal names, and follow the section once more.
 4. Choose one priority from the law's `LAW.md#role-court` section: `P0`, `P1`, `P2` or `P3`. Use `P2` when none of the other meanings fits. The printed Jev line is evidence only. The court may differ from it without giving a reason.
    - After a `grade` line or a `requirement` line, choose among `P1`, `P2` and `P3` only.
    - After a `p0` line, the court may lower its `P0` to `P1`.

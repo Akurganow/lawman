@@ -205,12 +205,24 @@ function expected(role: string): Expected[] {
 		court: ["## Precedent", "## Precedent"],
 	};
 	const wanted = markers[role];
+	// the sections that the three judging roles apply when they re-read exhibits
+	const exhibits = [
+		"## Read numbered lines",
+		"## Quote a claim of absence",
+		"## Follow a missing path",
+		"## Run a source",
+		"## Source values",
+		"## Ask an expert",
+	];
 	const extra: Expected[] = [
 		...(wanted === undefined
 			? []
 			: [{ head: "law markers.md", headings: wanted }]),
 		...(role === "patrol"
 			? [{ head: "law departments.md", whole: file("departments.md") }]
+			: []),
+		...(["prosecutor", "defender", "court"].includes(role)
+			? [{ head: "law exhibits.md", headings: exhibits }]
 			: []),
 	];
 	return [

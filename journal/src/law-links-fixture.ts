@@ -3,12 +3,13 @@ import { join } from "node:path";
 import { INTRO, WHOLE } from "./input-roles";
 import { LAW } from "./test-helpers";
 
-// The four files whose sections the roles take by heading.
+// The five files whose sections the roles take by heading.
 export const LAW_FILES = [
 	"LAW.md",
 	"tick.md",
 	"markers.md",
 	"departments.md",
+	"exhibits.md",
 ] as const;
 
 export type Ref = { line: number; name: string; file: string | null };
@@ -66,9 +67,9 @@ export const HEADINGS: Record<string, string[]> = Object.fromEntries(
 const filesOf = (name: string): string[] =>
 	LAW_FILES.filter((file) => HEADINGS[file]?.includes(name));
 
-const NAMED = /(LAW|tick|markers|departments)\.md#([a-z0-9-]+)/g;
+const NAMED = /(LAW|tick|markers|departments|exhibits)\.md#([a-z0-9-]+)/g;
 
-// A link in a skill or a role reference: a heading of the four files in straight
+// A link in a skill or a role reference: a heading of the five files in straight
 // or guillemet quotes, an anchor `<file>.md#<slug>`, or the words `<name> section`
 // for a heading that left the law. The name of an anchor
 // whose target is missing stays as written, so it fails the check.
@@ -111,7 +112,7 @@ const OWNED_SECTION = /\b\w+'s ([A-Z][^."\n,;:]*?) section\b/g;
 // The sections that a sentence of LAW.md or tick.md names with the words
 // `the "<name>" section`, `the section "<name>"` or `the sections "<name>", ...`.
 // The file is the one the sentence names with `of <file>`, else the file itself.
-// The form `<owner>'s <Name> section` counts when <Name> is a heading of the four
+// The form `<owner>'s <Name> section` counts when <Name> is a heading of the five
 // files; it names no file, so the file of the heading decides.
 export function wordsIn(text: string, own: string): Ref[] {
 	return prose(text).flatMap(([line, body]) => [
@@ -130,7 +131,7 @@ export function wordsIn(text: string, own: string): Ref[] {
 	]);
 }
 
-// The sections of the four files that the role reads, by file.
+// The sections of the five files that the role reads, by file.
 export function readBy(reads: [string, string[]][]): Set<string> {
 	const read = new Set<string>();
 	for (const [file, wanted] of reads)

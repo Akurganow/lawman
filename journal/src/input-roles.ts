@@ -189,6 +189,21 @@ const law = (role: string, tick: string[], extra: Read[] = []): Read[] => [
 	...extra,
 ];
 
+// The sections of exhibits.md that the prosecutor, the defender and the court apply
+// in the step that re-reads the exhibits. Patrol and investigation read the file
+// themselves, as their skills say.
+const EXHIBITS: Read = [
+	"exhibits.md",
+	[
+		"Read numbered lines",
+		"Quote a claim of absence",
+		"Follow a missing path",
+		"Run a source",
+		"Source values",
+		"Ask an expert",
+	],
+];
+
 const closed = (s: StageFields) => s.state === "CLOSED";
 const notOpen = (s: StageFields) => s.state !== "OPEN";
 const needNot = (need: string) => (s: StageFields) => s.need !== need;
@@ -290,18 +305,18 @@ export const ROLES: Record<string, RoleInput> = {
 	},
 	prosecutor: {
 		...ISSUE_ROLE,
-		law: law("prosecutor", JUDGING_STEPS),
+		law: law("prosecutor", JUDGING_STEPS, [EXHIBITS]),
 		stale: either(needNot("prosecutor"), closed),
 	},
 	defender: {
 		...ISSUE_ROLE,
-		law: law("defender", JUDGING_STEPS),
+		law: law("defender", JUDGING_STEPS, [EXHIBITS]),
 		stale: either(needNot("defender"), notOpen),
 		department: "stage",
 	},
 	court: {
 		...ISSUE_ROLE,
-		law: law("court", JUDGING_STEPS, [["markers.md", ["Precedent"]]]),
+		law: law("court", JUDGING_STEPS, [["markers.md", ["Precedent"]], EXHIBITS]),
 		stale: either(needNot("court"), notOpen),
 		department: "stage",
 	},
