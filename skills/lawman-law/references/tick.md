@@ -15,7 +15,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | Step | What the role does |
 | :-- | :-- |
 | `identity` | Ask the host which account the tool in the host notes acts as. A failed ask gives `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, gives `stopped-identity-changed`. |
-| `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: run the Lawman assembly". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
+| `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
 | `fetch` | the section "Fetch the precinct" |
 | `issues` | the section "Sync the tracker" |
 | `pulls` | the section "Sync the pull requests" |
