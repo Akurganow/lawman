@@ -157,18 +157,17 @@ The fixed body is:
 ````
 Closes #<n>
 
-Draft opened by the clerk to carry out the court ruling.
 Ruling: <ruling URL>
 ````
 
-Leave out the last line when there is no ruling. The title is `Execute #<n>`.
+Leave out the last line when there is no ruling. The title is `Execute #<n>`. With a ruling, `: ` and the first words of its Disposition follow, from the ruling only, never from the issue. Cut them at a word to one short line, never inside a code span.
 
 1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`.
-2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
+2. Read the ruling. A ruling whose stage is not `conviction` counts as none. Send the title to the body check with `--no-marker`. When the check refuses it, the title is `Execute #<n>` alone.
 3. Create the tree.
 4. Record one commit with no change and the message `Open execution of #<n>`.
 5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+6. Open a draft pull request from `<branch>` on the host, with the title of step 2 and the fixed body. The title and the body reach the host only as data, as Working rules says. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 7. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
 8. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
 
@@ -194,12 +193,14 @@ Taken up by the clerk as a draft that counts as not started.
 
 ## precedent
 
+The title is `Precedents of #<n>: ` and the names of the files the `precedent` output wrote or cancelled, separated by commas. Take them from each `entry` line and from each `cancel` line that holds a name and no `missing`. The journal holds each of these names to a fixed class, so the title needs no body check. The body is `Records the precedents of the court ruling <ruling URL>. Merge it to make them binding.` It holds no closing word and no fingerprint line.
+
 1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
 2. Create the tree.
 3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
 4. Record the precedent files.
 5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Precedents of #<n>`. The body is `Records the precedents of the court ruling <ruling URL>. Merge it to make them binding.` The body holds no closing word and no fingerprint line. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+6. Open a pull request that is not a draft from `<branch>` on the host, with that title and that body. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 6 and the no-entry form after a `none` or `no-entry` line.
 
 When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.

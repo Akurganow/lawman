@@ -177,7 +177,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 
 ## Recorded reasons
 
-- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is a conversation for the owner, in the report, never a lead. A claim of fact inside a recorded reason is still judged against the tree. When the tree refutes that claim, the reason protects nothing and the candidate stays open.
+- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is never a lead. A claim of fact inside a recorded reason is still judged against the tree. When the tree refutes that claim, the reason protects nothing and the candidate stays open.
 - No department judges a path from the Not judged section. The one page `licenses` reads there signs of foreign material and license statements, and judges nothing else.
 
 ## Requirement parts
@@ -339,7 +339,7 @@ The court never returns. For a defect, its doubt is an acquittal. For a requirem
 - The clerk writes its branch and its push, and creates a draft pull request. It edits a pull request body with fixed text, returns a pull request to draft and comments on a pull request. It closes and reopens a pull request. It comments on an issue and closes and reopens it.
 - The spec writer's one write is a comment on a pull request.
 - The executor writes in its copy under the run directory. It pushes to the head branch of its pull request and to no other ref, never forced. It also marks its pull request ready, returns it to draft and writes one comment on it per turn.
-- A role writes an issue title, an issue body, a comment or a commit message. The text that goes out is the journal's output, from the body check or from the hand-off, never a copy the role retypes. The host action runs only when the check exits 0. A commit message of fixed text goes out without the check. A quote of third-party text sits in a fenced block whose fence is longer than any run of the fence character in the quote. The clerk's pull request title and body hold fixed text, integers and the ruling comment URL. Its commit holds the precedent files that the journal wrote from the court's ruling, or is empty.
+- A role writes an issue title, an issue body, a comment or a commit message. The text that goes out is the journal's output, from the body check or from the hand-off, never a copy the role retypes. The host action runs only when the check exits 0. A commit message of fixed text goes out without the check. A quote of third-party text sits in a fenced block whose fence is longer than any run of the fence character in the quote. The clerk's pull request body holds fixed text, integers and the ruling comment URL. Its title holds fixed text, integers and either the first words of the court's Disposition or the names the journal printed. Its commit holds the precedent files that the journal wrote from the court's ruling, or is empty.
 
 ## Dedupe
 
@@ -371,7 +371,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 ## Pairs
 
 - Only the clerk opens a pull request. Only the clerk writes the link from an issue to a pull request, a `handed` marker on the issue.
-- For a conviction the clerk opens a draft pull request from a new branch off the tip. The title, the body and the hand-over comment hold fixed text. The commit is empty. The precedent of a ruling goes in a precedent pull request of its own, never in a pull request that executes it. The marker on the issue is the last write.
+- For a conviction the clerk opens a draft pull request from a new branch off the tip. The title holds fixed text and the first words of the court's Disposition. The body and the hand-over comment hold fixed text. The commit is empty. The precedent of a ruling goes in a precedent pull request of its own, never in a pull request that executes it. The marker on the issue is the last write.
 - An open pull request of the trusted login that closes an open issue is adopted at once. It happens at any stage of the funnel, with no court. Its priority is the best priority among the convictions of its sources, otherwise P2. It holds no precedent files. The clerk replaces the body with fixed text, sets the pull request back to draft, and keeps the old body in the hand-over comment. An adopted pull request counts as not started, even when it holds a spec or code.
 - The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing. That close or reopen is not undone on the host.
   - All sources closed by a decider: the clerk closes the pull request. One source closed while others stay open is no refusal.
@@ -392,7 +392,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 - The journal keeps the executor's state of a pull request as `work`: `todo`, `ready` or `returned`. It is `todo` while no `Executor` comment with a counted `stage=ready` marker is newer than the newest spec. Such a comment makes it `ready`. A decider returns the turn to the executor with a 👎 on the newest such comment, or with a Request changes review submitted after it. The commit that review names does not matter. A dismissed review, an approval, a non-decider's vote and every remark of a bot return nothing. A newer spec makes `work` `todo` again.
 - The executor takes a pull request whose spec is approved and whose `work` is `todo` or `returned`. A pull request with `work=ready` waits for a decider.
 - When a pull request branch conflicts with the main branch, the executor merges the main branch into it, never rebases. The executor resolves conflicts in code. Any conflict in the constitution ends the tick `skipped-merge-conflict`. The merge of a pull request into the main branch stays the owner's.
-- The title and the body of a pull request stay the clerk's fixed text. The executor never edits them.
+- The title and the body of a pull request stay as the clerk wrote them. The executor never edits them.
 - A pull request that the clerk sets back to draft after a reopen or an adoption can still have `work=ready`. It carries finished work of the executor. A decider returns it with a 👎 on the newest `Executor` comment, or marks it ready. No role does either.
 
 ## The cap table

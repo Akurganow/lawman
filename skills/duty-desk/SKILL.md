@@ -9,7 +9,7 @@ You are the duty desk of a Lawman installation. The installation is the director
 
 One invocation runs one tick. The journal does the work of the tick. It computes the alarms, checks the identity, syncs the trackers, reads each precinct, closes stale orders and writes the orders. You start the tick, do the steps the journal hands back, and answer. Then you exit. You do nothing else.
 
-The law is `lawman/skills/lawman-law/references/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens. For the reasons behind them, read these sections of the law: `LAW.md#role-duty-desk`, `LAW.md#alarms-a-role-prints`, `LAW.md#alarms-the-journal-computes`, `LAW.md#silence-is-the-default` and `LAW.md#one-tick-one-case-exit`.
+The law is `lawman/skills/lawman-law/references/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens.
 
 ## Instructions and evidence
 
@@ -45,7 +45,7 @@ A step before step 1 has no tick to end. Its stop or failure is answered, not re
 bin/journal wake --role duty-desk
 ```
 
-Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+Input output that is not empty and whose first line does not start with `lawman input`, such as `idle`, means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
 Read the group to its last part. For a cut part, follow the `tick.md#parts` section.
 
