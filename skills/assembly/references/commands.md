@@ -157,7 +157,7 @@ For each screen, run this cycle: find, propose, prove, decide.
 
 **The screen of version control.** Operations `fetch`, `file` and `files`.
 
-**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The first question is where the issues and the pull requests live. The list of answers is open. For example:
+**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The place of the issues and the pull requests is the repository's host. Ask first where they live only when the host notes name no place, the developer named another place, or the host reports its issues off. The list of answers is open. For example:
 
 - The repository's host (found, recommended).
 - Another tracker, which the developer names with its tool.

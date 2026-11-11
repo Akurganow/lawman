@@ -260,7 +260,7 @@ Each screen is one cycle: find, propose, prove, decide.
 
 ### The tracker screen
 
-Ask first where the issues and the pull requests live. The choices are an open list; for example:
+Take the repository host as the place of the issues and the pull requests. Ask first where they live only when the host notes name no place, the user named another place, or the host reports its issues off. The choices are an open list; for example:
 
 - the repository host (found, recommended);
 - another tracker, which the user names with its tool;
