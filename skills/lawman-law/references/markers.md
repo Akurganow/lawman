@@ -116,7 +116,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` follow an acquittal. They also follow a conviction whose first pull request is no draft of the clerk, or that has none, when its Precedent section holds a line other than `none`.
+- `entry` and `no-entry` follow an acquittal. They also follow a conviction whose first pair is adopted or older than the ruling, or that has no pair, when its Precedent section holds a line other than `none`.
 - `adopted` is `yes` on the `handed` marker that the adopt job writes for a pull request that is no draft of the clerk. A `handed` marker without it counts as a draft of the clerk.
 - `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".

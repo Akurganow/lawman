@@ -143,9 +143,12 @@ function tableRow(
 	if (ruling === undefined) return NO_JOB;
 	const conviction = ruling.stage === "conviction";
 	if (conviction && k === undefined && open) return job("open");
-	// a draft of the clerk, as the first pair, holds the files of a conviction
+	// a draft that the clerk opened after the ruling, as the first pair, holds its files
 	const [first] = pairs;
-	const draft = first !== undefined && first.fields[ADOPTED_FIELD] !== "yes";
+	const draft =
+		first !== undefined &&
+		first.ord > ruling.ord &&
+		first.fields[ADOPTED_FIELD] !== "yes";
 	if (conviction && draft) return NO_JOB;
 	if (i.markers.some((m) => answers(m, ruling.ord))) return NO_JOB;
 	// only the paths that once recorded nothing wait for a ruling that has a line

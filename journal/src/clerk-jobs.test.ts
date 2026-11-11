@@ -304,22 +304,30 @@ describe("table rows", () => {
 	});
 
 	test("a pair means the funnel is left even when no job is due", () => {
+		const handed = marker("clerk", "handed", 1, { pull: "7", issue: "open" });
 		const r = run({
-			markers: pairs(["handed", "7", "open"]),
+			markers: [handed],
 			pulls: [pull(7, 1)],
 			ruling: conviction(),
 		});
 		expect(r.job).toBe("-");
-		expect(hasPair(pairs(["handed", "7", "open"]))).toBe(true);
+		expect(hasPair([handed])).toBe(true);
 	});
 
 	test("a pair holding a draft of the clerk leaves a conviction no precedent job", () => {
 		const open = run({
-			markers: pairs(["handed", "7", "open"]),
+			markers: [marker("clerk", "handed", 1, { pull: "7", issue: "open" })],
 			pulls: [pull(7, 1)],
 			ruling: conviction(),
 		});
 		expect(open.job).toBe("-");
+	});
+
+	test("a draft opened before the ruling does not carry its precedent", () => {
+		const earlier = marker("clerk", "handed", 1, { pull: "7", issue: "open" });
+		expect(
+			run({ markers: [earlier], pulls: [pull(7, 1)], ruling: conviction(2) }),
+		).toMatchObject({ job: "precedent", branch: "lawman/precedent-1-1" });
 	});
 
 	test("an adopted pair gives the conviction its own precedent job", () => {
