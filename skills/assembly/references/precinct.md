@@ -291,7 +291,7 @@ An old line is a numbered line `<date> #<n>: <rule> (<link>)` of the section, ot
 2. Run `bin/journal old-precedent list` with `LAWMAN.md` at the tip of the default branch on stdin. The answer `none` means no old line. A line `outside position=<p>` is an item outside the form: it stays a note, and the proposal names its position.
 3. Find the open pull requests of the old form, as items 1 to 4 of the subsection "Pull requests of the old form" say.
 4. End the section for this precinct when there is no old line and no such pull request.
-5. Tell the user the facts, before the question, in the user's language.
+5. Tell the user the facts once for the pass, before the first question, in the user's language. For each later precinct tell only the two numbers and the links.
    - Precedents are files in `.lawman/precedents` now, and the roles are bound by those files. The numbered lines of `## Precedents` become a note in the margin that binds no role.
    - "Move" turns the lines whose kind is known into files. The owner merges the pull request. Open pull requests of the old form get the files by a commit.
    - Each open pull request of the old form with its link, or none.
