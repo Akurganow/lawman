@@ -139,7 +139,7 @@ The rows for a constitution that passes lint:
 
 Then decide.
 
-41. Ask in the question tool, in one call for this repository, after the screens, the old-precedent calls and the license calls. The call holds the approval, the TypeSafe consent, the catalog consent and the documents question. It also holds the consent to copy facts when the row "Facts to copy" exists. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
+41. Ask in the question tool, in one call for this repository, after the screens, the old-precedent calls and the license calls. The call holds the approval, the TypeSafe consent, the catalog consent and the documents question. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
 42. For an absent constitution, offer "Open the pull request" (recommended), "Change" and "Skip".
 43. For a constitution that passes lint, offer "Add the precinct" (recommended) and "Skip".
 44. When `typesafe` is yes in `config.yaml`, ask the consent for this repository in the same call.
@@ -153,7 +153,6 @@ Then decide.
 
 > May the patrol send the names and versions of the packages that <owner>/<repo> pins to the OSV service at every visit? The repository is <private|public>, and the list of a private repository leaves too. The service sees this installation's address.
 
-48a. When the row "Facts to copy" exists, ask in the same call whether to copy each fact into the commands of this precinct. Offer "No" first and "Yes" second. The line itself stays in its file either way.
 49. When the repository lacks typical documents, ask the question of "Recommended documents" in the same call.
 50. Treat a skip or an empty answer as "Skip", a missing consent as "No", and a missing documents choice as "Skip".
 51. On "Skip", write nothing for the repository, and go on with the next one. No command file, no host action, no move and no pull request follows. Remove the throwaway base of "Prove a command" for the repository.
@@ -269,7 +268,7 @@ Write `issues`, `pulls` and `decider` for any choice. For a source that has no a
 
 - A command only reads. It never writes to the host and holds no key or token value. Neither does a proposal row.
 - A command must not send the host a request beyond the host's limits. A request that the host refuses for size, limit or complexity fails the proof. Never assume a limit that the tool or the host did not report.
-- A command carries the facts it reads, such as the repository on the host, the tool, the place of the tracker and the account. Keep the lines of `host.md` and `config.yaml` where they are, because roles and the journal read them. When the precinct already exists and only a command of this precinct reads a line, put the line in the proposal row "Facts to copy". Ask the consent in the approval call of the proposal.
+- A command carries the facts it reads, such as the repository on the host, the tool, the place of the tracker and the account. Keep the lines of `host.md` and `config.yaml` where they are, because roles and the journal read them. When the precinct already exists and only a command of this precinct reads a line, put the line in the proposal row "Facts to copy".
 - Nothing reaches the installation before the approval. The proof folder lies outside the installation. "The throwaway base" in `references/commands.md` says when it is removed.
 
 ### Write the commands
