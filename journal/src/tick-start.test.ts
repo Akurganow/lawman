@@ -481,10 +481,6 @@ const DIRTY_REPORT: [string, string] = [
 	"stopped-dirty-law",
 	"the law folder has a local change",
 ];
-const FAILED_REPORT: [string, string] = [
-	"stopped-law-drift",
-	"the law-version command failed",
-];
 
 type Ending = {
 	name: string;
@@ -551,26 +547,6 @@ const ENDINGS: Ending[] = [
 				() => config(CONFIG.replace(LAW_COMMIT, "../x")),
 				["stopped-law-drift", "a value is not safe"],
 			],
-			[
-				"a law-version command that fails",
-				() => command(shared(), "law-version", "exit 1"),
-				FAILED_REPORT,
-			],
-			[
-				"a law-version command that does not start",
-				() => command(shared(), "law-version", "true", 0o644),
-				FAILED_REPORT,
-			],
-			[
-				"a law-version output outside the form",
-				() =>
-					command(
-						shared(),
-						"law-version",
-						`printf 'revision=${LAW_COMMIT}\\nchanged=maybe\\ntag=\\n'`,
-					),
-				FAILED_REPORT,
-			],
 		] as [string, () => void, [string, string]][]
 	).map(([name, setup, [outcome, report]]) => ({
 		name,
@@ -626,13 +602,23 @@ const ENDINGS: Ending[] = [
 		report: "The patrol order has an issue number or no department",
 		taken: true,
 	},
-	{
-		name: "a failed stage check",
-		role: "investigation",
+	...(["investigation", "response-unit", "clerk"] as const).map((role) => ({
+		name: `an issue that left the cache, for ${role}`,
+		role,
 		order: { issue: 9 },
 		setup: () => host(),
-		outcome: "failed",
-		report: "The stage check failed",
+		outcome: "silent",
+		report: "Order stale: need=none",
+		taken: true,
+	})),
+	{
+		name: "a pull request that left the cache, for the executor",
+		role: "executor",
+		order: { issue: 9 },
+		setup: () => host(),
+		outcome: "silent",
+		report:
+			"Order stale: need=none spec=- spec_id=- work=- sources=- priority=P2",
 		taken: true,
 	},
 	{
@@ -857,6 +843,35 @@ describe("the law folder at the start", () => {
 		expect(ticks()[0]).toMatchObject({ outcome: null });
 	});
 
+	test.each([
+		["fails", () => command(shared(), "law-version", "exit 1")],
+		["does not start", () => command(shared(), "law-version", "true", 0o644)],
+		[
+			"prints outside the form",
+			() =>
+				command(
+					shared(),
+					"law-version",
+					`printf 'revision=${LAW_COMMIT}\\nchanged=maybe\\ntag=\\n'`,
+				),
+		],
+	])(
+		"a law-version command that %s gives the self step, as an absent one does",
+		(_name, broken) => {
+			setUp();
+			broken();
+			orderOf("investigation", { issue: 3 });
+			CASES.investigation?.setup();
+			const r = start("investigation");
+			expect(lines(r.out).filter((l) => l.startsWith("self "))[0]).toBe(
+				"self law-version",
+			);
+			expect(r.out).not.toContain("stopped-law-drift");
+			expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
+			expect(ticks()[0]).toMatchObject({ outcome: null });
+		},
+	);
+
 	test("wake, the start and tick input run law-version and nothing else of the installation", () => {
 		setUp();
 		for (const op of ["release", "verify"])
@@ -888,7 +903,6 @@ describe("the law folder at the start", () => {
 	test.each([
 		["a drift", () => lawVersion("2".repeat(40))],
 		["a local change", () => lawVersion(LAW_COMMIT, "yes")],
-		["a failing law-version", () => command(shared(), "law-version", "exit 1")],
 	])("%s stops the start before any host operation runs", (_name, setup) => {
 		setUp();
 		orderOf("investigation", { issue: 3 });
@@ -1039,6 +1053,100 @@ describe("a department outside its class in tick input", () => {
 	});
 });
 
+describe("the precinct of a tick that stops before the take", () => {
+	test("is on the tick row, so tick-failing counts stops on that precinct only", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		host({ login: "someone-else", issues: { 3: withLead("fixtures") } });
+		const r = start("investigation");
+		expect(lines(r.out)).toContain("ended stopped-identity-changed");
+		expect(rows("SELECT precinct, department, outcome FROM ticks")).toEqual([
+			{
+				precinct: "main",
+				department: null,
+				outcome: "stopped-identity-changed",
+			},
+		]);
+	});
+});
+
+describe("the link of the case", () => {
+	// the host's own address for an issue or a pull request, written into the command's output
+	const withUrl = (file: string, list: string, url: (n: number) => string) => {
+		const path = join(configs("main"), file);
+		const form = JSON.parse(readFileSync(path, "utf8"));
+		for (const e of form[list]) e.url = url(e.number);
+		writeFileSync(path, JSON.stringify(form));
+	};
+
+	test("an issue role gets a link line right after the stage line, and the same line at tick input", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures") } });
+		withUrl(
+			"issues.json",
+			"issues",
+			(n) => `https://git.example/o/main/issues/${n}`,
+		);
+		const r = lines(start("investigation").out);
+		const at = r.findIndex((l) => l.startsWith("need="));
+		expect(r[at + 1]).toBe("link main#3 https://git.example/o/main/issues/3");
+		expect(lines(input("1").out)).toContain(
+			"link main#3 https://git.example/o/main/issues/3",
+		);
+	});
+
+	test("a pull request role gets the link of its pull request", () => {
+		setUp();
+		orderOf("spec-writer", { issue: 7 });
+		put({ 3: handed(7) });
+		host({ pulls: [{ number: 7, author: TRUSTED, closes: [3] }] });
+		withUrl(
+			"pulls.json",
+			"pulls",
+			(n) => `https://git.example/o/main/pull/${n}`,
+		);
+		expect(lines(start("spec-writer").out)).toContain(
+			"link main#7 https://git.example/o/main/pull/7",
+		);
+	});
+
+	test("a cache with no link prints no link line", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures") } });
+		expect(start("investigation").out).not.toContain("\nlink ");
+	});
+});
+
+describe("tick input after a self step", () => {
+	test("--part 1 builds and stores the group like the form without a part, and a later part comes from the stored group", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures", caseMark()) } });
+		rmSync(join(configs("main"), "issues"));
+		start("investigation");
+		put({ 3: withLead("fixtures", caseMark()) });
+		const first = input("1", "--part", "1");
+		expect(first.code).toBe(0);
+		expect(first.out).toStartWith(`${HEAD("investigation")}\n`);
+		expect(input("1", "--part", "1")).toEqual(first);
+		expect(input("1", "--part", "2").err).toContain("there is 1 part");
+	});
+
+	test("a part outside the group of an unbuilt tick exits 1 with the count of parts", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures", caseMark()) } });
+		rmSync(join(configs("main"), "issues"));
+		start("investigation");
+		put({ 3: withLead("fixtures", caseMark()) });
+		const r = input("1", "--part", "9");
+		expect(r.code).toBe(1);
+		expect(r.err).toContain("there is 1 part");
+	});
+});
+
 describe("tick input usage", () => {
 	test("an unknown tick, an ended tick, a tick without an order and a part outside the group exit 1", () => {
 		setUp();
@@ -1060,9 +1168,7 @@ describe("tick input usage", () => {
 			[],
 		])
 			expect([args, input(...args).code]).toEqual([args, 1]);
-		const none = input("2", "--part", "1");
-		expect(none.err).toContain("tick 2 has no part 1");
-		expect(none.err).not.toContain("there are 0 parts");
+		expect(input("2", "--part", "1").err).toContain("has no order or input");
 	});
 
 	test("tick start with an order checks its arguments", () => {
@@ -1091,11 +1197,12 @@ describe("tick input usage", () => {
 		expect(ticks()).toEqual([]);
 	});
 
-	test("an input_chars outside the class exits 1 before a tick starts", () => {
+	test("an input_chars outside the class reads as the default size", () => {
 		setUp(`${CONFIG}input_chars: -5\n`);
 		orderOf("investigation", { issue: 3 });
-		expect(start("investigation")).toMatchObject({ code: 1, out: "" });
-		expect(ticks()).toEqual([]);
+		CASES.investigation?.setup();
+		expect(start("investigation").code).toBe(0);
+		expect(ticks()).toHaveLength(1);
 	});
 });
 

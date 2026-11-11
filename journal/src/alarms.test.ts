@@ -8,6 +8,7 @@ import {
 	cachePull,
 	call,
 	later,
+	mark,
 	order,
 	precinct,
 	rows,
@@ -173,6 +174,18 @@ describe("alarms and status", () => {
 					.map((l) => l.split(" ").slice(0, 3).join(" ")),
 			).toEqual(["ALARM broken-lead a#7", "ALARM broken-lead a#10"]);
 		});
+
+		test("broken-lead ends with the link of the issue when the cache holds one", () => {
+			seed((db) =>
+				db.run(
+					"INSERT INTO issues (precinct, issue, state, title, created_at, url) VALUES ('a', 7, 'OPEN', '[Lead] broken', ?, 'https://git.example/o/a/issues/7')",
+					[BASE],
+				),
+			);
+			expect(alarm(BASE).out).toBe(
+				"ALARM broken-lead a#7 title starts with [Lead] but no lead marker https://git.example/o/a/issues/7\n",
+			);
+		});
 	});
 
 	describe("alarm lifecycle", () => {
@@ -334,6 +347,38 @@ describe("decision-waiting", () => {
 		put({ 3: handed(7) });
 		cachePull("main", 7, [3], "waiting", "ready");
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+	});
+
+	test("a handed pull request that a precedent entry marker also names raises one alarm, and the tick start does not fail", () => {
+		put({
+			3: handed(7),
+			4: human("CLOSED", mark("clerk", "entry", " pull=7")),
+		});
+		cachePull("main", 7, [3], "waiting");
+		const r = alarm(BASE);
+		expect(r.code).toBe(0);
+		expect(r.out).toBe(line("main#7", WAITS_SPEC));
+		expect(alarm(later(1))).toMatchObject({ code: 0, out: "" });
+		expect(rows("SELECT ref FROM alarms WHERE cleared_at IS NULL")).toEqual([
+			{ ref: "main#7" },
+		]);
+	});
+
+	test("an alarm about a pull request ends with the link the host reported, and the repeat carries it", () => {
+		waitingSpec();
+		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
+		const expected = line(
+			"main#7",
+			`${WAITS_SPEC} https://git.example/o/main/pull/7`,
+		);
+		expect(alarm(BASE).out).toBe(expected);
+		const repeat = call(later(1), ["tick", "start", "--role", "duty-desk"]);
+		expect(repeat.out).toContain(expected.trim());
+	});
+
+	test("a pull request with no link in the cache keeps the line as it was", () => {
+		waitingSpec();
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 	});
 
 	test.each([

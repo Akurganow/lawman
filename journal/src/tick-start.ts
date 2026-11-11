@@ -54,6 +54,20 @@ export function stageFor(
 	o: Taken,
 ): Stage | null {
 	const n = o.issue ?? 0;
+	// an issue that left the cache needs no role, as a pull request that left it does not
+	if (
+		(input.stage === "case" || input.stage === "intake") &&
+		db
+			.query("SELECT 1 FROM issues WHERE precinct = ? AND issue = ?")
+			.get(o.precinct, n) === null
+	)
+		return {
+			need: "none",
+			state: NONE,
+			department: NONE,
+			pull: NONE,
+			line: "need=none",
+		};
 	try {
 		if (input.stage === "case") return caseStage(db, o.precinct, n);
 		if (input.stage === "intake")
@@ -77,6 +91,21 @@ export function stageFor(
 		throw e;
 	}
 	return null;
+}
+
+// The link the host reported for the order's issue or pull request, when the cache holds one.
+// A role copies it onto the alarm it prints about that case.
+function linkLine(db: Database, input: RoleInput, o: Taken): string | null {
+	if (o.issue === null) return null;
+	const pull = input.number === "pull";
+	const row = db
+		.query(
+			pull
+				? "SELECT url FROM pulls WHERE precinct = ? AND number = ?"
+				: "SELECT url FROM issues WHERE precinct = ? AND issue = ?",
+		)
+		.get(o.precinct, o.issue) as { url: string | null } | null;
+	return row?.url ? `link ${o.precinct}#${o.issue} ${row.url}` : null;
 }
 
 // the issue or the pull request whose text the role reads, by the table
@@ -228,13 +257,15 @@ async function lintedPage(
 	kind: PageKind,
 	page: string,
 	name?: string,
+	// the line that names the page travels with the first fence, so no part ends between them
+	head?: string,
 ): Promise<{ passed: boolean; reasons: string[] } | null> {
 	const lint = lintPage(kind, page, name);
 	const passed = lint.reasons.length === 0;
 	const lines = await characters(pageLines(lint).join("\n"));
 	const text = passed ? await characters(page) : "";
 	if (lines === null || text === null) return null;
-	o.add(fencedBlock("lint", lines));
+	o.add(fencedBlock("lint", lines, head));
 	if (passed) o.add(fencedBlock(kind, text));
 	return { passed, reasons: lint.reasons };
 }
@@ -300,10 +331,13 @@ async function precedentBlocks(
 			missed = true;
 			continue;
 		}
-		o.line(
-			`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
+		o.add(
+			fencedBlock(
+				"precedent",
+				text,
+				`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
+			),
 		);
-		o.add(fencedBlock("precedent", text));
 		shown++;
 	}
 	if (missed) o.selfs.push(SELF_PRECEDENTS);
@@ -329,12 +363,13 @@ export async function tickStart(args: string[]): Promise<number> {
 	const size = inputChars(config);
 	const t: Tick = {
 		role,
+		// the precinct is on the row from the start, so a stop before the take still counts on it
 		id: withDb((db) =>
 			Number(
-				db.run("INSERT INTO ticks (role, started_at) VALUES (?, ?)", [
-					role,
-					stamp,
-				]).lastInsertRowid,
+				db.run(
+					"INSERT INTO ticks (role, started_at, precinct, department) VALUES (?, ?, ?, ?)",
+					[role, stamp, order.precinct, order.department],
+				).lastInsertRowid,
 			),
 		),
 	};
@@ -405,6 +440,8 @@ export async function tickStart(args: string[]): Promise<number> {
 		o.line(stage.line);
 		if (input.stale?.(stage))
 			return ended(t, o, "silent", `Order stale: ${stage.line}`, id);
+		const link = withDb((db) => linkLine(db, input, order));
+		if (link !== null) o.line(link);
 	}
 	let files: string | null = null;
 	if (input.constitution) {
@@ -467,10 +504,19 @@ export async function tickStart(args: string[]): Promise<number> {
 					});
 		const page = found?.kind === "page" ? found.page : null;
 		const self = found === null || found.kind === "failed";
-		if (page !== null)
-			o.line(`department ${d} place=${placeNumber(page.place)}`);
+		const placeLine =
+			page === null ? null : `department ${d} place=${placeNumber(page.place)}`;
 		const lint =
-			page === null ? null : await lintedPage(o, "department", page.text, d);
+			page === null
+				? null
+				: await lintedPage(
+						o,
+						"department",
+						page.text,
+						d,
+						placeLine ?? undefined,
+					);
+		if (placeLine !== null && lint === null) o.line(placeLine);
 		if (self || (page !== null && lint === null))
 			o.selfs.push(`department ${d}`);
 		else if (lint === null || !lint.passed)
@@ -514,14 +560,12 @@ export async function tickInput(args: string[]): Promise<number> {
 	if (row === null || row.ended_at !== null)
 		throw new Fail(EXIT.USAGE, `no open tick with id ${id}`);
 	const stored = JSON.parse(row.parts ?? "[]") as string[];
+	// the part asked for; part 1 without the option
+	const k = parsePart(opt.part, TICK_INPUT_USAGE);
 	// a built group stays as it was, so its constitution and page are not lost
-	if (opt.part !== undefined || stored.length > 0) {
-		const k = parsePart(opt.part, TICK_INPUT_USAGE);
+	if (stored.length > 0) {
 		const part = stored[k - 1];
-		if (part === undefined)
-			throw stored.length === 0
-				? new Fail(EXIT.USAGE, `tick ${id} has no part ${k}`)
-				: partOutOfRange(k, stored.length);
+		if (part === undefined) throw partOutOfRange(k, stored.length);
 		out(part);
 		return EXIT.OK;
 	}
@@ -547,7 +591,11 @@ export async function tickInput(args: string[]): Promise<number> {
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
 	if (input.stage !== null) {
 		if (stage === null) o.selfs.push("stage");
-		else o.line(stage.line);
+		else {
+			o.line(stage.line);
+			const link = withDb((db) => linkLine(db, input, order));
+			if (link !== null) o.line(link);
+		}
 	}
 	if (input.constitution) o.selfs.push("constitution");
 	const d = departmentOf(input, order, stage);
@@ -560,6 +608,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	);
 	o.add(...texts.blocks);
 	o.selfs.push(...texts.selfs);
-	out(storeParts(t, o.all(), size)[0] ?? "");
+	const built = storeParts(t, o.all(), size);
+	const asked = built[k - 1];
+	if (asked === undefined) throw partOutOfRange(k, built.length);
+	out(asked);
 	return EXIT.OK;
 }

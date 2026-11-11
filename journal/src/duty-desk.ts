@@ -48,12 +48,23 @@ type Precinct = {
 	pulls_synced_at: string | null;
 };
 type Reading = { revision: string; files: string; lines: string[] };
-type Visit = { reading: Reading | null; department: string | null };
+// lacks: why the constitution is unusable, null when it is usable or the read failed before it
+type Visit = {
+	reading: Reading | null;
+	department: string | null;
+	lacks: string | null;
+};
+type Visited = { reading: Reading | null; lacks: string | null };
 type Written = Taken & { role: string };
 
 const call = (args: string[], author = "") => ({ args, author, reset: false });
 const firstLine = (r: Operated) =>
 	r.blocks[0] !== undefined && "line" in r.blocks[0] ? r.blocks[0].line : "";
+// the texts a sync line says it held back, named as the line names them
+const uncleaned = (r: Operated) =>
+	firstLine(r)
+		.match(/ uncleaned=(\S+)/)?.[1]
+		?.split(",") ?? [];
 const empty = (r: Operated) => r.text === null && r.code === EXIT.OK;
 const listed = (files: string, path: string) =>
 	files.split("\n").map(stripCr).includes(path);
@@ -98,30 +109,28 @@ function sharedPages(blockers: string[]): string[] {
 	}
 }
 
-// The fetch and the constitution of one precinct. Null, with the cause in Blockers, when either fails.
-async function readPrecinct(
-	p: string,
-	blockers: string[],
-): Promise<Reading | null> {
+// The fetch and the constitution of one precinct. No reading, with the cause in Blockers, when either fails.
+// A constitution that is missing or fails its check is named in `lacks`; a failed command is not.
+async function readPrecinct(p: string, blockers: string[]): Promise<Visited> {
 	const fetched = await operate(p, "fetch", call([]));
 	if (fetched.text === null) {
 		blockers.push(`${p}: ${firstLine(fetched)}`);
-		return null;
+		return { reading: null, lacks: null };
 	}
 	const revision = fetched.text.replace(/\r?\n$/, "");
 	const files = await operate(p, "files", call([revision]));
 	if (files.text === null) {
 		blockers.push(`${p}: ${firstLine(files)}`);
-		return null;
+		return { reading: null, lacks: null };
 	}
 	if (!listed(files.text, CONSTITUTION)) {
 		blockers.push(`${p}: skipped-no-constitution`);
-		return null;
+		return { reading: null, lacks: "skipped-no-constitution" };
 	}
 	const file = await operate(p, "file", call([revision, CONSTITUTION]));
 	if (file.text === null) {
 		blockers.push(`${p}: constitution ${firstLine(file)}`);
-		return null;
+		return { reading: null, lacks: null };
 	}
 	const lint = lintPage("constitution", file.text);
 	if (lint.reasons.length > 0) {
@@ -129,12 +138,15 @@ async function readPrecinct(
 			? "skipped-contract-version"
 			: "skipped-bad-constitution";
 		blockers.push(`${p}: ${token}`);
-		return null;
+		return { reading: null, lacks: token };
 	}
 	return {
-		revision,
-		files: files.text,
-		lines: lint.departments.map(([name]) => name),
+		reading: {
+			revision,
+			files: files.text,
+			lines: lint.departments.map(([name]) => name),
+		},
+		lacks: null,
 	};
 }
 
@@ -201,10 +213,12 @@ const openPatrolOrder = (p: string) =>
 	);
 
 // Closes the open stale orders that nobody took; the role of a taken order
-// closes it on its own tick.
+// closes it on its own tick. An untaken order of a role that needs the
+// constitution is closed too on a precinct that lacks one.
 function closeStale(
 	db: Database,
 	eligible: Set<string>,
+	lacking: Set<string>,
 	stamp: string,
 ): Map<string, number> {
 	const closed = new Map<string, number>();
@@ -213,11 +227,13 @@ function closeStale(
      WHERE id = ?2 AND outcome IS NULL AND taken_at IS NULL`,
 	);
 	for (const [role, input] of Object.entries(ROLES)) {
-		if (input.stale === undefined) continue;
 		for (const o of takeableOrders(db, role)) {
 			if (!eligible.has(o.precinct)) continue;
-			const stage = stageFor(db, input, o);
-			if (stage === null || !input.stale(stage)) continue;
+			if (!(input.constitution && lacking.has(o.precinct))) {
+				if (input.stale === undefined) continue;
+				const stage = stageFor(db, input, o);
+				if (stage === null || !input.stale(stage)) continue;
+			}
 			if (close.run(stamp, o.id).changes > 0)
 				closed.set(role, (closed.get(role) ?? 0) + 1);
 		}
@@ -256,9 +272,13 @@ function writeOrders(
 				role,
 			});
 	};
+	// a role that cannot work without the constitution gets no order on a precinct that lacks one
+	const needs = (role: string, precinct: string) =>
+		!(ROLES[role]?.constitution && visits.get(precinct)?.lacks);
 	for (const role of CASE_ROLES)
 		for (const e of dueEntries(db, role))
-			if (visits.has(e.precinct)) add(e.precinct, role, null, e.number);
+			if (visits.has(e.precinct) && needs(role, e.precinct))
+				add(e.precinct, role, null, e.number);
 	for (const [p, v] of visits)
 		if (v.reading !== null)
 			for (const n of intakeWaiting(db, p)) add(p, RESPONSE_UNIT, null, n);
@@ -277,9 +297,10 @@ async function finish(
 	t: Tick,
 	alarms: string[],
 	config: string | null,
+	held: string[] = [],
 ): Promise<number> {
 	const precincts = weighted();
-	const blockers: string[] = [];
+	const blockers: string[] = [...held];
 	const visits = new Map<string, Visit>();
 	const shared = sharedPages(blockers);
 	for (const p of precincts) {
@@ -290,17 +311,28 @@ async function finish(
 			blockers.push(`${p.name}: pull request sync failed`);
 			continue;
 		}
-		const reading = await readPrecinct(p.name, blockers);
+		const { reading, lacks } = await readPrecinct(p.name, blockers);
 		const department =
 			reading === null || openPatrolOrder(p.name)
 				? null
 				: await chooseDepartment(p.name, reading, shared, config, blockers);
-		visits.set(p.name, { reading, department });
+		visits.set(p.name, { reading, department, lacks });
 	}
 	const stamp = now();
 	const done = withDb((db) =>
 		inTransaction(db, () => {
-			const closed = closeStale(db, new Set(visits.keys()), stamp);
+			// the cause stays as it was where a failed command hid the constitution
+			for (const [name, v] of visits)
+				if (v.reading !== null || v.lacks !== null)
+					db.run("UPDATE precincts SET constitution_cause = ? WHERE name = ?", [
+						v.lacks,
+						name,
+					]);
+			const raised = reconcileAlarms(db, stamp, false);
+			const lacking = new Set(
+				[...visits].filter(([, v]) => v.lacks !== null).map(([name]) => name),
+			);
+			const closed = closeStale(db, new Set(visits.keys()), lacking, stamp);
 			const written = writeOrders(db, precincts, visits, stamp);
 			const byRole = new Map<string, number>();
 			for (const o of written)
@@ -319,11 +351,12 @@ async function finish(
 			).changes;
 			if (changed === 0)
 				throw new Fail(EXIT.USAGE, `no open tick with id ${t.id}`);
-			return { written, outcome, report };
+			return { written, outcome, report, raised };
 		}),
 	);
 	return print(t, [
 		...alarms,
+		...done.raised,
 		...done.written.map(orderLine),
 		`ended ${done.outcome}`,
 		...done.report.map((line) => `report ${line}`),
@@ -358,6 +391,7 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 	if (law !== "current" && law !== "self")
 		return ended(t, alarms, law.outcome, law.report);
 	const selfs: string[] = law === "self" ? ["self law-version"] : [];
+	const held: string[] = [];
 	for (const p of weighted()) {
 		const step = (name: string) =>
 			selfs.push(`self ${name} ${p.name} ${p.repo}`);
@@ -385,9 +419,12 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 		// a failed pull request sync keeps the old time, so the precinct gets no orders
 		const pulls = await operate(p.name, "pulls", call([], login));
 		if (empty(pulls)) step("pulls");
+		const names = [...uncleaned(issues), ...uncleaned(pulls)];
+		if (names.length > 0)
+			held.push(`${p.name}: texts withheld, not cleaned: ${names.join(" ")}`);
 	}
 	if (selfs.length > 0) return print(t, [...alarms, ...selfs]);
-	return finish(t, alarms, config);
+	return finish(t, alarms, config, held);
 }
 
 type TickRow = { role: string; started_at: string; ended_at: string | null };

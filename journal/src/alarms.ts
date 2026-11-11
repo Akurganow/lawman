@@ -102,20 +102,48 @@ function tickFailing(db: Database): Candidate[] {
 	}));
 }
 
+// the link the host reported for an issue or a pull request ends the alarm line
+const linked = (detail: string, url: string | null) =>
+	url === null ? detail : `${detail} ${url}`;
+
+export const NO_CONSTITUTION: Record<string, string> = {
+	"skipped-no-constitution": "no constitution on the main branch",
+	"skipped-bad-constitution": "the constitution fails the page check",
+	"skipped-contract-version":
+		"the constitution declares a contract version the law does not support",
+};
+
+// the duty desk records the cause at each read of a precinct; the roles that need the constitution get no orders
+function noConstitution(db: Database): Candidate[] {
+	const rows = db
+		.query(
+			"SELECT name, constitution_cause AS cause FROM precincts WHERE weight > 0 AND constitution_cause IS NOT NULL ORDER BY name",
+		)
+		.all() as { name: string; cause: string }[];
+	return rows.map((r) => ({
+		kind: "no-constitution",
+		ref: r.name,
+		detail: `${NO_CONSTITUTION[r.cause] ?? r.cause}, so the roles that need it get no orders`,
+	}));
+}
+
 function brokenLead(db: Database): Candidate[] {
 	const broken = db
 		.query(
-			`SELECT precinct, issue FROM issues i
+			`SELECT precinct, issue, url FROM issues i
        WHERE substr(title, 1, ${LEAD_PREFIX.length}) = '${LEAD_PREFIX}' AND state = 'OPEN'
          AND NOT EXISTS (
            SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead')
        ORDER BY precinct, issue`,
 		)
-		.all() as { precinct: string; issue: number }[];
+		.all() as { precinct: string; issue: number; url: string | null }[];
 	return broken.map((b) => ({
 		kind: "broken-lead",
 		ref: `${b.precinct}#${b.issue}`,
-		detail: `title starts with ${LEAD_PREFIX} but no lead marker`,
+		detail: linked(
+			`title starts with ${LEAD_PREFIX} but no lead marker`,
+			b.url,
+		),
 	}));
 }
 
@@ -128,7 +156,7 @@ function decisionWaiting(db: Database): Candidate[] {
 	// a precinct of weight 0 is never synced, so its cached rows go stale
 	const waiting = db
 		.query(
-			`SELECT p.precinct, p.number, p.issues, p.work FROM pulls p
+			`SELECT p.precinct, p.number, p.issues, p.work, p.url FROM pulls p
        WHERE (p.spec = 'waiting' OR p.work = 'ready')
          AND EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)
        ORDER BY p.precinct, p.number`,
@@ -138,6 +166,7 @@ function decisionWaiting(db: Database): Candidate[] {
 		number: number;
 		issues: string;
 		work: string;
+		url: string | null;
 	}[];
 	const pairs = waiting
 		.filter((p) => isHanded(sourceMarkers(db, p.precinct, p.issues), p.number))
@@ -150,20 +179,25 @@ function decisionWaiting(db: Database): Candidate[] {
 		.map((p) => ({
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
-			detail: p.detail,
+			detail: linked(p.detail, p.url),
 		}));
 }
 
-type Waiting = { precinct: string; number: number; detail: string };
+type Waiting = {
+	precinct: string;
+	number: number;
+	detail: string;
+	url: string | null;
+};
 
 // a precedent pull request has no sources: the clerk's entry marker names it
 function precedentWaiting(db: Database): Waiting[] {
 	const open = db
 		.query(
-			`SELECT p.precinct, p.number FROM pulls p
+			`SELECT p.precinct, p.number, p.url FROM pulls p
        WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)`,
 		)
-		.all() as { precinct: string; number: number }[];
+		.all() as { precinct: string; number: number; url: string | null }[];
 	const waiting = new Map(
 		[...new Set(open.map((p) => p.precinct))].map((precinct) => [
 			precinct,
@@ -184,6 +218,7 @@ const DETECTORS = [
 	tickFailing,
 	brokenLead,
 	decisionWaiting,
+	noConstitution,
 ] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
@@ -203,7 +238,16 @@ export function reconcileAlarms(
 	repeat: boolean,
 ): string[] {
 	const nowMs = Date.parse(stamp);
-	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
+	// one open alarm holds a kind and a ref, so a second condition on the same key adds nothing
+	const seen = new Set<string>();
+	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs)).filter(
+		(a) => {
+			const key = `${a.kind} ${a.ref}`;
+			if (seen.has(key)) return false;
+			seen.add(key);
+			return true;
+		},
+	);
 	const open = db
 		.query(
 			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
