@@ -122,7 +122,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 
 After the facts of the refusal and before the refusal is written, prove that a swapped binary is still rejected by the checksum. Run one pass of `journal law-update` on a throwaway installation of the same layout, in the session's environment. The commands in the pass are stand-ins, so the pass needs no tick environment. The installation of the pass holds:
 
-- `config.yaml` with a `law_commit` that differs from the revision, and `release_repo` in its class. Without both, the pass returns "law current".
+- `config.yaml` with a `law_commit` that differs from the revision, and `release_repo` in its class. Without both, the pass stops with `stopped-law-config`.
 - The entry `lawman`.
 - `shared/law-version` with another revision and a tag.
 - `shared/release`, which puts into the release folder the real `SHA256SUMS`, an asset with one changed byte and an ordinary provenance file.

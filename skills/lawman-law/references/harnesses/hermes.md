@@ -345,8 +345,6 @@ Same-minute jobs run in parallel. A job still running skips its next slot. The C
 
 `cron.catch_up_missed` is `true` by default. After an outage the scheduler runs a missed job once, not once per missed slot. With `false`, a late job skips to its next slot.
 
-Every tick must be idempotent under a catch-up run. The law already requires this. The journal rejects a repeated order.
-
 ### Silence
 
 A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the output locally and delivers nothing. A failed run always delivers.
@@ -354,8 +352,6 @@ A tick with nothing to deliver answers `[SILENT]` alone. Hermes then saves the o
 Hermes suppresses delivery when `[SILENT]` is the whole response, or its own first line or last line, trimmed and ignoring case. A token inside a sentence is delivered (read in the harness code).
 
 Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ban on creating cron jobs into every cron prompt (seen in scheduled runs). That text says never to combine `[SILENT]` with content (read in the harness code). A report written before the token once led the model to drop the token, and the report was delivered (seen in a run). So the skills answer the token alone. Skills do not repeat the explanation.
-
-An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 
 ### Delivery targets
 
@@ -503,8 +499,6 @@ Cron sessions cannot create cron jobs. The docs say cron management tools are di
 The model is chosen per job with `--model`. Each role has its own model. The docs state no spend cap in money, for cron or for config, so only the model choice and the interval limit spend.
 
 ### The token
-
-Every role uses one identity: the account that the installation's host tool signs in, or one token the developer adds at setup.
 
 A variable in `~/.hermes/.env` reaches Hermes sessions. The docs say `.env` values are exported to the process environment.
 

@@ -89,7 +89,7 @@ A related issue is evidence of the case, never a reason to close it.
 1. Re-read the decisive exhibit of each claim at `<sha>`.
    - Read a cited range with its numbers, as the `exhibits.md#read-numbered-lines` section says.
    - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
-2. A command output quoted in the case counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+2. A command output quoted in the case counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` now, unless you read them already. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 3. For the class gone at a later commit, read the exhibit paths at `<tip>`.
 4. Search with a pattern from the case only through the heredoc form.
 5. A path that the case reports missing in its Not established section:

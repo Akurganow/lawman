@@ -51,11 +51,12 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 ## Choose the mode
 
-Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read the commit that the law folder holds, and take the first case that fits.
+Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read `law_commit`, `release_repo` and the commit that the law folder holds, and take the first case that fits.
 
+- `law_commit` or `release_repo` is missing. Take the row `stop stopped-law-config` of the table below. Ask no question about the sync first.
 - The commit cannot be read, because the folder has no history. Compare nothing. Say in one line that no comparison was made. Say what "Find the facts of the law" in `references/install.md` says about a folder with no history, and whether `shared/law-version` exists. Go on to the modes.
 - The commit equals `law_commit`. Go on to the modes.
-- The commit differs from `law_commit`, or the config has no `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
+- The commit differs from `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
 
 When the host notes record the refusal of the signature, look for a verifier on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
 
@@ -66,7 +67,7 @@ Run `bin/journal law-update assembly`. For each `self` line, do the step as the 
 | Last line | Tell the developer | Then |
 | :-- | :-- | :-- |
 | `synced <tag>` | Each `ALARM` line of the sync. | Read `config.yaml` again. Go on to the modes. |
-| `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and its source. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit that the installed journal was built from. When the developer does not know it, 40 zeros do: the sync replaces the value. | The developer writes the line. End the assembly run. |
+| `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and where its value comes from. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit of the tag in `release_tag` of `config.yaml`, in the release repository, as the host tool reports it. When it cannot be had, 40 zeros are a placeholder that the sync replaces. The sync then also fills `amended_law_commit` from the value that `law_commit` held, so say that the zeros reach it when that key is absent. | Offer to write the line. On a yes, write it, read `config.yaml` back, and go on with the cases above. On a no, end the assembly run. |
 | `stop stopped-no-verifier` | The host notes name neither a verifier nor a refusal of the signature check. | Run part Host of `references/install.md` once, then run the sync again. End the assembly run when the same stop comes back. |
 | any other `stop` | The reason, and the action of its row under "The stops" in `lawman/docs/journal.md`. | End the assembly run. |
 | a non-zero exit | `journal unavailable: <stderr>` | End the assembly run. |

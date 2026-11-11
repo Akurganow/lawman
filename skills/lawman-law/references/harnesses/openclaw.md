@@ -345,8 +345,6 @@ After a restart of the gateway, overdue agent jobs are rescheduled and not repla
 
 A quiet evaluation counts as a completed occurrence for the catch-up (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/schedules.md; not verified). Whether several missed slots run once or several times is (not verified).
 
-Every tick must be idempotent under a catch-up run. The law already requires this. The journal rejects a repeated order.
-
 ### Silence
 
 A tick with nothing to deliver answers `NO_REPLY` in capitals, alone on its own line, as the whole reply. OpenClaw then delivers nothing (read in the harness code, openclaw/src/agents/agent-run-terminal-reply.ts).
@@ -354,8 +352,6 @@ A tick with nothing to deliver answers `NO_REPLY` in capitals, alone on its own 
 A token mixed with text never silences the text. OpenClaw strips a leading or trailing token line and delivers the rest (read in the harness code, openclaw/src/auto-reply/reply/mixed-silent-reply-tokens.ts). So the skills answer the token alone.
 
 OpenClaw already injects the explanation of `NO_REPLY` into every cron prompt (read in the harness code, openclaw/src/cron/run-prompt.ts). Skills do not repeat the explanation.
-
-An alarm line in an answer defeats silence. The answer is then delivered, as the law says.
 
 ### Delivery targets
 
@@ -496,8 +492,6 @@ No cap on the model turns of a run was found. Tool-loop detection exists and is 
 The model is chosen per job with `--model`. Each role has its own model. The cron docs state no spend cap in money. Only the model choice, the failure backoff and the minimum interval of 30 seconds limit spend.
 
 ### The token
-
-Every role uses one identity: the account that the installation's host tool signs in, or one token the developer adds at setup.
 
 The `gh` of an `exec` call takes its identity from `GH_TOKEN` or `GITHUB_TOKEN` in the gateway's environment. Next it tries the keyring or config of the gateway's user (stated by the docs, https://docs.openclaw.ai/gateway/config-tools/github-identity.md; not verified). `exec` gets the two variables back through the native-identity exception (read in the harness code, openclaw/src/agents/bash-tools.exec-request-preparation.ts). Setting `tools.github` replaces this with a managed identity (read in the harness code, openclaw/src/agents/github-tool-identity.ts).
 

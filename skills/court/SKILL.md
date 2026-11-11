@@ -115,7 +115,7 @@ When `answer` is `comment`, read the comment with the id `answer_id`. The tick g
    - Re-read a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
 2. Read the history of each exhibit path that the court re-reads, up to `<sha>`. For each commit that touched it, read the short hash and the subject.
 3. Search the tree at `<sha>` for the callers and tests of a symbol the court re-reads. Use a pattern from the case or a decision of a party only through the heredoc form.
-4. A command output quoted in the case or a decision of a party counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
+4. A command output quoted in the case or a decision of a party counts as an exhibit in two cases. The command stands verbatim under Regression proof of the `constitution` fence. The command is a source command of the department page, run as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` now, unless you read them already. Any other quoted output is a claim, not an exhibit. A license read that `LAW.md#sources` names is an exhibit too.
 5. Read the exhibit paths at `<tip>` only when the court considers the class `gone at <tip>`. Only this read can show that class.
 
 ### Step 5: decide
