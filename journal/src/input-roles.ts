@@ -61,13 +61,11 @@ export function lawMap(rows: LawRow[]): LawRow[] {
 	return rows;
 }
 
-const EVERY = LAW_ROLES;
 const WORKING = WORKING_ROLES;
 const WITHOUT_CLERK = WORKING.filter((r) => r !== "clerk");
 
 const LAW_MAP = lawMap([
 	[INTRO, WORKING],
-	["Role duty desk", [DUTY_DESK]],
 	["Role patrol", ["patrol"]],
 	["Role response unit", ["response-unit"]],
 	["Role investigation", ["investigation"]],
@@ -77,7 +75,7 @@ const LAW_MAP = lawMap([
 	["Role clerk", ["clerk"]],
 	["Role spec writer", ["spec-writer"]],
 	["Role executor", ["executor"]],
-	["Silence is the default", EVERY],
+	["Silence is the default", WORKING],
 	["Writing", WORKING],
 	["The lead body", ["patrol", "response-unit"]],
 	[
@@ -103,7 +101,7 @@ const LAW_MAP = lawMap([
 	["Orders", ["executor"]],
 	["Texts of the precinct", WITHOUT_CLERK],
 	["Precedents", WITHOUT_CLERK],
-	["One tick, one case, exit", EVERY],
+	["One tick, one case, exit", WORKING],
 	[
 		"Alarms a role prints",
 		[
@@ -114,10 +112,8 @@ const LAW_MAP = lawMap([
 			"defender",
 			"court",
 			"clerk",
-			DUTY_DESK,
 		],
 	],
-	["Alarms the journal computes", [DUTY_DESK]],
 	[
 		"Returns instead of stops",
 		["patrol", "investigation", "prosecutor", "defender", "court"],
@@ -356,7 +352,6 @@ export const ROLES: Record<string, RoleInput> = {
 };
 
 const DUTY_DESK_LAW: Read[] = [
-	["LAW.md", lawSections(DUTY_DESK)],
 	[
 		"tick.md",
 		[
