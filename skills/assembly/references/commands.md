@@ -108,7 +108,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 | :-- | :-- | :-- |
 | right | the asset, its provenance file, `release_repo`, the commit of the law folder | `verify passed` |
 | swapped binary | a copy of the asset with one byte changed, and the right provenance file | `verify failed reason=exit` |
-| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the one the developer named when choosing the method, else the repository of the chosen verifier | `verify failed reason=exit` |
+| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the repository of the chosen verifier | `verify failed reason=exit` |
 | right signature, other commit | the right asset and file, and another commit in the argument | `verify failed reason=exit` |
 
 - The files lie in `runs/` of the throwaway base. The real files lie in the folder that `release` built. On the first install, copy the downloaded files there from `runs/install-journal`.
