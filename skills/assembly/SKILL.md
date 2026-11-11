@@ -149,7 +149,7 @@ The developer may answer a proposal with a list or with free text. Treat that an
   | a proof run of a command | the user accepted its price |
 - Ask the developer to confirm that anything arrived. The one exception is the confirmation of receipt during the delivery check that the user chose.
 
-Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, ask whether the key already lies somewhere the developer knows. Offer "the page's place" as the other choice. The developer writes the value there.
+Check for a secret only after the developer chooses the feature that needs it. Look in the place that the harness page names under "The TypeSafe key" as the one scheduled sessions read. Learn only whether the key is found. Tell the developer which key the feature needs. When nothing is found, say that the developer writes the value in the page's place.
 
 ## Rules
 
@@ -157,7 +157,7 @@ Check for a secret only after the developer chooses the feature that needs it. L
 - Before you run or write anything, here or on the host, tell the user in one line what you are about to do.
 - Write what you say to the user in the user's language.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.
-- Never edit the harness configuration. Show the lines. The developer applies them and confirms.
+- Never edit the harness configuration. Show the lines. The developer applies them.
 - Merge a pull request of the assembly only when the user explicitly asks the assembly to merge its pull requests. When the host notes record no merge form, find it as part Host finds other host actions, and record it. A refused merge leaves the pull request open: say so.
 - Never resolve or close a reviewer's thread. Before a merge, show the user each open thread with what it says. The user decides.
 - Never write a local path, a key, an account name, a token or a machine detail into a precinct, pull request, issue or commit.

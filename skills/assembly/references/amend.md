@@ -8,7 +8,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 
 1. Note `contract_version` (it may be absent), `amended_law_commit`, `law_commit` and `journal_sha256` from `config.yaml`.
 2. Compute the SHA-256 of `bin/journal`. Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
-3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`. Read the `Contract version` line in `lawman/skills/lawman-law/references/departments.md`.
+3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`.
 4. Read the current `constitution.md` of the law folder. Read the older text at `amended_law_commit` from the history of the law folder. Compare the two texts. Show the developer the differences. When the folder has no history, or its history lacks `amended_law_commit`, there is no older text. Show the developer the whole current text as changed. That is a path, not a stop.
 5. Read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them. Three more host actions serve the move of the old precedents. They turn a line's link into an issue number, read a file at a pull request revision and write to its branch. Find a missing one the same way when a precinct holds old lines, and let Step 3 append it too.
 
