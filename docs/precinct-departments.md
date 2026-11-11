@@ -50,7 +50,7 @@ The rules for the item:
 - A kind that rests on a source command names the command in its measurement.
 - On a page at any other place, the item is text.
 
-The constitution has no section for source commands. The Departments line admits the page to the rotation, and the merge makes it trusted. The source commands of a page that passes its check are instructions to the roles.
+The constitution has no section for source commands. The Departments line admits the page to the rotation. The page is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says.
 
 ### Who runs them
 

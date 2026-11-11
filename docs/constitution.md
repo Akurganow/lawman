@@ -2,7 +2,7 @@
 
 A constitution holds what is true of one repository and of no other. Each precinct carries one, as `LAWMAN.md` at the repository root. Everything specific to the repository lives there and never in the law.
 
-The roles read the constitution from the main branch of the precinct. A reviewed merge put it there, so the roles trust its listed sections as instructions. A constitution points at files by path. It never restates them.
+The roles read the constitution from the main branch of the precinct. It is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says. A constitution points at files by path. It never restates them.
 
 The contract is [constitution.md](../skills/lawman-law/references/constitution.md). It sets the version and the shape. This repository's own [LAWMAN.md](../LAWMAN.md) is a working example.
 

@@ -4,7 +4,18 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 
 ## Where it lives
 
-`config.yaml` sits in the installation directory. The directory also holds `lawman/`, the link to the plugin folder, `bin/journal`, `host.md`, `configs/` and `shared/`. See [the journal](journal.md).
+`config.yaml` sits in the installation directory. The directory also holds:
+
+- `lawman/`, the link to the plugin folder
+- `bin/journal`, the journal binary
+- `journal.sqlite`, the database
+- `precincts/`, the clones of the precincts
+- `runs/`, where the journal makes the release folder of an update, the folder of `run-installation` and the catalog state of a tick, and where roles keep their trees
+- `host.md`, the host notes
+- `configs/` and `shared/`, the commands of the precincts and of the installation
+- `departments/`, the installation's own department pages, when it has any
+
+See [the journal](journal.md).
 
 The file stays in the installation. It never enters a precinct, a pull request, an issue or a commit. Only `host.md` holds such facts beside it.
 
@@ -178,6 +189,9 @@ Ticks read the keys they need.
 
 - The start of every tick reads `law_commit` and `trusted_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
 - The update reads `law_commit` and `release_repo`.
+- The duty desk reads `license_precincts` when it picks the department of a patrol order. The law's page for licenses serves only a precinct with a pair.
+- The commands `precedent` and `old-precedent` read `trusted_login`.
+- The command `precedent` reads `typesafe` and `typesafe_precincts` for the Jev request. It reads `license_precincts` for the pages it reads.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The clerk applies the same rule through the journal, which reads `typesafe` and `typesafe_precincts` itself. The clerk reads only `typesafe_key`.
 - The patrol reads `catalog`, `catalog_precincts` and the precinct's line under `## Dependency reading` in `host.md`. The check runs only when `catalog` is exactly `yes`, the precinct pair is `yes` and the line names a way. Otherwise the tick ends with an ordinary outcome, and its report says that the check did not run.
