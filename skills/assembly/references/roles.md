@@ -54,7 +54,7 @@ One table holds the defaults of every role, in clock order. The roles form that 
 - The default model and provider of scheduled jobs, as "Models" gives them. An unset value shows as unset.
 - The providers that hold a credential, by name only.
 - The effort levels, when "Models" names them.
-- On a rerun, the model, provider and effort of each job, from the place that "Editing a job" names. Where it names none, they stay unknown.
+- On a rerun, the model, provider and effort of each job, from the place the page names. Where it names none, they stay unknown.
 
 When "Models" names no way to read the default, say so. Then ask for model names only, with no provider and no effort.
 
@@ -124,7 +124,7 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 - Each entry file that "Entry file marks" names, with its mark.
 - In the menu, the mode of each job, by "Entry mode".
 
-**Proposes.** Show the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job to translate appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job. A failed condition leaves the job as it is.
+**Proposes.** Send the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job to translate appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job. A failed condition leaves the job as it is.
 
 **Decides.** Ask nothing here. The developer cannot judge the modes. Take a typed edit of the proposal, such as leaving one job untranslated.
 
@@ -146,7 +146,7 @@ Install and the menu job run this part. The roles mode skips it.
 - The size of a part that the page names under "Role entry". The page may name none.
 - The table of jobs in "Jobs and progress checks" of `lawman/docs/configuration.md`. It holds nine roles and no duty desk.
 
-**Proposes.** Show the size of a part when the page names one, as found on the page, or current when the key exists. Show the values of `jobs` and `progress_checks`, each as current or default. The default of `progress_checks` is 3.
+**Proposes.** Send the size of a part when the page names one, as found on the page, or current when the key exists. Show the values of `jobs` and `progress_checks`, each as current or default. The default of `progress_checks` is 3.
 
 **Decides.** Ask nothing. Take a change as a typed edit of the proposal. A value that is not a whole number above zero is asked again.
 
@@ -202,7 +202,7 @@ Translate a job in monitor mode when all three conditions hold. A job with no en
 2. The entry file is in place and proven. A new or different file passed "Write and prove". A file marked identical is not written again: its run proved it when it was written, and the probe covers the new journal.
 3. The developer approved the change in Apply, which named the job and its change.
 
-Translate with the page's translation form for one job id, in one call. A job with no entry takes the page's edit form for the entry. The call sets the entry file and clears the monitor together. It changes no schedule, skill, model, delivery or pause. When the harness refuses, stop, show its message, and say that the job still runs in one of its two modes. Use no other way and change no harness setting.
+Translate with the page's translation form for one job id, in one call. A job with no entry takes the page's form that gives an entry to a job that has none. The call sets the entry file and clears the monitor together. It changes no schedule, skill, model, delivery or pause. When the harness refuses, stop, show its message, and say that the job stays as it was. Use no other way and change no harness setting.
 
 ## Entry file marks
 
@@ -226,7 +226,7 @@ Translate with the page's translation form for one job id, in one call. A job wi
 2. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. Every job name carries the prefix `[lawman] `.
 3. Build `<cron expression>` from the forms in "Schedule forms and time zone". The minute and the hour are `<S>` plus the role's minutes. Every day keeps the day fields open. Chosen weekdays fill the weekday field. A day of the month fills the day field.
 4. Add the model, provider and effort flags that the page names for each answer other than `default`.
-5. The create line gains the entry as the page's create form takes it, for every role. It gains the page's paused form while no precinct has a weight. An edit never touches the entry, except in two ways. One is the page's translation form of "Translation", or its edit form for the entry when the job has none. The other is the page's edit form for a copy that "Entry file marks" names and the approval showed.
+5. The create line gains the entry as the page's create form takes it, for every role. It gains the page's paused form while no precinct has a weight. An edit never touches the entry, except in two ways. One is the page's translation form of "Translation", or its form that gives an entry to a job that has none. The other is the page's edit form for a copy that "Entry file marks" names and the approval showed.
 6. Count the precincts with a weight above zero: run `bin/journal precinct list`, and read the third field of each line.
 7. When `typesafe` is `yes` in `config.yaml`, run the skill listing command the page gives. When it shows `typesafe-ai`, attach it to the court's create line by the form the page gives for a skill. When the page gives no such form, add nothing.
 8. An edit command is the page's edit form for one job id, from the list command. Pass the page's schedule flag with `<cron expression>` for a changed schedule. Omit the flag of every `keep` answer. For `default`, pass the page's clear form of the flag.
@@ -253,7 +253,7 @@ Run step 1 whenever a file is new or different, or a job will be translated. Run
 
 ## Finish
 
-1. Name the jobs still paused, if any. Say what the page's "Paused jobs" gives for the first run of a job created paused, with the mark that the page puts on it. The page gives the resume form.
+1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say what the page's "Paused jobs" gives for the first run of a job created paused, with the mark that the page puts on it. The page gives the resume form.
 2. Name every file written outside the installation, with its path, where the page puts any there. Say that this assembly never deletes them.
 3. List the jobs that changed and what changed. Name each job that was translated.
 4. Name each job to translate that was left as it is, and say why. Where the page names an old mode, say that a job in monitor mode keeps the cut and the extra run that the page's "Role entry" names for monitor mode. That holds until the Roles part translates it.

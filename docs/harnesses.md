@@ -113,7 +113,7 @@ The assembly asks the developer through the harness's question tool. Each row na
 | Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
 | Pi | none built in (read in the harness code) | (not verified) | (not verified) |
 
-A harness page names the question tool in its own section. When the section says none, or the session holds no such tool, the assembly sends the same questions in one message.
+A harness page names the question tool in its own section. When the section says none, the assembly uses a question tool of the session if it holds one, and else sends the same questions in one message.
 
 ## What each harness does
 

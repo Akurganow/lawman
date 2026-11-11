@@ -96,6 +96,7 @@ From a terminal, run the job with:
 hermes cron run "[lawman] <role>"
 ```
 
+- The run executes inside the `hermes cron run` process, synchronously, and the command returns when the tick ends. A terminal that closes mid-run kills the run (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false. The reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`). Resume the job first, with the form under "Paused jobs".
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
@@ -133,7 +134,7 @@ Accepted, checked with the harness's check function: `&&`, `;`, a redirect outsi
 
 Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script. Such a pipeline inside `(set -o pipefail; …)` also passed the check.
 
-A chat started with `hermes chat -q` from a command line, with no terminal, refused `python3 -c`, `find` with `-delete` and a redirect into a file named `config.yaml` (seen in such a chat, not in a scheduled run). In it `gh attestation verify` printed nothing on success: exit 0 with no output is success (seen in such a chat).
+A chat started with `hermes chat -q` from a command line, with no terminal, refused `find` with `-delete` and a redirect into a file named `config.yaml` (seen in such a chat, not in a scheduled run). In it `gh attestation verify` printed nothing on success: exit 0 with no output is success (seen in such a chat).
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 

@@ -17,7 +17,7 @@ Terms used below:
 
 Detection: `openclaw --version` prints the installed version. The assembly runs it to detect this harness. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
 
-Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers. The start instruction is `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
+Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers. The start instruction is `openclaw gateway start` (stated by `openclaw gateway --help`).
 
 - The command is an alias of `openclaw automations status`. It asks the gateway for `cron.status`, and the reply holds `enabled` (read in the harness code, openclaw/src/cli/cron-cli/register.cron-add.ts).
 - Every cron command needs a running gateway (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
@@ -226,7 +226,7 @@ There is no output folder. The result of each run lies in the run history, which
 
 `openclaw cron show <job id> --json` prints one job, with the field `trigger.script` holding the stored script (read in the harness code, openclaw/src/cli/cron-cli/register.cron-simple.ts, openclaw/src/cron/job-read-view.ts, openclaw/src/cron/public-job.ts and openclaw/packages/gateway-protocol/src/schema/cron.ts). A job with a `trigger.script` has an entry. A job without one has none. The live output is (not verified).
 
-none: OpenClaw has one kind of entry. No job holds a monitor. The page names no form that gives an entry to a job that has none, so such a job stays as it is.
+none: OpenClaw has one kind of entry. No job holds a monitor. A job with no entry stays as it is, because adding an entry to such a job is (not verified).
 
 ### Schedule forms and time zone
 

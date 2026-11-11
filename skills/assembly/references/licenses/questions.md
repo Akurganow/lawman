@@ -30,7 +30,7 @@ For each open precinct whose constitution passes, ask the questions of "The lice
 
 ## Apply
 
-Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". After "Change", ask both questions of the precinct, with the sign shown. Treat a skip, an empty answer or a cancel as no, and write nothing.
+Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". After "Change", ask both questions of each precinct that has answers, with the sign shown. Treat a skip, an empty answer or a cancel as no, and write nothing.
 
 Show for each precinct the rows chosen and the rows refused, by id and recipient, and the values of `reaches` and `use`. Name the sign of each value that no question asked. After the approval, run "Write the answers" for each precinct that has answers.
 
