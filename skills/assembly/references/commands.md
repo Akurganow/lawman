@@ -75,7 +75,7 @@ The constitution asks that a host command run on a throwaway base before it is r
 
 ## Commands of the installation
 
-The installation has three commands in `shared/`: `release`, `verify` and `law-version`. For each file the developer chooses "Write" or "Leave empty". An operation with no file stays a step of the role. The journal runs `verify` always, and the answer `declined` does not skip it.
+The installation has three commands in `shared/`: `release`, `verify` and `law-version`. An operation with no file stays a step of the role. In the approval the developer may change a command or leave it empty. The journal runs `verify` always, and the answer `declined` does not skip it.
 
 Show one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state. The state reads "will be proven at Apply". Apply proves them, after the approval and after the chosen verifier is installed.
 
@@ -148,12 +148,12 @@ A command is never written from a value that the developer typed. See "Find the 
 
 A precinct has seven commands in `configs/<precinct>/`, in two screens. The operations are `fetch`, `identity`, `issues`, `pulls`, `decider`, `file` and `files`.
 
-For each screen, run this cycle: find, propose, prove, decide.
+For each screen, run this cycle: find, propose, prove. The approval of the precinct decides.
 
 1. Find how this machine does each operation with the tool of the host notes. Take the forms of the output from `journal form` and from `docs/journal.md`.
 2. Propose one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state, which reads "will be proven". An operation with no command stays a step of the role, and the row says so.
 3. Prove each command by "Prove a command".
-4. Decide in one call, with the proof result in the call. Offer "Keep as is" first on a screen whose commands already exist. Then offer "Write", "Change" and "Leave empty". "Change" asks for a new proof.
+4. After the approval, write each command that passed its proof, and keep one that already exists. The approval names the files. "Change" there asks for a new proof.
 
 **The screen of version control.** Operations `fetch`, `file` and `files`.
 

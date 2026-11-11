@@ -154,7 +154,7 @@ Finds: which of the three files exist in `shared/`, and how this machine does ea
 
 Proposes: one row for each operation, with how it runs, its source and its proof state. A new or changed command reads "will be proven at Apply".
 
-Decides: for each command, "Write" or "Leave empty", with "Keep as is" first for a command that exists. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
+Decides: nothing. Apply writes each command that passes its proof and keeps one that exists. "Change" in the approval takes a command to change or to leave empty. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
 
 Never:
 
