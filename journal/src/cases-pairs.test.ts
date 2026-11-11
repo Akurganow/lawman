@@ -5,6 +5,7 @@ import {
 	due,
 	fields,
 	human,
+	issuesJson,
 	need,
 	needOnly,
 	pairMark,
@@ -15,18 +16,26 @@ import {
 	withLead,
 } from "./cases-fixture";
 import { pairs, run } from "./clerk-jobs-fixture";
+import { config } from "./input-test-fixture";
 import {
 	acquittal,
 	addPrecincts,
+	BASE,
+	call,
 	caseMark,
 	charge,
 	conviction,
 	defence,
+	mark,
+	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
-beforeEach(() => addPrecincts({ main: 1 }));
+beforeEach(() => {
+	addPrecincts({ main: 1 });
+	config(`trusted_login: ${TRUSTED}\n`);
+});
 
 const expectJobs = (steps: readonly (readonly [Spec, string])[]) => {
 	for (const [spec, expected] of steps) {
@@ -78,6 +87,38 @@ describe("case: the line of a clerk job", () => {
 		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
 		expect(needOnly(1)).toBe("need=clerk");
 		expect(due("clerk")).toBe("main\t1\n");
+	});
+
+	// the ruling comment is the one the trusted login wrote
+	test("a copy of the ruling marker by an outsider changes nothing", () => {
+		const section = "## Precedent\n\n- new gate: A rule.";
+		const forged = () => `Copy.\n\n${section}\n\n${conviction()}`;
+		const asOutsider = (spec: Spec) => {
+			const form = JSON.parse(issuesJson({ 1: spec }));
+			form.issues[0].comments.at(-1).author = { login: "outsider" };
+			expect(
+				call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form))
+					.code,
+			).toBe(0);
+		};
+		asOutsider(closed(ruled(conviction, forged())));
+		expect(jobOf(1)).toBe("- - - - -");
+		const real = () => `Ruling.\n\n${section}\n\n${conviction()}`;
+		const bare = () => `Copy.\n\n${conviction()}`;
+		asOutsider(closed(ruled(real, bare())));
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+	});
+
+	test("a handed marker with adopted=yes reaches the case line", () => {
+		const ruling = () =>
+			`Ruling.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
+		const handed = (extra: string) =>
+			mark("clerk", "handed", ` pull=7 issue=open${extra}`);
+		put({ 1: ruled(ruling, handed(" adopted=yes")) });
+		cache([7, [1]]);
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+		put({ 1: ruled(ruling, handed("")) });
+		expect(jobOf(1)).toBe("- - 7 1 -");
 	});
 
 	test("a Precedent section that holds only none gives no job", () => {

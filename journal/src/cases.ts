@@ -11,6 +11,7 @@ import {
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { leadOrigins, symbolOf } from "./leads";
 import { holdsPrecedent } from "./precedent-items";
+import { rulingComment, trustedLogin } from "./ruling-comment";
 
 const CASE_USAGE = "case <precinct> <issue>";
 
@@ -98,15 +99,15 @@ function rulingHoldsPrecedent(
 			)
 			.get(precinct, issue, ruling.ord) as { raw: string } | null
 	)?.raw;
-	const comments = db
-		.query(
-			"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at DESC, rowid DESC",
-		)
-		.all(precinct, issue) as { body: string }[];
-	const found = comments.find(
-		(c) => c.body.trimEnd().split("\n").at(-1)?.trim() === raw,
-	);
-	return found !== undefined && holdsPrecedent(found.body);
+	let login: string;
+	try {
+		login = trustedLogin();
+	} catch (e) {
+		if (e instanceof Fail) return false;
+		throw e;
+	}
+	const body = rulingComment(db, precinct, issue, raw ?? "", login);
+	return body !== undefined && holdsPrecedent(body);
 }
 
 // A pair marker means the case left the funnel. Only the clerk is left to act.

@@ -27,9 +27,7 @@ import { readConfig } from "./input-files";
 import { jevNone, replyOf } from "./jev";
 import { utf8 } from "./launch";
 import { sectionNodes, sectionWords, sliceOf } from "./law-sections";
-import { configValue } from "./law-sync";
 import { lintPage } from "./lint";
-import { extractMarkers, stripCr } from "./markers";
 import {
 	ALL,
 	asksJev,
@@ -54,6 +52,9 @@ import {
 	withDepartments,
 } from "./precedent-file";
 import { type Item, itemsOf } from "./precedent-items";
+import { rulingComment, trustedLogin } from "./ruling-comment";
+
+export { trustedLogin };
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
@@ -316,18 +317,6 @@ function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	return row;
 }
 
-// the counted marker on the last non-empty line of the text, if any
-function markerAtEnd(text: string, author: string | null, login: string) {
-	const at = text
-		.split("\n")
-		.map(stripCr)
-		.findLastIndex((l) => l.trim() !== "");
-	return extractMarkers(
-		{ text, createdAt: "", rank: 1, author: author ?? "" },
-		login,
-	).find((f) => f.line === at + 1)?.marker;
-}
-
 // the cached ruling comment: its last line is the newest ruling marker of the case
 function rulingText(
 	db: Database,
@@ -336,27 +325,13 @@ function rulingText(
 	raw: string,
 	login: string,
 ): string {
-	const comments = db
-		.query(
-			"SELECT author, body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at DESC, rowid DESC",
-		)
-		.all(precinct, issue) as { author: string | null; body: string }[];
-	const ruling = comments.find(
-		(c) => markerAtEnd(c.body, c.author, login)?.raw === raw,
-	);
-	if (ruling === undefined)
+	const body = rulingComment(db, precinct, issue, raw, login);
+	if (body === undefined)
 		throw new Fail(
 			EXIT.USAGE,
 			`no cached comment carries the court ruling of ${precinct} #${issue}`,
 		);
-	return ruling.body;
-}
-
-export function trustedLogin(): string {
-	const login = configValue(readConfig() ?? "", "trusted_login");
-	if (login === undefined || !fits("login", login))
-		throw new Fail(EXIT.USAGE, "config.yaml has no valid trusted_login");
-	return login;
+	return body;
 }
 
 function summary(sections: Item[][], lines: string[]): string[] {

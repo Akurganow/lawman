@@ -145,13 +145,18 @@ export function expectRoundKept(spec: Spec) {
 }
 
 // The first case or pull request the role is due on, as the duty desk would order it first.
+// the journal reads its config from the folder of its database
 export function due(role: string): string {
+	const saved = process.env.LAWMAN_DB;
+	process.env.LAWMAN_DB = dbFile;
 	const db = open(dbFile);
 	try {
 		const first = dueEntries(db, role)[0];
 		return first === undefined ? "" : `${first.precinct}\t${first.number}\n`;
 	} finally {
 		db.close();
+		if (saved === undefined) delete process.env.LAWMAN_DB;
+		else process.env.LAWMAN_DB = saved;
 	}
 }
 
