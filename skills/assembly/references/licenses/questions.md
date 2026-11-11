@@ -89,7 +89,7 @@ Offer "No" first and "Yes" second. The question holds the account of each statem
 
 - `No`: The check stays off, and Lawman asks no more.
 - `Yes`: Lawman starts at its next visit once the weight of the repository is above zero. Lawman's license check sends nothing about your project to an outside service until you agree to that service by name. A pull request adds a short section about licenses to LAWMAN.md. Until you merge it, Lawman files no `conflict` and no `unmet` finding. It may still file `unlicensed`.
-- `Yes`, for a draft: Lawman starts once the constitution pull request is merged and the weight is raised. The assembly offers that at its next start. That pull request carries the section about licenses. Until it is merged, Lawman reports no license problem.
+- `Yes`, for a draft: Lawman starts once the constitution pull request is merged and you choose "Precincts", then "raise a weight", in the menu. That pull request carries the section about licenses. Until it is merged, Lawman reports no license problem.
 
 A skip and an empty answer mean "No". A "No" writes the outcome `no` and asks nothing more. An answer that corrects a statement of license changes that row. Show it marked and ask this question again.
 

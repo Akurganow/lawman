@@ -1,6 +1,6 @@
 # License update
 
-Use this reference for a precinct that said yes to the license department. It serves every run that reaches the menu and the job "Re-check a precinct". It asks the questions of `references/licenses/questions.md` that the table below names, and no others.
+Use this reference for a precinct that said yes to the license department. It serves the mode of the license questions and the job "Re-check a precinct". It asks the questions of `references/licenses/questions.md` that the table below names, and no others.
 
 Every such run takes the tip of the default branch for each precinct that said yes. It runs "Agree the reading way" of `references/precinct.md` again and compares the result with the recorded entry. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
 

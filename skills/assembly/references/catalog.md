@@ -47,4 +47,4 @@ A "No" writes the pair and no entry.
 
 ## Summary
 
-Follow "Finish" in `SKILL.md`. Name the answers that were written.
+Follow "Finish" in `SKILL.md`. Name the answers that were written and the answers still missing.
