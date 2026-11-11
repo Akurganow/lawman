@@ -174,7 +174,7 @@ Then decide.
 61. On approval, stop unless `LAWMAN.md` is the only change in the clone. Then run "Create the label" of the section "Pick the labels".
 62. Commit `LAWMAN.md` in the clone with the message "Add the Lawman constitution".
 63. Publish the branch `lawman/constitution` to the repository, and stop if it fails.
-64. Open a pull request from the branch `lawman/constitution` in the repository. Its title is "Add the Lawman constitution". Its body is "Adds LAWMAN.md. Review the paths and the department lines." Stop if it fails, showing the link.
+64. Open a pull request from the branch `lawman/constitution` in the repository. Its title is "Add the Lawman constitution". Its body is "Review `LAWMAN.md`." Stop if it fails, showing the link.
 
 ### Agree the reading way
 
