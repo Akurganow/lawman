@@ -124,6 +124,19 @@ describe("old-precedent list", () => {
 		);
 	});
 
+	test.each(["1. ", "-  ", "* ", "2) "])(
+		"an old line behind the list prefix %j inside an HTML block prints as outside",
+		async (prefix) => {
+			const text = page(
+				"<details>",
+				`${prefix}2026-09-03 #2: Hidden.`,
+				"</details>",
+			);
+			const r = await inprocFed(BASE, ["old-precedent", "list"], text);
+			expect(r.out).toBe("outside position=1\n");
+		},
+	);
+
 	test("an HTML block with no old line is no item", async () => {
 		const text = page(
 			"- 2026-09-02 #1: First.",

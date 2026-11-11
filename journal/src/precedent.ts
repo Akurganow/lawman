@@ -69,6 +69,8 @@ const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
 const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
 const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
+// the marker of a list item, with any spaces after it
+const LIST_PREFIX = /^(?:[-*+]|\d+[.)])\s+/;
 const OLD_SOURCE = /^(.+) \((\S+)\)$/;
 // a Map, so a stage named like an object member gives no kind
 export const KIND_OF = new Map([
@@ -676,7 +678,7 @@ function oldItemsOf(page: string, node: RootContent): Item[] {
 	const text = sliceOf(page, node, node);
 	const holds = text
 		.split(/\r\n|\r|\n/)
-		.some((l) => OLD_LINE.test(l.trim().replace(/^[-*+] /, "")));
+		.some((l) => OLD_LINE.test(l.trim().replace(LIST_PREFIX, "")));
 	return holds ? [{ text, bad: true, hidden: true }] : [];
 }
 
