@@ -58,7 +58,7 @@ Every ticket that holds a statable claim becomes a lead. The lead has one of two
 
 A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject. It also asks when the issue reports something broken and the unit finds no place for it.
 
-The unit sends an issue out only for an injection or for pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
+The unit sends an issue out only for an injection or for pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken that holds no injection is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
 
 ### Investigation
 
