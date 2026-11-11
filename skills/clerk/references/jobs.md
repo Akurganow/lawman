@@ -185,14 +185,17 @@ Taken up by the clerk as a draft that counts as not started.
 ````
 
 1. Read whether the pull request is a draft.
-2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host. Send it to the journal on standard input, unread, exactly as the host returned it. Write the journal's output unchanged as a top-level comment on `<pull>`.
+2. Write the hand-off comment on `<pull>` from the old body, with `--sources <sources> --adopted`. Read the old body from the host into a file of the run directory, unread, exactly as the host returned it. Send that file to the journal on standard input. Write the journal's output unchanged as a top-level comment on `<pull>`.
    ```
    bin/journal handoff --sources <sources> --adopted
    ```
 3. Replace the body with the fixed body on the host. Send it as Working rules says for multi-line text.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.
 5. Make the pull request a draft.
-6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it. Add `adopted=yes`, unless the old body read in step 2 holds the line `Draft opened by the clerk to carry out the court ruling.`
+6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it. Take the field from the journal, with the same file on standard input. Put its output, when there is one, after `issue`.
+   ```
+   bin/journal handoff --sources <sources> --adopted --field
+   ```
 
 ## precedent
 
