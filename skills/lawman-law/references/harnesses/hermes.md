@@ -12,9 +12,9 @@ Terms used below:
 
 ## Installing the plugin
 
-Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to find the harnesses that are installed.
+Detection: `hermes --version` prints the installed version and exits 0. The assembly runs it to detect this harness.
 
-Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway. The start instruction is `hermes gateway restart` (stated by `hermes gateway --help`).
+Scheduler check: `hermes cron status` reports whether the gateway is running and whether jobs will fire. The assembly runs it before creating any job and stops when it reports no gateway. The form that starts the installed background service is `hermes gateway start` (stated by `hermes gateway --help`).
 
 Install and enable the plugin from its repository.
 
@@ -99,7 +99,7 @@ hermes cron run "[lawman] <role>"
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false. The reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`). Resume the job first, with the form under "Paused jobs".
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
-- A killed run leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The session that started the run ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
+- A killed run leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
@@ -116,7 +116,7 @@ Refused, seen in scheduled runs:
 - the tool `execute_code`, which runs local Python and is blocked because no user is present (seen in a job's run);
 - a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
 
-A role removes a folder without a recursive delete. Each form below passed the harness's check function as a role sends it. Removing the files with `rm -f` and then the folder with `rmdir` was seen in scheduled runs.
+A role removes a folder without a recursive delete. The form below passed the harness's check function as a role sends it.
 
 - A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rmdir runs/<tick id>`.
 
@@ -133,7 +133,7 @@ Accepted, checked with the harness's check function: `&&`, `;`, a redirect outsi
 
 Accepted, checked with the harness's check function: a pipe into `jq` with a quoted filter and a pipe into `sed -E` with a quoted script. Such a pipeline inside `(set -o pipefail; …)` also passed the check.
 
-A session started with `hermes chat -q` and no terminal refused `python3 -c`, `find` with `-delete` and a redirect into a file named `config.yaml` (seen in a run). `gh attestation verify` prints nothing on success without a terminal: exit 0 with no output is success (seen in a run).
+A chat started with `hermes chat -q` from a command line, with no terminal, refused `python3 -c`, `find` with `-delete` and a redirect into a file named `config.yaml` (seen in such a chat, not in a scheduled run). In it `gh attestation verify` printed nothing on success: exit 0 with no output is success (seen in such a chat).
 
 A step that needs `set -o pipefail` writes `(set -o pipefail; <pipeline>)`.
 
@@ -262,18 +262,18 @@ Run output is kept in `~/.hermes/cron/output/<id>/`. Each run has a Markdown fil
 
 ### Editing a job
 
-`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort`, `--script` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. The job store `jobs.json` sits in the same `cron` folder as the run output above. Its fields `model`, `provider` and `reasoning_effort` hold the model, provider and effort of each job (read in the harness code, seen in a run). Read it. Change a job only with `hermes cron edit`.
+`hermes cron edit <job id>` changes one job. `--schedule` changes its schedule. `--add-skill` appends a skill without replacing the list. An empty string clears `--model`, `--provider`, `--reasoning-effort`, `--script` and `--monitor-script` (stated by `hermes cron edit --help`). `hermes cron list` prints no model. The job store is `~/.hermes/cron/jobs.json`. The fields `model`, `provider` and `reasoning_effort` of each job hold its model, provider and effort (read in the harness code: `cron/jobs.py`, its docstring and its job fields; seen in a run). Read only those three fields of each job. Change a job only with `hermes cron edit`.
 
-A job shows its entry mode in the list (read in the harness code). A job in script mode prints a `Script:` line. A job in monitor mode prints a `Monitor:` line. A job with neither line has no entry file. Give it one with `hermes cron edit <job id> --script lawman-<role>.sh`. The file must exist in the scripts folder (stated by `hermes cron edit --help`, not probed).
+A job shows its entry mode in the list (read in the harness code). A job in script mode prints a `Script:` line. A job in monitor mode prints a `Monitor:` line. A job with neither line has no entry file.
 
-Translate a job from monitor mode to script mode with one call:
+Translate a job from monitor mode to script mode, or give a job with no entry file its entry, with one call:
 
 ```
 hermes cron edit <job id> --script lawman-<role>.sh --monitor-script ''
 ```
 
 - The call sets the entry file and clears the monitor in one update. The harness checks the rules of the modes on the merged record before it writes (read in the harness code).
-- The file must exist in the scripts folder, or the call is refused with "Script file not found". The job then stays as it was (read in the harness code).
+- The file must exist in the scripts folder, or the call is refused with "Script file not found". The job then stays as it was (read in the harness code: `tools/cronjob_job_args.py`, `_validate_cron_script_path`, called from `tools/cronjob_tools.py`, `_update_script_fields`).
 - A paused job stays paused. Skills, model, provider and delivery stay (read in the harness code: each field is updated by itself).
 - Both flags go in one call. A job that keeps its monitor runs the monitor check first. The check can end the run before the script runs (read in the harness code).
 - The harness's check function accepts the line (checked with the harness's check function). Not seen in a scheduled run.
@@ -364,7 +364,7 @@ Hermes already injects the explanation of `[SILENT]`, of delivery, and of the ba
 - `all`, every connected home channel;
 - a comma-separated list, such as `origin,all`.
 
-A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked. A session that runs in a messenger chat has that chat as `origin`, so that route can deliver now.
+A role cannot see whether a message arrived. This page names no way to learn which messengers are connected. The assembly labels such a route as not checked.
 
 ### One-off run
 

@@ -15,7 +15,7 @@ Terms used below:
 
 ## Installing the plugin
 
-Detection: `openclaw --version` prints the installed version. The assembly runs it to find the harnesses that are installed. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
+Detection: `openclaw --version` prints the installed version. The assembly runs it to detect this harness. The CLI treats `--version` as a help-class flag (read in the harness code, openclaw/src/cli/program/preaction.ts). That it exits 0 on success is (not verified).
 
 Scheduler check: `openclaw cron status` reports whether the scheduler runs. The assembly runs it before creating any job and stops when `enabled` is false or no gateway answers. The start instruction is `openclaw gateway start` (stated by the docs, https://docs.openclaw.ai/cli/gateway/service.md; not verified).
 
@@ -127,7 +127,7 @@ openclaw cron run <job id> --wait
 - Read the result with `openclaw cron runs <job id> --run-id <run id>` (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified).
 - From an agent session, the tool `automations` starts a run with `action` set to `run` and `runMode` set to `force`. The default `runMode` is `due`, which honors the entry script (stated by the docs, https://docs.openclaw.ai/cli/cron.md; not verified). A run aimed at the requesting conversation starts after that turn ends (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
 - The run is recorded like a scheduled one. `openclaw cron runs <job id>` lists it, and its output lands in the run history.
-- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The session that started the run ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
+- A killed run leaves a tick open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
 
 `openclaw agent exec` runs one embedded turn in the foreground and records no job (stated by the docs, https://docs.openclaw.ai/cli/agent.md; not verified). Use it only while developing a skill.
 
@@ -226,7 +226,7 @@ There is no output folder. The result of each run lies in the run history, which
 
 `openclaw cron show <job id> --json` prints one job, with the field `trigger.script` holding the stored script (read in the harness code, openclaw/src/cli/cron-cli/register.cron-simple.ts, openclaw/src/cron/job-read-view.ts, openclaw/src/cron/public-job.ts and openclaw/packages/gateway-protocol/src/schema/cron.ts). A job with a `trigger.script` has an entry. A job without one has none. The live output is (not verified).
 
-none: OpenClaw has one kind of entry. No job holds a monitor, so there is nothing to translate. The assembly skips that step.
+none: OpenClaw has one kind of entry. No job holds a monitor. The page names no form that gives an entry to a job that has none, so such a job stays as it is.
 
 ### Schedule forms and time zone
 
