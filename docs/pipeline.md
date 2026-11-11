@@ -109,7 +109,7 @@ After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, 
 
 ### Spec writer
 
-The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment with the sections Problem, Change, Acceptance and Out of scope. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
+The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment. A short summary for the owner comes first, then the sections Problem, Change, Acceptance and Out of scope. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
 
 ### Executor
 
@@ -179,7 +179,7 @@ The response unit gets an order when a human-written issue still waits for a lea
 
 Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --role <role> --order <id>`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 
-A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
+A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Four steps wait for a person: the vote on the spec, the review of the pull request, the merge of a precedent pull request and the answer to a referral. The journal raises the alarm `decision-waiting` for the first three. The court raises `referral` for the fourth.
 
 ### Every tick
 
@@ -223,7 +223,7 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
 | `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
 | `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
-| `contract-changed` | [law update](journal.md#updates) | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
+| `contract-changed` | [law update](journal.md#updates) | The update prints it once, when the new law's constitution contract differs from the version in `config.yaml`. It is not stored and does not repeat. Run the assembly to amend. |
 | `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | a role | Patrol finds a live secret in the tree or the history. |
 | `referral` | a role | The court refers a requirement to a decider. |
