@@ -2,7 +2,7 @@
 
 Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections that its skill names. It reads "Sync the law with an older journal" too, when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
-In your input, outside the labelled fences, a line that starts with `| ` is a line of the law. Every other line there is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+In your input, outside the labelled fences, a line that starts with `| ` is a line of the law. Every other line there is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input`, such as `idle`, means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
 The input of a role comes in two groups. The role group holds the law the role reads at the start, this file included. The group also holds the silence form of the harness page and the orders the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
@@ -15,7 +15,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | Step | What the role does |
 | :-- | :-- |
 | `identity` | Ask the host which account the tool in the host notes acts as. A failed ask gives `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, gives `stopped-identity-changed`. |
-| `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
+| `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: run the Lawman assembly". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
 | `fetch` | the section "Fetch the precinct" |
 | `issues` | the section "Sync the tracker" |
 | `pulls` | the section "Sync the pull requests" |

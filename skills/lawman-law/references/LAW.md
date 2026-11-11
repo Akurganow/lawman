@@ -177,7 +177,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 
 ## Recorded reasons
 
-- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is a conversation for the owner, in the report, never a lead. A claim of fact inside a recorded reason is still judged against the tree. When the tree refutes that claim, the reason protects nothing and the candidate stays open.
+- A recorded reason protects a shape. Its sources are a comment, a rule, a commit message, a docstring, the judging document, and a Not findings entry of the department page. A precedent is no recorded reason. The Precedents section says what it does. The department records in Not findings that it does not file such findings. A recorded reason that explains the current shape closes the candidate. Disagreeing with a recorded decision is never a lead. A claim of fact inside a recorded reason is still judged against the tree. When the tree refutes that claim, the reason protects nothing and the candidate stays open.
 - No department judges a path from the Not judged section. The one page `licenses` reads there signs of foreign material and license statements, and judges nothing else.
 
 ## Requirement parts
