@@ -126,7 +126,7 @@ The rows for a constitution that passes lint:
 
 - Repository: as in the rows above.
 - Constitution: "Constitution found, passes lint" (found). Show no draft, no branch and no pull request.
-- Notes: the unknown sections that the check printed, or none (found). Leave out the note about the section `## Licenses`.
+- Notes: the count of unknown sections that the check printed (found). Leave out the note about the section `## Licenses`.
 - Weight: 1. The constitution is already in place (default).
 - TypeSafe, Catalog and Reading way: as in the rows above.
 - Commands of version control, Commands of the tracker and Facts to copy: as in the rows above.
@@ -206,7 +206,7 @@ Ask in the question tool.
 
 1. Choose the precinct from `bin/journal precinct list`.
 2. Fetch the repository's latest state into `precincts/<precinct name>`, and stop if it fails.
-3. Run `bin/journal lint-page constitution` with `LAWMAN.md` as it is at the tip of the default branch on stdin, and show the reasons on exit 8. On exit 0, show each printed line that starts with `#` as a note row (found), except the note about the section `## Licenses`. A note changes nothing.
+3. Run `bin/journal lint-page constitution` with `LAWMAN.md` as it is at the tip of the default branch on stdin, and show the reasons on exit 8. On exit 0, show the count of printed lines that start with `#` as one note row (found), except the note about the section `## Licenses`. A note changes nothing.
 4. Run the line check on each department line that the previous step printed, and skip a line that starts with `#`. Use the tip of the default branch as the ref.
 5. Run the Issue templates section of the add path, using the tip of the default branch in place of `HEAD`.
 6. For a precinct with `yes` in `license_precincts` and without its own page `licenses`, run `references/licenses/update.md` at the tip of the default branch.
