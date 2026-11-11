@@ -92,7 +92,7 @@ Update the plugin in a terminal with the harness update command:
 hermes plugins update lawman
 ```
 
-The next tick of any role completes the update. It downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
+The next tick of any role completes the update, and so does the assembly when you run it first. The sync downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
 
 After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
 

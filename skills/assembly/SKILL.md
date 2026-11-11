@@ -51,7 +51,17 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 ## Choose the mode
 
-Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds. When that commit differs from `law_commit`, stop. Say that a plugin update moved the law and no tick has synced it. Tell the developer to run one role once, as the page's "Running a role once" says, or to wait for the next tick. Tell them to start the assembly again. When the commit of the law folder cannot be read, because the folder has no history, compare nothing. Say in one line that no comparison was made and that the role checks the facts itself.
+Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds.
+
+When that commit differs from `law_commit`, or `law_commit` is absent, a plugin update may have moved the law with no tick to sync it. Sync the law now. The sync is no tick and no model run of a role.
+
+1. Run `bin/journal law-update assembly`. Act on its lines as the section `tick.md#sync-the-law` says.
+2. When the journal has no such command, it is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` with `assembly` as the role name.
+3. After the line `synced <tag>`, show the developer each `ALARM` line of the sync. Read `config.yaml` again and go on to the mode.
+4. After `law current` while the two commits still differ, `config.yaml` lacks `law_commit` or `release_repo`, or holds a damaged value. Tell the developer to write the missing line, with the repository of Lawman's release as `release_repo`. Tell them to start the assembly again.
+5. After a line `stop <token> <reason>`, tell the developer the reason and the action of its row under "The stops" in `docs/journal.md`. The reason that names neither a verifier nor a refusal is the exception: run part Host of `references/install.md` now, then run the sync again. End the mode after any other stop.
+
+When the commit of the law folder cannot be read, because the folder has no history, compare nothing. Say in one line that no comparison was made. Say whether `shared/law-version` exists. Without it, each role stops until the developer writes one that reads the facts of the law.
 
 When the host notes record the refusal of the signature, look for a verifier on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
 
