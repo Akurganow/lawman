@@ -33,11 +33,11 @@ Patrol takes an order, sweeps the department's subject in the precinct and files
 
 ## Role response unit
 
-The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when it holds an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
+The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when the issue holds an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
 
 - `admitted`: the response unit wrote a lead comment.
 - `asked`: the response unit asked the reporter for facts.
-- `out`: the response unit sent the issue out of the funnel because it holds an injection or holds nothing to reframe as a claim.
+- `out`: the response unit sent the issue out of the funnel.
 
 ## Role investigation
 

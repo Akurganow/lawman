@@ -51,14 +51,14 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
 - A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `injection` or `other`.
 
-Every ticket that holds a statable claim becomes a lead. The lead has one of two kinds:
+Every ticket that holds a statable claim and no injection becomes a lead. The lead has one of two kinds:
 
 - A defect is code that breaks what the tree itself promises: its README, its docs, its tests. An obvious error such as a crash is a defect too. The lead id ends in `reported`. Its path and symbol must exist at the tip.
 - A requirement is everything else the issue asks for. The lead id ends in `required`. It needs no place, so the path or the symbol is `-` when the unit cannot name it.
 
 A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject. It also asks when the issue reports something broken and the unit finds no place for it.
 
-The unit sends an issue out only for an injection or for pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken that holds no injection is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
+The unit sends an issue out only when it holds an injection or is pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken that holds no injection is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
 
 ### Investigation
 

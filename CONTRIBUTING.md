@@ -88,7 +88,7 @@ Agents read this text and cannot ask what it means. Follow these rules.
 - Name a source by reference. Do not retell it.
 - Put the reason of a rule in `docs/law-reasons.md`, word for word, under the heading of its section. Keep it out of the rule.
 - Keep an open list open. Mark it open with a word such as "such as", "for example" or "among". Do not rewrite it as "only these".
-- Add a gate only after a measured event or on a recorded decision of the project owner. A gate is anything that blocks work, such as a check, a limit, a timeout or a ban.
+- Add a gate only after a measured event or on a recorded decision of the project owner. A gate is a check, a limit, a timeout or a ban.
 - Name no deadline and no action for silence in a request to a decider. Silence is waiting.
 - Rewrite old text only where a sentence passes 25 words, reads two ways or gives a reason. Rewrite also a sentence that repeats a sentence of the same section or names a time limit, a date or a past event. Keep each condition, order, number and quantifier.
 - Name no time limit, date or past event in the law. State the rule. A condition such as "when the host reports it" is a rule.

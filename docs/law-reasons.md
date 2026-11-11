@@ -22,7 +22,7 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Its purpose is that the same dispute is not argued again in every case: the parties and the court rely on the decision already made.
 
-> Something else may be found there.
+> Because something else may be found there.
 
 ### Alarms the journal computes
 
@@ -70,7 +70,7 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 ### Defined markers
 
-> An older `feature` stays valid.
+> So an older `feature` stays valid.
 
 ## skills/clerk/SKILL.md
 
@@ -241,6 +241,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Isolation
 
 > This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt.
+
+### Silence
+
+> A report written before the token once led the model to drop the token, and the report was delivered (seen in a run).
 
 ## skills/lawman-law/references/harnesses/openclaw.md
 
