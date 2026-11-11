@@ -171,7 +171,7 @@ A request that the host refuses to accept for its size, its limit or its complex
 
 - For a host that the assembly does not know, take the limits from what the tool or the host reports about the call. Never assume a limit.
 - A checked list that is smaller than one page of the command does not prove that the command reads page by page.
-- Part Host says in plain text that a written command must not send the host a request beyond its limits.
+- A written command must not send the host a request beyond its limits.
 
 ## Facts of the precinct
 

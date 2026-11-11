@@ -101,8 +101,6 @@ Part Host does not change the account. A run of part Host again serves a change 
 
 Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. The choice of the method, the facts of a refusal and what a refusal records follow "Choose the method of verification" in `references/commands.md`.
 
-Say in plain text that a written command must not send the host a request beyond the host's limits. "Host limits" in `references/commands.md` gives them.
-
 Finds:
 
 - The repository host, and each tool on this machine that reaches it.
