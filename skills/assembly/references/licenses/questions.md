@@ -67,7 +67,7 @@ Run this section for the open repositories. The add path of `references/precinct
 Every call is one call of the question tool. A call holds up to the limit of the tool on the harness page, and more questions split into several calls. Text that is the same for all stands once in the message before the call. A cancel in any call ends the mode and writes nothing, including the answers of the earlier calls. A timeout follows rule 16 of `SKILL.md`. The pairs and the pull requests are written once, after the last answer.
 
 1. The enable question, one for each precinct.
-2. After "Yes", the rows of "Agree the reading way" of `references/precinct.md` go into the proposal, once for each repository. They are made here even when the catalog consent is not given, because the patrol takes its list of pins from that entry.
+2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the patrol takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it.
 3. The questions of "How people get the project and what it earns" that no sign answers, for each precinct that said yes.
 4. The first source question of each precinct that has a fitting source.
 5. After "Choose", one call for each fitting source.
@@ -178,7 +178,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 | "Yes", nothing fits or the lock records the licenses | `yes` | the fact about the lock from the index, no agreed row | `reaches`, `use`, `sources none` |
 | "No", a skip or an empty answer to the enable question, full silence, or its own page `licenses` | `no` | not written | not written |
 | The repository states no license anywhere | `no` | not written | not written |
-| Cancel on any question: the mode ends. A skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
+| Cancel on any question: the mode ends. A skip on "Agree the reading way", or a skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;

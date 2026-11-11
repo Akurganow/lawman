@@ -23,7 +23,7 @@ Rules of the update:
 - An owner who narrowed `sources`, or changed `use` at the merge, gets no question and no pull request.
 - Never remove a recorded answer because the tree or a release changed. Only the row for a request in "Re-check a precinct" replaces answers. A returning ecosystem raises no question.
 - An id of `sources` outside the index is rejected and named. A value with no valid id reads as `none`, as the law says.
-- "Agree the reading way" puts only the differences with the record into the proposal at an update. The approval updates both records, `## Dependency reading` and `## License reading`.
+- "Agree the reading way" asks at an update only about the differences with the record. The answer updates both records, `## Dependency reading` and `## License reading`.
 - A precinct that said yes and has no `use` line gets its question once.
 - Add no fifth task to the menu.
 
