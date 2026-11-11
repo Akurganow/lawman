@@ -1211,6 +1211,9 @@ describe("the request lines of the write", () => {
 	test("a repeated call finds the file standing and asks for neither file", async () => {
 		await written();
 		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
+		// a file an older runtime wrote has a space after the empty key
+		writeFileSync(file(), text().replace("departments:\n", "departments: \n"));
+		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
 		// the adding step changed its departments, and the standing file is still it
 		writeFileSync(file(), withDepartments(text(), ["core", "beta"]));
 		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
