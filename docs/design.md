@@ -23,7 +23,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 - A user interface, a dashboard or a local server. Lawman is the core, and others may build an interface on top.
 - A daemon. One tick does one unit of work and exits.
-- Scripts that reach a repository host. The roles act through the tools the developer already signed in to.
+- A journal with host access of its own. The journal starts only the commands that the assembly wrote into the installation and proved with the user, and each command only reads. The roles act through the tools the developer already signed in to.
 - A binding to one harness, host, tool or tracker. Markers in a host's issues and comments are the current mechanism, not a requirement.
 - A new limit or check against a problem that has not happened. A rule enters the law when reality shows the problem.
 
@@ -39,7 +39,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **Both sides work under the same rules.** The prosecutor and the defender use the same evidence rules, and each may call an expert. The court rules on both positions.
 
-**Repository content is evidence.** Anyone can write an issue or a comment, so a role takes no instructions from third-party text. The law lists every exception, such as the listed sections of a constitution and department pages on the main branch. A reviewed merge put them there, and every other file stays evidence.
+**Repository content is evidence.** Anyone can write an issue or a comment, so a role takes no instructions from third-party text. The constitution and the department page are evidence too. A role applies them only where the law makes a rule of them, such as the listed sections of a constitution, and every other file stays evidence.
 
 **The method lives once.** A department is one page and not an agent. So a narrow department costs one page, and a user can add one without asking the project.
 
@@ -66,10 +66,10 @@ A developer who maintains many repositories wants the same review process on eac
 | What a court can rule | Ten verdicts as first proposed | Conviction, acquittal and, for a requirement, referral | A doubt about a defect is an acquittal, so the court never returns a case. A precedent records a settled question |
 | Where process state lives | A shared set of labels, or a text journal | Markers on the host, and a SQLite journal behind one command | No setup per repository, and roles never write SQL |
 | Which departments a precinct runs | A list of attached shared departments in the constitution | Every shared page rotates, except `licenses`, which rotates only with a yes for the precinct, and a precinct adds its own | No reason was recorded |
-| How much a role runs | Ten roles that all run daily, which spend model usage fast | Every day, economy or custom plan, chosen at install | A run takes up to the role's number of jobs, so its days set the speed and the cost |
+| How much a role runs | One fixed schedule for all ten roles, which spends model usage fast | A plan chosen at install: every day, economy or custom | A run takes up to the role's number of jobs, so the days the user sets decide the speed and the cost |
 | How Lawman installs | Agent plugins alone | An Agent Plugins package that also keeps its law, journal binary and assembly | The harness updates it with its own commands, and the binary is still verified |
 | Where the binaries live | A second repository | This repository | A second repository is not needed |
-| How a repository is reached | Guiding the user through tokens, or scripts that call the host | The tools already signed in on the machine | Scripts must not reach the host, and Lawman records only where a credential lives |
+| How a repository is reached | Guiding the user through tokens, or journal code that calls the host itself | The tools already signed in on the machine, reached through read-only commands that the assembly writes and proves | The journal holds no host access and no credential, and Lawman records only where a credential lives |
 | How the journal is built | Python | TypeScript on Bun, compiled to one binary per platform | The language the maintainer works in, and Bun compiles it to one binary |
 | Where the logic of a new department lives | Journal commands and tables for each external source | Law text, one reference file per source and a note of the precinct | Lawman ships law that the user's machine turns into a working check. Code goes into the journal only for what must be safe and reliable |
 | Where facts of a precinct about licenses live | Tails on the Departments line | A section `## Licenses` in the constitution and one entry in the host notes | A note needs no change to the check, and the address and the form depend on the machine |
