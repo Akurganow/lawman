@@ -6,6 +6,7 @@ import {
 	HARNESS_SECTIONS,
 	INTRO,
 	inputOf,
+	LAW_MAP,
 	lawMap,
 	lawOf,
 	lawSections,
@@ -45,7 +46,7 @@ describe("the role table", () => {
 		expect(lawSections("patrol").length).toBeGreaterThan(0);
 	});
 
-	test("every section of LAW.md has a reader but the two that the journal does for the duty desk, and the whole file counts as every section", () => {
+	test("every section of LAW.md has a reader or a row with none, and the whole file counts as every section", () => {
 		const sections = [INTRO, ...(HEADINGS["LAW.md"] ?? [])];
 		const read = new Set(
 			ROLE_NAMES.flatMap((role) =>
@@ -56,10 +57,9 @@ describe("the role table", () => {
 					),
 			),
 		);
-		expect(sections.filter((s) => !read.has(s))).toEqual([
-			"Role duty desk",
-			"Alarms the journal computes",
-		]);
+		expect(sections.filter((s) => !read.has(s))).toEqual(
+			LAW_MAP.filter(([, readers]) => readers.length === 0).map(([s]) => s),
+		);
 	});
 
 	test("every role has its precedents, the duty desk none", () => {
