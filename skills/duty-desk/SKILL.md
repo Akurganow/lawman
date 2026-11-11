@@ -127,7 +127,7 @@ Build the answer from these rules, in this order:
 4. Write every line of the update list that the sync printed, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 
-Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered.
+Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone, unless an `ALARM` line stands. A stop of the duty desk is always delivered.
 
 ## Report
 

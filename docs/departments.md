@@ -65,7 +65,7 @@ A department name resolves in this order. The first hit wins.
 
 Pages are never merged. A page found at an earlier place hides the later ones, even when it is incomplete. A precinct's own page is trusted because a reviewed merge put it on the main branch.
 
-The name is checked against `[a-z][a-z0-9-]*` before any path is built. The start of the duty desk tick checks the resolved page as `bin/journal lint-page department --name <name>` does. A page that fails is skipped for that tick and named in Blockers. The check names each missing, repeated or unknown heading. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
+The name is checked against `[a-z][a-z0-9-]*` before any path is built. The start of the duty desk tick checks the resolved page as `bin/journal lint-page department --name <name>` does. A page that fails is skipped for that tick and named in Blockers. The check names each missing or repeated heading. A heading that the page does not list is an unknown section: it is a note in the margin and fails nothing. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
 
 ## The rotation
 

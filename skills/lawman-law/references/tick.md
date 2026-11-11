@@ -194,7 +194,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
+The output is `issues= leads= markers= invalid= skipped=`, and ends with `uncleaned=<list>` when the journal withheld a text it could not clean. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
 
 ## Sync the pull requests
 
@@ -335,8 +335,8 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 
 ## Alarm
 
-Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap.
+Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap. An alarm about an issue or a pull request ends with its `<link>`. The link is the one in the `link` line of the role's input. Without that line, it is the one the host reports.
 
-- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
+- An issue role prints a critical condition as `ALARM case <p>#<n> <one line> <link>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.
-- The court prints a referral as `ALARM referral <p>#<n> <one line>`.
+- The court prints a referral as `ALARM referral <p>#<n> <one line> <link>`.

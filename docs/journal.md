@@ -148,7 +148,11 @@ journal wake --role <r>
 
 - `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name. It then prints the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
 
-No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk prints the open alarms again, except those it raised itself.
+No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The start of the duty desk prints the open alarms again, except those it raised itself. The duty desk also computes the alarms at its end, so a constitution it found missing raises its alarm in the same tick.
+
+An alarm about an issue or a pull request ends with the link that the host reported for it. The journal reads the link from the field `url` of the issues form and the pulls form. A host command that leaves the field out gives an alarm without a link. The alarms `broken-lead` and `decision-waiting` carry the link.
+
+The alarm `no-constitution` names a precinct and the cause. The cause is no constitution on the main branch, a constitution that fails the page check, or a contract version the law does not support. The duty desk records the cause at each visit of the precinct. A visit that finds a usable constitution clears it, and the alarm clears with it. A visit that fails before the constitution is read leaves the cause as it was.
 
 ```
 journal status
@@ -160,7 +164,7 @@ The journal's cache is refreshed when a role syncs. Issues by bots (an author wi
 
 The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The duty desk refreshes it right after the issue cache of the same precinct. A failed pull request sync of one precinct removes the orders of every role on that precinct. It does not end the tick.
 
-- `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. A cleaning library that fails gives exit 1 and leaves the cache as it was.
+- `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. Each text is cleaned alone. A text that the cleaning cannot process is stored as the fixed line "This text could not be cleaned and is withheld." It is never stored raw or partly cleaned, and the sync goes on. The sync line then ends with `uncleaned=` and a list such as `issue:12:body,issue:12:comment,pull:7:comment`. Each item names the issue or the pull request, and the body or a comment. The duty desk puts the list under Blockers. To restore the text, edit or delete it on the host and sync again.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
@@ -169,7 +173,7 @@ The pull request cache holds every open pull request of the trusted login, with 
 - `intake`: prints `need=` and `state=` for one issue.
 - `pull`: prints the stage of a pull request, with the next role, the spec vote, the executor's work state, the sources and the priority.
 - `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
-- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. Each comment carries `id`, and `approvedBy` and `rejectedBy` for the comments of the trusted login on open issues. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
+- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. An issue and a pull request may carry `url`, the address that opens it. The journal stores it and puts it into the alarms about that issue or pull request. Each comment carries `id`, and `approvedBy` and `rejectedBy` for the comments of the trusted login on open issues. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
 
 ```
 journal sync <precinct> --author <login> [--reset | --pulls]
@@ -224,7 +228,7 @@ journal catalog answer --kind record --id <identifier> (stdin: the reply, then t
 
 Cleaning host text has these known limits:
 
-- Specially built Markdown can make cleaning slow.
+- Specially built Markdown, a few thousand characters of it, can still make cleaning take seconds.
 - A token split by emphasis markup is not masked.
 - When cleaning removes something, the text comes back as normalised Markdown.
 - Text hidden by styling (a hidden attribute, a style block) reaches the role as text.
@@ -351,7 +355,7 @@ tag=<tag>
 - `changed` is `yes` when the law folder holds a change that its release does not, and `no` otherwise.
 - `tag` is the release tag of the revision, the tag that names a release with assets. It is empty, as `tag=`, when the revision has no release tag. The word `none` is an ordinary tag.
 - The command exits 0.
-- The output is in form when it is valid UTF-8 and holds these three lines, in this order, with no other line. A value is any text on one line, and a value may be empty. The value of `changed` is `yes` or `no` only. A file that does not start, a non-zero exit, a signal or an output outside the form stops the update with "the law-version command failed".
+- The output is in form when it is valid UTF-8 and holds these three lines, in this order, with no other line. A value is any text on one line, and a value may be empty. The value of `changed` is `yes` or `no` only. A file that does not start, a non-zero exit, a signal or an output outside the form stops the update with "the law-version command failed". The check at the start of a tick reads such a file as an absent one and hands the facts to the role.
 - A value in form still passes its class. A revision outside its class, an empty one included, stops the update with "a value is not safe". A tag outside its class stops it with "the tag is not safe". An empty tag means no tag. The journal judges nothing more about the tag. The step that gets the release judges it: with no release it says "binary not ready".
 - With the file in `shared/`, the update and the check at the start of a tick need no step of the role. They get the facts of the law folder themselves. Without it, the role reads the revision and the state itself.
 
@@ -369,7 +373,7 @@ journal run-installation <release <repo> <tag>|verify <asset> <provenance> <repo
 - `verify`: the asset and the provenance file are paths relative to the database folder, inside `runs/`. Each is a plain file, and no link stands on the way. The journal builds nothing and passes the absolute paths. On exit 0 it prints `verify passed`.
 - `law-version`: the journal passes the law folder, `lawman` in the database folder. Output in form prints the three facts, `revision=<revision>`, `changed=<yes|no>` and `tag=<tag>`. Output outside the form, or not UTF-8, prints `law-version stop the law-version command failed`. A revision outside its class prints `law-version stop a value is not safe`, a tag outside its class `law-version stop the tag is not safe`. Each stop exits 5.
 - An operation without a file prints `<operation> empty` and exits 0.
-- A failure prints `<operation> failed reason=<reason>` and an `error` fence, as `run` does. The reasons are `argument`, `start`, `exit` and `clean`. The fence holds the cleaned standard error after `exit`.
+- A failure prints `<operation> failed reason=<reason>` and an `error` fence, as `run` does. The reasons are `argument`, `start`, `exit` and `clean`. The fence holds the cleaned standard error after `exit`. `release` on a platform with no asset, and a release folder that cannot be made, print `start` with the cause in the fence.
 - The journal prints no word of the standard output of `release` and `verify`. Of `law-version` it prints only the three facts in their classes.
 
 ### The classes of the arguments
@@ -394,7 +398,7 @@ The reasons are `argument`, `start`, `exit`, `form` and `clean`.
 | `start` | the file did not start | nothing, because the system message carries the installation path | 5 |
 | `exit` | a non-zero exit or a signal | the command's standard error | 5 |
 | `form` | the output is outside the operation's form, or a reader refused it | the journal's message, with the form for a reader's refusal | 4, or 3 for the ceiling of 1000 issues |
-| `clean` | a cleaning library failed | nothing, because the library's message can quote the input | 5 |
+| `clean` | a cleaning library failed on the output of `file` or `files` | nothing, because the library's message can quote the input | 5 |
 
 The text inside the `error` fence passes the character layer of the cleaning. Every refusal of the readers of `issues`, `pulls` and `decider` prints as `form` inside the fence. The refusals are the ceiling, an empty list over a filled cache without `--reset`, and a broken cache constraint. A comment id that repeats has its own message.
 
@@ -489,7 +493,7 @@ The order of a tick that never ended stays open; a later tick of its role takes 
 | `stopped-identity-changed` | `Host identity changed: <login>` (before the order is taken) |
 | `silent` | `No order.` when the order was closed first |
 | `failed` | `The order has no issue number`, `The order has no pull request number`, `The patrol order has an issue number or no department`, `The stage check failed` |
-| `silent` | `Order stale: <stage line>` |
+| `silent` | `Order stale: <stage line>`, and `Order stale: need=none` for an order on an issue that left the cache |
 | `skipped-no-constitution` | `No constitution at <revision>` |
 | `skipped-contract-version`, `skipped-bad-constitution` | `Constitution check failed at <revision>` |
 | `stopped-bad-department` | `Department page check failed: <d>`, or `The department name is not safe` |
@@ -503,12 +507,12 @@ An ended tick prints one part, `part 1 of 1`, whatever its size. Its last lines 
 The start of every tick checks the law folder against `law_commit` before it reads the host. A role does it before the identity check and before it takes the order. The duty desk does it before it visits a precinct.
 
 1. A `law_commit` that cannot be read ends the tick `failed`, with the report `config.yaml has no law_commit`.
-2. With a `law-version` command, the journal runs it. A command that fails ends the tick `stopped-law-drift` with the report `the law-version command failed`.
+2. With a `law-version` command, the journal runs it. A command that fails, exits non-zero or prints outside its form is treated as an absent one: item 4 applies.
 3. The journal then judges the facts in this order. Each report is a fixed text without a value.
    - A revision or a `law_commit` outside the 40 lowercase hexadecimal digits ends the tick `stopped-law-drift` with the report `a value is not safe`.
    - A local change ends it `stopped-dirty-law` with the report `the law folder has a local change`.
    - A revision that differs from `law_commit` ends it `stopped-law-drift` with the report `the law folder is not at law_commit`.
-4. Without the command, the start prints the line `self law-version` and goes on. The role reads the revision and the local change of the law folder itself, as soon as it has read its group. It compares the revision with `law_commit` in the same order of judgement. Its stop ends the tick and the order with the same outcome.
+4. Without the command, or when it failed, the start prints the line `self law-version` and goes on. The role reads the revision and the local change of the law folder itself, as soon as it has read its group. It compares the revision with `law_commit` in the same order of judgement. Its stop ends the tick and the order with the same outcome.
 
 The check ignores the tag. The journal writes the end of the tick itself. It takes no order for a stopped role, as for `stopped-identity-changed`. A stopped duty desk reads no host and writes no order.
 
@@ -525,14 +529,14 @@ The start runs these steps in order.
 3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says. A stop ends the tick here, before any precinct is read.
 4. For each precinct with a weight above zero, by name, it runs the operations `identity`, `issues` and `pulls`, with `trusted_login` as the author. A different login ends the tick `stopped-identity-changed`. A failed tracker sync ends it `stopped-sync`, or `stopped-sync-limit` for the ceiling. A failed pull request sync leaves the precinct without orders for every role.
 5. An operation with no command, or a failed `identity`, gives a line `self <step> <precinct> <repo>`. The step is `identity`, `issues` or `pulls`. A law folder with no `law-version` command gives the line `self law-version`. It names no precinct and stands first among the self lines. When any self line stands, the start prints the `ALARM` lines and the self lines, and stops. The tick stays open and has written no order. On the path of `self law-version` the start has already run the host sync of item 4, so the issue cache may hold what it read.
-6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads.
-7. It closes the stale orders of those precincts. An order closes when nobody took it and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. Patrol has no stale rule.
-8. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get one order per due case or pull request. The cache shows what is due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. An open order of the same role, precinct and issue is the only bar.
-9. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers.
+6. Otherwise it reads each precinct whose tracker and pull requests were synced in this tick: `fetch`, `LAWMAN.md` and the page of a patrol department. It only reads. It records, for each precinct, whether the constitution is missing, fails its check or is usable.
+7. It closes the stale orders of those precincts. An order closes when nobody took it and the stale rule of its role says stale. A stage that the cache cannot give closes nothing. An issue that left the cache needs no role, as a pull request that left it needs none, so its untaken orders close. Patrol has no stale rule. On a precinct whose constitution is missing or fails its check, it also closes the untaken orders of the roles that need the constitution.
+8. It writes the orders. Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor each get one order per due case or pull request. The cache shows what is due. The response unit gets one for each issue that waits for it. Patrol gets one for each precinct with no open patrol order, in the department that the rotation and the cap choose. A precinct of weight 0 gets none. A precinct whose constitution is missing or fails its check gets only the orders of the clerk, which does not read the constitution. An open order of the same role, precinct and issue is the only bar.
+9. It computes the alarms again, so that a constitution found missing raises its alarm now. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers. So does each text that the sync withheld because it could not clean it, named as `<precinct>: texts withheld, not cleaned: <list>`.
 
 The output is one part, framed as the tick group. It holds the `ALARM` lines, the `order` lines of the orders written, `ended <outcome>` and the lines `report <line>`. A start that stopped on self lines holds the `ALARM` lines and the self lines.
 
-`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 6 to 9 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id>`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it. It trusts the duty desk on the law folder too, and checks nothing of it again.
+`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 6 to 9 and prints no repeated `ALARM` line. An alarm that step 9 raises prints. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id> for this role`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it. It trusts the duty desk on the law folder too, and checks nothing of it again.
 
 A duty desk tick that the model ends itself uses `tick end <tick id> --outcome <token>`, as the skill says.
 
@@ -563,6 +567,7 @@ The tick group:
 - the `ALARM` lines of the new alarms;
 - `login=<login>`, `revision=<revision>` and the sync counts as `journal run` prints them;
 - the stage line as `case`, `intake` or `pull` prints it;
+- `link <precinct>#<number> <url>`, right after the stage line, when the cache holds the link of the order's issue or pull request. The role copies it onto an alarm about that case;
 - `department <d> place=<1|2|3>`;
 - `precedent <name> kind=<protects|condemns|-> departments=<a,b|all|->` and `precedents none`;
 - `comment at=<time>` as the print of the cache gives it;
@@ -595,10 +600,10 @@ The line `self law-version` of the tick group is not the line that `law-update` 
 
 ### Parts
 
-The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the key. The size counts Unicode characters of the content, fence lines included, each line with its line break. The first and the last line of a part do not count. The same key sets the size at which a case text is cut, and the part size of `text` and `clean`. See [cut texts](#cut-texts) and [parts of clean and text](#parts-of-clean-and-text).
+The size of a part is the key `input_chars` of `config.yaml`. It is 16 000 without the key, and with a value that is no whole number above zero. The size counts Unicode characters of the content, fence lines included, each line with its line break. The first and the last line of a part do not count. The same key sets the size at which a case text is cut, and the part size of `text` and `clean`. See [cut texts](#cut-texts) and [parts of clean and text](#parts-of-clean-and-text).
 
 - Each group splits on its own. A group within the size is one part.
-- A split falls between blocks. A block longer than the size splits by lines, a line longer than the size by characters. Each piece of a law line keeps the prefix. Each piece of a foreign text gets a fence of its own with the same kind. A `comment at=` line goes with the fence of its comment.
+- A split falls between blocks. A block longer than the size splits by lines, a line longer than the size by characters. Each piece of a law line keeps the prefix. Each piece of a foreign text gets a fence of its own with the same kind. A `comment at=` line, a `precedent` line and the `department` line go with the fence that follows them.
 - A cut case text is one block. Its pieces and its two journal lines stay in one part.
 - When the role group splits, its orders take the last part or parts. The parts of the law and the page then stay the same while the orders change, and the count changes only with the law folder. The role takes the order id from the last part. The duty desk has no orders.
 - A part without its last line was cut from the end by the harness.
@@ -607,9 +612,9 @@ The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the
 
 The journal stores the tick group when it builds it. `journal tick input <tick id> --part <k>` prints a stored part. `tick end` and an end by the journal clear the parts.
 
-The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>` then builds the tick group from the cache and prints its first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
+The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>`, with or without `--part <k>`, then builds the tick group from the cache and stores it. It prints part `k`, or the first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
 
-An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
+An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1. So is a name that is no role, for `wake` as for `tick input --role`.
 
 ### Cut texts
 
