@@ -106,12 +106,14 @@ describe("precedent: a new precedent", () => {
 			date: DATE,
 			ruling: SOURCE,
 		});
-		// Bun.YAML.stringify leaves a space after `departments:`
-		expect(readFileSync(file(`${DATE}-empty-doubles`), "utf8")).toBe(
+		// Bun.YAML.stringify leaves a space after `departments:` before Bun 1.4.3
+		expect(
+			readFileSync(file(`${DATE}-empty-doubles`), "utf8").replace(/ +$/gm, ""),
+		).toBe(
 			[
 				"---",
 				"kind: protects",
-				"departments: ",
+				"departments:",
 				"  - core",
 				"issue: 1",
 				`date: ${DATE}`,

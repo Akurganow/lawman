@@ -1091,11 +1091,12 @@ describe("the adding step", () => {
 		expect((await answer(reply(values))).out).toBe(
 			"jev model=jev-1.14.0 departments=core,gamma\n",
 		);
-		expect(text()).toBe(
+		// Bun.YAML.stringify leaves a space after `departments:` before Bun 1.4.3
+		expect(text().replace(/ +$/gm, "")).toBe(
 			[
 				"---",
 				"kind: protects",
-				"departments: ",
+				"departments:",
 				"  - core",
 				"  - gamma",
 				"issue: 1",
