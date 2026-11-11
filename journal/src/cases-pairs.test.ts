@@ -26,6 +26,7 @@ import {
 	charge,
 	conviction,
 	defence,
+	lead,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
@@ -79,12 +80,16 @@ describe("case: the line of a clerk job", () => {
 	// a marker row exists only for the trusted login, so only its comment is the ruling
 	test("a copy of the ruling marker by an outsider changes nothing", () => {
 		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
-		const form = JSON.parse(issuesJson({ 1: closed(ruled(conviction, copy)) }));
-		form.issues[0].comments.at(-1).author = { login: "outsider" };
-		call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
-		expect(jobOf(1)).toBe("- - - - -");
-		put({ 1: closed(ruled(lined(conviction))) });
-		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+		const asOutsider = (spec: Spec, at: number) => {
+			const form = JSON.parse(issuesJson({ 1: spec }));
+			form.issues[0].comments[at].author = { login: "outsider" };
+			call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
+			expect(jobOf(1)).toBe("- - - - -");
+		};
+		asOutsider(closed(ruled(conviction, copy)), 4);
+		// a ruling marker in the issue body has no comment, whoever comments first
+		const body = [lead(), caseMark(), charge(), defence(), conviction()];
+		asOutsider({ state: "CLOSED", body, comments: [[T(10), copy]] }, 0);
 	});
 
 	test("an open pull request of an open issue is adopted from any stage", () => {

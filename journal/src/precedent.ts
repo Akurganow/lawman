@@ -129,8 +129,14 @@ class Folder {
 		this.state.set(name, text);
 	}
 
-	stands = (name: string, text: string) =>
-		entryKind(this.path(name)) === "file" && this.disk(name) === text;
+	// the file stands as the command would write it, up to the departments the adding step set
+	stands = (name: string, text: string) => {
+		if (this.state.has(name) || entryKind(this.path(name)) !== "file")
+			return false;
+		const held = this.disk(name) ?? "";
+		const departments = headerOf(held).departments;
+		return departments !== null && held === withDepartments(text, departments);
+	};
 
 	free(base: string): string {
 		for (let k = 1; ; k++) {

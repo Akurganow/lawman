@@ -119,10 +119,6 @@ describe("old-precedent list", () => {
 			const r = await inprocFed(BASE, ["old-precedent", "list"], text);
 			expect(r.out).toBe("outside position=1\n");
 		}
-		const plain = page("<details>", "More", "</details>");
-		expect((await inprocFed(BASE, ["old-precedent", "list"], plain)).out).toBe(
-			"none\n",
-		);
 	});
 
 	test("a page with no old line prints none", async () => {

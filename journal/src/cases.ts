@@ -92,6 +92,7 @@ export function rulingComment(
 	ord: string,
 ): string | undefined {
 	const rank = Number(ord.split("|")[ORD_RANK_PART]);
+	if (rank < 1) return undefined;
 	const raw = (
 		db
 			.query(

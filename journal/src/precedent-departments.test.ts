@@ -26,7 +26,7 @@ import {
 	departmentsState,
 	originalList,
 } from "./precedent-departments";
-import { headerOf, splitPrecedent } from "./precedent-file";
+import { headerOf, splitPrecedent, withDepartments } from "./precedent-file";
 import { cache, cacheWith } from "./precedent-test-fixture";
 import {
 	acquittal,
@@ -1209,8 +1209,15 @@ describe("the request lines of the write", () => {
 
 	test("a repeated call finds the file standing and asks for neither file", async () => {
 		await written();
-		const again = await record();
-		expect(linesOf(again)).toEqual(["no-entry\tno-change"]);
+		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
+		// the adding step changed its departments, and the standing file is still it
+		writeFileSync(file(), withDepartments(text(), ["core", "beta"]));
+		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
+		await cache([ruling([`- cancel ${NAME}`, `- new empty-doubles: ${RULE}`])]);
+		expect(linesOf(await record())).toEqual([
+			`cancel\t${NAME}`,
+			`entry\t${NAME}-2\tname-taken`,
+		]);
 	});
 
 	test("a ruling with two new lines writes both files with their original lists", async () => {
