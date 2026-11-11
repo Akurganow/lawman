@@ -98,15 +98,7 @@ A department with no line is judged by none. A judging document is evidence. It 
 
 The assembly adds one department to a precinct that is already in the journal. It works in a copy under the run directory and never in the live clone.
 
-1. Merge the precinct's constitution pull request first.
-2. Choose "Precincts" in the assembly menu.
-3. Choose the job "add a department".
-4. Choose the precinct.
-5. Give the department name, matching `[a-z][a-z0-9-]*`.
-6. Choose the place of the department.
-7. Name the document that judges the department, or answer `none`.
-8. Draft the page with the assembly, unless the department is a shared one.
-9. Approve the diff that the assembly shows.
+Merge the precinct's constitution pull request first. Then choose "Precincts" in the assembly menu and the job "add a department". The assembly asks which precinct only when several stand. It asks for the department name, matching `[a-z][a-z0-9-]*`, and for the document that judges the department, or `none`. The place follows from the name: a shared department gets only a Departments line, and any other name gets a page in the precinct's `.lawman/departments/`. Choose "Change" in the approval to put the page in the installation instead. The assembly drafts the page for you to edit, unless the department is a shared one. The approval names the place and the files.
 
 The three places differ in what the pull request holds:
 
