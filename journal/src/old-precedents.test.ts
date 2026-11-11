@@ -109,6 +109,36 @@ describe("old-precedent list", () => {
 		);
 	});
 
+	test("an old line inside an HTML block prints as outside", async () => {
+		const text = page(
+			"- 2026-09-02 #1: First.",
+			"",
+			"<details>",
+			"<summary>More</summary>",
+			"</details>",
+			"2026-09-03 #2: Appended after the block, so the block holds it.",
+		);
+		const r = await inprocFed(BASE, ["old-precedent", "list"], text);
+		expect(r.out).toBe(
+			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nFirst.\n~~~\noutside position=2\n",
+		);
+	});
+
+	test("an HTML block with no old line is no item", async () => {
+		const text = page(
+			"- 2026-09-02 #1: First.",
+			"",
+			"<!-- a note -->",
+			"<details>",
+			"More",
+			"</details>",
+		);
+		const r = await inprocFed(BASE, ["old-precedent", "list"], text);
+		expect(r.out).toBe(
+			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nFirst.\n~~~\n",
+		);
+	});
+
 	test("a page with no old line prints none", async () => {
 		expect(
 			(await inprocFed(BASE, ["old-precedent", "list"], page("none"))).out,
@@ -173,6 +203,14 @@ describe("old-precedent added", () => {
 		);
 		// against the tip the moved line would count again
 		expect((await added(tip, head)).out).toContain("line 1 ");
+	});
+
+	test("an HTML block that hides an old line is added when the base lacks it", async () => {
+		const block = ["<details>", "2026-09-04 #3: Hidden.", "</details>"];
+		const base = page("- 2026-09-02 #1: First.");
+		const head = page("- 2026-09-02 #1: First.", "", ...block);
+		expect((await added(base, head)).out).toBe("outside position=2\n");
+		expect((await added(head, head)).out).toBe("none\n");
 	});
 
 	test("an edited old line and a free note are not added old lines", async () => {

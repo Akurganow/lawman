@@ -75,7 +75,7 @@ export const KIND_OF = new Map([
 ]);
 
 // an underlined heading never applies as written
-type Item = { text: string; bad: boolean };
+type Item = { text: string; bad: boolean; hidden?: true };
 
 function itemsOf(text: string, nodes: RootContent[]): Item[] {
 	return nodes.flatMap((node): Item[] => {
@@ -702,6 +702,8 @@ export type OldItem = {
 	end: number;
 	text: string;
 	line?: { date: string; number: number; rule: string; link?: string };
+	// an HTML block that holds a line of the old form: the move cannot take it
+	hidden?: true;
 };
 
 function oldLine(text: string): OldItem["line"] {
@@ -717,6 +719,17 @@ function oldLine(text: string): OldItem["line"] {
 		: { date, number: Number(number), rule, link };
 }
 
+// A line of the old form that an HTML block holds is part of that block, so it is
+// no item of its own. The block stands in its place, and the move cannot take it.
+function oldItemsOf(page: string, node: RootContent): Item[] {
+	if (node.type !== "html") return itemsOf(page, [node]);
+	const text = sliceOf(page, node, node);
+	const holds = text
+		.split(/\r\n|\r|\n/)
+		.some((l) => OLD_LINE.test(l.trim().replace(/^[-*+] /, "")));
+	return holds ? [{ text, bad: true, hidden: true }] : [];
+}
+
 // every item of the old sections except `none`, numbered from 1 in page order
 export function oldItems(page: string): OldItem[] {
 	const parts = sectionNodes(page, OLD_SECTION).flatMap((nodes, section) =>
@@ -727,7 +740,7 @@ export function oldItems(page: string): OldItem[] {
 						node: li,
 						item: itemsOf(page, [{ ...node, children: [li] }]),
 					}))
-				: [{ section, node, item: itemsOf(page, [node]) }],
+				: [{ section, node, item: oldItemsOf(page, node) }],
 		),
 	);
 	return parts
@@ -748,6 +761,7 @@ export function oldItems(page: string): OldItem[] {
 				start: i.start,
 				end: i.end,
 				text: i.text,
+				...(i.hidden ? { hidden: true as const } : {}),
 				...(line === undefined ? {} : { line }),
 			};
 		});

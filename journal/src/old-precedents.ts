@@ -80,11 +80,16 @@ const readPage = (path: string) => {
 };
 
 // The numbered lines of the head page whose number the page at the merge base
-// lacks. An edited line keeps its number, and a free note is no old line.
+// lacks, and the HTML blocks that hide such a line and that the base lacks. An
+// edited line keeps its number, and a free note is no old line.
 function added(base: string, head: string): OldItem[] {
-	const before = new Set(oldItems(base).map((i) => i.line?.number));
-	return oldItems(head).filter(
-		(i) => i.line !== undefined && !before.has(i.line.number),
+	const was = oldItems(base);
+	const numbers = new Set(was.map((i) => i.line?.number));
+	const blocks = new Set(was.filter((i) => i.hidden).map((i) => i.text));
+	return oldItems(head).filter((i) =>
+		i.line === undefined
+			? i.hidden === true && !blocks.has(i.text)
+			: !numbers.has(i.line.number),
 	);
 }
 
