@@ -323,8 +323,10 @@ describe("the alarm of withheld texts", () => {
 			return JSON.stringify(f);
 		};
 		await onlyFaultFails(() => sync("a", form("FAULT")));
+		await onlyFaultFails(() => sync("a", form("FAULT")));
+		expect(rows("SELECT withheld FROM issues")).toEqual([{ withheld: 1 }]);
 		expect(alarm(AT).out).toBe(
-			"ALARM withheld-text a 2 texts are withheld, because the journal could not clean them: issue #1 https://git.example/o/a/issues/1; comment IC_2 on issue #1 https://git.example/o/a/issues/1. Edit or delete each on the host. The next sync cleans it again.\n",
+			"ALARM withheld-text a 2 texts are withheld, because the journal could not clean them: issue #1 https://git.example/o/a/issues/1; comment IC_2 on issue #1 https://git.example/o/a/issues/1. Edit or delete each on the host.\n",
 		);
 		await sync("a", form("fixed"));
 		expect(alarm(LATER).out).toBe("");

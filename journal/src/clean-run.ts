@@ -3,7 +3,7 @@ import { cleanHostText } from "./clean-host";
 // The most time one text may take to clean. The slowest ordinary text measured at the
 // largest size a host accepts (65 536 characters of a table) took 357 ms, so the
 // budget is about fourteen times that. A text that does not finish is withheld.
-export const CLEAN_BUDGET_MS = 5000;
+const CLEAN_BUDGET_MS = 5000;
 
 // A text this short cannot run long: the slowest shape found takes about 30 ms at
 // this size, and its cost grows eightfold per doubling. Shorter texts run in this
@@ -13,7 +13,7 @@ const SHORT_TEXT = 300;
 // what a role reads in place of a text that was withheld
 export const WITHHELD = "This text could not be cleaned and is withheld.";
 
-export type Cleaned = { text: string; withheld: boolean };
+type Cleaned = { text: string; withheld: boolean };
 
 const withheld: Cleaned = { text: WITHHELD, withheld: true };
 

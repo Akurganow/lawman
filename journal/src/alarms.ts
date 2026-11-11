@@ -149,7 +149,7 @@ function withheldTexts(db: Database): Candidate[] {
 			{
 				kind: "withheld-text",
 				ref: name,
-				detail: `${found.length} text${found.length === 1 ? " is" : "s are"} withheld, because the journal could not clean ${found.length === 1 ? "it" : "them"}: ${named.join("; ")}${more}. Edit or delete each on the host. The next sync cleans it again.`,
+				detail: `${found.length} text${found.length === 1 ? " is" : "s are"} withheld, because the journal could not clean ${found.length === 1 ? "it" : "them"}: ${named.join("; ")}${more}. Edit or delete each on the host.`,
 			},
 		];
 	});
@@ -243,13 +243,12 @@ const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 
 // An alarm about an issue or a pull request ends with its link. The address is looked up
 // from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
-const SUBJECTS: Record<string, Subject> = { "decision-waiting": "pull" };
-
 function alarmLine(db: Database, a: Candidate): string {
-	const subject = SUBJECTS[a.kind];
 	const [precinct = "", number = ""] = a.ref.split("#");
 	const url =
-		subject === undefined ? null : urlOf(db, precinct, subject, Number(number));
+		a.kind === "decision-waiting"
+			? urlOf(db, precinct, "pull", Number(number))
+			: null;
 	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
 }
 

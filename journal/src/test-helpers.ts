@@ -9,7 +9,7 @@ import {
 	rmSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
@@ -70,7 +70,8 @@ export function env(
 
 // The journal finds its database and its commands beside the runtime that runs it
 // when `LAWMAN_DB` is unset. A copy of the runtime in a folder of its own keeps a
-// run with no database path off the files of the machine.
+// run with no database path off the files of the machine. `test-teardown.ts` removes
+// the copy once the run ends, because `bun test` fires no `exit` hook.
 let runtime: string | undefined;
 function ownRuntime(): string {
 	if (runtime === undefined) {
@@ -78,10 +79,12 @@ function ownRuntime(): string {
 		mkdirSync(join(root, "bin"));
 		runtime = join(root, "bin", "bun");
 		copyFileSync(process.execPath, runtime, constants.COPYFILE_FICLONE);
-		process.on("exit", () => rmSync(root, { recursive: true, force: true }));
 	}
 	return runtime;
 }
+export const removeRuntime = () =>
+	runtime &&
+	rmSync(dirname(dirname(runtime)), { recursive: true, force: true });
 
 export function cli(
 	args: string[],

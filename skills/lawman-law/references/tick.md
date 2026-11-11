@@ -194,7 +194,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`, and `withheld=<n>`, the count of texts the journal withheld. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
+The output is `issues= leads= markers= invalid= skipped=`, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
 
 ## Sync the pull requests
 

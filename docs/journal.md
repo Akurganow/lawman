@@ -161,7 +161,7 @@ The journal's cache is refreshed when a role syncs. Issues by bots (an author wi
 
 The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The duty desk refreshes it right after the issue cache of the same precinct. A failed pull request sync of one precinct writes no order and closes no stale order for that precinct in that tick. It does not end the tick.
 
-- `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. Each text is cleaned alone, and only when its content or the journal version changed since the last sync: a sync of unchanged texts cleans nothing. A text that the cleaning cannot process, or that does not finish within 5 seconds, is stored as the fixed line "This text could not be cleaned and is withheld." It is never stored raw or partly cleaned, and the sync goes on. The sync line ends with `withheld=<n>`, the count of withheld texts of the precinct, and the alarm `withheld-text` names them. To restore a withheld text, edit or delete it on the host and sync again.
+- `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. Each text is cleaned alone, and only when its content or the journal version changed since the last sync: a sync of unchanged texts cleans nothing. A text that the cleaning cannot process, or that does not finish within 5 seconds, is stored as the fixed line "This text could not be cleaned and is withheld." It is never stored raw or partly cleaned, and the sync goes on. The sync line ends with `withheld=<n>` when the sync withheld texts, and the alarm `withheld-text` names them. To restore a withheld text, edit or delete it on the host and sync again.
 - `leads`: lists the open leads of a precinct, or of one department.
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
@@ -495,7 +495,7 @@ The order of a tick that never ended stays open; a later tick of its role takes 
 | `stopped-identity-changed` | `Host identity changed: <login>` (before the order is taken) |
 | `silent` | `No order.` when the order was closed first |
 | `failed` | `The order has no issue number`, `The order has no pull request number`, `The patrol order has an issue number or no department`, `The stage check failed` |
-| `silent` | `Order stale: <stage line>`, and `Order stale: need=none` for an order on an issue that left the cache |
+| `silent` | `Order stale: <stage line>` |
 | `skipped-no-constitution` | `No constitution at <revision>` |
 | `skipped-contract-version`, `skipped-bad-constitution` | `Constitution check failed at <revision>` |
 | `stopped-bad-department` | `Department page check failed: <d>`, or `The department name is not safe` |
@@ -616,7 +616,7 @@ The journal stores the tick group when it builds it. `journal tick input <tick i
 
 The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>`, with or without `--part <k>`, then builds the tick group from the cache and stores it. It prints part `k`, or the first part. When the tick group is already stored, it prints the stored first part instead. It prints the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
 
-An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1. So is a name that is no role, for `wake` as for `tick input --role`.
+An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
 
 ### Cut texts
 
@@ -646,7 +646,7 @@ The command `text` prints the whole text that a `full` line names, from the cach
 journal text <precinct> <issue|pull> <number> body|comment <at> <j> [--part <k>]
 ```
 
-It cleans the cached text again and prints part `k` of it, 1 without the option. The parts are framed as [parts of clean and text](#parts-of-clean-and-text) says. It reads the cache, not the host, and it needs no open tick, so it works after a tick ends. It exits 0 on success. It exits 1 for a usage error, for a part outside the text, for a text the cache lacks, and when the cleaning library fails. A text the cache lacks gets a message that says to read the host itself, as for a self step.
+It prints part `k` of the cached text as the sync stored it, 1 without the option. The parts are framed as [parts of clean and text](#parts-of-clean-and-text) says. It reads the cache, not the host, and it needs no open tick, so it works after a tick ends. It exits 0 on success. It exits 1 for a usage error, for a part outside the text, for a text the cache lacks, and when the cleaning library fails. A text the cache lacks gets a message that says to read the host itself, as for a self step.
 
 ### What the input leaves out
 

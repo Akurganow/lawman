@@ -21,8 +21,8 @@ export type CommentText = {
 export type HostText = { body: string; comments: CommentText[] };
 
 // A cleaned text with the hash of the raw text it came from, so the same raw text is cleaned once.
-export type Done = { text: string; sha: string; withheld: boolean };
-export type CommentDone = Omit<CommentText, "body"> & { done: Done };
+type Done = { text: string; sha: string; withheld: boolean };
+type CommentDone = Omit<CommentText, "body"> & { done: Done };
 export type TextDone = { body: Done; comments: CommentDone[] };
 
 // a library error can quote the input, so each caller prints its own message
@@ -260,8 +260,7 @@ export async function printText(
 ): Promise<FencedBlock | null> {
 	const body = bodyOf(db, key);
 	if (body === null) return null;
-	if (key.part === "body")
-		return cleaning(async () => fencedBlock(key.kind, body));
+	if (key.part === "body") return fencedBlock(key.kind, body);
 	const row = db
 		.query(`${COMMENTS} AND at = ? ORDER BY id LIMIT 1 OFFSET ?`)
 		.get(

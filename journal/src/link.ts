@@ -4,7 +4,7 @@ import type { Database } from "bun:sqlite";
 // is no plain address is no link: only http and https, no credentials, a safe character set
 // and a length that a host's own address fits in.
 const SAFE = /^[A-Za-z0-9._~:/?#@!$&'*+,;=%-]+$/;
-export const LINK_MAX = 500;
+const LINK_MAX = 500;
 
 export function linkOrNull(v: unknown): string | null {
 	if (typeof v !== "string" || v.length > LINK_MAX || !SAFE.test(v))
