@@ -2,11 +2,11 @@
 
 Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections that its skill names. It reads "Sync the law with an older journal" too, when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
-In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, and every other line is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+In your input, outside the labelled fences, a line that starts with `| ` is a line of the law. Every other line is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
-The input of a role comes in two groups. The role group holds the law that the role reads at the start, this file included, the silence form of the harness page and the orders that the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
+The input of a role comes in two groups. The role group holds the law the role reads at the start, this file included. It holds the silence form of the harness page and the orders the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
-The tick group holds the results of these steps, as far as the role gets each: the alarms, the check of the law folder and the identity, the fetched commit and the sync, the stage and its stale rule, the link of the case, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
+The tick group holds the results of these steps, as far as the role gets each: the alarms, the check of the law folder and the identity, the fetched commit and the sync, the stage and its stale rule, the link of the case, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and labels of an issue, or the state and title of a pull request. It never prints the files a role reads later in its work, the tree of a precinct or the results of a search.
 
 The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Its skill says how to go on.
 
@@ -30,7 +30,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 
 The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-version`. The line `self law-version` names no precinct. Each other self step line of the duty desk names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `pulls` step does not end the duty desk tick. That precinct goes without orders. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
 
-- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group, and read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. The journal applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group. Read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. The journal applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
@@ -92,7 +92,7 @@ Never do these:
 
 - Write into the law folder.
 - Replace `bin/journal` or `config.yaml` by any means. The journal's sync does it, with a file that passed its checks.
-- Run any file other than the commands of the journal that this section names, the download tool that `self release` needs and the verifier that `self verify` needs.
+- Run any file other than the journal commands this section names, the download tool that `self release` needs and the verifier that `self verify` needs.
 - Continue the tick after a stop.
 
 **The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
@@ -103,9 +103,9 @@ The list has one entry, `licenses`. It applies when a precinct that `bin/journal
 
 Do this section only when the first line of the output of your role entry does not start with `lawman input`. Its steps 3 and 4 also serve the rows `self release` and `self verify` of the section "Sync the law". Such a first line means that the journal is older than the law and has no command `law-update`. A tick that finds the law at the recorded commit skips this section.
 
-Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal. When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop: the token `stopped-law-drift` and the reason "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".
+Read `law_commit` and `release_repo` from `config.yaml`. Read the commit that the law folder holds. Skip the rest of this section when the two commits are equal. When the file or a key cannot be read and the two commits differ or cannot be compared, end the section with a stop. The token is `stopped-law-drift` and the reason is "config.yaml cannot give law_commit or release_repo: run the Lawman assembly".
 
-The commit to check is the one that the law folder holds. Check the commit against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
+Check the commit that the law folder holds against `[0-9a-f]{40}`. Check `release_repo` against `[A-Za-z0-9._-]+/[A-Za-z0-9._-]+`. A value that does not match is a stop with the reason "a value is not safe".
 
 Otherwise do these steps in order. A step that fails ends the section with a stop. A stop uses the token `stopped-law-drift` unless the step names another.
 
@@ -128,7 +128,7 @@ Never do these:
 - Run any file other than the asset that step 4 verified.
 - Continue the tick after a stop.
 
-A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it, with no recursive delete. Answer the token, a colon and the reason, and stop. The next tick tries again.
+A stop is answered and not recorded. Remove the folder of step 3 when step 3 created it, with no recursive delete. Answer the token, a colon and the reason, and stop. The next tick tries again.
 
 ## Working rules
 

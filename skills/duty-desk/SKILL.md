@@ -145,7 +145,7 @@ Strongest rejected: none.
 Blockers: <outcome token, precinct and reason>
 ```
 
-This example is the format. Earlier stored reports are not a template.
+This example is the format. Stored reports are not a template.
 
 ```
 Coverage: orders: none; precincts: none
