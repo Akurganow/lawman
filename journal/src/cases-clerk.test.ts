@@ -10,6 +10,7 @@ import {
 	ruled,
 	withLead,
 } from "./cases-fixture";
+import { config } from "./input-test-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -20,11 +21,15 @@ import {
 	entry,
 	noEntry,
 	returnTo,
+	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
-beforeEach(() => addPrecincts({ main: 1 }));
+beforeEach(() => {
+	addPrecincts({ main: 1 });
+	config(`trusted_login: ${TRUSTED}\n`);
+});
 
 describe("case: clerk stage", () => {
 	test.each([

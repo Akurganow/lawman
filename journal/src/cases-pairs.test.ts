@@ -121,6 +121,16 @@ describe("case: the line of a clerk job", () => {
 		expect(jobOf(1)).toBe("- - 7 1 -");
 	});
 
+	test("a missing trusted login is an error, not a case with nothing to do", () => {
+		const ruling = () =>
+			`Ruling.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
+		put({ 1: closed(ruled(ruling)) });
+		config("");
+		const r = call(BASE, ["case", "main", "1"]);
+		expect(r.code).not.toBe(0);
+		expect(r.err).toContain("trusted_login");
+	});
+
 	test("a Precedent section that holds only none gives no job", () => {
 		const ruling = () => `Ruling.\n\n## Precedent\n\nnone\n\n${conviction()}`;
 		put({ 1: closed(ruled(ruling)) });

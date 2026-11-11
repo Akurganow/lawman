@@ -99,14 +99,7 @@ function rulingHoldsPrecedent(
 			)
 			.get(precinct, issue, ruling.ord) as { raw: string } | null
 	)?.raw;
-	let login: string;
-	try {
-		login = trustedLogin();
-	} catch (e) {
-		if (e instanceof Fail) return false;
-		throw e;
-	}
-	const body = rulingComment(db, precinct, issue, raw ?? "", login);
+	const body = rulingComment(db, precinct, issue, raw ?? "", trustedLogin());
 	return body !== undefined && holdsPrecedent(body);
 }
 
