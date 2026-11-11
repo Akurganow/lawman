@@ -10,11 +10,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
 2. Compute the SHA-256 of `bin/journal`. Stop if it differs from `journal_sha256`, because the binary changed outside the sync.
 3. Read the contract version in `lawman/skills/lawman-law/references/constitution.md`. Call it `<n>`. Read the `Contract version` line in `lawman/skills/lawman-law/references/departments.md`.
 4. Read the current `constitution.md` of the law folder. Read the older text at `amended_law_commit` from the history of the law folder. Compare the two texts. Show the developer the differences. When the folder has no history, or its history lacks `amended_law_commit`, there is no older text. Show the developer the whole current text as changed. That is a path, not a stop.
-5. Ask in the question tool. Offer "Amend now" (recommended) and "Later".
-6. Label "Later" so that it says the next start enters amend again.
-7. Say in the same label that roles and the menu stay out of reach until an amendment runs.
-8. Stop on "Later", an empty answer or a cancel.
-9. On "Amend now", read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them. Three more host actions serve the move of the old precedents. They turn a line's link into an issue number, read a file at a pull request revision and write to its branch. Find a missing one the same way when a precinct holds old lines, and let Step 3 append it too.
+5. Read `host.md`. Five label actions need a record in it. They read a repository's labels with their descriptions and create a label with a description. They also apply a label to an issue, remove a label from an issue, and set a label's description. For each one that `host.md` does not record, find how this machine does it with the tool the notes name. Step 3 appends them. Ask no separate question for them. Three more host actions serve the move of the old precedents. They turn a line's link into an issue number, read a file at a pull request revision and write to its branch. Find a missing one the same way when a precinct holds old lines, and let Step 3 append it too.
 
 ## Step 2. Amend the precincts
 
@@ -37,7 +33,7 @@ Amend follows the shape in `SKILL.md`. Step 1 finds the change and shows it. Ste
    12. Ask in the question tool, in one call for the precinct. The call covers the amendment and, when the proposal holds the row "Old precedents", the move.
    13. Offer "Open the pull request" (recommended), "Change" and "Skip".
    14. On "Change", follow the change items of "The repository proposal".
-   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path. Then run part two of "Move the old precedents" when the proposal holds its row. After the pull request opens, set the description of the label on the host when the proposal holds that row. Use the way that the host notes record, or that item 9 of Step 1 found. Read the labels back and find the new description. If the write or the read-back fails, tell the developer and go on.
+   15. On "Open the pull request", run only the section "Commit and open the pull request" of the add path. Then run part two of "Move the old precedents" when the proposal holds its row. After the pull request opens, set the description of the label on the host when the proposal holds that row. Use the way that the host notes record, or that item 5 of Step 1 found. Read the labels back and find the new description. If the write or the read-back fails, tell the developer and go on.
    16. Use the branch lawman/constitution-v<n> in place of lawman/constitution.
    17. Use "Amend the Lawman constitution to version <n>" as the commit message and the pull request title.
    18. On "Skip", write nothing for the precinct, the move included.
@@ -52,4 +48,4 @@ When the developer skipped a precinct, skip item 1 and name the skipped precinct
 1. Set `contract_version` to `<n>` and `amended_law_commit` to `law_commit`. Keep the other keys. Write `config.yaml`, and read it back.
 2. Tell the developer the new contract version, the pull requests that the amendment opened and the pull requests that moved old precedents. Say that a move, an amendment and a pull request of the old form all edit `LAWMAN.md`. Say that no order stands between them and that a conflict shows in the pull request itself. Say that a job in monitor mode can move to the entry file with the part "Roles". Say that two of its features stay until it moves. They are the 8000-character cut of its display and its extra run at the change from `idle` to an empty output.
 3. If a folder under `lawman/skills/` other than `assembly` and `lawman-law` has no scheduler job `[lawman] <role>`, tell the developer to run the assembly again. That enters the roles mode.
-4. Append to `host.md` the label rows and the host actions of the move that Step 1 item 9 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.
+4. Append to `host.md` the label rows and the host actions of the move that Step 1 item 5 found, and name them to the developer. Keep every other line, write no credential value, and read the file back.
