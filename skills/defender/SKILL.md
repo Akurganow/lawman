@@ -21,7 +21,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
 - A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
-- Your input holds the sections of `exhibits.md` that every run applies. The others stand in `lawman/skills/lawman-law/references/exhibits.md`. Read one once, and only when a rule or step that names it applies to the case. `Run a source` also needs `Source values`.
+- Your input holds the sections of `exhibits.md` that every run applies. The others stand in `lawman/skills/lawman-law/references/exhibits.md`. Read each once in a session, and only when a rule or step that names it applies to the case. Reading `Run a source` includes `Source values`.
 
 ## Tick
 

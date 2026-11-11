@@ -74,7 +74,7 @@ The folder of the law may carry no history. A harness may place the plugin as a 
 
 1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
 2. The developer's word. Ask in free text, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
-   With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`, and proves it with Host in the menu. The install goes on.
+   With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. The person proves it with Host in the menu. The install goes on.
 3. No history and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
