@@ -12,7 +12,7 @@ At install the assembly downloads the binary of the release that matches your pl
 
 A verifier checks the signature in the provenance file. At an update that is your `verify` command in `shared/`. Without that command, the role uses the verifier that the host notes name. The verifier confirms that the release workflow of Lawman's repository signed the file and built it from the commit of the law folder. The assembly finds a Sigstore verifier with you at install.
 
-A declined verifier leaves only the checksum from the same release. An update accepts the checksum alone only when `shared/` has no `verify` command. A `verify` command always runs, whatever the host notes say. You can turn the check on later. The assembly offers it at each start when it finds a verifier on this machine, and the menu item "Host" runs the part again.
+A declined verifier leaves only the checksum from the same release. An update accepts the checksum alone only when `shared/` has no `verify` command. A `verify` command always runs, whatever the host notes say. You can turn the check on later: the menu item "Host" runs the part again.
 
 The database file `journal.sqlite` sits in the installation directory, next to `bin/`. The binary applies its schema migrations when it opens the file. A database newer than the binary is refused with exit code 6.
 
@@ -92,7 +92,7 @@ A law folder with a local change at `law_commit` is no stop here: `law-update` p
 | the checksum failed | The asset does not match `SHA256SUMS`, or the file has no line or several lines for the asset | Do not run the file. The next tick downloads it again. If the stop repeats, open an issue in Lawman's repository. |
 | the check could not run | The `verify` command did not start, or the role could not run the verifier | Check the execute permission of `shared/verify`, or install the verifier that the host notes name. |
 | the provenance check failed | The signature check did not confirm the file | Do not run the file. If the stop repeats, open an issue in Lawman's repository. |
-| the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal. | Run the assembly and its part Host, then name a verifier or decline one. |
+| the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal. | Run the assembly. It runs part Host, where you name a verifier or decline one. |
 | the new binary did not start | The asset did not start on this machine, or the journal cannot make it executable | Check that the machine matches the platform of the asset, and that the journal may change the mode of the files in the release folder. The installation stays as it was. |
 | the new binary did not confirm the update | The new file exited 0 and printed no `synced <tag>` line | `bin/journal` may already hold the new file. Open an issue in Lawman's repository. |
 | the first line of the new binary's error output, or the new binary failed | The new file refused the update, for example because the skills ask for a newer schema than it has | Read the reason. Before the swap `law-sync` only reads, so the installation stays as it was. |

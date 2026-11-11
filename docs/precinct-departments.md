@@ -95,11 +95,9 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 
 ## Adding one
 
-The assembly offers a special department when it adds a precinct. The repository proposal holds an own-department row. The assembly explains the idea only when you ask.
-
 The summary names "Add a department" as the step after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch.
 
-The job asks where the department lives. Choose the place that is a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
+[Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
 
 ## How the duty desk rotates it
 
