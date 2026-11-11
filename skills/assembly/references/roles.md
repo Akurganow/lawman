@@ -11,7 +11,6 @@ This reference sets up the scheduled job of each role. It follows the shape of e
 - `<S>`: the start time of the duty desk, in the harness's time zone.
 - Entry file: the entry of a role. The harness page gives its place, its name and its form under "Role entry", with the placeholders of that form.
 - Monitor mode: the old mode of a job, when the page names one under "Editing a job". The list shows it as the page describes. A page that names no old mode has no job in monitor mode.
-- Translation: the change of a job in monitor mode, or of a job with no entry, to the entry mode that the page names for new jobs. It runs when the conditions of "Translation" hold. A page that names no entry form never runs it.
 
 ## Rules
 
@@ -125,7 +124,7 @@ Compute the interval of each role by "Interval by form". Record it by "Create or
 - Each entry file that "Entry file marks" names, with its mark.
 - In the menu, the mode of each job, by "Entry mode".
 
-**Proposes.** Show the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job to translate, in monitor mode or with no entry, appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job. A failed condition leaves the job as it is.
+**Proposes.** Show the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job to translate appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job. A failed condition leaves the job as it is.
 
 **Decides.** Ask nothing here. The developer cannot judge the modes. Take a typed edit of the proposal, such as leaving one job untranslated.
 
@@ -191,13 +190,13 @@ Write no file that carries the mark identical.
 
 ## Entry mode
 
-1. In the menu job, read each job's mode. Take it from the output of the list command or of the page's read form for one job, as the page's "Editing a job" describes. Where the page names an old mode, a job the list marks with it is in monitor mode. A job with an entry and no mark of the old mode has the entry mode that the page names for new jobs. A job with neither has no entry. A page that names no old mode has no job in monitor mode.
+1. In the menu job, read each job's mode. Take it from the output of the list command or of the page's read form for one job, as the page's "Editing a job" describes. Where the page names an old mode, a job the list marks with it is in monitor mode. A job with an entry and no mark of the old mode has the entry mode that the page names for new jobs. A job with neither has no entry.
 2. Read the mark of the old mode only to find a job to translate.
-3. A job with no entry is a job to translate, the duty desk job of an earlier release included. A page that names no entry form has jobs with no entry, and they stay as they are. A job that the developer left out by a typed edit stays as it is.
+3. A job with no entry stays as it is, unless "Translation" takes it.
 
 ## Translation
 
-Translate a job when all three conditions hold.
+Translate a job in monitor mode when all three conditions hold. A job with no entry joins it when the page names a form that gives an entry to a job that has none.
 
 1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name one run of a role, which updates the journal. The harness page gives its form under "Running a role once". Change no job.
 2. The entry file is in place and proven. A new or different file passed "Write and prove". A file marked identical is not written again: its run proved it when it was written, and the probe covers the new journal.
