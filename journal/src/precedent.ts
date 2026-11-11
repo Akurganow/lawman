@@ -53,6 +53,7 @@ import {
 	splitPrecedent,
 	withDepartments,
 } from "./precedent-file";
+import { type Item, itemsOf } from "./precedent-items";
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
@@ -73,32 +74,6 @@ export const KIND_OF = new Map([
 	["conviction", "condemns"],
 	["acquittal", "protects"],
 ]);
-
-// an underlined heading never applies as written
-type Item = { text: string; bad: boolean; hidden?: true };
-
-function itemsOf(text: string, nodes: RootContent[]): Item[] {
-	return nodes.flatMap((node): Item[] => {
-		if (node.type === "html" || node.type === "thematicBreak") return [];
-		if (node.type === "list")
-			return node.children.flatMap((li) => {
-				const t = sliceOf(text, li.children[0], li.children.at(-1));
-				return t === "" ? [] : [{ text: t, bad: false }];
-			});
-		if (
-			node.type === "heading" &&
-			text[node.position?.start.offset ?? 0] !== "#"
-		)
-			return [
-				{
-					text: sliceOf(text, node.children[0], node.children.at(-1)),
-					bad: true,
-				},
-			];
-		const t = sliceOf(text, node, node);
-		return t === "" ? [] : [{ text: t, bad: false }];
-	});
-}
 
 type EntryKind = "absent" | "file" | "dir" | "other";
 

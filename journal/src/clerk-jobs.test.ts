@@ -386,10 +386,32 @@ describe("table rows", () => {
 		});
 	});
 
-	test("an adopt comes before the precedent job", () => {
-		expect(run({ pulls: [pull(7, 1)], ruling: conviction() }).job).toBe(
-			"adopt",
-		);
+	test("a ruling with no Precedent line gives no job on the paths that once gave none", () => {
+		const adopted = marker("clerk", "handed", 1, {
+			pull: "7",
+			issue: "open",
+			adopted: "yes",
+		});
+		const none = [
+			run({ state: "CLOSED", ruling: conviction(), holds: false }),
+			run({
+				markers: [adopted],
+				pulls: [pull(7, 1)],
+				ruling: conviction(),
+				holds: false,
+			}),
+			run({
+				markers: pairs(["handed", "7", "open"]),
+				pulls: [pull(7, 1)],
+				ruling: acquittal(),
+				holds: false,
+			}),
+		];
+		expect(none.map((r) => r.job)).toEqual(["-", "-", "-"]);
+	});
+
+	test("an acquittal with no pair keeps its job without a Precedent line", () => {
+		expect(run({ ruling: acquittal(), holds: false }).job).toBe("precedent");
 	});
 });
 

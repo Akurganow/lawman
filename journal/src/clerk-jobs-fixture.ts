@@ -29,6 +29,8 @@ export type Scene = {
 	pulls?: CachedPull[];
 	closed?: number[];
 	ruling?: CaseMarker;
+	// whether the ruling has a Precedent section with a line; true when absent
+	holds?: boolean;
 	others?: Record<number, CaseMarker[]>;
 };
 
@@ -40,6 +42,7 @@ export const run = (s: Scene): ClerkCase =>
 		pulls: s.pulls ?? [],
 		isClosed: (n) => (s.closed ?? []).includes(n),
 		ruling: s.ruling,
+		holdsPrecedent: () => s.holds ?? true,
 		others: () =>
 			new Map(Object.entries(s.others ?? {}).map(([n, m]) => [Number(n), m])),
 	});

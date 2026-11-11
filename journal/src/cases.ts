@@ -10,6 +10,7 @@ import {
 } from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
 import { leadOrigins, symbolOf } from "./leads";
+import { holdsPrecedent } from "./precedent-items";
 
 const CASE_USAGE = "case <precinct> <issue>";
 
@@ -82,6 +83,32 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 
 export type CaseView = { need: Need; clerk: ClerkCase };
 
+// whether the cached comment of the ruling has a Precedent section with a line
+function rulingHoldsPrecedent(
+	db: Database,
+	precinct: string,
+	issue: number,
+	ruling: CaseMarker | undefined,
+): boolean {
+	if (ruling === undefined) return false;
+	const raw = (
+		db
+			.query(
+				"SELECT raw FROM markers WHERE precinct = ? AND issue = ? AND ord = ?",
+			)
+			.get(precinct, issue, ruling.ord) as { raw: string } | null
+	)?.raw;
+	const comments = db
+		.query(
+			"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at DESC, rowid DESC",
+		)
+		.all(precinct, issue) as { body: string }[];
+	const found = comments.find(
+		(c) => c.body.trimEnd().split("\n").at(-1)?.trim() === raw,
+	);
+	return found !== undefined && holdsPrecedent(found.body);
+}
+
 // A pair marker means the case left the funnel. Only the clerk is left to act.
 export function caseOf(
 	db: Database,
@@ -102,6 +129,8 @@ export function caseOf(
 		pulls: pullsOf(db, precinct),
 		isClosed: closedIn(db, precinct),
 		ruling: funnel.ruling,
+		holdsPrecedent: () =>
+			rulingHoldsPrecedent(db, precinct, issue, funnel.ruling),
 		others: () => clerkMarkersOf(db, precinct),
 	});
 	if (clerk.job !== "-") return { need: "clerk", clerk };
