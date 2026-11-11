@@ -10,7 +10,7 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 - `bin/journal`, the journal binary
 - `journal.sqlite`, the database
 - `precincts/`, the clones of the precincts
-- `runs/`, the working folders of ticks and updates
+- `runs/`, where the journal makes the release folder of an update, the folder of `run-installation` and the catalog state of a tick, and where roles keep their trees
 - `host.md`, the host notes
 - `configs/` and `shared/`, the commands of the precincts and of the installation
 - `departments/`, the installation's own department pages, when it has any

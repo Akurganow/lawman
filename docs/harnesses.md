@@ -14,7 +14,7 @@ Every fact about a harness names its source in brackets. These marks are in use,
 - `(seen in a run)` means a command ran and printed it.
 - `(checked with the harness's check function)` means the harness's own approval check accepted the command form.
 - `(not verified)` means nobody checked it. Check it live before you rely on it.
-- A mark may add a closer source: a terminal, a scheduled run, the manual page of a tool or the journal code.
+- A mark may add a closer source, such as a terminal, a scheduled run, the manual page of a tool or the journal code.
 
 Harnesses change fast. Read the live documentation when the work on a harness starts.
 

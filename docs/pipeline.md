@@ -155,7 +155,7 @@ The newest marker of a role on an issue wins. Nobody edits an old marker. A role
 
 A case runs in this order: lead, case, charge, defence, ruling, then the clerk's pull request. The journal reads the markers and names the next role. `bin/journal case <precinct> <issue>` prints `need=` with `investigation`, `prosecutor`, `defender`, `court`, `clerk` or `none`. An issue whose newest clerk marker names a pull request has left the funnel.
 
-An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The line also prints `kind=` with `defect` or `requirement`, and the answer as `answer=` and `answer_id=`.
+An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The fields of the line are in [Read the stage](../skills/lawman-law/references/tick.md#read-the-stage).
 
 A pull request has its own stage. `bin/journal pull <precinct> <pull request>` prints `need=` with `spec-writer`, `executor` or `none`. A pull request needs a spec when it has none or when the newest spec drew a 👎. It needs the executor when the newest spec has a 👍 and its `work` is `todo` or `returned`. Only a pull request that the clerk handed, in a precinct with a weight above zero, gets an order.
 
