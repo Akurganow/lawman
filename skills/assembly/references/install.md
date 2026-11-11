@@ -220,13 +220,7 @@ After a yes:
 2. Find whether the key is in the place that scheduled sessions read, which the harness page names under "The TypeSafe key".
 3. Learn found or not found and nothing else.
 4. Show a key row that reads found or not found in that place and names the variable.
-5. When the key is found, record that place.
-
-When the key is found, ask nothing more. When it is not found, ask in the question tool with one question and three choices. The why line reads: "Maybe the key already lies somewhere you know."
-
-- The key lies elsewhere. The developer names the place in free text.
-- The developer will put the key in the page's place (recommended).
-- Turn TypeSafe off.
+5. Record that place as `typesafe_key`, found or not. When the key is not found, the summary names the place and the variable.
 
 Result: typesafe is yes or no. `typesafe_key` names the place in words, or reads none when TypeSafe is off. The consent to send stays per repository, and phase 2 asks it.
 
@@ -235,7 +229,7 @@ Never:
 - Ask for, print, read or store the value of the key.
 - Run a command whose output can hold the value.
 - Run a paid probe.
-- Ask which key and where, when the key is found.
+- Ask which key and where.
 
 ## Catalog
 
