@@ -205,7 +205,7 @@ Run this section once for a precinct, when its catalog consent is "Yes" or its l
 79a. Add to `host.md` the host actions that the approval named as found, such as these. One turns a link into an issue number. One reads a file at the revision of a pull request. One writes to its branch. Keep every other line, write no credential value, and read the file back.
 79b. When the user answered "Move", run part two of the section "Move the old precedents".
 80. When `<w>` is above zero, run steps 9 to 14 of "Raise a weight".
-81. When the job opened a pull request, tell the developer to choose "Precincts", then "raise a weight", after it merges.
+81. When the job opened a pull request, tell the developer that the next start of the assembly offers to raise the weight after it merges.
 82. Tell the developer that the job "add a department" also follows the merge, for a department of the repository's own.
 83. Name the commands that were written, the ones left empty and the ones that are not proven in the tick environment. Name the pull request of the move, if one opened, and the lines that stayed notes.
 

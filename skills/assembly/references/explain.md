@@ -92,7 +92,7 @@
 
 3. Only when the page names an older mode of the entry, tell the developer:
 
-> A job created by an earlier release may run the entry in an older mode of the harness. The page of your harness says what that mode costs. The Roles part of the menu moves such a job to the new mode, after you approve the change.
+> A job created by an earlier release may run the entry in an older mode of the harness. The page of your harness says what that mode costs. The assembly proposes the Roles part of the menu when it sees such a job, and moves it to the new mode after you approve the change.
 
 ## Commands
 
@@ -132,7 +132,7 @@
 
 ## The weight
 
-A weight is a share of patrol visits. The duty desk does not cover a precinct of weight 0: no role gets an order there and no patrol visits it. A precinct with a weight and no merged constitution wastes its visit, because the duty desk writes no patrol order there. A precinct with a new draft starts at weight 0. A precinct whose constitution is already in place starts at weight 1.
+A weight is a share of patrol visits. The duty desk does not cover a precinct of weight 0: no role gets an order there and no patrol visits it. A precinct with a weight and no merged constitution wastes its visit, because the duty desk writes no patrol order there. A precinct with a new draft starts at weight 0. A precinct whose constitution is already in place starts at weight 1. After a draft merges, the assembly offers to raise the weight.
 
 ## The own department
 
