@@ -152,23 +152,22 @@ A reopen that fails because the head branch is gone ends the tick with `failed`.
 
 ## open
 
-The fixed body is:
+The body is `Closes #<n>`. With a ruling, a blank line and these lines follow it:
 
 ````
-Closes #<n>
-
-Draft opened by the clerk to carry out the court ruling.
+<the sentence of the ruling's Disposition>
+<the sentence of the ruling's Verdict>
 Ruling: <ruling URL>
 ````
 
-Leave out the last line when there is no ruling. The title is `Execute #<n>`.
+The title is `Execute #<n>`. With a ruling, `: ` and the first words of its Disposition follow, cut at a word to one short line. Take the lines from the ruling only, never from the issue. Leave out a ruling line that holds a closing word or a fingerprint line.
 
 1. The `branch` must match `^lawman/execute-<n>-[1-9][0-9]*$`.
-2. Read the ruling. A ruling whose stage is not `conviction` counts as none.
+2. Read the ruling. A ruling whose stage is not `conviction` counts as none. Send the title, then the body, each on standard input to the body check with `--no-marker`. Exit 7 gives `stopped-lint`, and nothing is written. The output of each is what goes out.
 3. Create the tree.
 4. Record one commit with no change and the message `Open execution of #<n>`.
 5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a draft pull request from `<branch>` on the host, with the title `Execute #<n>` and the fixed body. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+6. Open a draft pull request from `<branch>` on the host, with the title and the body of step 2. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 7. Write the hand-off comment on `<m>` with `--sources <n>`. When `pull` of the line is not `-`, that pull request was merged. Add `--merged <pull>`.
 8. Write the marker `handed` with `pull=<m>` and `issue=open` on the issue `<n>`.
 
@@ -194,12 +193,22 @@ Taken up by the clerk as a draft that counts as not started.
 
 ## precedent
 
+The title is `Precedents of #<n>: ` and the names in the `entry` and `cancel` lines of the `precedent` output, separated by commas. The body is:
+
+````
+Records the precedents of the court ruling <ruling URL>.
+<each line of the ruling's `## Precedent` section>
+Merge it to make them binding.
+````
+
+Take the lines from the ruling only. The body holds no closing word and no fingerprint line, so leave out a ruling line that holds one.
+
 1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
 2. Create the tree.
-3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
+3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7. Otherwise send the title, then the body, each on standard input to the body check with `--no-marker`. Exit 7 gives `stopped-lint`, and nothing is written. The output of each is what goes out.
 4. Record the precedent files.
 5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a pull request that is not a draft from `<branch>` on the host. The title is `Precedents of #<n>`. The body is `Records the precedents of the court ruling <ruling URL>. Merge it to make them binding.` The body holds no closing word and no fingerprint line. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+6. Open a pull request that is not a draft from `<branch>` on the host. The title and the body are those of step 3. Send the body as Working rules says for multi-line text. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
 7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 6 and the no-entry form after a `none` or `no-entry` line.
 
 When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
