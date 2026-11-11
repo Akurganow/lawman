@@ -78,7 +78,6 @@ Take the first mode that holds.
 4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel or a constitution that fails its check writes nothing. Then go on to the next mode that holds and to the menu in the same run.
 5. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
 6. Otherwise, run the menu job.
-    - Before the menu, for each precinct that said yes to the license department, run `references/licenses/update.md`. An answer or a skip does not block the menu.
     - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
     - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
     - For "Keep as is", end the mode with the words "Nothing changed".
