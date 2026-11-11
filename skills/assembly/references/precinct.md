@@ -90,10 +90,6 @@ Name the typical documents the repository lacks, such as a privacy promise or a 
 
 This section runs for every repository, whether its constitution is absent or passes lint.
 
-### Measure access
-
-40. Find the account's access level on the repository through the host. It stops nothing.
-
 ### Commands, old precedents and licenses
 
 Run these sections after the finds above and before "The repository proposal". They ask their own questions and write nothing.
@@ -110,7 +106,6 @@ Send one message for the repository. Show each row with its value, its source an
 The rows for an absent constitution:
 
 - Repository: `<owner>/<repo>`, private or public (found).
-- Access: the account's access level on the repository (found).
 - Constitution: the draft as a table, one row for each of its eight sections, and one for `## Licenses` when item 40c asked. Show each line with the file it came from (recommended).
 - Departments: the lines with a judging document, the count of the other departments, which run with no line, and the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
@@ -129,7 +124,7 @@ The rows for an absent constitution:
 
 The rows for a constitution that passes lint:
 
-- Repository and Access: as in the rows above.
+- Repository: as in the rows above.
 - Constitution: "Constitution found, passes lint" (found). Show no draft, no branch and no pull request.
 - Notes: the unknown sections that the check printed, or none (found). Leave out the note about the section `## Licenses`.
 - Weight: 1. The constitution is already in place (default).
@@ -214,12 +209,11 @@ Ask in the question tool.
 3. Run `bin/journal lint-page constitution` with `LAWMAN.md` as it is at the tip of the default branch on stdin, and show the reasons on exit 8. On exit 0, show each printed line that starts with `#` as a note row (found), except the note about the section `## Licenses`. A note changes nothing.
 4. Run the line check on each department line that the previous step printed, and skip a line that starts with `#`. Use the tip of the default branch as the ref.
 5. Run the Issue templates section of the add path, using the tip of the default branch in place of `HEAD`.
-6. Find the account's access level, as the Measure access section of the add path does, and show it as a row.
-6a. For a precinct with `yes` in `license_precincts` and without its own page `licenses`, run `references/licenses/update.md` at the tip of the default branch.
-6b. Offer to ask the use and source questions again, with the original first sentences. The answers replace the entry and the `use` value, and a changed section opens a pull request. This withdraws a consent.
+6. For a precinct with `yes` in `license_precincts` and without its own page `licenses`, run `references/licenses/update.md` at the tip of the default branch.
+6a. Offer to ask the use and source questions again, with the original first sentences. The answers replace the entry and the `use` value, and a changed section opens a pull request. This withdraws a consent.
 7. Run the section "Commands of the precinct" for both screens. Prove the commands that exist again, as "Prove a command" in `references/commands.md` says, and show each result. A command that was proven without `url` (see "Prove a command") is offered a rewrite once, so that the owner's alarms carry links. A command that fails again keeps its file until the user chooses "Change" or "Leave empty". The proof state "not proven in the tick environment" of a command stays visible. Ask the consent to paid proof runs by "Consent to paid runs" in `references/commands.md`.
 8. Run part one of the section "Move the old precedents" only when the user asked to move the old precedents now. It asks when the repository still holds old lines or has open pull requests of the old form, and asks nothing otherwise.
-9. Show one proposal. Its rows are the lint result, the notes and the access level. It also holds the commands of version control, the commands of the tracker, the facts to copy and the old precedents. The section "The repository proposal" describes these rows. Add a row for each host action that the section "Move the old precedents" found and that `host.md` lacks.
+9. Show one proposal. Its rows are the lint result and the notes. It also holds the commands of version control, the commands of the tracker, the facts to copy and the old precedents. The section "The repository proposal" describes these rows. Add a row for each host action that the section "Move the old precedents" found and that `host.md` lacks.
 10. When the proposal holds a write, ask in the question tool and offer "Apply" (recommended), "Change" and "Skip". A write is a command to write, change or remove, a fact to copy, a host action to record or a move. A skip, an empty answer or a cancel writes nothing. On "Change", follow the change items of "The repository proposal".
 11. After the approval, run the subsection "Write the commands" and add the found host actions to `host.md` as item 79a says. Then run part two of "Move the old precedents" when the user answered "Move".
 12. Report the result, and change no weight. For a precinct whose pair in `typesafe_precincts` is yes, say in one line that the yes covers the court's brief and the clerk's request. The consent question now says so. Ask nothing and block nothing for it.

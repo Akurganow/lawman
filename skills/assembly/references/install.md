@@ -6,7 +6,7 @@ A stop ends the install. Each stop says what failed, the cause and the fix. Fix 
 
 ## Order
 
-The install finds what is available before it checks any file or role. It finds the repository host and the tools that reach it. For each tool, it finds the account the host reports. It finds where the repositories keep their issues, and how the install verifies Lawman's own release. Phase 2 finds each repository's access before that repository's proposal. When no tool reaches the host, offer choices that fit this machine. When the host reports no account, ask the user to sign in. When the user declines, say plainly that the roles cannot work without it, and end the install. Every role writes as that account.
+The install finds what is available before it checks any file or role. It finds the repository host and the tools that reach it. For each tool, it finds the account the host reports. It finds where the repositories keep their issues, and how the install verifies Lawman's own release. When no tool reaches the host, offer choices that fit this machine. When the host reports no account, ask the user to sign in. When the user declines, say plainly that the roles cannot work without it, and end the install. Every role writes as that account.
 
 The install has two phases.
 
