@@ -23,8 +23,6 @@ Send one message for all open precincts. Give each open precinct a block of rows
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Constitution: found and passes lint, or the reason it does not (found).
-- License statements: each as `path:line`, or none (found).
-- Questions to ask: the questions this mode will ask (found).
 
 ## Decide
 
@@ -34,7 +32,7 @@ For each open precinct whose constitution passes, ask the questions of "The lice
 
 Ask for one approval when some precinct has answers. Offer "Apply" (recommended), "Change" and "Skip". Treat a skip, an empty answer or a cancel as no, and write nothing.
 
-Show the whole entry for `host.md` of each precinct in the Apply question. Show the values of `reaches` and `use` too. After the approval, run "Write the answers" for each precinct that has answers.
+Show for each precinct the rows chosen and the rows refused, by id and recipient, and the values of `reaches` and `use`. Name the sign of each value that no question asked. After the approval, run "Write the answers" for each precinct that has answers.
 
 ## Summary
 
@@ -62,15 +60,15 @@ Run this section for the open repositories. The add path of `references/precinct
 5. Signs that point to different answers recommend nothing, and the question names both.
 6. For a precinct with no pair, when the repository states no license anywhere, show this message. Ask no question and ask nothing on the next start. The outcome is `no`.
 
-> <owner>/<repo> states no license anywhere: no license file, no manifest field and no sentence in its front document. The license department cannot be enabled, because it has nothing to compare against. Add a statement of license to the repository. To be asked again, remove this repository's pair from `license_precincts` in `config.yaml` and start the assembly.
+> <owner>/<repo> states no license anywhere: no license file, no manifest field and no sentence in its front document. The license department cannot be enabled, because it has nothing to compare against. Add a statement of license to the repository. To be asked again, say so when you start the assembly, and it removes this repository's pair.
 
 ### Order of the calls
 
 Every call is one call of the question tool. A call holds up to the limit of the tool on the harness page, and more questions split into several calls. Text that is the same for all stands once in the message before the call. A cancel in any call ends the mode and writes nothing, including the answers of the earlier calls. A timeout follows rule 16 of `SKILL.md`. The pairs and the pull requests are written once, after the last answer.
 
 1. The enable question, one for each precinct.
-2. After "Yes", the section "Agree the reading way" of `references/precinct.md`, once for each repository. It runs here even when the catalog consent is not given, because the patrol takes its list of pins from that entry. A skip or an empty answer there cancels the questions of that precinct and writes nothing for it.
-3. The two questions of "How people get the project and what it earns", for each precinct that said yes.
+2. After "Yes", the rows of "Agree the reading way" of `references/precinct.md` go into the proposal, once for each repository. They are made here even when the catalog consent is not given, because the patrol takes its list of pins from that entry.
+3. The questions of "How people get the project and what it earns" that no sign answers, for each precinct that said yes.
 4. The first source question of each precinct that has a fitting source.
 5. After "Choose", one call for each fitting source.
 
@@ -85,9 +83,9 @@ Rule 12 of `SKILL.md` lets a skipped question take the proposal's default. The s
 
 ### The enable question
 
-Offer "No" first and "Yes" second. The question holds the account of each statement of license with `path:line`. The consequences stand in the choices. Take the first "Yes" when the constitution is in the default branch. Take the second when it is a draft.
+Offer "No" first and "Yes" second. The question holds the account of each statement of license with `path:line`. End it with "Tell me if that is wrong" only when the statements disagree. The consequences stand in the choices. Take the first "Yes" when the constitution is in the default branch. Take the second when it is a draft.
 
-> Check the licenses of <owner>/<repo>? The code, data and fonts a project uses come with licenses. Some forbid commercial use. Some ask you to share your own code or to credit the author. Lawman compares them with the license your project states: <account> (`path:line`). Tell me if that is wrong.
+> Check the licenses of <owner>/<repo>? The code, data and fonts a project uses come with licenses. Some forbid commercial use. Some ask you to share your own code or to credit the author. Lawman compares them with the license your project states: <account> (`path:line`).
 
 - `No`: The check stays off, and Lawman asks no more.
 - `Yes`: Lawman starts at its next visit once the weight of the repository is above zero. Lawman's license check sends nothing about your project to an outside service until you agree to that service by name. A pull request adds a short section about licenses to LAWMAN.md. Until you merge it, Lawman files no `conflict` and no `unmet` finding. It may still file `unlicensed`.
@@ -97,7 +95,7 @@ A skip and an empty answer mean "No". A "No" writes the outcome `no` and asks no
 
 ### How people get the project and what it earns
 
-Ask the two questions of each precinct in the same call. Put the recommended answer of each question first. Map the answer to the value in backticks by the label of the choice, not its position. Ask again on a free-text answer that fits no choice. End the question with the sign that recommends the answer. With no sign, end it with "I found nothing that settles this" and recommend nothing. The sign reads like this: "I found <what the line does> (`path:line`)."
+Ask a question only when no sign recommends its answer. Where a sign recommends it, write that answer and show it in Apply with its sign. Ask the questions of one precinct in the same call. Map the answer to the value in backticks by the label of the choice, not its position. Ask again on a free-text answer that fits no choice. End a question with "I found nothing that settles this", and recommend nothing. The sign reads like this: "I found <what the line does> (`path:line`)."
 
 > How do other people get <owner>/<repo>? Lawman reports a license clash only for material that reaches other people.
 
@@ -169,7 +167,7 @@ Where the harness has no question tool, follow the numbered message of `SKILL.md
 
 ### Write the answers
 
-Run this after the last answer, with the approval of the caller. The mode asks that approval in Apply. The add path holds it from its own call, and shows the whole entry in a message before the write.
+Run this after the last answer, with the approval of the caller. The mode asks that approval in Apply. The add path holds it from its own call, and shows the same in a message before the write.
 
 1. Set the pairs by the table. Replace `none`, replace an existing pair of that name, and never append a second one. Read `config.yaml` again just before the write, so pairs of other modes stay. Write it, and read it back.
 
@@ -180,7 +178,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 | "Yes", nothing fits or the lock records the licenses | `yes` | the fact about the lock from the index, no agreed row | `reaches`, `use`, `sources none` |
 | "No", a skip or an empty answer to the enable question, full silence, or its own page `licenses` | `no` | not written | not written |
 | The repository states no license anywhere | `no` | not written | not written |
-| Cancel on any question: the mode ends. A skip on "Agree the reading way", or a skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
+| Cancel on any question: the mode ends. A skip on how people get the project with no recommended answer: that precinct only. A constitution that fails | not written | not written | no pull request |
 
 2. After a "Yes", write the entry under `## License reading` in `host.md` of the installation. It is a list item `- <precinct name>: <words>`, and the lines of the blocks stand under it with an indent. For each ecosystem of the precinct, named as the index names it, it holds:
     - the fact about the lock from the index. The lock records the license at each pin, at some pins or at none, and the fact names the place of the record. For such a lock and pin the entry says that no source is needed;
@@ -188,7 +186,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
     - the rows refused, apart, so that the question does not return;
     - the word `none` when nothing is agreed.
 3. The entry takes from the tree only values that passed their class. These are a path by the path rules and the id of a row from the index. It holds no free phrase from the tree or from a reply. It holds no token and no key. The words of the author of the assembly stay out of it.
-4. Show the entry whole before the write. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
+4. Write the entry whole. Create the section when `host.md` lacks it, replace an existing line of that name, keep every other line, and read the file back. Never write the entry into the repository.
 5. Write the section `## Licenses` with these lines and no free phrase:
     - `reaches <internal|copies|service|copies,service>`
     - `use <commercial|non-commercial|unknown>`
@@ -198,7 +196,7 @@ Run this after the last answer, with the approval of the caller. The mode asks t
 8. Commit `LAWMAN.md`, publish the branch and open a pull request with the title "Update the license facts in LAWMAN.md". When the section already holds the answer, open none.
 9. When a pull request of Lawman is open for the section, run item 7 on `LAWMAN.md` as it is at the head of its branch. Commit on that branch and open no new pull request.
 10. Show no note `# <n>` about the section `## Licenses`. The assembly writes that section itself.
-11. A pull request that did not open leaves the pairs in place. Say so, and name the way back: remove the pairs of this repository from `config.yaml` and start the assembly.
+11. A pull request that did not open leaves the pairs in place. Say so, and name the way back: say so when you start the assembly, and it removes the pairs of this repository.
 12. Say nothing when a pull request closes later.
 
 On an update keep every recorded answer and add the new ones. A "No" or a skip writes a refusal of that row.
