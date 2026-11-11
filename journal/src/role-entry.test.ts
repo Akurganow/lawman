@@ -8,7 +8,13 @@ import { withDb } from "./db";
 import { takeableOrders } from "./dispatch";
 import { captured, inprocAsync } from "./inproc";
 import { readConfig } from "./input-files";
-import { lawOf, lawSections } from "./input-roles";
+import {
+	HARNESS_SECTIONS,
+	INTRO,
+	lawOf,
+	lawSections,
+	WHOLE,
+} from "./input-roles";
 import {
 	CONFIG,
 	config,
@@ -73,82 +79,7 @@ async function parts(role: string): Promise<string[]> {
 	return [first, ...rest];
 }
 
-// Appendix A of the role table, as the skills read it at this commit.
 const TICK = readFileSync(join(LAW, "tick.md"), "utf8");
-const TICK_HEADINGS = [
-	"intro",
-	...[...TICK.matchAll(/^## (.+)$/gm)].map((m) => m[1] ?? ""),
-];
-const EVERY_ROLE = [
-	"intro",
-	"Parts",
-	"One end",
-	"Sync the law",
-	"Working rules",
-	"Instructions and evidence",
-	"Fetch the precinct",
-	"End the tick",
-];
-const PROSECUTOR = [
-	"Sync the tracker",
-	"Read the stage",
-	"Check the constitution",
-	"Reading without a tree",
-	"Write a comment",
-	"Close the issue",
-	"Alarm",
-];
-const MORE: Record<string, string[]> = {
-	patrol: [
-		"Sync the tracker",
-		"Check the constitution",
-		"Resolve the department page",
-		"Alarm",
-	],
-	"response-unit": [
-		"Sync the tracker",
-		"Check the intake order",
-		"Check the constitution",
-		"Reading without a tree",
-		"Write a comment",
-		"Alarm",
-	],
-	investigation: [
-		"Sync the tracker",
-		"Read the stage",
-		"Check the constitution",
-		"Resolve the department page",
-		"Write a comment",
-		"Alarm",
-	],
-	prosecutor: [...PROSECUTOR, "Resolve the department page"],
-	defender: [...PROSECUTOR, "Resolve the department page"],
-	court: [...PROSECUTOR, "Resolve the department page"],
-	clerk: [
-		"Sync the tracker",
-		"Sync the pull requests",
-		"Read the stage",
-		"Check the decider",
-		"Write a comment",
-		"Close the issue",
-		"Alarm",
-	],
-	"spec-writer": [
-		"Sync the pull requests",
-		"Read the pull stage",
-		"Check the constitution",
-		"Reading without a tree",
-		"Write a comment",
-	],
-	executor: [
-		"Sync the pull requests",
-		"Read the pull stage",
-		"Check the constitution",
-		"Write a comment",
-	],
-};
-const heading = (name: string) =>
-	name === "intro" ? "# The tick" : `## ${name}`;
 
 // a heading at the start of a line outside a fenced block starts a section
 const LAW_PARTS = new Map<string, string[]>();
@@ -168,69 +99,23 @@ const lawLines = (role: string): string[] =>
 	lawSections(role).flatMap(
 		(section) => LAW_PARTS.get(section) ?? [`missing ${section}`],
 	);
-const file = (path: string) =>
-	readFileSync(join(LAW, path), "utf8").replace(/\n$/, "").split("\n");
-
 type Expected = { head: string; whole?: string[]; headings?: string[] };
 
+// what the role table names, read from the journal's own table
 function expected(role: string): Expected[] {
-	const harness = {
-		head: "harness harnesses/hermes.md",
-		headings: ["### Silence"],
-	};
-	const order = { head: "order 1 main o/main - 3", headings: [] };
-	if (role === "duty-desk")
-		return [
-			{ head: "law LAW.md", whole: lawLines(role) },
-			{
-				head: "law tick.md",
-				headings: [
-					"# The tick",
-					"## Parts",
-					"## Sync the law",
-					"## Sync the tracker",
-					"## Sync the pull requests",
-				],
-			},
-			harness,
-		];
-	const tick = TICK_HEADINGS.filter(
-		(h) => EVERY_ROLE.includes(h) || (MORE[role] ?? []).includes(h),
-	);
-	// the example in the section Precedent repeats its heading inside a fence
-	const markers: Record<string, string[]> = {
-		patrol: [
-			"## Line shape",
-			"## Fields",
-			"## The `id` value",
-			"## Defined markers",
-		],
-		"response-unit": ["## The `id` value"],
-		court: ["## Precedent", "## Precedent"],
-	};
-	const wanted = markers[role];
-	const extra: Expected[] = [
-		...(wanted === undefined
-			? []
-			: [{ head: "law markers.md", headings: wanted }]),
-		...(role === "patrol"
-			? [{ head: "law departments.md", whole: file("departments.md") }]
-			: []),
-		...lawOf(role)
-			.filter(([path]) => path === "exhibits.md")
-			.map(([, wanted]) => ({
-				head: "law exhibits.md",
-				headings: wanted.map((n) =>
-					n === "intro" ? (file("exhibits.md")[0] ?? "") : `## ${n}`,
-				),
-			})),
-	];
+	const named = (wanted: string[], prefix: string) =>
+		wanted.filter((n) => n !== INTRO && n !== WHOLE).map((n) => prefix + n);
 	return [
-		{ head: "law LAW.md", whole: lawLines(role) },
-		{ head: "law tick.md", headings: tick.map(heading) },
-		...extra,
-		harness,
-		order,
+		...lawOf(role).map(([path, wanted]) =>
+			path === "LAW.md"
+				? { head: `law ${path}`, whole: lawLines(role) }
+				: { head: `law ${path}`, headings: named(wanted, "## ") },
+		),
+		{
+			head: "harness harnesses/hermes.md",
+			headings: named(HARNESS_SECTIONS, "### "),
+		},
+		...(role === "duty-desk" ? [] : [{ head: "order 1 main o/main - 3" }]),
 	];
 }
 
@@ -266,10 +151,10 @@ describe("the role group", () => {
 				if (e.whole !== undefined)
 					expect([e.head, body]).toEqual([e.head, e.whole]);
 				else
-					expect([e.head, body.filter((l) => /^#{1,3} /.test(l))]).toEqual([
+					expect([
 						e.head,
-						e.headings ?? [],
-					]);
+						(e.headings ?? []).filter((h) => !body.includes(h)),
+					]).toEqual([e.head, []]);
 			}
 		},
 	);

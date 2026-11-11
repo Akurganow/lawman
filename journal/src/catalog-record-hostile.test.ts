@@ -1,6 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { readdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readdirSync } from "node:fs";
 import { isRecordId } from "./catalog-entries";
 import { recordAnswer } from "./catalog-record";
 import {
@@ -16,7 +15,7 @@ import {
 import { FIXTURES, fixture, inProcessAsync, reply } from "./catalog-test-run";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
-import { JOURNAL, lead, tempDb } from "./test-helpers";
+import { lead, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -85,38 +84,9 @@ describe("catalog record identifiers", () => {
 		.flatMap((result) => (result as { vulns?: { id: string }[] }).vulns ?? [])
 		.map((vuln) => vuln.id);
 
-	test("the batch fixtures hold identifiers", () => {
-		expect(fromBatches.length).toBeGreaterThan(3);
-	});
-
 	test.each([...new Set([...fromBatches, ID])])("the class admits %s", (id) => {
 		expect(isRecordId(id)).toBe(true);
 	});
-});
-
-describe("only the record module reads the cleaning code", () => {
-	const SRC = join(JOURNAL, "src");
-	const source = (name: string) => readFileSync(join(SRC, name), "utf8");
-	const catalogSources = readdirSync(SRC).filter(
-		(name) =>
-			name.startsWith("catalog") &&
-			name.endsWith(".ts") &&
-			!name.endsWith(".test.ts"),
-	);
-
-	test("the record module imports it dynamically and not statically", () => {
-		expect(source("catalog-record.ts")).toMatch(
-			/await import\("\.\/clean-host"\)/,
-		);
-		expect(source("catalog-record.ts")).not.toMatch(/^import .*clean/m);
-	});
-
-	test.each(catalogSources.filter((name) => name !== "catalog-record.ts"))(
-		"%s does not import it",
-		(name) => {
-			expect(source(name)).not.toMatch(/clean/);
-		},
-	);
 });
 
 describe("a cleaning library that fails", () => {

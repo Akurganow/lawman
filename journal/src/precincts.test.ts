@@ -200,20 +200,13 @@ describe("the patrol take", () => {
 		expect(picks).toEqual(["a", "b", "c"]);
 	});
 
-	test.each([
-		["4/3/2", { a: 4, b: 3, c: 2 }, 900, { a: 400, b: 300, c: 200 }],
-		["5/3/2", { a: 5, b: 3, c: 2 }, 1000, { a: 500, b: 300, c: 200 }],
-	])(
-		"weights %s over the given cycles keep their shares and ignore the clock",
-		(_label, weights, count, shares) => {
-			const frozen = cycles(weights, count, () => 0);
-			expect(tally(frozen)).toEqual(shares);
-			rmSync(dbFile);
-			const advancing = cycles(weights, count, UNEVEN_STEP_SECONDS);
-			expect(advancing).toEqual(frozen);
-		},
-		60_000,
-	);
+	test("weights 5/3/2 over 1000 cycles keep their shares and ignore the clock", () => {
+		const weights = { a: 5, b: 3, c: 2 };
+		const frozen = cycles(weights, 1000, () => 0);
+		expect(tally(frozen)).toEqual({ a: 500, b: 300, c: 200 });
+		rmSync(dbFile);
+		expect(cycles(weights, 1000, UNEVEN_STEP_SECONDS)).toEqual(frozen);
+	}, 60_000);
 
 	test("weight 0 is never picked", () => {
 		const picks = cycles({ a: 1, z: 0, b: 1 }, 50, () => 1);

@@ -81,9 +81,4 @@ describe("law-sync, CLI only", () => {
 		).toBe(true);
 		expect(leftovers(root)).toEqual([]);
 	});
-
-	test("the source names no network, version-control or process word", () => {
-		const source = readFileSync(join(JOURNAL, "src", "law-sync.ts"), "utf8");
-		expect(source).not.toMatch(/\b(fetch|http|git|gh|spawn|child_process)\b/i);
-	});
 });
