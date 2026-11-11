@@ -67,7 +67,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 
 ### A failed proof
 
-The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal and the `error` fence. After the reason `exit`, the fence holds the command's standard error after cleaning. The developer then changes the command or leaves it empty. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
+The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
 
 ### The rule of the constitution
 
@@ -115,7 +115,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 - When `release` is empty or its folder is missing, fetch the real files from `release_repo` by the tag, as the first install does.
 - The copy with a changed byte lies in a neighbouring folder of the same `runs/`, under the same file name. The platform gives the name of the asset.
 - Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure. The verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
-- On a proof failure `verify` is not written, and the developer chooses another method or declines the signature.
+- On a proof failure `verify` is not written. Stop as "A failed proof" says.
 - Never run the copy with a changed byte.
 
 ### Prove a refused signature
