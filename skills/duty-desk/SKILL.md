@@ -53,7 +53,7 @@ Read the group to its last part. For a cut part, follow the `tick.md#parts` sect
 bin/journal tick input --role duty-desk --part <k>
 ```
 
-0.2. Sync the law as the section `tick.md#sync-the-law` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again.
+0.2. Sync the law as the section `tick.md#sync-the-law` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again. The sync prints no line of the update list. You build those lines after step 0.3, as the section `tick.md#sync-the-law` says.
 
 0.3. Check the journal schema. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
@@ -126,7 +126,7 @@ Build the answer from these rules, in this order:
 1. If the tick stopped or failed, write one line `<outcome>: <reason>` first. The reason is the report line of the tick, or the line that step 0 names.
 2. Write every `ALARM` line that the sync of step 0.2 printed, one per line, verbatim.
 3. Write every `ALARM` line of the start, one per line, verbatim.
-4. Write every line of the update list that the sync printed, one per line, verbatim.
+4. Write every line of the update list that you built, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 
 Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered.

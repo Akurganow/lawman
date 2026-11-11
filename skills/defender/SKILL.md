@@ -24,7 +24,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm and no failure is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm, no failure and no line of the update list is the silence form alone.
 
 ### Step 0: the input and the order
 
@@ -108,7 +108,7 @@ Decide one of three. The tick outcome equals the decision.
 
 - `defence`: when neither other outcome holds. Outcome `defended`.
 - `return`: one precise question for investigation. Allowed only when `round` is less than 3 and `returned` does not contain `defender`. Outcome `returned`.
-- `refute`: one of the three classes in the law's `LAW.md#closure-classes` section holds. The class is shown by an exhibit you re-read in step 4 or by a recorded reason you read in step 2. Name the class in the defence as a proposal to the court. A refute closes nothing, and the case goes to the court. Outcome `refuted`.
+- `refute`: a class of the law's `LAW.md#closure-classes` section holds, except `declined by the owner`, which only a decider's act gives. The class is shown by an exhibit you re-read in step 4 or by a recorded reason you read in step 2. Name the class in the defence as a proposal to the court. A refute closes nothing, and the case goes to the court. Outcome `refuted`.
 
 The law's `LAW.md#precedents` section says how a precedent weighs in the decision.
 

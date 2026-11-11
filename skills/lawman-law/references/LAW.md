@@ -463,7 +463,7 @@ Before every commit the executor searches three texts for the literal installati
 
 ## Hard constraints
 
-- Reading roles never edit a file in the precinct or alter its clone in any other way.
+- Reading roles never edit a file in the precinct. They alter its clone in two ways only. They bring it up to date with the host. They add and remove the tree that their skill names.
 - Patrol never closes or reopens an issue.
 - Patrol never comments.
 - Investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor file no issue.

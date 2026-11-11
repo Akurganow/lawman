@@ -24,7 +24,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 1. Detect the harness.
     1. List `../lawman-law/references/harnesses/*.md` relative to this skill's folder, in name order.
-    2. Read the first section of each page, and run the detection command that section names.
+    2. Read the section "Installing the plugin" of each page, and run the detection command that section names.
     3. Record a page as a match when its command exits 0.
     4. Stop if a page names no detection command, and tell the developer the page needs one.
     5. Stop if no page matches, and tell the developer to install a harness first.
@@ -33,7 +33,7 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 2. Find the default installation.
     1. Run the list command the harness page gives for the scheduler's jobs.
     2. Stop if the command fails, and tell the developer what failed.
-    3. Take the working directory of the first job named `[lawman] <role>`.
+    3. Take the installation of the first job named `[lawman] <role>`. The harness page says where a job holds it: its working directory, or the workspace of its agent.
     4. When no such job exists, take `~/.lawman`.
 3. Settle the folder.
     1. When step 2 found a job, an installation exists. Keep its folder and ask nothing.

@@ -273,7 +273,7 @@ Ask nothing in the middle of Apply, except the wait for the agent in step 4. On 
 
 ### Write the host notes
 
-Write `<installation>/host.md` as the approved Host rows show, by the head of "Host". Read the existing `host.md` first. Carry every line of its sections `## Dependency reading` and `## License reading` over unchanged into the new file. Leave the earlier record of the verification of the binary as it is.
+Write `<installation>/host.md` as the approved Host rows show, by the head of "Host". Read the existing `host.md` first. Carry every line of its sections `## Dependency reading` and `## License reading` over unchanged into the new file. Leave the earlier record of the verification of the binary as it is. Read the file back. It must hold the approved rows and every carried line.
 
 ### Install a verifier
 
