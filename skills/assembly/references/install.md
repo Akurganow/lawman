@@ -12,7 +12,7 @@ The install has two phases.
 
 **Phase 1. Installation.** One round and one approval for the phase. The screens come in this order.
 
-1. Installation: the folder, the harness and the release. It has no message of its own: the approval names them.
+1. Installation: the folder, the harness and the release.
 2. Host: the tool, the account, the host notes, and the verifier or the refusal.
 3. The commands of the installation: `release`, `verify` and `law-version` on one screen.
 4. Delivery.
@@ -25,7 +25,7 @@ The install has two phases.
 Phase 1 runs as follows.
 
 1. Find the facts of every screen.
-2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
+2. For each screen but the first, send one proposal, then ask its decisions, batching the independent ones.
 3. Ask for one approval to apply, offering apply and change. The approval names the folder, the harness and the release. It names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
@@ -68,7 +68,7 @@ The folder of the law may carry no history. A harness may place the plugin as a 
 
 1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
 2. With no history, the plugin's manifest and the host's tool, then the developer's word. Read the repository and the version from `plugin.json` in the law folder. Get the release tag and its commit from the host's tool. Ask in free text only for what they cannot give, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
-   With no history, the role cannot read them. Without a `law-version` command, every tick then ends `stopped-law-drift`, because the law folder gives no facts. Write an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. Prove it by "Prove `law-version`" in `references/commands.md`. When no such place exists or the proof fails, say so in the proposal and the summary. The install goes on.
+   With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. The person proves it with Host in the menu. The install goes on.
 3. No history, no value from the manifest or the tool, and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
@@ -102,13 +102,13 @@ Finds:
 - For each tool that reaches the host, the account the host reports.
 - Where the chosen tool keeps its credential. Learn the place and never the value.
 - How the host keeps its issues with their templates, and what is particular to it.
-- How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms. Find only the actions the notes lack.
+- How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
 - The verifier of Lawman's release, by the paragraph above.
 
 An installation made before these actions existed has no record of one of them. The assembly finds how this machine does it, and records it in the approved Apply, as `SKILL.md` says for the merge form. It asks the user only when it cannot find a way.
 
-Proposes, as rows with their source. The rows are the notes, the recorded actions included. Leave out a row that does not change the notes. The notes keep it.
+Proposes, as rows with their source. The rows are the notes, the recorded actions included.
 
 | Row | Value | Source |
 | :-- | :-- | :-- |
@@ -124,8 +124,8 @@ The why line for the login: every role writes as this account, and only its mark
 
 Decides: ask in the question tool.
 
-- The tool, when several report an account and the notes record none. The user chooses.
-- The verifier, when the notes record no method and several fit, or whether to install one when none fits, or to decline.
+- The tool, when several reach the host. The user chooses.
+- The verifier, as "Choose the method of verification" in `references/commands.md` says.
 
 Stops:
 
@@ -144,7 +144,7 @@ Finds: which of the three files exist in `shared/`, and how this machine does ea
 
 Proposes: one row for each operation, with how it runs, its source and its proof state. A new or changed command reads "will be proven at Apply".
 
-Decides: nothing. Apply writes each command that passes its proof and keeps one that exists. "Change" in the approval takes a command to change or to leave empty. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
+Decides: nothing. Apply writes each command that passes its proof and keeps one that exists. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
 
 Never:
 
@@ -210,7 +210,7 @@ After a yes:
 2. Find whether the key is in the place that scheduled sessions read, which the harness page names under "The TypeSafe key".
 3. Learn found or not found and nothing else.
 4. Show a key row that reads found or not found in that place and names the variable.
-5. Record that place as `typesafe_key`, found or not. When the key is not found, the summary names the place and the variable.
+5. Record that place as `typesafe_key`, found or not.
 
 Result: typesafe is yes or no. `typesafe_key` names the place in words, or reads none when TypeSafe is off. The consent to send stays per repository, and phase 2 asks it.
 
@@ -283,7 +283,7 @@ Items 4 to 9 belong to the first install. A run of part Host again does not repl
 
 ### Prove the commands of the installation
 
-Prove each command that the developer wrote or changed, through the journal on the throwaway base. Follow "Prove a command" and "Commands of the installation" in `references/commands.md`. Commands that stay as they are are not proven again on a repeat. Then:
+Prove each new or changed command, through the journal on the throwaway base. Follow "Prove a command" and "Commands of the installation" in `references/commands.md`. Commands that stay as they are are not proven again on a repeat. Then:
 
 - With a signature chosen, run the four cases of `verify` when `verify`, the method or the verifier changed. Otherwise do not run them.
 - Two cases run the pass of `law-update` on the throwaway installation. The method changed to a refusal. A refusal is written for the first time.
