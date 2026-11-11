@@ -4,7 +4,7 @@ Use this reference for a precinct that said yes to the license department. It se
 
 Every such run takes the tip of the default branch for each precinct that said yes. It runs "Agree the reading way" of `references/precinct.md` again and compares the result with the recorded entry. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
 
-Read the tip as items 1 to 5 of "Read the repository" of `references/licenses/questions.md` say, before any question. Ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
+Read the tip as items 1 to 5 of "Read the repository" of `references/licenses/questions.md` say, before any question. Ask the questions of the table at once. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
 
 This table has these rows and no others.
 

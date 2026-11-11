@@ -70,7 +70,7 @@ Run `bin/journal law-update assembly`. For each `self` line, do the step as the 
 | any other `stop` | The reason, and the action of its row under "The stops" in `lawman/docs/journal.md`. | End the assembly run. |
 | a non-zero exit | `journal unavailable: <stderr>` | End the assembly run. |
 
-Take the first mode that holds. After amend, catalog, licenses or roles ends with its answers written, take a later mode that holds, and end at the menu job. A skip or a cancel ends the run.
+Take the first mode that holds. After amend, catalog, licenses or roles ends with its answers written, take a later mode that holds, and end at the menu job. A mode that ends with a skip or a cancel ends the run.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
 2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`.
@@ -84,7 +84,7 @@ Take the first mode that holds. After amend, catalog, licenses or roles ends wit
         - An installation with every command empty in `bin/journal commands`: "Host".
         - A precinct with every command empty in `bin/journal commands <precinct>`: "Precincts".
     - One empty command among others is the person's choice. Offer nothing for it.
-    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". While a case remains, put the choice for the first case first and recommend it in place of "Keep as is". After that part ends, ask again. A case that the part left unmended is said again, and "Keep as is" ends the run.
+    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". "Keep as is" stays first. While a case remains, the choice that mends the first case carries the recommendation in its place. After that part ends, ask again. A case that the part left unmended is said again.
     - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
