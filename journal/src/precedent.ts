@@ -833,6 +833,23 @@ function swapPage(
 	}
 }
 
+// The page of the tree and the one numbered line of it, or a refusal.
+export function oldLineAt(tree: string, number: number) {
+	const path = join(tree, CONSTITUTION);
+	if (treeFile(tree, [CONSTITUTION]).kind !== "page") throw unsafe(path);
+	const text = utf8(readFileSync(path));
+	if (text === null)
+		throw new Fail(EXIT.USAGE, `${CONSTITUTION} is not UTF-8, nothing written`);
+	const found = oldItems(text).filter((i) => i.line?.number === number);
+	const [item] = found;
+	if (item?.line === undefined || found.length > 1)
+		throw new Fail(
+			EXIT.USAGE,
+			`expected exactly one precedent line #${number}`,
+		);
+	return { path, text, item, line: item.line };
+}
+
 // One numbered line of an old Precedents section becomes a file, and the line
 // leaves LAWMAN.md of the tree.
 export function oldLineToFile(o: OldLine): string {
@@ -840,19 +857,8 @@ export function oldLineToFile(o: OldLine): string {
 		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
 	if (!PRECEDENT_KINDS.includes(o.kind))
 		throw new Fail(EXIT.USAGE, `invalid kind: ${JSON.stringify(o.kind)}`);
-	const path = join(o.tree, CONSTITUTION);
-	if (treeFile(o.tree, [CONSTITUTION]).kind !== "page") throw unsafe(path);
-	const text = utf8(readFileSync(path));
-	if (text === null)
-		throw new Fail(EXIT.USAGE, `${CONSTITUTION} is not UTF-8, nothing written`);
-	const found = oldItems(text).filter((i) => i.line?.number === o.number);
-	const [item] = found;
-	if (item?.line === undefined || found.length > 1)
-		throw new Fail(
-			EXIT.USAGE,
-			`expected exactly one precedent line #${o.number}`,
-		);
-	const { date, rule, link } = item.line;
+	const { path, text, item, line } = oldLineAt(o.tree, o.number);
+	const { date, rule, link } = line;
 	const folder = new Folder(o.tree);
 	const name = folder.free(`${date}-${o.gist}`);
 	folder.set(

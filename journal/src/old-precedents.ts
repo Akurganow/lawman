@@ -11,6 +11,7 @@ import {
 	KIND_OF,
 	type OldItem,
 	oldItems,
+	oldLineAt,
 	oldLineToFile,
 	trustedLogin,
 } from "./precedent";
@@ -189,6 +190,8 @@ async function moveCommand(args: string[]): Promise<number> {
 	if (opt.kind !== undefined && !PRECEDENT_KINDS.includes(opt.kind))
 		throw usage(USAGE);
 	registered(precinct);
+	// a line that is not in the page is no question for the user
+	oldLineAt(opt.tree, line);
 	const login = trustedLogin();
 	let verdict = NO_ISSUE;
 	if (issue !== null) {

@@ -399,6 +399,16 @@ describe("old-precedent move", () => {
 		);
 	});
 
+	test("a missing line fails before it asks anything", async () => {
+		const r = await move("", "--line", "9");
+		expect(r).toEqual({
+			code: EXIT.USAGE,
+			out: "",
+			err: "journal: expected exactly one precedent line #9\n",
+		});
+		expect(lawman()).toBe(PAGE);
+	});
+
 	test("a missing line fails and writes nothing", async () => {
 		const r = await move("", "--line", "9", "--kind", "protects");
 		expect(r.code).toBe(EXIT.USAGE);
