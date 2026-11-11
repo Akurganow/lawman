@@ -412,7 +412,7 @@ The kinds are `issue`, `comment`, `pull`, `file`, `files`, `error`, `title`, `co
 
 ### Texts in the cache
 
-The cache holds the texts of issues, pull requests and comments after the cleaning of `journal clean`. The output of `file` and `files` and the text of `error` are data, not Markdown. They pass the character layer, which removes hidden characters and masks secrets. A text is cleaned again each time it prints, so every stored text prints clean.
+The cache holds the texts of issues, pull requests and comments after the cleaning of `journal clean`. The output of `file` and `files` and the text of `error` are data, not Markdown. They pass the character layer, which removes hidden characters and masks secrets. A text prints as the sync stored it.
 
 A printed issue or pull request is its body in an `issue` or `pull` fence, then each comment, by time and then by id. Each comment has a `comment at=<time>` line and a `comment` fence. The first line inside that fence is `id="<id>" author="<login>"`, written as JSON strings, or `author=null` when the host gave no author.
 

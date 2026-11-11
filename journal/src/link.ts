@@ -1,14 +1,13 @@
 import type { Database } from "bun:sqlite";
 
 // The address that opens an issue or a pull request, as the host reports it. A value that
-// is no plain address is no link: only http and https, no credentials, a safe character set
-// and a length that a host's own address fits in.
-const SAFE = /^[A-Za-z0-9._~:/?#@!$&'*+,;=%-]+$/;
+// is no plain address is no link: only http and https, no credentials, a length that a
+// host's own address fits in, and the form the URL parser serializes. The last check drops
+// every space, line break, control, non-ASCII and other character the parser would escape.
 const LINK_MAX = 500;
 
 export function linkOrNull(v: unknown): string | null {
-	if (typeof v !== "string" || v.length > LINK_MAX || !SAFE.test(v))
-		return null;
+	if (typeof v !== "string" || v.length > LINK_MAX) return null;
 	try {
 		const u = new URL(v);
 		const plain = u.protocol === "http:" || u.protocol === "https:";
