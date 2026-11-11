@@ -6,7 +6,7 @@ A stop ends the install. Each stop says what failed, the cause and the fix. Fix 
 
 ## Order
 
-The install finds what is available before it checks any file or role. It finds the repository host and the tools that reach it. For each tool, it finds the account the host reports. It finds where the repositories keep their issues, and how the install verifies Lawman's own release. Phase 2 finds each repository's access before that repository's proposal. When no tool reaches the host, offer choices that fit this machine. When the host reports no account, ask the user to sign in. When the user declines, say plainly that the roles cannot work without it, and end the install. Every role writes as that account.
+The install finds what is available before it checks any file or role. It finds the repository host and the tools that reach it. For each tool, it finds the account the host reports. It finds where the repositories keep their issues, and how the install verifies Lawman's own release. When no tool reaches the host, offer choices that fit this machine. When the host reports no account, ask the user to sign in. When the user declines, say plainly that the roles cannot work without it, and end the install. Every role writes as that account.
 
 The install has two phases.
 
@@ -25,8 +25,8 @@ The install has two phases.
 Phase 1 runs as follows.
 
 1. Find the facts of every screen.
-2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
+2. For each screen but the first, send one proposal, then ask its decisions, batching the independent ones.
+3. Ask for one approval to apply, offering apply and change. The approval names the folder, the harness and the release. It names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
@@ -44,13 +44,7 @@ Finds:
 - Whether the plugin is enabled, by the checks that the harness page names under "Installing the plugin", in the page's order.
 - The law commit, the release tag and the release repository, by "Find the facts of the law" below.
 
-Proposes, as rows with their source:
-
-| Row | Value | Source |
-| :-- | :-- | :-- |
-| Folder | `<installation>` | current, default or yours |
-| Harness | the harness page | found |
-| Release | tag and repository | found, or yours |
+Proposes: nothing of its own. The approval shows the folder (current, default or yours). It shows the harness (found) and the release, its tag and repository (found, or yours).
 
 A release repository that is read from the origin is found, and the developer does not edit it. A release repository that the developer named is yours, and the developer may change it.
 
@@ -73,9 +67,9 @@ Never:
 The folder of the law may carry no history. A harness may place the plugin as a plain copy. Take the commit, the release tag and the release repository from these sources in this order. The list is open for sources that a later release reads.
 
 1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
-2. The developer's word. Ask in free text, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
+2. With no history, the plugin's manifest and the host's tool, then the developer's word. Read the repository and the version from `plugin.json` in the law folder. Get the release tag and its commit from the host's tool. Ask in free text only for what they cannot give, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
    With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. The person proves it with Host in the menu. The install goes on.
-3. No history and no word: stop, and say which source to name.
+3. No history, no value from the manifest or the tool, and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
 
@@ -101,8 +95,6 @@ Part Host does not change the account. A run of part Host again serves a change 
 
 Find a tool on this machine that verifies a Sigstore signature. Examples are [gh](https://docs.github.com/en/actions/how-tos/secure-your-work/use-artifact-attestations/verify-attestations-offline), [cosign](https://docs.sigstore.dev/), [sigstore-python](https://pypi.org/project/sigstore/), [@sigstore/cli](https://npmjs.com/package/@sigstore/cli) and [sigstore-go](https://pkg.go.dev/github.com/sigstore/sigstore-go). Another tool is fine. The choice of the method, the facts of a refusal and what a refusal records follow "Choose the method of verification" in `references/commands.md`.
 
-Say in plain text that a written command must not send the host a request beyond the host's limits. "Host limits" in `references/commands.md` gives them.
-
 Finds:
 
 - The repository host, and each tool on this machine that reaches it.
@@ -112,7 +104,6 @@ Finds:
 - How the host keeps its issues with their templates, and what is particular to it.
 - How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
-- Three actions for the old precedents. One reads a file at a given revision of a pull request. One writes to the branch of a pull request. One turns the link of an old precedent line into the number of an issue.
 - The verifier of Lawman's release, by the paragraph above.
 
 An installation made before these actions existed has no record of one of them. The assembly finds how this machine does it, and records it in the approved Apply, as `SKILL.md` says for the merge form. It asks the user only when it cannot find a way.
@@ -134,8 +125,8 @@ The why line for the login: every role writes as this account, and only its mark
 Decides: ask in the question tool.
 
 - The tool, when several reach the host. The user chooses.
-- The verifier, when several fit, or whether to install one when none fits, or to decline.
 - The host, when the finds do not show it.
+- The verifier, as "Choose the method of verification" in `references/commands.md` says.
 
 Stops:
 
@@ -154,7 +145,7 @@ Finds: which of the three files exist in `shared/`, and how this machine does ea
 
 Proposes: one row for each operation, with how it runs, its source and its proof state. A new or changed command reads "will be proven at Apply".
 
-Decides: for each command, "Write" or "Leave empty", with "Keep as is" first for a command that exists. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
+Decides: nothing. Apply writes each command that passes its proof and keeps one that exists. What `verify` needs under a chosen signature or a refusal is in "Choose the method of verification".
 
 Never:
 
@@ -220,13 +211,7 @@ After a yes:
 2. Find whether the key is in the place that scheduled sessions read, which the harness page names under "The TypeSafe key".
 3. Learn found or not found and nothing else.
 4. Show a key row that reads found or not found in that place and names the variable.
-5. When the key is found, record that place.
-
-When the key is found, ask nothing more. When it is not found, ask in the question tool with one question and three choices. The why line reads: "Maybe the key already lies somewhere you know."
-
-- The key lies elsewhere. The developer names the place in free text.
-- The developer will put the key in the page's place (recommended).
-- Turn TypeSafe off.
+5. Record that place as `typesafe_key`, found or not.
 
 Result: typesafe is yes or no. `typesafe_key` names the place in words, or reads none when TypeSafe is off. The consent to send stays per repository, and phase 2 asks it.
 
@@ -235,7 +220,7 @@ Never:
 - Ask for, print, read or store the value of the key.
 - Run a command whose output can hold the value.
 - Run a paid probe.
-- Ask which key and where, when the key is found.
+- Ask which key and where.
 
 ## Catalog
 
@@ -299,7 +284,7 @@ Items 4 to 9 belong to the first install. A run of part Host again does not repl
 
 ### Prove the commands of the installation
 
-Prove each command that the developer wrote or changed, through the journal on the throwaway base. Follow "Prove a command" and "Commands of the installation" in `references/commands.md`. Commands that stay as they are are not proven again on a repeat. Then:
+Prove each new or changed command, through the journal on the throwaway base. Follow "Prove a command" and "Commands of the installation" in `references/commands.md`. Commands that stay as they are are not proven again on a repeat. Then:
 
 - With a signature chosen, run the four cases of `verify` when `verify`, the method or the verifier changed. Otherwise do not run them.
 - Two cases run the pass of `law-update` on the throwaway installation. The method changed to a refusal. A refusal is written for the first time.
@@ -383,6 +368,6 @@ When TypeSafe is on and the official skill was missing at install, add these ite
 - Show https://docs.typesafe.ai/agent-skill, and recommend installing the official skill by the method on that page.
 - When the harness page gives an add-skill form under "Editing a job", give the step that attaches the skill to the court job. Use that form.
 
-Offer the user one manual run of the duty desk, and say that the run is paid. What a manual run does over a job that is still running is not verified on any harness. Read the run record: does it start beside the running tick, and do both ticks work the same order? When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run with the form the harness page gives under "Running a role once". Read its record with the user: what worked, what is missing, and what is broken. For anything broken, propose a fix. Apply a fix only after the user says yes.
+Offer the user one manual run of the duty desk, and say that the run is paid. What a manual run does over a job that is still running is not verified on any harness. Read the run record: does it start beside the running tick, and do both ticks work the same order? When the duty desk's job is paused, say that the run needs the job resumed, and that the job then runs on its schedule, paid. When the user accepts, resume a paused job by the form the harness page gives under "Paused jobs". Then start the run with the form the harness page gives under "Running a role once". Report the outcome in one line, and name each broken item with its fix. Apply a fix only after the user says yes.
 
 Then tell the developer that the install is complete.

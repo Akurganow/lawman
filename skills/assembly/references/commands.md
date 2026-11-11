@@ -2,7 +2,7 @@
 
 A command is an executable file that the journal runs by itself. The commands of the installation lie in `shared/`. The commands of a precinct lie in `configs/<precinct>/`. The assembly writes a command with the developer's consent, and only after it proved the file. Both kinds of command only read: a command never writes to the host. `fetch` updates the local clone, which is no write to the host.
 
-Part Host reads "Prove a command" and "Commands of the installation". The precinct jobs read "Prove a command", "Commands of a precinct", "Host limits", "Facts of the precinct" and "Leave empty". The forms of the files are in `docs/journal.md`. The forms of the output are those of `journal form issues|pulls|decider`.
+Part Host reads "Prove a command", "Commands of the installation" and "Host limits". The precinct jobs read "Prove a command", "Commands of a precinct", "Host limits", "Facts of the precinct" and "Leave empty". The forms of the files are in `docs/journal.md`. The forms of the output are those of `journal form issues|pulls|decider`.
 
 ## Prove a command
 
@@ -58,16 +58,16 @@ A command runs once for its proof. The run is in the tick environment when the d
 - A failure blocks the write in both environments.
 - Without consent, or without a way on the harness page, the command is not proven in the tick environment. The approval of the proposal confirms that gap.
 
-**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary. It is the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run. Use these words: every such run is a short paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
+**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary. It is the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run. Use these words: each proof is a paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
-- A pass of part Host asks it before the approval question of that part, with the other questions. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
+- A pass of part Host asks it before the approval question of that part, with the other questions, when a proof will run. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
 - A pass without a run in the tick environment asks nothing. Examples are "Roles" with entry files and a single proof of a refused signature.
 
 ### A failed proof
 
-The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal and the `error` fence. After the reason `exit`, the fence holds the command's standard error after cleaning. The developer then changes the command or leaves it empty. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
+The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Outside Apply, a candidate with no file yet stays a step of the role, and its row says so. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
 
 ### The rule of the constitution
 
@@ -75,26 +75,26 @@ The constitution asks that a host command run on a throwaway base before it is r
 
 ## Commands of the installation
 
-The installation has three commands in `shared/`: `release`, `verify` and `law-version`. For each file the developer chooses "Write" or "Leave empty". An operation with no file stays a step of the role. The journal runs `verify` always, and the answer `declined` does not skip it.
+The installation has three commands in `shared/`: `release`, `verify` and `law-version`. An operation with no file stays a step of the role. In the approval the developer may change a command or leave it empty. The journal runs `verify` always, and the answer `declined` does not skip it.
 
 Show one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state. The state reads "will be proven at Apply". Apply proves them, after the approval and after the chosen verifier is installed.
 
 ### Choose the method of verification
 
-The developer chooses the method together with the assembly, on the Host screen, where the verifier is found. The list is open. For example:
+The notes record the method. Ask on the Host screen when the notes record none and either no verifier is found or several fit. A run of part Host from the menu asks as if none were recorded. With one verifier found, the proposal row names it, and "Change" in the approval takes another choice or the refusal. The list is open. For example:
 
 - Verify the signature with a verifier that was found on this machine (recommended). Name the found verifiers.
 - Install a verifier, when none fits. Offer choices that fit this machine, and Apply installs the chosen one.
 - Decline the signature.
 
-Before the question, say the two facts of a refusal, in the developer's language.
+Before a question that offers the refusal, and when the developer declines, say the two facts of a refusal, in the developer's language.
 
 1. Only the checksum from the same release remains.
 2. That checksum cannot tell a replaced release as a whole. Whoever replaces the release replaces the sum too, so the sum does not prove where the release came from.
 
 The label of the choice names the consequence in one phrase. The right to decline is the developer's. After a refusal, say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing.
 
-With a signature chosen, `verify` is needed, because nothing else can prove the method. "Leave empty" is then not offered. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
+With a signature chosen, `verify` is needed, because nothing else can prove the method. "Change" in the approval does not leave it empty. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
 
 The summary of a refusal says the two facts above in plain words. It also names both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
 
@@ -108,14 +108,14 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 | :-- | :-- | :-- |
 | right | the asset, its provenance file, `release_repo`, the commit of the law folder | `verify passed` |
 | swapped binary | a copy of the asset with one byte changed, and the right provenance file | `verify failed reason=exit` |
-| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the one the developer named when choosing the method, else the repository of the chosen verifier | `verify failed reason=exit` |
+| signature of another | the right asset and file, and another existing repository in the argument `release_repo`: the repository of the chosen verifier | `verify failed reason=exit` |
 | right signature, other commit | the right asset and file, and another commit in the argument | `verify failed reason=exit` |
 
 - The files lie in `runs/` of the throwaway base. The real files lie in the folder that `release` built. On the first install, copy the downloaded files there from `runs/install-journal`.
 - When `release` is empty or its folder is missing, fetch the real files from `release_repo` by the tag, as the first install does.
 - The copy with a changed byte lies in a neighbouring folder of the same `runs/`, under the same file name. The platform gives the name of the asset.
 - Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure. The verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
-- On a proof failure `verify` is not written, and the developer chooses another method or declines the signature.
+- On a proof failure `verify` is not written. Stop as "A failed proof" says, and name "Change" in the next approval as the way to another method or to the refusal.
 - Never run the copy with a changed byte.
 
 ### Prove a refused signature
@@ -148,16 +148,16 @@ A command is never written from a value that the developer typed. See "Find the 
 
 A precinct has seven commands in `configs/<precinct>/`, in two screens. The operations are `fetch`, `identity`, `issues`, `pulls`, `decider`, `file` and `files`.
 
-For each screen, run this cycle: find, propose, prove, decide.
+For each screen, run this cycle: find, propose, prove.
 
 1. Find how this machine does each operation with the tool of the host notes. Take the forms of the output from `journal form` and from `docs/journal.md`.
 2. Propose one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state, which reads "will be proven". An operation with no command stays a step of the role, and the row says so.
 3. Prove each command by "Prove a command".
-4. Decide in one call, with the proof result in the call. Offer "Keep as is" first on a screen whose commands already exist. Then offer "Write", "Change" and "Leave empty". "Change" asks for a new proof.
+4. After the approval, write each command that passed its proof, and keep one that already exists. The approval names the files. "Change" there asks for a new proof.
 
 **The screen of version control.** Operations `fetch`, `file` and `files`.
 
-**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The first question is where the issues and the pull requests live. The list of answers is open. For example:
+**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The place of the issues and the pull requests is the repository's host. Ask first where they live only when the host notes name no place or the developer named another place. The list of answers is open. For example:
 
 - The repository's host (found, recommended).
 - Another tracker, which the developer names with its tool.
@@ -171,14 +171,14 @@ A request that the host refuses to accept for its size, its limit or its complex
 
 - For a host that the assembly does not know, take the limits from what the tool or the host reports about the call. Never assume a limit.
 - A checked list that is smaller than one page of the command does not prove that the command reads page by page.
-- Part Host says in plain text that a written command must not send the host a request beyond its limits.
+- A written command must not send the host a request beyond its limits.
 
 ## Facts of the precinct
 
 A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives and the account. Write them into the command file when you write the command.
 
 - `host.md` and `config.yaml` hold the same facts as lines for the whole installation, and the roles and the journal read those lines. Copy the fact into the command and keep the line.
-- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to copy it in the same call of approval. The line stays where it is.
+- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. The line stays where it is.
 - `law-sync` copies nothing.
 - The keys `typesafe` and `typesafe_key` lie in `config.yaml`, which belongs to the whole installation. They stay there.
 
@@ -186,4 +186,4 @@ A command of a precinct carries the facts that it reads itself. Examples are the
 
 An operation with no command stays a step that the role does itself.
 
-- "Leave empty" over an existing command removes the file at Apply. The approval names the file.
+- A command that the approval leaves empty over an existing one is removed at Apply. The approval names the file.
