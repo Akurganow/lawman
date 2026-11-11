@@ -4,74 +4,90 @@ import remarkParse from "remark-parse";
 import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { cleanCharacters } from "./clean";
-import { fenceOf } from "./fence";
+import { splitPrecedent } from "./precedent-file";
 
-// The class of a sentence. It leaves out `#` and `@`, which start a reference or
-// a mention, and every character that starts markup, so no host reads the words
-// as anything but words.
-const PLAIN = /^[\p{L}\p{N} .,;:?'"()/_+=*%-]+$/u;
-// a hyphen before a digit forms `GH-12`, which a host reads as an issue after a closing word
-const SHORTHAND = /-\d/;
-const PLAIN_NODES = new Set([
-	"root",
-	"paragraph",
-	"text",
-	"inlineCode",
-	"emphasis",
-	"strong",
-]);
-
-const parse = (text: string) =>
-	unified().use(remarkParse).use(remarkGfm).parse(text) as Root;
+// The ruling is already a public comment. A pull request body adds two risks: the
+// host may close or reference an issue that the words name, and the journal reads
+// a fingerprint line of the body as a source. Each pattern is one such sign.
+const REFUSED = [
+	/#/u, // an issue or work item (`#12`, `o/r#12`, `AB#12`); the `sources=#12` of a fingerprint line
+	/@/u, // a mention, an email address
+	/!\p{N}/u, // a merge request (`!12`)
+	/~/u, // a label, and the run that ends a fence
+	/\p{L}[\p{L}\p{N}_]*[\p{Pd}−]\p{N}/u, // a tracker key (`GH-12`, `PROJ-12`)
+	/https?:\/\/|www\./iu, // an address that a host closes by or links
+	/\p{C}/u, // a line break that whitespace misses, or a mark that hides a sign
+];
+const PLAIN = new Set(
+	"root paragraph text inlineCode emphasis strong".split(" "),
+);
+const LEFT_OUT = "The text of the ruling was left out. It stands at the link.";
+const RULE_STANDS = "the rule stands in the file";
 
 // the words of a text that is one paragraph of text, code spans and emphasis
 function wordsOf(markdown: string): string | null {
-	const tree = parse(markdown);
+	const tree = unified()
+		.use(remarkParse)
+		.use(remarkGfm)
+		.parse(markdown) as Root;
 	let plain =
 		tree.children.length === 1 && tree.children[0]?.type === "paragraph";
 	const parts: string[] = [];
 	visit(tree, (node) => {
-		if (!PLAIN_NODES.has(node.type)) plain = false;
+		if (!PLAIN.has(node.type)) plain = false;
 		if (node.type === "text" || node.type === "inlineCode")
 			parts.push(node.value);
 	});
 	return plain ? parts.join("").replace(/\s+/g, " ").trim() : null;
 }
 
-// Words that read the same on every host, or null. The pieces of a link that
-// emphasis marks separate join into one, so the joined words are read again.
-export async function plainWords(markdown: string): Promise<string | null> {
+// Words that no host reads as a reference, a mention or an address, or null. The
+// case's own `#<n>` adds no source, so it stands.
+export async function plainWords(markdown: string, own?: number) {
 	let words: string | null;
 	try {
-		words = wordsOf(await cleanCharacters(markdown));
+		// folded first, so a full-width or small form of a sign reads as the sign
+		words = wordsOf(await cleanCharacters(markdown.normalize("NFKC")));
 	} catch {
 		return null;
 	}
-	if (words === null || !PLAIN.test(words) || SHORTHAND.test(words))
-		return null;
-	const [only, ...more] = parse(words).children;
-	const alone = only?.type === "paragraph" && more.length === 0;
-	return alone && only.children.every((c) => c.type === "text") ? words : null;
+	if (words === null) return null;
+	const probe =
+		own === undefined
+			? words
+			: words.replaceAll(new RegExp(`(?<![^\\s(])#${own}(?!\\p{N})`, "gu"), "");
+	return REFUSED.some((re) => re.test(probe)) ? null : words;
 }
 
-// the words stand in a fence that no line of them closes, as the law quotes text
-const quoted = (lines: string[]) => {
-	const text = lines.join("\n");
-	const fence = fenceOf(text);
-	return `${fence}\n${text}\n${fence}`;
-};
+// The words stand in a fence. They hold no `~`, so no line of them ends it.
+const fenced = (lines: string[]) => `~~~\n${lines.join("\n")}\n~~~`;
 
-const block = (lines: string[]) => (lines.length === 0 ? [] : [quoted(lines)]);
-
-export const convictionBody = (
+export function convictionBody(
 	issue: number,
-	ruling: string,
-	lines: string[],
-) =>
-	`${[`Closes #${issue}`, ...block(lines), `Ruling: ${ruling}`].join("\n\n")}\n`;
+	source?: string,
+	disposition?: string | null,
+) {
+	const parts = [`Closes #${issue}`];
+	if (source !== undefined)
+		parts.push(
+			disposition ? fenced([`Disposition: ${disposition}`]) : LEFT_OUT,
+			`Ruling: ${source}`,
+		);
+	return `${parts.join("\n\n")}\n`;
+}
 
-export const precedentBody = (ruling: string, lines: string[]) =>
-	`${[
-		`Records the precedents of the court ruling ${ruling}. Merge it to make them binding.`,
-		...block(lines),
-	].join("\n\n")}\n`;
+// One line for each changed file: its name and the rule it writes or cancels.
+export async function precedentBody(
+	source: string,
+	changes: { name: string; was: string | null; now: string | null }[],
+) {
+	const lines = await Promise.all(
+		changes.map(async ({ name, was, now }) => {
+			const verb = now === null ? "cancel" : was === null ? "new" : "refine";
+			const rule = splitPrecedent(now ?? was ?? "")?.body ?? "";
+			const head = (await plainWords(`${verb} ${name}`)) ?? `${verb} a file`;
+			return `${head}: ${(await plainWords(rule)) ?? RULE_STANDS}`;
+		}),
+	);
+	return `Records the precedents of the court ruling ${source}. Merge it to make them binding.\n\n${fenced(lines)}\n`;
+}
