@@ -62,7 +62,7 @@ A command runs once for its proof. The run is in the tick environment when the d
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
-- A pass of part Host asks it before the approval question of that part, with the other questions. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
+- A pass of part Host asks it before the approval question of that part, with the other questions, when a command is new or changed. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
 - A pass without a run in the tick environment asks nothing. Examples are "Roles" with entry files and a single proof of a refused signature.
 
 ### A failed proof
