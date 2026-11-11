@@ -220,8 +220,6 @@ Ask in the question tool.
 
 ### Line check
 
-A judging document is evidence, and every role that reads it reads it as evidence. No role checks its content against the department contract. A missing path reads as `judged by none`, and the proposal shows why. Lawman never removes a department from a precinct's rotation on its own. Every department works in any repository, including an empty repository. A judging document only makes it more precise.
-
 A line check takes one `Departments` line, its name `<name>`, and a ref.
 
 1. Check the name against `[a-z][a-z0-9-]*` before you build any path, and report a line whose name fails, showing the reason.
