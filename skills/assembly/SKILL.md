@@ -78,14 +78,13 @@ Take the first mode that holds.
 4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel or a constitution that fails its check writes nothing. Then go on to the next mode that holds and to the menu in the same run.
 5. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
 6. Otherwise, run the menu job.
-    - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose each part with its current values. Show a job's model as "as set".
+    - Find `config.yaml`, the job list, the precincts and the paused jobs. Propose only what the choice needs.
     - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host".
     - For "Keep as is", end the mode with the words "Nothing changed".
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
     - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `trusted_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
-    - Offer the topics in one line: roles, models, tiers, schedule, plans, clock order, lower frequency, role entry, commands and limits. Name also these topics in the same line: delivery check, old precedents, constitution sections, weight, own department and license department.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
 
@@ -123,8 +122,8 @@ Read the section "Asking the developer" of the harness page, when the page has o
 16. When the developer cancels a question, end the mode without a write. A timeout means nobody answered and refuses nothing. Send the open questions once in one message, as item 17 says, wait for the reply, and keep the answers of the earlier calls.
 17. When the harness has no question tool, or the tool is off, send the same questions in one message.
 18. In that message, number the questions, letter the choices and mark the recommended one.
-19. When the harness cannot list a value, say so.
-20. Ask for it in free text, with one example and the default, if the value has one.
+19. When no command lists a value, read it from the harness's own state, as the page names it. When no source holds it, say so.
+20. Then ask for it in free text, with one example and the default, if the value has one.
 
 ### Bulk edits
 
