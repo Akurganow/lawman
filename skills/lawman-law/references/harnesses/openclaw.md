@@ -143,12 +143,7 @@ A scheduled run has no one to approve a command. The default mode of a gateway h
 - The shell is `bash` or `zsh`. `(set -o pipefail; …)` and a subshell are ordinary shell (stated by the docs, https://docs.openclaw.ai/tools/exec.md; not verified).
 - A command yields a handle after 10 seconds by default. It runs to the end in one call when the call sets `awaitResults` to true, or when the run has no `process` tool. A job with `--tools exec,read` has no `process` tool (read in the harness code, openclaw/src/agents/bash-tools.exec-run.ts).
 
-The forms that a role sends start no shell or interpreter with `-c` or `-e`. They feed no heredoc to a shell or an interpreter, and they use no recursive delete. The modes above refuse or review such forms, so no form of a role depends on them.
-
-A role removes a folder with the plain forms below and no recursive delete. They are the forms of the Hermes page, and none was run in a scheduled run on this harness (not verified).
-
-- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rmdir runs/<tick id>`.
-- A folder that holds only files, such as the folder of the law sync: `rm -f <folder>/*`, then `rmdir <folder>`.
+In `full`, the default mode, no form is refused. Under `allowlist`, `ask` and `auto` such forms are refused or reviewed, as the list above says. The forms that a role sends start no shell or interpreter with `-c` or `-e`. They feed no heredoc to a shell or an interpreter and use no recursive delete.
 
 ## Sending to the catalog
 
@@ -164,7 +159,7 @@ none: this page gives no send form for the catalog check. The patrol then sends 
 none: this page gives no send form. The assembly sends nothing to a source. The patrol finds the way to read one. Two things bound that way.
 
 - The time limit of a command. On OpenClaw the default is 1800 seconds. A call may set its own `timeoutSeconds` (read in the harness code, openclaw/src/agents/exec-tool-timeout.ts). The scheduler bounds the whole turn at 60 minutes unless the job sets `--timeout-seconds` (stated by the docs, https://docs.openclaw.ai/automation/cron-jobs/how-it-works.md; not verified).
-- The forms of a command. In `full` mode no form is refused, as "Commands in scheduled runs" says. The command that reads a source uses only the plain forms that section lists.
+- The forms of a command. In `full` mode no form is refused, as "Commands in scheduled runs" says. The command that reads a source starts no shell or interpreter with `-c` or `-e`. It feeds no heredoc to a shell or an interpreter and uses no recursive delete.
 
 ## Calling an expert
 
@@ -343,8 +338,6 @@ No rule withholds the job's identity or tokens from the script. It holds the job
 Same-minute jobs run in parallel. They share the lanes `cron` and `cron-nested` (stated by the docs, https://docs.openclaw.ai/concepts/queue.md; not verified). The lane widths are (not verified). At most 3 entry scripts run at once (read in the harness code, openclaw/src/cron/trigger-script.ts). A role beyond that waits for its slot. The visible effect with many roles due in one minute is (not verified).
 
 A running job is tracked so the scheduler avoids a duplicate run (read in the harness code, openclaw/src/cron/active-jobs.ts). Whether a slot that arrives during a run is skipped or deferred is (not verified). The CLI has no chaining, so order comes from the clock.
-
-What a manual run does over a job that is still running is (not verified). The live run must show whether the manual run starts beside the running tick, and whether both ticks work the same order.
 
 ### Catch-up
 

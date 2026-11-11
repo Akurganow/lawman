@@ -46,11 +46,11 @@ Patrol uses the Read first files, the department page from any of its places and
 
 ## Tick
 
-Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm, no failure and no line of the update list is the silence form alone.
+Run items 1 to 3 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 4 of step 0 to step 6, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 3 names. Every started tick ends exactly once, at step 6. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
 ### Step 0: the input and the order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits its turn. Exit 2 means that the precinct already has an open patrol order, of any department. The named order is not queued: answer only the silence form that item 2 gives, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
+1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits its turn. Exit 2 means that the precinct already has an open patrol order, of any department. The named order is not queued: answer only the silence form of the harness page, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```
@@ -58,7 +58,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
    ```
    bin/journal wake --role patrol
    ```
-   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -169,10 +169,10 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 Run it when the page's Proof says that a list sent through the journal replaces the pattern search. This check reads the catalog only through the `exhibits.md#send` section.
 
 1. Read `catalog` and `catalog_precincts` from `config.yaml`, and the precinct's line under `## Dependency reading` in `host.md`. Do it before the tree is created and before any send. A missing key reads as no and is no failure. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`.
-2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same when the harness page gives no form under "Sending to the catalog". Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
+2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same when the section "Sending to the catalog" of the harness page gives no form. Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
 3. With consent and a line, take the list by the recorded way. The way reads the tree's content at `<sha>` as data. It runs nothing from the precinct and no tool that the precinct configures. `bin/journal form catalog` prints the form of the list.
 4. Hand the list to the journal as data, as the `tick.md#working-rules` section says. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
-5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows under "Sending to the catalog". The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
+5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the section "Sending to the catalog" of the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
 6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
 7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
@@ -181,14 +181,14 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 
 Title: `[Lead] <department>: <symbol>: <what>`
 
-The body holds every part of the law's `LAW.md#the-lead-body` section, with these additions:
+The body holds every part of the law's `LAW.md#the-lead-body` section. These rules fill its patrol slots:
 
-- Put any extra section the page's Lead body names before `## Not checked`.
+- The extra sections come from the page section Lead body.
 - For a fixed candidate, `## What` names the closed issue.
 - For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
 - Put every `@` inside a code span or a fenced block.
-- A kind with an external source puts one `Source:` line per source in Not checked, inside one fenced block, in one of three shapes:
+- A kind with an external source fills the `Source:` slot of Not checked. It holds one `Source:` line per source, inside one fenced block, in one of three shapes:
   ```
   Source: catalog <record identifier> <package>
   Source: releases <owner>/<repo>
@@ -196,7 +196,7 @@ The body holds every part of the law's `LAW.md#the-lead-body` section, with thes
   ```
   Take each `releases` value from the tree. Take the `catalog` line as the journal printed it.
 
-Marker, the last line of the body. Nothing follows it:
+Marker:
 
 ```
 <!-- lawman: role=patrol stage=lead department=<department> id=<id> sha=<sha> at=<UTC> -->

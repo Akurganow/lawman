@@ -51,19 +51,25 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 
 ## Choose the mode
 
-Read `<installation>/config.yaml`. When it exists, read the commit that the law folder holds.
+Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read the commit that the law folder holds, and take the first case that fits.
 
-When that commit differs from `law_commit`, or `law_commit` is absent, a plugin update may have moved the law with no tick to sync it. Sync the law now. The sync is no tick and no model run of a role.
-
-1. Run `bin/journal law-update assembly`. Act on its lines as the section `tick.md#sync-the-law` says.
-2. When the journal has no such command, it is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` with `assembly` as the role name.
-3. After the line `synced <tag>`, show the developer each `ALARM` line of the sync. Read `config.yaml` again and go on to the mode.
-4. After `law current` while the two commits still differ, `config.yaml` lacks `law_commit` or `release_repo`, or holds a damaged value. Tell the developer to write the missing line, with the repository of Lawman's release as `release_repo`. Tell them to start the assembly again.
-5. After a line `stop <token> <reason>`, tell the developer the reason and the action of its row under "The stops" in `docs/journal.md`. The reason that names neither a verifier nor a refusal is the exception: run part Host of `references/install.md` now, then run the sync again. End the mode after any other stop.
-
-When the commit of the law folder cannot be read, because the folder has no history, compare nothing. Say in one line that no comparison was made. Say whether `shared/law-version` exists. Without it, each role stops until the developer writes one that reads the facts of the law.
+- The commit cannot be read, because the folder has no history. Compare nothing. Say in one line that no comparison was made. Say what "Find the facts of the law" in `references/install.md` says about a folder with no history, and whether `shared/law-version` exists. Go on to the modes.
+- The commit equals `law_commit`. Go on to the modes.
+- The commit differs from `law_commit`, or the config has no `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
 
 When the host notes record the refusal of the signature, look for a verifier on this machine. When you find one, offer to run part Host again. A no or a cancel goes on to the mode.
+
+**The sync of the law.** The sync downloads the release of the new law, checks it, replaces `bin/journal` and rewrites the sync keys of `config.yaml`. It is no tick and no model run of a role. Say that in one line and ask once, in the question tool, whether to run it. On a no, end the assembly run. It is a write before approval, and only this yes covers it.
+
+Run `bin/journal law-update assembly`. For each `self` line, do the step as the row of that name in the table of `lawman/skills/lawman-law/references/tick.md#sync-the-law` says. The assembly takes no other row of that table. Where the journal has no such command, it is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` with `assembly` as the role name. Read its stop as a stop below. The assembly keeps no update list, because mode 4 asks the license question.
+
+| Last line | Tell the developer | Then |
+| :-- | :-- | :-- |
+| `synced <tag>` | Each `ALARM` line of the sync. | Read `config.yaml` again. Go on to the modes. |
+| `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and its source. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit that the installed journal was built from. When the developer does not know it, 40 zeros do: the sync replaces the value. | The developer writes the line. End the assembly run. |
+| `stop stopped-no-verifier` | The host notes name neither a verifier nor a refusal of the signature check. | Run part Host of `references/install.md` once, then run the sync again. End the assembly run when the same stop comes back. |
+| any other `stop` | The reason, and the action of its row under "The stops" in `lawman/docs/journal.md`. | End the assembly run. |
+| a non-zero exit | `journal unavailable: <stderr>` | End the assembly run. |
 
 Take the first mode that holds.
 
@@ -92,7 +98,7 @@ Every mode has five parts, in this order: find, propose, decide, apply and summa
 - **Find.** Read what the harness, the plugin, the repository and the host report. Ask nothing, except the harness and the folder, which "Choose the installation" settles.
 - **Propose.** Send one message for each part of the setup. Show every row with its value, its source and at most one line of why. A source is found, current, default, recommended or yours. After each message, ask that part's decisions. Batch the independent ones.
 - **Decide.** Ask only the real decisions.
-- **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. Two exceptions hold. The first is the throwaway folder of a proof, which `references/commands.md` describes. It lies outside the installation, is made fresh and is removed on every outcome, a stop included. The second is the one-off job of a proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent to paid runs. Its name never starts with the prefix of an installation job, and it is removed the same way. After approval, run the writes in a fixed order.
+- **Apply.** Ask for one approval. Offer apply and change, and offer skip when the developer may leave the part out. Before approval, write only the installation folder, the plugin link and the repository clones. Two exceptions hold. The first is the throwaway folder of a proof, which `references/commands.md` describes. It lies outside the installation, is made fresh and is removed on every outcome, a stop included. The second is the one-off job of a proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent to paid runs. Its name never starts with the prefix of an installation job, and it is removed the same way. A third exception is the sync of the law in "Choose the mode", which waits for its own yes. After approval, run the writes in a fixed order.
 - **Summary.** Follow the section "Finish". Add how to change each item later.
 
 Explain a topic only when the developer asks. The explanations sit in `references/explain.md`.

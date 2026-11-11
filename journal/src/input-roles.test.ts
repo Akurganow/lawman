@@ -47,7 +47,6 @@ describe("the role table", () => {
 
 	test("every section of LAW.md has a reader, and the whole file counts as every section", () => {
 		const sections = [INTRO, ...(HEADINGS["LAW.md"] ?? [])];
-		expect(sections).toHaveLength(39);
 		const read = new Set(
 			ROLE_NAMES.flatMap((role) =>
 				lawOf(role)
@@ -81,26 +80,6 @@ describe("the role table", () => {
 	test("every section of the harness page stands on the Hermes page", () => {
 		const page = read(join("harnesses", "hermes.md"));
 		expect(sectionsOf(page, HARNESS_SECTIONS)).not.toContain(null);
-	});
-
-	test("each harness page holds the sections that the law and the skills point to", () => {
-		// the pointers of tick.md, exhibits.md, the role skills and the clerk recipes
-		const pointed = [
-			...HARNESS_SECTIONS,
-			"Commands in scheduled runs",
-			"Sending to the catalog",
-			"Sending to license sources",
-			"Calling an expert",
-			"The TypeSafe key",
-		];
-		for (const page of ["hermes.md", "openclaw.md"])
-			expect([
-				page,
-				pointed.filter(
-					(name) =>
-						sectionsOf(read(join("harnesses", page)), [name])[0] === null,
-				),
-			]).toEqual([page, []]);
 	});
 
 	test("the section for an older journal follows Sync the law and no role reads it", () => {

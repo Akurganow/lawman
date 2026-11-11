@@ -10,6 +10,8 @@ Every command runs through the journal on a throwaway base before it enters the 
 
 A command file carries no value of a key or a token. A role never writes a command.
 
+A command of `issues` or `pulls` returns `url` for each issue and pull request, the address that opens it on the host, when the tool gives one. The journal puts it into the alarms that the owner must act on. The proof compares nothing with it.
+
 ### The throwaway base
 
 One layout serves every proof, the first install and the proof of a refused signature included.

@@ -7,7 +7,7 @@ description: Reads the case on one issue at the commit it was built on, decides 
 
 One tick takes one order on an issue, reads the case, decides charge, return or decline, writes the decision as a comment, and exits.
 
-The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
+The prosecutor reads and writes comments. It runs no code of the precinct. It may ask an expert, as the `exhibits.md#ask-an-expert` section says. Read that section in `lawman/skills/lawman-law/references/exhibits.md` only when you ask.
 
 ## Limits
 
@@ -21,11 +21,11 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` when the case quotes such a command. The read-only rule above does not limit it.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm, no failure and no line of the update list is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 7, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 7. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
 ### Step 0: the input and the order
 
@@ -33,7 +33,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role prosecutor
    ```
-   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```

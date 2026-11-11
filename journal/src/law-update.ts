@@ -58,10 +58,18 @@ const ALARM = "ALARM contract-changed";
 const MISSING = 2;
 const NO_FACTS =
 	"the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md";
-const VERIFY_STOPS: Record<string, string> = {
-	failed: CHECK_FAILED,
-	"not-run": CHECK_NOT_RUN,
-	unnamed: "the host notes name neither a verifier nor a refusal",
+// the config lacks a key that the update needs; the assembly mends it
+export const NO_CONFIG = "stopped-law-config";
+const NO_CONFIG_REASON = "config.yaml cannot give law_commit or release_repo";
+// the host notes record neither a verifier nor a refusal; part Host of the assembly mends it
+export const NO_VERIFIER = "stopped-no-verifier";
+const VERIFY_STOPS: Record<string, [reason: string, token?: string]> = {
+	failed: [CHECK_FAILED],
+	"not-run": [CHECK_NOT_RUN],
+	unnamed: [
+		"the host notes name neither a verifier nor a refusal",
+		NO_VERIFIER,
+	],
 };
 
 type Options = Partial<Record<(typeof OPTIONS)[number], string>>;
@@ -256,7 +264,7 @@ async function update(
 			];
 		} else {
 			const stop = VERIFY_STOPS[opt.verify];
-			if (stop !== undefined) throw new Stopped(stop);
+			if (stop !== undefined) throw new Stopped(stop[0], stop[1] ?? DRIFT);
 		}
 		return await swap(folder, asset, f.tag, f.revision);
 	} catch (e) {
@@ -273,7 +281,8 @@ async function pass(
 	const config = readConfig() ?? "";
 	const commit = configValue(config, "law_commit");
 	const repo = configValue(config, "release_repo");
-	if (commit === undefined || repo === undefined) return ["law current"];
+	if (commit === undefined || repo === undefined)
+		throw new Stopped(NO_CONFIG_REASON, NO_CONFIG);
 	const f = await facts(opt);
 	if (f === "self") return ["self law-version"];
 	if (!COMMIT.test(f.revision) || !COMMIT.test(commit))

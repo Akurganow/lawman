@@ -18,7 +18,7 @@ This reference sets up the scheduled job of each role. It follows the shape of e
 - Read the page by subsection name under its scheduling section. The names are "Editing a job", "Schedule forms and time zone", "Models", "Paused jobs", "Role entry", "One-off run" and "Order and overlap".
 - Skip the effort level when the page names none.
 - When the page names no role entry, drop the part Role entry, "Write and prove", every entry flag and the Entry column. A new job is then created without an entry file, and the role calls its entry itself.
-- Run each command as this reference writes it. Never start a shell or an interpreter with `-c`. Never feed a heredoc to a shell. These are rules of Lawman on every harness. The page names the cause for its harness.
+- Run each command as this reference writes it. Never start a shell or an interpreter with `-c`. Never feed a heredoc to a shell. The commands of this reference avoid these forms, because a harness may refuse them. The page names the cause for its harness.
 - Create and edit jobs in this interactive session only. The page gives the cause for its harness.
 - The tiers, the plans and the clock order are advice. The developer may override each one. The entry is no advice: every job gets it, and the developer is asked nothing about its mode.
 - The sections "Command forms" and "Create or edit" use two words for answers. A keep answer is the choice "Keep as is". A default answer is the choice "Use the harness default".

@@ -191,19 +191,30 @@ const law = (role: string, tick: string[], extra: Read[] = []): Read[] => [
 ];
 
 // The sections of exhibits.md that the prosecutor, the defender and the court apply
-// in the step that re-reads the exhibits. Patrol and investigation read the file
-// themselves, as their skills say.
+// on ordinary work: the step that re-reads the exhibits.
 const EXHIBITS: Read = [
 	"exhibits.md",
 	[
+		INTRO,
 		"Read numbered lines",
 		"Quote a claim of absence",
 		"Follow a missing path",
-		"Run a source",
-		"Source values",
-		"Ask an expert",
 	],
 ];
+
+// What a role's skill tells it to read itself, because the work needs it only
+// on a condition. The link check counts these sections as read.
+export const SELF_READS: Record<string, Read[]> = {
+	patrol: [["exhibits.md", [WHOLE]]],
+	investigation: [["exhibits.md", [WHOLE]]],
+	prosecutor: [
+		["exhibits.md", ["Run a source", "Source values", "Ask an expert"]],
+	],
+	defender: [
+		["exhibits.md", ["Run a source", "Source values", "Ask an expert"]],
+	],
+	court: [["exhibits.md", ["Run a source", "Source values", "Ask an expert"]]],
+};
 
 const closed = (s: StageFields) => s.state === "CLOSED";
 const notOpen = (s: StageFields) => s.state !== "OPEN";

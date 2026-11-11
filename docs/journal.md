@@ -22,7 +22,7 @@ You update the plugin with your harness. The law then moves ahead of the binary.
 
 Each call of `law-update` is one pass over these steps. The pass ends at the first step that gives a line to print.
 
-1. It reads `law_commit` and `release_repo` from `config.yaml`. When the file or a key cannot be read, it prints `law current`.
+1. It reads `law_commit` and `release_repo` from `config.yaml`. When the file or a key cannot be read, it stops with the token `stopped-law-config`.
 2. It gets the facts of the law folder: the revision, whether the folder holds a local change, and the release tag of the revision. Your `law-version` command gives them. Without that command, the role reads them and answers with options.
 3. It checks the revision and `law_commit` against 40 lowercase hexadecimal digits. When the two are equal, it prints `law current`.
 4. It checks `release_repo` against its class: `<owner>/<repo>`, with letters, digits, `.`, `_` and `-`, neither part `.` or `..`, and no `-` at the start. A local change stops the pass. So does a revision with no release tag. The tag must hold letters, digits, `.`, `_` and `-`, must not be `.` or `..` and must not start with `-`.
@@ -71,7 +71,7 @@ journal law-update <role> [--revision <revision>|unreadable [--state clean|chang
 
 ### The stops
 
-Every stop carries the token `stopped-law-drift`, except the local change, which carries `stopped-dirty-law`. The list of reasons stays open: a new reason arrives with the path that mends it.
+Every stop carries the token `stopped-law-drift`, with three exceptions. The local change carries `stopped-dirty-law`. A config that cannot give `law_commit` or `release_repo` carries `stopped-law-config`. Host notes with neither a verifier nor a refusal carry `stopped-no-verifier`. The list of reasons stays open: a new reason arrives with the path that mends it.
 
 A law folder with a local change at `law_commit` is no stop here: `law-update` prints `law current`, because the revision equals `law_commit`. The tick start then stops with `stopped-dirty-law`.
 
@@ -79,6 +79,7 @@ A law folder with a local change at `law_commit` is no stop here: `law-update` p
 | :-- | :-- | :-- |
 | the law-version command failed | `shared/law-version` did not start, exited non-zero or printed outside its form | Check three places: the execute permission of the file, its exit code and its output form. See [the law-version file](#the-law-version-file). |
 | the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md | No `law-version` command exists, and the role could not read the revision of the law folder | Write the `law-version` file in `shared/`, as [the law-version file](#the-law-version-file) says. |
+| config.yaml cannot give law_commit or release_repo | `config.yaml` is missing or unreadable, or lacks `law_commit` or `release_repo`. Token `stopped-law-config`. | Run the assembly: it names the value to write. `law_commit` is the commit that the law folder held at the last sync, and `release_repo` is the `<owner>/<repo>` of Lawman's release. |
 | a value is not safe | The revision is empty or is not 40 lowercase hexadecimal digits, or `law_commit` is not, or `release_repo` is outside its class | Check the `revision=` line of the command, and `law_commit` and `release_repo` in `config.yaml`. |
 | the law folder has a local change | The folder holds a change that its release does not | Restore the law folder to its release, or update the plugin again with your harness. |
 | the law is not on a release | The revision carries no release tag | Move the plugin to a released version, or make the `law-version` command print the tag of the revision. |
@@ -89,7 +90,7 @@ A law folder with a local change at `law_commit` is no stop here: `law-update` p
 | the checksum failed | The asset does not match `SHA256SUMS`, or the file has no line or several lines for the asset | Do not run the file. The next tick downloads it again. If the stop repeats, open an issue in Lawman's repository. |
 | the check could not run | The `verify` command did not start, or the role could not run the verifier | Check the execute permission of `shared/verify`, or install the verifier that the host notes name. |
 | the provenance check failed | The signature check did not confirm the file | Do not run the file. If the stop repeats, open an issue in Lawman's repository. |
-| the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal | Run the assembly and its part Host, then name a verifier or decline one. |
+| the host notes name neither a verifier nor a refusal | No `verify` command exists, and the host notes name neither a verifier nor a refusal. Token `stopped-no-verifier`. | Run the assembly and its part Host, then name a verifier or decline one. |
 | the new binary did not start | The asset did not start on this machine, or the journal cannot make it executable | Check that the machine matches the platform of the asset, and that the journal may change the mode of the files in the release folder. The installation stays as it was. |
 | the new binary did not confirm the update | The new file exited 0 and printed no `synced <tag>` line | `bin/journal` may already hold the new file. Open an issue in Lawman's repository. |
 | the first line of the new binary's error output, or the new binary failed | The new file refused the update, for example because the skills ask for a newer schema than it has | Read the reason. Before the swap `law-sync` only reads, so the installation stays as it was. |
@@ -98,7 +99,7 @@ The start of every tick checks the law folder too, and it has one more reason. S
 
 | Reason | When | What you do |
 | :-- | :-- | :-- |
-| the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update prints `law current` and cannot mend it: run the assembly. |
+| the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update stops with `stopped-law-config`: run the assembly. |
 
 `law-sync` renames the new binary over `bin/journal` and rewrites the sync keys of `config.yaml`. Before the swap it only reads, so a failure leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
 

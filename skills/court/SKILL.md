@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman court, which takes one order on a case af
 
 One tick takes one order on a case after the parties, re-reads the exhibits, decides, writes the ruling as a comment, and exits.
 
-The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the `exhibits.md#ask-an-expert` section says.
+The court reads and writes comments. It runs no code from the precinct. It creates no worktree. It applies and removes only the owner-attention label, as step 6 says. It may ask an expert, as the `exhibits.md#ask-an-expert` section says. Read that section in `lawman/skills/lawman-law/references/exhibits.md` only when you ask.
 
 ## Limits
 
@@ -21,11 +21,11 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 
 - A clone changes only by bringing it up to date, as the `tick.md#fetch-the-precinct` section says. Never change its working files, branches, tags or history, and never publish from it.
 - There is no worktree. Follow the `tick.md#reading-without-a-tree` section.
-- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. The read-only rule above does not limit it.
+- A source command of the department page that passes its check runs as the `exhibits.md#run-a-source` section says. Read that section and `exhibits.md#source-values` in `lawman/skills/lawman-law/references/exhibits.md` when the case quotes such a command. The read-only rule above does not limit it.
 
 ## Tick
 
-Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. An answer with no alarm, no failure and no line of the update list is the silence form alone.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
 ### Step 0: the input and the order
 
@@ -33,7 +33,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role court
    ```
-   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -226,7 +226,7 @@ not_established: How many users want the option. Nothing was run.
 Ask the service for its judgment once, with the brief. `<p0|grade|requirement>` is the kind. Write it the same way in both places.
 
 1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, print `jev none reason=no-key` and stop this step.
-2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names under "The TypeSafe key". When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a process substitution that feeds a header. Read the section "The TypeSafe key" of the harness page for the form. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
 3. Run `bin/journal jev request --kind <p0|grade|requirement>`. Give it the brief on standard input, one `name: value` line per field. It prints the request body. When it fails, print `jev none reason=brief` and stop this step.
 4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
 5. Run `bin/journal jev answer --kind <p0|grade|requirement>`. Give it the response body and the status line on standard input. It prints one `jev` line.

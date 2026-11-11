@@ -16,13 +16,13 @@ Each role is an Agent Skill. The scheduler starts a role. The role takes a few o
 
 ### Harnesses
 
-Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Two harnesses have a page today. Lawman installs on Hermes Agent. OpenClaw has a page and install steps that no live run has proved yet. The other harnesses are TBD.
+Lawman installs as an Agent Plugins package, with one manifest at the repository root and one skill folder per role. Only Hermes Agent is Supported. Every other harness in the table of the harnesses page is TBD. OpenClaw has a page and install steps that no live run has proved yet.
 
 [Harnesses and layout](docs/harnesses.md)
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds fifteen required keys and three optional ones, among them the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds, among others, the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -42,7 +42,7 @@ A department is a page, not an agent. One generic patrol reads the page and swee
 
 ### The constitution
 
-A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner and from court rulings. The file also names the labels that mean something, among them the one that marks an issue for a person. The court applies that label when it refers a requirement to a decider, and removes it when it rules.
+A precinct's `LAWMAN.md` states what is true of that repository and of no other. The assembly writes a draft once for a repository without one, and the owner reviews it. Later amendments come from the owner, and from the assembly when the contract version moves. The file also names the labels that mean something, among them the one that marks an issue for a person. The court applies that label when it refers a requirement to a decider, and removes it when it rules.
 
 [Writing a constitution](docs/constitution.md)
 

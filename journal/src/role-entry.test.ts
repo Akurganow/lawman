@@ -8,7 +8,7 @@ import { withDb } from "./db";
 import { takeableOrders } from "./dispatch";
 import { captured, inprocAsync } from "./inproc";
 import { readConfig } from "./input-files";
-import { lawSections } from "./input-roles";
+import { lawOf, lawSections } from "./input-roles";
 import {
 	CONFIG,
 	config,
@@ -209,15 +209,6 @@ function expected(role: string): Expected[] {
 		court: ["## Precedent", "## Precedent"],
 	};
 	const wanted = markers[role];
-	// the sections that the three judging roles apply when they re-read exhibits
-	const exhibits = [
-		"## Read numbered lines",
-		"## Quote a claim of absence",
-		"## Follow a missing path",
-		"## Run a source",
-		"## Source values",
-		"## Ask an expert",
-	];
 	const extra: Expected[] = [
 		...(wanted === undefined
 			? []
@@ -225,9 +216,14 @@ function expected(role: string): Expected[] {
 		...(role === "patrol"
 			? [{ head: "law departments.md", whole: file("departments.md") }]
 			: []),
-		...(["prosecutor", "defender", "court"].includes(role)
-			? [{ head: "law exhibits.md", headings: exhibits }]
-			: []),
+		...lawOf(role)
+			.filter(([path]) => path === "exhibits.md")
+			.map(([, wanted]) => ({
+				head: "law exhibits.md",
+				headings: wanted.map((n) =>
+					n === "intro" ? "# Reading an exhibit" : `## ${n}`,
+				),
+			})),
 	];
 	return [
 		{ head: "law LAW.md", whole: lawLines(role) },

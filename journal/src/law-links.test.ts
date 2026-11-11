@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { existsSync, readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import { INTRO, lawOf, ROLES, WHOLE } from "./input-roles";
+import { INTRO, lawOf, ROLES, SELF_READS, WHOLE } from "./input-roles";
 import { ROLE_NAMES } from "./input-test-fixture";
 import {
 	DEPARTED,
@@ -16,16 +16,12 @@ import {
 } from "./law-links-fixture";
 import { LAW, ROOT } from "./test-helpers";
 
-// Patrol and investigation do not get exhibits.md in their input. Their skills tell
-// them to read the file themselves, so every section of it counts as read.
-const READS_EXHIBITS_ITSELF = ["patrol", "investigation"];
-const readOf = (role: string): Set<string> => {
-	const read = readBy(lawOf(role));
-	if (READS_EXHIBITS_ITSELF.includes(role))
-		for (const name of HEADINGS["exhibits.md"] ?? [])
-			read.add(`exhibits.md#${slug(name)}`);
-	return read;
-};
+// A section that a skill tells the role to read itself counts as read.
+const readOf = (role: string): Set<string> =>
+	readBy([...lawOf(role), ...(SELF_READS[role] ?? [])]);
+
+const readsAll = (role: string) =>
+	(SELF_READS[role] ?? []).some(([, sections]) => sections.includes(WHOLE));
 
 // the skill of a role and its references
 const filesOf = (role: string): string[] => {
@@ -66,9 +62,9 @@ describe("links from the skills to the sections of the law", () => {
 		"%s reads every section that a section it reads in LAW.md or tick.md names",
 		(role) => {
 			for (const file of ["LAW.md", "tick.md", "exhibits.md"]) {
-				// a role that reads exhibits.md itself follows its pointers itself
-				const read =
-					file === "exhibits.md" ? readBy(lawOf(role)) : readOf(role);
+				// a role that reads all of exhibits.md follows its pointers itself
+				if (file === "exhibits.md" && readsAll(role)) continue;
+				const read = readOf(role);
 				const text = readFileSync(join(LAW, file), "utf8");
 				expect([file, unreached(text, file, read)]).toEqual([file, []]);
 			}

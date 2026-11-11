@@ -53,13 +53,15 @@ Read the group to its last part. For a cut part, follow the `tick.md#parts` sect
 bin/journal tick input --role duty-desk --part <k>
 ```
 
-0.2. Sync the law as the section `tick.md#sync-the-law` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again. The sync prints no line of the update list. You build those lines after step 0.3, as the section `tick.md#sync-the-law` says.
+0.2. Sync the law as the section `tick.md#sync-the-law` says. Keep every `ALARM` line that the sync printed, for the answer. After the line `synced <tag>`, the group you hold is stale. Read every part of it again.
 
 0.3. Check the journal schema. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 ```
 bin/journal probe --schema 10
 ```
+
+0.4. Only after a `synced <tag>` line, build the update list as the section `tick.md#sync-the-law` says. Keep its lines for the answer. The sync prints none.
 
 ### Step 1: Start the tick
 

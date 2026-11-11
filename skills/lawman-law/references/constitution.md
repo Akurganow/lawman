@@ -8,7 +8,7 @@ contract_version: 4
 
 A constitution holds what is true of one repository and of no other.
 Each repository Lawman patrols carries one, as `LAWMAN.md` at its root.
-The assembly writes a draft once. The owner reviews it. Later amendments come from the owner.
+The assembly writes a draft once. The owner reviews it. Later amendments come from the owner, and from the assembly when the contract version moves.
 A constitution points at files by path. It never restates them.
 
 ## File shape
