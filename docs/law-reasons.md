@@ -54,11 +54,11 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > It completes an installation after the plugin was updated.
 
-> A stop is answered and not recorded, because no tick exists yet.
-
 ### Sync the law with an older journal
 
 > This section completes an installation after the plugin was updated.
+
+> A stop is answered and not recorded, because no tick exists yet.
 
 ### Working rules
 
@@ -233,10 +233,6 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Isolation
 
 > This matters because the docs say that a job with `--workdir` injects `AGENTS.md`, `CLAUDE.md` and `.cursorrules` from that directory into the system prompt.
-
-### What a second harness needs
-
-> Nothing changes in the skills or in the law, because both name no harness.
 
 ## skills/lawman-law/references/harnesses/openclaw.md
 

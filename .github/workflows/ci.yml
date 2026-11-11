@@ -26,7 +26,7 @@ jobs:
       - name: Clean through the compiled binary
         run: test "$(printf 'a <!-- hidden --> ![x](https://e.example/i.png)' | ./journal-smoke clean)" = "a [x](https://e.example/i.png)"
 
-  # The release workflow's cog bump reads every commit since the last tag
+  # The bump workflow's cog bump reads every commit since the last tag
   # (cog.toml), so each commit of a pull request must be a conventional commit.
   commits:
     if: github.event_name == 'pull_request'

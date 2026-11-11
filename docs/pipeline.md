@@ -155,7 +155,7 @@ The newest marker of a role on an issue wins. Nobody edits an old marker. A role
 
 A case runs in this order: lead, case, charge, defence, ruling, then the clerk's pull request. The journal reads the markers and names the next role. `bin/journal case <precinct> <issue>` prints `need=` with `investigation`, `prosecutor`, `defender`, `court`, `clerk` or `none`. An issue whose newest clerk marker names a pull request has left the funnel.
 
-An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The line also prints `kind=` with `defect` or `requirement`, and the answer as `answer=` and `answer_id=`.
+An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The fields of the line are in [Read the stage](../skills/lawman-law/references/tick.md#read-the-stage).
 
 A pull request has its own stage. `bin/journal pull <precinct> <pull request>` prints `need=` with `spec-writer`, `executor` or `none`. A pull request needs a spec when it has none or when the newest spec drew a 👎. It needs the executor when the newest spec has a 👍 and its `work` is `todo` or `returned`. Only a pull request that the clerk handed, in a precinct with a weight above zero, gets an order.
 
@@ -177,13 +177,13 @@ The duty desk runs first.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --order`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
+Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --role <role> --order <id>`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 
 A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Three steps wait for a person: the vote on the spec, the review of the pull request and the merge of a precedent pull request. The journal raises the alarm `decision-waiting` for each of them.
 
 ### Every tick
 
-Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --order` checks the trusted login and computes the alarms. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the trusted login and computes the alarms. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
@@ -202,30 +202,30 @@ The role entry tells a harness whether a role has work. The harness runs a small
 
 The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
 
-The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
 
 An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
 ## What reaches the developer
 
-Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you, and a stop of the law sync or of the duty desk.
+Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you. So do a stop of the law sync, a stop of the duty desk and the update list that [Sync the law](../skills/lawman-law/references/tick.md#sync-the-law) defines.
 
 ### Alarms
 
-The journal computes the first seven alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
+The column Raised by says who prints each alarm. The `case` and `sweep` alarms name a path and a line, never a value.
 
-| Alarm | Raised when |
-| :-- | :-- |
-| `no-progress` | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
-| `tick-hung` | A tick has no end record while a later tick of its role exists. |
-| `role-silent` | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
-| `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
-| `no-constitution` | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no orders there, and the clerk goes on. The alarm clears when the constitution is usable. |
-| `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
-| `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
-| `sweep` | Patrol finds a live secret in the tree or the history. |
-| `referral` | The court refers a requirement to a decider. |
+| Alarm | Raised by | Raised when |
+| :-- | :-- | :-- |
+| `no-progress` | journal | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
+| `tick-hung` | journal | A tick has no end record while a later tick of its role exists. |
+| `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
+| `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
+| `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
+| `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no orders there, and the clerk goes on. The alarm clears when the constitution is usable. |
+| `contract-changed` | [law update](journal.md#updates) | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
+| `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
+| `sweep` | a role | Patrol finds a live secret in the tree or the history. |
+| `referral` | a role | The court refers a requirement to a decider. |
 
 The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. A host command that leaves out the field `url` gives no link to the alarms the journal computes. An alarm line defeats the silence form, so the reply is delivered.
 
