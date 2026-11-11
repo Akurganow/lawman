@@ -9,9 +9,8 @@ import {
 	pullsOf,
 } from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
+import { holdsPrecedent } from "./law-sections";
 import { leadOrigins, symbolOf } from "./leads";
-import { holdsPrecedent } from "./precedent-items";
-import { rulingComment, trustedLogin } from "./ruling-comment";
 
 const CASE_USAGE = "case <precinct> <issue>";
 
@@ -84,23 +83,30 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 
 export type CaseView = { need: Need; clerk: ClerkCase };
 
-// whether the cached comment of the ruling has a Precedent section with a line
-function rulingHoldsPrecedent(
+// The cached comment whose last line is the counted marker with this ord. The
+// rank of the ord is the comment's place among the comments by time.
+export function rulingComment(
 	db: Database,
 	precinct: string,
 	issue: number,
-	ruling: CaseMarker | undefined,
-): boolean {
-	if (ruling === undefined) return false;
+	ord: string,
+): string | undefined {
+	const rank = Number(ord.split("|")[ORD_RANK_PART]);
 	const raw = (
 		db
 			.query(
 				"SELECT raw FROM markers WHERE precinct = ? AND issue = ? AND ord = ?",
 			)
-			.get(precinct, issue, ruling.ord) as { raw: string } | null
+			.get(precinct, issue, ord) as { raw: string } | null
 	)?.raw;
-	const body = rulingComment(db, precinct, issue, raw ?? "", trustedLogin());
-	return body !== undefined && holdsPrecedent(body);
+	const body = (
+		db
+			.query(
+				"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
+			)
+			.get(precinct, issue, rank - 1) as { body: string } | null
+	)?.body;
+	return body?.trimEnd().split("\n").at(-1)?.trim() === raw ? body : undefined;
 }
 
 // A pair marker means the case left the funnel. Only the clerk is left to act.
@@ -123,8 +129,10 @@ export function caseOf(
 		pulls: pullsOf(db, precinct),
 		isClosed: closedIn(db, precinct),
 		ruling: funnel.ruling,
-		holdsPrecedent: () =>
-			rulingHoldsPrecedent(db, precinct, issue, funnel.ruling),
+		holdsPrecedent: () => {
+			const body = rulingComment(db, precinct, issue, funnel.ruling?.ord ?? "");
+			return body !== undefined && holdsPrecedent(body);
+		},
 		others: () => clerkMarkersOf(db, precinct),
 	});
 	if (clerk.job !== "-") return { need: "clerk", clerk };

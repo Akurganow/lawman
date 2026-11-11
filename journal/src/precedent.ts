@@ -12,9 +12,8 @@ import {
 import { dirname, join } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
-import { caseStage, markersOf } from "./cases";
+import { caseStage, rulingComment } from "./cases";
 import { cleanCharacters } from "./clean";
-import { answers } from "./clerk-jobs";
 import { consents, jevAllowed, licensesAllowed } from "./consent";
 import { EXIT, Fail, out, readStdin, withDb } from "./db";
 import {
@@ -26,7 +25,14 @@ import {
 import { readConfig } from "./input-files";
 import { jevNone, replyOf } from "./jev";
 import { utf8 } from "./launch";
-import { sectionNodes, sectionWords, sliceOf } from "./law-sections";
+import {
+	type Item,
+	itemsOf,
+	sectionNodes,
+	sectionWords,
+	sliceOf,
+} from "./law-sections";
+import { configValue } from "./law-sync";
 import { lintPage } from "./lint";
 import {
 	ALL,
@@ -51,10 +57,6 @@ import {
 	splitPrecedent,
 	withDepartments,
 } from "./precedent-file";
-import { type Item, itemsOf } from "./precedent-items";
-import { rulingComment, trustedLogin } from "./ruling-comment";
-
-export { trustedLogin };
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
@@ -62,7 +64,6 @@ const CONSTITUTION = "LAWMAN.md";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
 const NONE = "none";
-const ANSWERED = "answered";
 const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // the names stand before the first colon, so no character of the rule reads as a name
 const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
@@ -305,13 +306,13 @@ function apply(
 	};
 }
 
-type Stored = { stage: string; fields: string; raw: string; ord: string };
+type Stored = { stage: string; fields: string; ord: string };
 
 // the newest court marker of the case, which must be a ruling
 function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	const row = db
 		.query(
-			"SELECT stage, fields, raw, ord FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
+			"SELECT stage, fields, ord FROM markers WHERE precinct = ? AND issue = ? AND role = 'court' ORDER BY ord DESC LIMIT 1",
 		)
 		.get(precinct, issue) as Stored | null;
 	if (row === null || !KIND_OF.has(row.stage))
@@ -319,21 +320,27 @@ function rulingMarker(db: Database, precinct: string, issue: number): Stored {
 	return row;
 }
 
-// the cached ruling comment: its last line is the newest ruling marker of the case
+// the cached comment that holds the newest ruling marker of the case
 function rulingText(
 	db: Database,
 	precinct: string,
 	issue: number,
-	raw: string,
-	login: string,
+	ord: string,
 ): string {
-	const body = rulingComment(db, precinct, issue, raw, login);
+	const body = rulingComment(db, precinct, issue, ord);
 	if (body === undefined)
 		throw new Fail(
 			EXIT.USAGE,
 			`no cached comment carries the court ruling of ${precinct} #${issue}`,
 		);
 	return body;
+}
+
+export function trustedLogin(): string {
+	const login = configValue(readConfig() ?? "", "trusted_login");
+	if (login === undefined || !fits("login", login))
+		throw new Fail(EXIT.USAGE, "config.yaml has no valid trusted_login");
+	return login;
 }
 
 function summary(sections: Item[][], lines: string[]): string[] {
@@ -353,21 +360,16 @@ function summary(sections: Item[][], lines: string[]): string[] {
 
 // the newest ruling of the case and its cached comment
 function rulingOf(precinct: string, issue: number) {
-	const login = trustedLogin();
-	const { marker, text, answered } = withDb((db) => {
+	trustedLogin();
+	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
-		return {
-			marker: m,
-			text: rulingText(db, precinct, issue, m.raw, login),
-			answered: markersOf(db, precinct, issue).some((c) => answers(c, m.ord)),
-		};
+		return { marker: m, text: rulingText(db, precinct, issue, m.ord) };
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	return {
 		precedentKind: KIND_OF.get(marker.stage) ?? NO_VALUE,
 		date: at.slice(0, 10),
 		text,
-		answered,
 	};
 }
 
@@ -583,12 +585,7 @@ async function writePrecedents(
 	tree: string,
 	source: string,
 ): Promise<void> {
-	const { precedentKind, date, text, answered } = rulingOf(precinct, issue);
-	// the clerk has already recorded this ruling, so no file is written a second time
-	if (answered) {
-		out("no-entry", ANSWERED);
-		return;
-	}
+	const { precedentKind, date, text } = rulingOf(precinct, issue);
 	const sections = itemsOfRuling(text);
 	const items = sections.flat();
 	const config = readConfig();
@@ -654,8 +651,6 @@ export type OldItem = {
 	end: number;
 	text: string;
 	line?: { date: string; number: number; rule: string; link?: string };
-	// an HTML block that holds a line of the old form: the move cannot take it
-	hidden?: true;
 };
 
 function oldLine(text: string): OldItem["line"] {
@@ -671,15 +666,15 @@ function oldLine(text: string): OldItem["line"] {
 		: { date, number: Number(number), rule, link };
 }
 
-// A line of the old form that an HTML block holds is part of that block, so it is
-// no item of its own. The block stands in its place, and the move cannot take it.
+// A line of the old form that an HTML block holds is part of that block, so the
+// block stands in its place as an item that the move cannot take.
 function oldItemsOf(page: string, node: RootContent): Item[] {
 	if (node.type !== "html") return itemsOf(page, [node]);
 	const text = sliceOf(page, node, node);
 	const holds = text
 		.split(/\r\n|\r|\n/)
 		.some((l) => OLD_LINE.test(l.trim().replace(LIST_PREFIX, "")));
-	return holds ? [{ text, bad: true, hidden: true }] : [];
+	return holds ? [{ text, bad: true }] : [];
 }
 
 // every item of the old sections except `none`, numbered from 1 in page order
@@ -713,7 +708,6 @@ export function oldItems(page: string): OldItem[] {
 				start: i.start,
 				end: i.end,
 				text: i.text,
-				...(i.hidden ? { hidden: true as const } : {}),
 				...(line === undefined ? {} : { line }),
 			};
 		});
@@ -785,23 +779,6 @@ function swapPage(
 	}
 }
 
-// The page of the tree and the one numbered line of it, or a refusal.
-export function oldLineAt(tree: string, number: number) {
-	const path = join(tree, CONSTITUTION);
-	if (treeFile(tree, [CONSTITUTION]).kind !== "page") throw unsafe(path);
-	const text = utf8(readFileSync(path));
-	if (text === null)
-		throw new Fail(EXIT.USAGE, `${CONSTITUTION} is not UTF-8, nothing written`);
-	const found = oldItems(text).filter((i) => i.line?.number === number);
-	const [item] = found;
-	if (item?.line === undefined || found.length > 1)
-		throw new Fail(
-			EXIT.USAGE,
-			`expected exactly one precedent line #${number}`,
-		);
-	return { path, text, item, line: item.line };
-}
-
 // One numbered line of an old Precedents section becomes a file, and the line
 // leaves LAWMAN.md of the tree.
 export function oldLineToFile(o: OldLine): string {
@@ -809,8 +786,19 @@ export function oldLineToFile(o: OldLine): string {
 		throw new Fail(EXIT.USAGE, `invalid gist: ${JSON.stringify(o.gist)}`);
 	if (!PRECEDENT_KINDS.includes(o.kind))
 		throw new Fail(EXIT.USAGE, `invalid kind: ${JSON.stringify(o.kind)}`);
-	const { path, text, item, line } = oldLineAt(o.tree, o.number);
-	const { date, rule, link } = line;
+	const path = join(o.tree, CONSTITUTION);
+	if (treeFile(o.tree, [CONSTITUTION]).kind !== "page") throw unsafe(path);
+	const text = utf8(readFileSync(path));
+	if (text === null)
+		throw new Fail(EXIT.USAGE, `${CONSTITUTION} is not UTF-8, nothing written`);
+	const found = oldItems(text).filter((i) => i.line?.number === o.number);
+	const [item] = found;
+	if (item?.line === undefined || found.length > 1)
+		throw new Fail(
+			EXIT.USAGE,
+			`expected exactly one precedent line #${o.number}`,
+		);
+	const { date, rule, link } = item.line;
 	const folder = new Folder(o.tree);
 	const name = folder.free(`${date}-${o.gist}`);
 	folder.set(

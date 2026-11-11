@@ -109,24 +109,8 @@ describe("old-precedent list", () => {
 		);
 	});
 
-	test("an old line inside an HTML block prints as outside", async () => {
-		const text = page(
-			"- 2026-09-02 #1: First.",
-			"",
-			"<details>",
-			"<summary>More</summary>",
-			"</details>",
-			"2026-09-03 #2: Appended after the block, so the block holds it.",
-		);
-		const r = await inprocFed(BASE, ["old-precedent", "list"], text);
-		expect(r.out).toBe(
-			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nFirst.\n~~~\noutside position=2\n",
-		);
-	});
-
-	test.each(["1. ", "-  ", "* ", "2) "])(
-		"an old line behind the list prefix %j inside an HTML block prints as outside",
-		async (prefix) => {
+	test("an old line in an HTML block prints as outside, behind any list prefix", async () => {
+		for (const prefix of ["", "- ", "1. ", "-  ", "2) "]) {
 			const text = page(
 				"<details>",
 				`${prefix}2026-09-03 #2: Hidden.`,
@@ -134,21 +118,10 @@ describe("old-precedent list", () => {
 			);
 			const r = await inprocFed(BASE, ["old-precedent", "list"], text);
 			expect(r.out).toBe("outside position=1\n");
-		},
-	);
-
-	test("an HTML block with no old line is no item", async () => {
-		const text = page(
-			"- 2026-09-02 #1: First.",
-			"",
-			"<!-- a note -->",
-			"<details>",
-			"More",
-			"</details>",
-		);
-		const r = await inprocFed(BASE, ["old-precedent", "list"], text);
-		expect(r.out).toBe(
-			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nFirst.\n~~~\n",
+		}
+		const plain = page("<details>", "More", "</details>");
+		expect((await inprocFed(BASE, ["old-precedent", "list"], plain)).out).toBe(
+			"none\n",
 		);
 	});
 
@@ -216,14 +189,6 @@ describe("old-precedent added", () => {
 		);
 		// against the tip the moved line would count again
 		expect((await added(tip, head)).out).toContain("line 1 ");
-	});
-
-	test("an HTML block that hides an old line is added when the base lacks it", async () => {
-		const block = ["<details>", "2026-09-04 #3: Hidden.", "</details>"];
-		const base = page("- 2026-09-02 #1: First.");
-		const head = page("- 2026-09-02 #1: First.", "", ...block);
-		expect((await added(base, head)).out).toBe("outside position=2\n");
-		expect((await added(head, head)).out).toBe("none\n");
 	});
 
 	test("an edited old line and a free note are not added old lines", async () => {
@@ -410,16 +375,6 @@ describe("old-precedent move", () => {
 				`- 2026-09-02 #1: An unused callback parameter is not dead. (${LINK})`,
 			).replaceAll("\n", "\r\n"),
 		);
-	});
-
-	test("a missing line fails before it asks anything", async () => {
-		const r = await move("", "--line", "9");
-		expect(r).toEqual({
-			code: EXIT.USAGE,
-			out: "",
-			err: "journal: expected exactly one precedent line #9\n",
-		});
-		expect(lawman()).toBe(PAGE);
 	});
 
 	test("a missing line fails and writes nothing", async () => {

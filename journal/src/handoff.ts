@@ -4,12 +4,9 @@ import { fenceLength } from "./clean-quote";
 import { EXIT, Fail, now, readStdin } from "./db";
 
 const HANDOFF_USAGE =
-	"handoff --sources <a,b,…> [--adopted] [--field] [--merged <m>] (stdin: the old pull request body, with --adopted)";
+	"handoff --sources <a,b,…> [--adopted] [--merged <m>] (stdin: the old pull request body, with --adopted)";
 const POSITIVE = /^[1-9][0-9]*$/;
 const ADOPTED_FLAG = "--adopted";
-const FIELD_FLAG = "--field";
-// the line that the open recipe of the clerk puts in the body of its own draft
-const OWN_DRAFT = "Draft opened by the clerk to carry out the court ruling.";
 const TITLE = "Clerk";
 const MIN_FENCE = 3;
 const CLEAN_FAILED =
@@ -54,32 +51,21 @@ export async function buildHandoff(input: HandoffInput): Promise<string> {
 	return `${TITLE}\n\n${blocks.join("\n\n")}\n`;
 }
 
-function splitFlags(args: string[]): {
-	adopted: boolean;
-	field: boolean;
-	rest: string[];
-} {
+function splitAdopted(args: string[]): { adopted: boolean; rest: string[] } {
 	const rest: string[] = [];
-	const seen = new Set<string>();
+	let adopted = false;
 	for (let i = 0; i < args.length; ) {
-		const arg = args[i] ?? "";
-		if (arg === ADOPTED_FLAG || arg === FIELD_FLAG) {
-			if (seen.has(arg)) throw usage(HANDOFF_USAGE);
-			seen.add(arg);
+		if (args[i] === ADOPTED_FLAG) {
+			if (adopted) throw usage(HANDOFF_USAGE);
+			adopted = true;
 			i += 1;
 		} else {
 			rest.push(...args.slice(i, i + 2));
 			i += 2;
 		}
 	}
-	return { adopted: seen.has(ADOPTED_FLAG), field: seen.has(FIELD_FLAG), rest };
+	return { adopted, rest };
 }
-
-// the field of the `handed` marker that the adopt job writes: empty for a draft of the clerk
-export const adoptedField = (oldBody: string) =>
-	oldBody.split(/\r\n|\r|\n/).some((l) => l.trim() === OWN_DRAFT)
-		? ""
-		: "adopted=yes\n";
 
 function positive(value: string): string {
 	if (!POSITIVE.test(value)) throw usage(HANDOFF_USAGE);
@@ -87,18 +73,12 @@ function positive(value: string): string {
 }
 
 export async function handoffCommand(args: string[]): Promise<number> {
-	const { adopted, field, rest } = splitFlags(args);
-	if (field && !adopted) throw usage(HANDOFF_USAGE);
+	const { adopted, rest } = splitAdopted(args);
 	const { opt } = parseArgs(rest, 0, ["sources"], HANDOFF_USAGE, ["merged"]);
-	const old = adopted ? readStdin() : undefined;
-	if (field) {
-		process.stdout.write(adoptedField(old ?? ""));
-		return EXIT.OK;
-	}
 	const text = await buildHandoff({
 		sources: opt.sources.split(",").map(positive),
 		merged: opt.merged === undefined ? undefined : positive(opt.merged),
-		adopted: old,
+		adopted: adopted ? readStdin() : undefined,
 		at: now(),
 	});
 	process.stdout.write(text);

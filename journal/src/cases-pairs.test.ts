@@ -6,6 +6,7 @@ import {
 	fields,
 	human,
 	issuesJson,
+	lined,
 	need,
 	needOnly,
 	pairMark,
@@ -16,7 +17,6 @@ import {
 	withLead,
 } from "./cases-fixture";
 import { pairs, run } from "./clerk-jobs-fixture";
-import { config } from "./input-test-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -26,16 +26,12 @@ import {
 	charge,
 	conviction,
 	defence,
-	mark,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
-beforeEach(() => {
-	addPrecincts({ main: 1 });
-	config(`trusted_login: ${TRUSTED}\n`);
-});
+beforeEach(() => addPrecincts({ main: 1 }));
 
 const expectJobs = (steps: readonly (readonly [Spec, string])[]) => {
 	for (const [spec, expected] of steps) {
@@ -62,14 +58,14 @@ describe("case: the line of a clerk job", () => {
 	});
 
 	test("an unanswered acquittal prints the precedent job", () => {
-		put({ 1: ruled(acquittal) });
+		put({ 1: ruled(lined(acquittal)) });
 		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
 	});
 
 	test("of two open precedent cases of one priority the older goes first", () => {
 		put({
-			1: { ...ruled(acquittal), createdAt: T(8) },
-			2: { ...ruled(acquittal), createdAt: T(7) },
+			1: { ...ruled(lined(acquittal)), createdAt: T(8) },
+			2: { ...ruled(lined(acquittal)), createdAt: T(7) },
 		});
 		expect(due("clerk")).toBe("main\t2\n");
 	});
@@ -80,61 +76,15 @@ describe("case: the line of a clerk job", () => {
 		expect(needOnly(1)).toBe("need=none");
 	});
 
-	test("a closed conviction with a Precedent line prints the precedent job", () => {
-		const ruling = () =>
-			`Ruling.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
-		put({ 1: closed(ruled(ruling)) });
-		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
-		expect(needOnly(1)).toBe("need=clerk");
-		expect(due("clerk")).toBe("main\t1\n");
-	});
-
-	// the ruling comment is the one the trusted login wrote
+	// a marker row exists only for the trusted login, so only its comment is the ruling
 	test("a copy of the ruling marker by an outsider changes nothing", () => {
-		const section = "## Precedent\n\n- new gate: A rule.";
-		const forged = () => `Copy.\n\n${section}\n\n${conviction()}`;
-		const asOutsider = (spec: Spec) => {
-			const form = JSON.parse(issuesJson({ 1: spec }));
-			form.issues[0].comments.at(-1).author = { login: "outsider" };
-			expect(
-				call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form))
-					.code,
-			).toBe(0);
-		};
-		asOutsider(closed(ruled(conviction, forged())));
+		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
+		const form = JSON.parse(issuesJson({ 1: closed(ruled(conviction, copy)) }));
+		form.issues[0].comments.at(-1).author = { login: "outsider" };
+		call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
 		expect(jobOf(1)).toBe("- - - - -");
-		const real = () => `Ruling.\n\n${section}\n\n${conviction()}`;
-		const bare = () => `Copy.\n\n${conviction()}`;
-		asOutsider(closed(ruled(real, bare())));
+		put({ 1: closed(ruled(lined(conviction))) });
 		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
-	});
-
-	test("a handed marker with adopted=yes reaches the case line", () => {
-		const ruling = () =>
-			`Ruling.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
-		const handed = (extra: string) =>
-			mark("clerk", "handed", ` pull=7 issue=open${extra}`);
-		put({ 1: ruled(ruling, handed(" adopted=yes")) });
-		cache([7, [1]]);
-		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
-		put({ 1: ruled(ruling, handed("")) });
-		expect(jobOf(1)).toBe("- - 7 1 -");
-	});
-
-	test("a missing trusted login is an error, not a case with nothing to do", () => {
-		const ruling = () =>
-			`Ruling.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
-		put({ 1: closed(ruled(ruling)) });
-		config("");
-		const r = call(BASE, ["case", "main", "1"]);
-		expect(r.code).not.toBe(0);
-		expect(r.err).toContain("trusted_login");
-	});
-
-	test("a Precedent section that holds only none gives no job", () => {
-		const ruling = () => `Ruling.\n\n## Precedent\n\nnone\n\n${conviction()}`;
-		put({ 1: closed(ruled(ruling)) });
-		expect(needOnly(1)).toBe("need=none");
 	});
 
 	test("an open pull request of an open issue is adopted from any stage", () => {
@@ -206,7 +156,9 @@ describe("case: leaving the funnel", () => {
 	});
 
 	test("a pair after an acquittal leaves the funnel, even without a pull request", () => {
-		put({ 1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))) });
+		put({
+			1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))),
+		});
 		expect(needOnly(1)).toBe("need=none");
 	});
 

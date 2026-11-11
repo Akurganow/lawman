@@ -102,7 +102,7 @@ The clerk takes an order for one job on an issue. The journal names the job. The
 - It takes up an open pull request of the trusted login.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
-- It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. For a conviction, the files come in the draft pull request that carries the fix. An acquittal, and a conviction that no such draft carries, get a precedent pull request of their own for you to merge.
+- It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. The clerk opens a pull request with them for you to merge.
 - It records your decision on that pull request.
 
 After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
@@ -252,7 +252,7 @@ The funnel runs without you until a decision needs a person. On a pull request, 
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
 - **Close a pull request to decline it.** The clerk then closes its open source issues as not planned.
 - **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing.
-- **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A conviction's precedent comes in its draft pull request. Without such a draft it gets a precedent pull request of its own. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
+- **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live
 

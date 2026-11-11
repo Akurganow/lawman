@@ -118,6 +118,10 @@ export function cache(...pulls: [number, number[], string?][]) {
 export const ruled = (ruling: () => string, ...rest: string[]) =>
 	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
 
+// a ruling with a Precedent line, so the clerk has a precedent to record
+export const lined = (ruling: () => string) => () =>
+	`## Precedent\n\n- new gate: A rule.\n\n${ruling()}`;
+
 export const referral = () => mark("court", "referral", ` sha=${SHA}`);
 
 export const answer = (n: number, value: string, id = "-", name = "main") =>
@@ -145,18 +149,13 @@ export function expectRoundKept(spec: Spec) {
 }
 
 // The first case or pull request the role is due on, as the duty desk would order it first.
-// the journal reads its config from the folder of its database
 export function due(role: string): string {
-	const saved = process.env.LAWMAN_DB;
-	process.env.LAWMAN_DB = dbFile;
 	const db = open(dbFile);
 	try {
 		const first = dueEntries(db, role)[0];
 		return first === undefined ? "" : `${first.precinct}\t${first.number}\n`;
 	} finally {
 		db.close();
-		if (saved === undefined) delete process.env.LAWMAN_DB;
-		else process.env.LAWMAN_DB = saved;
 	}
 }
 

@@ -29,7 +29,7 @@ export type Scene = {
 	pulls?: CachedPull[];
 	closed?: number[];
 	ruling?: CaseMarker;
-	// whether the ruling has a Precedent section with a line; true when absent
+	// whether the ruling holds a Precedent line other than none; true when absent
 	holds?: boolean;
 	others?: Record<number, CaseMarker[]>;
 };

@@ -158,36 +158,10 @@ describe("handoff command", () => {
 		[["--sources", "1", "--sources", "2"]],
 		[["--sources", "1", "--other", "2"]],
 		[["--adopted"]],
-		[["--sources", "1", "--field"]],
-		[["--sources", "1", "--adopted", "--field", "--field"]],
 	])("bad args %j are a usage error", (args) => {
 		const r = run(args, "body");
 		expect(r.code).toBe(EXIT.USAGE);
 		expect(r.out).toBe("");
 		expect(r.err).not.toBe("");
-	});
-});
-
-describe("the field of the adopt marker", () => {
-	const field = (body: string) =>
-		run(["--sources", "1", "--adopted", "--field"], body);
-
-	test("a body that is not the clerk's own draft gives adopted=yes", () => {
-		expect(field("Some human-made fix.\n")).toMatchObject({
-			code: EXIT.OK,
-			out: "adopted=yes\n",
-		});
-	});
-
-	test("the body of a draft of the clerk gives nothing", () => {
-		const own =
-			"Closes #1\r\n\r\nDraft opened by the clerk to carry out the court ruling.\r\nRuling: https://git.example.com/o/r/issues/1#c-7\r\n";
-		expect(field(own)).toMatchObject({ code: EXIT.OK, out: "" });
-	});
-
-	test("the sentence inside a longer line does not count", () => {
-		const text =
-			"I wrote: Draft opened by the clerk to carry out the court ruling.";
-		expect(field(text).out).toBe("adopted=yes\n");
 	});
 });

@@ -4,13 +4,13 @@ import {
 	due,
 	expectNeed,
 	expectRoundKept,
+	lined,
 	need,
 	needOnly,
 	put,
 	ruled,
 	withLead,
 } from "./cases-fixture";
-import { config } from "./input-test-fixture";
 import {
 	acquittal,
 	addPrecincts,
@@ -21,21 +21,21 @@ import {
 	entry,
 	noEntry,
 	returnTo,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
-beforeEach(() => {
-	addPrecincts({ main: 1 });
-	config(`trusted_login: ${TRUSTED}\n`);
-});
+beforeEach(() => addPrecincts({ main: 1 }));
 
 describe("case: clerk stage", () => {
 	test.each([
 		["an open conviction needs the clerk", ruled(conviction), "clerk"],
-		["an open acquittal needs the clerk", ruled(acquittal), "clerk"],
-		["a closed acquittal needs the clerk", closed(ruled(acquittal)), "clerk"],
+		["an open acquittal needs the clerk", ruled(lined(acquittal)), "clerk"],
+		[
+			"a closed acquittal needs the clerk",
+			closed(ruled(lined(acquittal))),
+			"clerk",
+		],
 		["a closed conviction needs nobody", closed(ruled(conviction)), "none"],
 		[
 			"an entry does not answer an open conviction",
@@ -44,7 +44,7 @@ describe("case: clerk stage", () => {
 		],
 		[
 			"a no-entry newer than the acquittal needs nobody",
-			ruled(acquittal, noEntry()),
+			ruled(lined(acquittal), noEntry()),
 			"none",
 		],
 		[
@@ -54,7 +54,7 @@ describe("case: clerk stage", () => {
 		],
 		[
 			"a closed no-entry newer than the acquittal needs nobody",
-			closed(ruled(acquittal, noEntry())),
+			closed(ruled(lined(acquittal), noEntry())),
 			"none",
 		],
 		[
@@ -64,7 +64,14 @@ describe("case: clerk stage", () => {
 		],
 		[
 			"a new cycle after an entry needs the clerk",
-			ruled(conviction, entry(), caseMark(), charge(), defence(), acquittal()),
+			ruled(
+				conviction,
+				entry(),
+				caseMark(),
+				charge(),
+				defence(),
+				lined(acquittal)(),
+			),
 			"clerk",
 		],
 		[
@@ -80,7 +87,7 @@ describe("case: clerk stage", () => {
 	});
 
 	test("clerk markers leave round and returned unchanged", () => {
-		expectRoundKept(ruled(acquittal, entry()));
+		expectRoundKept(ruled(lined(acquittal), entry()));
 	});
 
 	test("a clerk return marker leaves round and returned unchanged", () => {
@@ -92,11 +99,11 @@ describe("case: clerk stage", () => {
 		put({ 1: ruled(conviction) });
 		expect(due("clerk")).toBe("main\t1\n");
 		put({
-			1: ruled(acquittal, noEntry()),
-			2: closed(ruled(acquittal)),
+			1: ruled(lined(acquittal), noEntry()),
+			2: closed(ruled(lined(acquittal))),
 		});
 		expect(due("clerk")).toBe("main\t2\n");
-		put({ 2: closed(ruled(acquittal, noEntry())) });
+		put({ 2: closed(ruled(lined(acquittal), noEntry())) });
 		expect(due("clerk")).toBe("");
 	});
 });

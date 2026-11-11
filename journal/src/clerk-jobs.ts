@@ -27,7 +27,7 @@ export type ClerkInput = {
 	pulls: CachedPull[];
 	isClosed: (issue: number) => boolean;
 	ruling: CaseMarker | undefined;
-	// whether the ruling has a Precedent section with a line, read only when needed
+	// whether the ruling holds a Precedent line other than none, read only when needed
 	holdsPrecedent: () => boolean;
 	// the clerk markers of the other issues of the precinct, read only when needed
 	others: () => Map<number, CaseMarker[]>;
@@ -55,15 +55,6 @@ const pairMarkers = (markers: CaseMarker[]) =>
 	markers.filter(isPairMarker).sort(byOrd);
 
 export const hasPair = (markers: CaseMarker[]) => markers.some(isPairMarker);
-
-// The adopt recipe writes this field on the `handed` marker of a pull request
-// that is no draft of the clerk.
-const ADOPTED_FIELD = "adopted";
-
-// A clerk marker newer than the ruling that answers it: the entry of a precedent
-// pull request, or the comment that says there is none.
-export const answers = (m: CaseMarker, rulingOrd: string) =>
-	m.role === "clerk" && ANSWERS.includes(m.stage) && m.ord > rulingOrd;
 
 // the precedent pull requests of an issue whose newest entry, final or kept marker is entry, ascending
 export function awaitingDecision(markers: CaseMarker[]): number[] {
@@ -124,54 +115,48 @@ const NO_JOB = job(NONE);
 
 function tableRow(
 	i: ClerkInput,
-	pairs: CaseMarker[],
+	k: CaseMarker | undefined,
 	base: string | undefined,
 	pull: CachedPull | undefined,
 ): Row {
-	const k = pairs.at(-1);
 	const open = i.state === "OPEN";
 	const points = pull !== undefined && Number(k?.fields.pull) === pull.number;
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
+	if (pull === undefined && base === "handed") return job("settle");
 	const decided = awaitingDecision(i.markers).find(
 		(m) => !i.pulls.some((p) => p.number === m),
 	);
 	if (decided !== undefined)
 		return { ...job("decision"), pull: String(decided) };
-	const ruling = i.ruling;
-	if (ruling === undefined) return NO_JOB;
-	const conviction = ruling.stage === "conviction";
-	if (conviction && k === undefined && open) return job("open");
-	// a draft that the clerk opened after the ruling, as the first pair, holds its files
-	const [first] = pairs;
-	const draft =
-		first !== undefined &&
-		first.ord > ruling.ord &&
-		first.fields[ADOPTED_FIELD] !== "yes";
-	if (conviction && draft) return NO_JOB;
-	if (i.markers.some((m) => answers(m, ruling.ord))) return NO_JOB;
-	// only the paths that once recorded nothing wait for a ruling that has a line
-	if ((conviction || k !== undefined) && !i.holdsPrecedent()) return NO_JOB;
-	return { ...job("precedent"), pull: NONE };
+	if (i.ruling === undefined) return NO_JOB;
+	if (i.ruling.stage === "conviction" && k === undefined && open)
+		return job("open");
+	const answered = i.markers.some(
+		(m) =>
+			m.role === "clerk" &&
+			ANSWERS.includes(m.stage) &&
+			m.ord > (i.ruling?.ord ?? ""),
+	);
+	return answered || !i.holdsPrecedent()
+		? NO_JOB
+		: { ...job("precedent"), pull: NONE };
 }
 
 function rowOf(
 	i: ClerkInput,
-	pairs: CaseMarker[],
+	k: CaseMarker | undefined,
+	base: string | undefined,
 	pull: CachedPull | undefined,
 ): Row {
-	const k = pairs.at(-1);
-	const base = baseOf(pairs);
 	const closed = i.state === "CLOSED";
-	// a pull request that left the cache is settled before a close of the issue is recorded
-	if (pull === undefined && base === "handed") return job("settle");
 	if (k !== undefined && k.fields.issue !== i.state.toLowerCase()) {
 		const closePull =
 			pull?.issues.includes(i.issue) === true && pull.issues.every(i.isClosed);
 		return job("state", stateAction(base, closed, closePull));
 	}
-	return tableRow(i, pairs, base, pull);
+	return tableRow(i, k, base, pull);
 }
 
 function branchOf(i: ClerkInput, pairs: CaseMarker[], row: Row) {
@@ -224,7 +209,7 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 		i.pulls
 			.filter((p) => p.issues.includes(i.issue))
 			.sort((a, b) => a.number - b.number)[0];
-	const row = rowOf(i, pairs, pull);
+	const row = rowOf(i, k, baseOf(pairs), pull);
 	const found = pull === undefined ? NONE : String(pull.number);
 	return {
 		priority: priorityOf(i.markers),

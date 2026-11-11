@@ -59,13 +59,13 @@ describe("state rule: base and issue state", () => {
 		expect(r).toMatchObject({ job: "state", action, pull: "7" });
 	});
 
-	test("a closed issue whose pull request left the cache settles at once", () => {
+	test("a closed issue whose pull request left the cache is kept, not closed", () => {
 		const r = run({
 			state: "CLOSED",
 			markers: pairs(["handed", "7", "open"]),
 			closed: [1],
 		});
-		expect(r).toMatchObject({ job: "settle", action: "-", pull: "7" });
+		expect(r).toMatchObject({ job: "state", action: "kept" });
 	});
 
 	test("a source missing from the issue cache counts as open", () => {
@@ -212,33 +212,15 @@ describe("table rows", () => {
 		});
 	});
 
-	test("a conviction on a closed issue with no pair records its precedent", () => {
-		expect(run({ state: "CLOSED", ruling: conviction() })).toMatchObject({
-			job: "precedent",
-			action: "-",
-			pull: "-",
-			sources: "-",
-			branch: "lawman/precedent-1-1",
-		});
+	test("4: a conviction on a closed issue records its precedent", () => {
+		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe(
+			"precedent",
+		);
 	});
 
-	test("an entry or a no-entry newer than a closed conviction answers it", () => {
-		for (const stage of ["entry", "no-entry"])
-			expect(
-				run({
-					state: "CLOSED",
-					markers: [marker("clerk", stage, 5)],
-					ruling: conviction(2),
-				}).job,
-			).toBe("-");
-	});
-
-	test("a closed conviction that a decider reopens opens a draft again", () => {
-		const r = run({
-			markers: [marker("clerk", "entry", 5)],
-			ruling: conviction(2),
-		});
-		expect(r).toMatchObject({ job: "open", branch: "lawman/execute-1-1" });
+	test("a ruling with no Precedent line gives no job", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(run({ state: "CLOSED", ruling, holds: false }).job).toBe("-");
 	});
 
 	test("a referral gives no job", () => {
@@ -304,122 +286,25 @@ describe("table rows", () => {
 	});
 
 	test("a pair means the funnel is left even when no job is due", () => {
-		const handed = marker("clerk", "handed", 1, { pull: "7", issue: "open" });
 		const r = run({
-			markers: [handed],
-			pulls: [pull(7, 1)],
-			ruling: conviction(),
-		});
-		expect(r.job).toBe("-");
-		expect(hasPair([handed])).toBe(true);
-	});
-
-	test("a pair holding a draft of the clerk leaves a conviction no precedent job", () => {
-		const open = run({
-			markers: [marker("clerk", "handed", 1, { pull: "7", issue: "open" })],
-			pulls: [pull(7, 1)],
-			ruling: conviction(),
-		});
-		expect(open.job).toBe("-");
-	});
-
-	test("a draft opened before the ruling does not carry its precedent", () => {
-		const earlier = marker("clerk", "handed", 1, { pull: "7", issue: "open" });
-		expect(
-			run({ markers: [earlier], pulls: [pull(7, 1)], ruling: conviction(2) }),
-		).toMatchObject({ job: "precedent", branch: "lawman/precedent-1-1" });
-	});
-
-	test("an adopted pair gives the conviction its own precedent job", () => {
-		for (const state of ["OPEN", "CLOSED"])
-			expect(
-				run({
-					state,
-					markers: [
-						marker("clerk", "handed", 1, {
-							pull: "7",
-							issue: state.toLowerCase(),
-							adopted: "yes",
-						}),
-					],
-					pulls: [pull(7, 1)],
-					ruling: conviction(),
-				}),
-			).toMatchObject({
-				job: "precedent",
-				pull: "-",
-				branch: "lawman/precedent-1-1",
-			});
-	});
-
-	test("the first pair decides whether the draft carried the files", () => {
-		const first = marker("clerk", "handed", 1, { pull: "7", issue: "open" });
-		const later = marker("clerk", "handed", 3, {
-			pull: "9",
-			issue: "open",
-			adopted: "yes",
-		});
-		expect(
-			run({
-				markers: [first, later],
-				pulls: [pull(9, 1)],
-				ruling: conviction(),
-			}).job,
-		).toBe("-");
-	});
-
-	test("an entry answers the conviction of an adopted pair", () => {
-		const markers = [
-			marker("clerk", "handed", 1, {
-				pull: "7",
-				issue: "open",
-				adopted: "yes",
-			}),
-			marker("clerk", "entry", 3, { pull: "9" }),
-		];
-		expect(
-			run({ markers, pulls: [pull(7, 1), pull(9)], ruling: conviction() }).job,
-		).toBe("-");
-	});
-
-	test("an acquittal gets its precedent job beside a pair too", () => {
-		const open = run({
 			markers: pairs(["handed", "7", "open"]),
 			pulls: [pull(7, 1)],
-			ruling: acquittal(),
+			ruling: conviction(),
+			holds: false,
 		});
-		expect(open).toMatchObject({
-			job: "precedent",
-			branch: "lawman/precedent-1-1",
-		});
+		expect(r.job).toBe("-");
+		expect(hasPair(pairs(["handed", "7", "open"]))).toBe(true);
 	});
 
-	test("a ruling with no Precedent line gives no job on the paths that once gave none", () => {
-		const adopted = marker("clerk", "handed", 1, {
-			pull: "7",
-			issue: "open",
-			adopted: "yes",
-		});
-		const none = [
-			run({ state: "CLOSED", ruling: conviction(), holds: false }),
-			run({
-				markers: [adopted],
-				pulls: [pull(7, 1)],
-				ruling: conviction(),
-				holds: false,
-			}),
-			run({
-				markers: pairs(["handed", "7", "open"]),
-				pulls: [pull(7, 1)],
-				ruling: acquittal(),
-				holds: false,
-			}),
-		];
-		expect(none.map((r) => r.job)).toEqual(["-", "-", "-"]);
-	});
-
-	test("an acquittal with no pair keeps its job without a Precedent line", () => {
-		expect(run({ ruling: acquittal(), holds: false }).job).toBe("precedent");
+	test("a pair does not hold back the precedent job of a ruling", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(
+				run({
+					markers: pairs(["handed", "7", "open"]),
+					pulls: [pull(7, 1)],
+					ruling,
+				}).job,
+			).toBe("precedent");
 	});
 });
 

@@ -116,8 +116,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` follow an acquittal. They also follow a conviction whose first pair is adopted or older than the ruling, or that has no pair, when its Precedent section holds a line other than `none`.
-- `adopted` is `yes` on the `handed` marker that the adopt job writes for a pull request that is no draft of the clerk. A `handed` marker without it counts as a draft of the clerk.
+- `entry` and `no-entry` follow a ruling, conviction or acquittal, whose Precedent section holds a line other than `none`.
 - `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
@@ -149,12 +148,11 @@ The section `## Precedent` of a court ruling holds its precedent lines. A ruling
 - `<gist>` matches `[a-z0-9]+(-[a-z0-9]+)*`. `<name>` matches `[A-Za-z0-9][A-Za-z0-9._-]*`. `<rule>` is non-empty text to the end of the line.
 - `<departments>` is a list of department names separated by commas, or the word `all`. It stands before the first colon, so no character of the rule reads as a name, and the rule keeps every character after `: `. The names never enter the rule.
 - A `new` line without names is a valid line.
-- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add a department when its probability for that department reaches the threshold that the journal holds, and never removes one from the list.
+- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add a department whose name it does not reject, and never removes one from the list.
 - `all` is reserved: it means every department and never names a department called `all`. A list that holds `all` beside names means every department too, and its other names count for nothing.
 - An empty element in `<departments>` makes a line that fits no form.
 - The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds the list only as the department of the case, when no other name counts.
 - `refine` and `cancel` carry no names.
-- A `cancel` whose name is outside the class of `<name>` cancels nothing. The journal reports it as `cancel` with no name and `missing`.
 - A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
 - The journal writes the files. The writer never numbers, names or copies a rule into a file.
 
