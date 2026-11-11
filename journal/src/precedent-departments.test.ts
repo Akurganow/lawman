@@ -1092,7 +1092,7 @@ describe("the adding step", () => {
 			"jev model=jev-1.14.0 departments=core,gamma\n",
 		);
 		// Bun.YAML.stringify leaves a space after `departments:` before Bun 1.4.3
-		expect(text().replace(/ +$/gm, "")).toBe(
+		expect(text().replace(/^departments: $/m, "departments:")).toBe(
 			[
 				"---",
 				"kind: protects",

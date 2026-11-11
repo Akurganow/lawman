@@ -99,6 +99,7 @@ describe("a command that finishes later", () => {
 });
 
 describe("source constraints", () => {
+	const LAUNCH = "launch.ts";
 	const sources = readdirSync(join(JOURNAL, "src")).filter(
 		(f) => f.endsWith(".ts") && !f.includes("test"),
 	);
@@ -121,5 +122,19 @@ describe("source constraints", () => {
 				"Bun.serve",
 			])
 				expect(source(file)).not.toContain(banned);
+	});
+
+	test("only the launch module starts a process, and only the cleaning starts a worker", () => {
+		expect(sources).toContain(LAUNCH);
+		for (const file of sources.filter((f) => f !== LAUNCH))
+			for (const banned of [
+				"spawn",
+				"Bun.$",
+				"child_process",
+				"exec(",
+				"Worker(",
+			])
+				if (!(banned === "Worker(" && file === "clean-run.ts"))
+					expect(source(file)).not.toContain(banned);
 	});
 });

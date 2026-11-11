@@ -109,7 +109,14 @@ function expected(role: string): Expected[] {
 		...lawOf(role).map(([path, wanted]) =>
 			path === "LAW.md"
 				? { head: `law ${path}`, whole: lawLines(role) }
-				: { head: `law ${path}`, headings: named(wanted, "## ") },
+				: wanted.includes(WHOLE)
+					? {
+							head: `law ${path}`,
+							whole: readFileSync(join(LAW, path), "utf8")
+								.replace(/\n$/, "")
+								.split("\n"),
+						}
+					: { head: `law ${path}`, headings: named(wanted, "## ") },
 		),
 		{
 			head: "harness harnesses/hermes.md",
@@ -153,8 +160,8 @@ describe("the role group", () => {
 				else
 					expect([
 						e.head,
-						(e.headings ?? []).filter((h) => !body.includes(h)),
-					]).toEqual([e.head, []]);
+						[...new Set(body.filter((l) => /^#{2,3} /.test(l)))],
+					]).toEqual([e.head, e.headings ?? []]);
 			}
 		},
 	);

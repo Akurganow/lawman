@@ -108,7 +108,10 @@ describe("precedent: a new precedent", () => {
 		});
 		// Bun.YAML.stringify leaves a space after `departments:` before Bun 1.4.3
 		expect(
-			readFileSync(file(`${DATE}-empty-doubles`), "utf8").replace(/ +$/gm, ""),
+			readFileSync(file(`${DATE}-empty-doubles`), "utf8").replace(
+				/^departments: $/m,
+				"departments:",
+			),
 		).toBe(
 			[
 				"---",

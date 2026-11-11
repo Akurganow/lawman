@@ -35,6 +35,14 @@ const fed = async (stdin: unknown, args = ARGS) => {
 
 beforeEach(() => addPrecincts({ main: 1 }));
 
+describe("sync in process: the issues form", () => {
+	test("an object without writers exits 4", async () => {
+		const r = await fed({ issues: [] });
+		expect(r.code).toBe(EXIT.SYNC_INPUT);
+		expect(r.err).toContain(formText("issues"));
+	});
+});
+
 describe("the issues reader", () => {
 	const commentOf = (extra: Record<string, unknown>) =>
 		readIssues(
