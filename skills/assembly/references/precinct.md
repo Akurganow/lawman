@@ -8,14 +8,6 @@ The precinct name is the repository's path `<owner>/<repo>`, lowercased, with ev
 
 The job follows the shape in `SKILL.md` once for each chosen repository. It finds, proposes, decides, applies and summarizes. The sections run in the order they appear below.
 
-Each repository gets these calls, in this order. A call splits at the question and choice limit that the harness page names.
-
-1. "Clone and read".
-2. The screen of the version-control commands, from "Commands of the precinct".
-3. The screen of the tracker commands, from the same section.
-4. The old precedents, when the repository has them: the question whether to move them, then the questions about lines whose kind cannot be told. These are separate calls, because the questions about kinds depend on the first answer.
-5. The repository proposal and its decision, in one call. The call is that repository's approval.
-
 After the approval, the pull request of the draft opens first, when the user chose it. Then the writes run in this order.
 
 1. The registration of the precinct and the consents.
@@ -102,13 +94,14 @@ This section runs for every repository, whether its constitution is absent or pa
 
 40. Find the account's access level on the repository through the host. It stops nothing.
 
-### Commands and old precedents
+### Commands, old precedents and licenses
 
 Run these sections after the finds above and before "The repository proposal". They ask their own questions and write nothing.
 
 40a. Run the section "Commands of the precinct" for the repository, once for the version-control screen and once for the tracker screen.
 40b. Run part one of the section "Move the old precedents". It asks nothing when the repository has no old line and no open pull request of the old form.
-40c. Take the results into the rows of the proposal. The user decides on them once more, in the call of the proposal, and that call is the approval.
+40c. Run `references/licenses/questions.md` for the repository when `license_precincts` holds no pair for it. Skip it when `.lawman/departments/licenses.md` at `HEAD` or `departments/licenses.md` of the installation exists. The answers go into the proposal, and item 57a writes them.
+40d. Take the results into the rows of the proposal. The user decides on them once more, in the call of the proposal, and that call is the approval.
 
 ### The repository proposal
 
@@ -118,7 +111,7 @@ The rows for an absent constitution:
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Access: the account's access level on the repository (found).
-- Constitution: the draft as a table, one row for each of its eight sections. Show each line with the file it came from (recommended).
+- Constitution: the draft as a table, one row for each of its eight sections, and one for `## Licenses` when item 40c asked. Show each line with the file it came from (recommended).
 - Departments: each shared department with its first sentence, and its judging document or none, with the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).
@@ -146,7 +139,7 @@ The rows for a constitution that passes lint:
 
 Then decide.
 
-41. Ask in the question tool, in one call for this repository, after the screens and the old-precedent calls. The call holds the approval, the TypeSafe consent, the catalog consent and the documents question. It also holds the consent to copy facts when the row "Facts to copy" exists. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
+41. Ask in the question tool, in one call for this repository, after the screens, the old-precedent calls and the license calls. The call holds the approval, the TypeSafe consent, the catalog consent and the documents question. It also holds the consent to copy facts when the row "Facts to copy" exists. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
 42. For an absent constitution, offer "Open the pull request" (recommended), "Change" and "Skip".
 43. For a constitution that passes lint, offer "Add the precinct" (recommended) and "Skip".
 44. When `typesafe` is yes in `config.yaml`, ask the consent for this repository in the same call.
@@ -171,7 +164,7 @@ Then decide.
 55. Show the changed rows, marked, and ask this call again.
 56. On "Open the pull request", run item 57a, then the sections "Commit and open the pull request", "Agree the reading way" and "Add the precinct".
 57. On "Add the precinct", run item 57a, then "Agree the reading way", and after it "Add the precinct".
-57a. Run `references/licenses/questions.md` before "Commit and open the pull request". Run it when the user chose "Open the pull request" or "Add the precinct" and `license_precincts` holds no pair for this repository. Run it only when neither `.lawman/departments/licenses.md` at `HEAD` nor `departments/licenses.md` of the installation exists. A cancel in these questions adds the precinct without a pair, and the question returns at the next start. When one of those pages exists, ask nothing and write the pair `no` with the other pairs. The section "Agree the reading way" runs once, inside these questions or after them. On "Add the precinct" the constitution exists. The section `## Licenses` then goes into a pull request from `lawman/licenses-sources`, as item 7 of "Write the answers" in that file says.
+57a. Before "Commit and open the pull request", write the answers of item 40c as "Write the answers" in that file says. When item 40c found a page `licenses`, ask nothing and write the pair `no` with the other pairs. The section "Agree the reading way" runs once, inside these questions or after them. On "Add the precinct" the constitution exists. The section `## Licenses` then goes into a pull request from `lawman/licenses-sources`, as item 7 of "Write the answers" in that file says.
 58. After the approval, run "Open an issue in the repository" when the user chose it. Open an issue there that asks for the documents, and show its link.
 59. After the approval, run "Create them now" when the user chose it. Draft the documents with the developer in this session.
 60. Deliver the drafted documents to the repository only by a pull request, opened after the approval.
