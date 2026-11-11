@@ -50,7 +50,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
 
 ### Step 0: the input and the order
 
-1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits its turn. Exit 2 means that the precinct already has an open patrol order, of any department, so the named order is not queued: answer only the silence form that item 2 gives, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
+1. Manual run only. When the prompt names a precinct and a department, add that order before you take the input. A named order waits its turn. Exit 2 means that the precinct already has an open patrol order, of any department. The named order is not queued: answer only the silence form that item 2 gives, and stop. Any other failure: answer `journal unavailable: <stderr>` and stop. The input that came with the turn holds no new order, so run the role entry yourself in item 2.
    ```
    bin/journal dispatch add --precinct <p> --role patrol --department <d>
    ```

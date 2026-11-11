@@ -46,7 +46,7 @@ The output is the comment. Write it unchanged as a conversation comment on pull 
 
 ### Read the ruling
 
-The tick group prints the comments of the issue `<n>`, cleaned, each with its id. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Its URL is not in the group. Read the comments of the issue from the host, send the reply through `bin/journal clean`, and take the URL of that id as the host returned it. A failed read gives `stopped-issue-read`. Keep the URL with the id.
+The tick group prints the comments of the issue `<n>`, cleaned, each with its id. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Its URL is not in the group. Read the comments of the issue from the host and send the reply through `bin/journal clean`. Take the URL of that id as the host returned it. A failed read gives `stopped-issue-read`. Keep the URL with the id.
 
 ### Create the tree
 

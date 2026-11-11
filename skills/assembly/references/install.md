@@ -372,7 +372,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account in its run, and its stop arrives on the delivery routes.
 - After the refusal of the signature, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written and the law folder has history, that the role reads the facts of the law itself.
-- When no `law-version` command was written and the law folder has no history, that every role stops on every tick until such a command reads the facts of the law, and what the command must print.
+- When no `law-version` command was written and the law folder has no history, that every role stops on every tick until a `law-version` command reads the facts of the law. Name what the command must print.
 - When TypeSafe is on, both uses: the court's brief and the clerk's request. When the key was not found, the place to put the key and the variable it needs.
 - "Add a department" as the step after a constitution merges.
 - For roles and precincts: the menu of the assembly changes them later.

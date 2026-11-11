@@ -143,7 +143,7 @@ A scheduled run has no one to approve a command. The default mode of a gateway h
 - The shell is `bash` or `zsh`. `(set -o pipefail; …)` and a subshell are ordinary shell (stated by the docs, https://docs.openclaw.ai/tools/exec.md; not verified).
 - A command yields a handle after 10 seconds by default. It runs to the end in one call when the call sets `awaitResults` to true, or when the run has no `process` tool. A job with `--tools exec,read` has no `process` tool (read in the harness code, openclaw/src/agents/bash-tools.exec-run.ts).
 
-The forms that a role sends start no shell or interpreter with `-c` or `-e`, feed no heredoc to a shell or an interpreter, and use no recursive delete. The modes above refuse or review such forms, so no form of a role depends on them.
+The forms that a role sends start no shell or interpreter with `-c` or `-e`. They feed no heredoc to a shell or an interpreter, and they use no recursive delete. The modes above refuse or review such forms, so no form of a role depends on them.
 
 A role removes a folder with the plain forms below and no recursive delete. They are the forms of the Hermes page, and none was run in a scheduled run on this harness (not verified).
 
