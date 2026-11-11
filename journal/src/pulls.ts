@@ -1,12 +1,21 @@
 import type { Database } from "bun:sqlite";
 import {
+	type Cleaned,
 	cleanTexts,
 	dropComments,
 	type HostText,
 	storeComments,
+	uncleanedField,
 } from "./cache-text";
 import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
-import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import {
+	inputRejected,
+	isRecord,
+	linkOrNull,
+	loginList,
+	text,
+	timeOf,
+} from "./form";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
@@ -30,6 +39,7 @@ type Comment = {
 };
 type Pull = {
 	number: number;
+	url: string | null;
 	body: string;
 	closes: number[];
 	comments: Comment[];
@@ -79,6 +89,7 @@ function readReview(raw: unknown): Pull["changesRequested"][number] {
 function readPull(raw: Obj): Pull {
 	return {
 		number: raw.number as number,
+		url: linkOrNull(raw.url),
 		body: text(raw.body),
 		closes: list(raw.closes, "closes").map((n) => {
 			if (!Number.isInteger(n)) throw reject("closes holds a non-integer");
@@ -168,7 +179,7 @@ function workOf(
 		: "ready";
 }
 
-export type ReadPull = { row: PullRow; text: HostText };
+export type ReadPull = { row: PullRow; text: HostText; url: string | null };
 
 const pullText = (pull: Pull): HostText => ({
 	body: pull.body,
@@ -198,6 +209,7 @@ export function readPulls(input: string, login: string): ReadPull[] {
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
 			text: pullText(pull),
+			url: pull.url,
 		});
 	}
 	return read;
@@ -206,9 +218,9 @@ export function readPulls(input: string, login: string): ReadPull[] {
 function replacePulls(db: Database, name: string, read: ReadPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
 	dropComments(db, name, "pull");
-	for (const { row, text } of read) {
+	for (const { row, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body) VALUES (?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
 			[
 				name,
 				row.number,
@@ -217,13 +229,14 @@ function replacePulls(db: Database, name: string, read: ReadPull[]): void {
 				row.work,
 				row.spec_id,
 				text.body,
+				url,
 			],
 		);
 		storeComments(db, name, "pull", row.number, text.comments, reject);
 	}
 }
 
-// The texts are cleaned before the transaction, so a failed cleaning leaves the cache as it was.
+// Each text is cleaned before the transaction, alone. A text that fails is stored as a placeholder and named in the line.
 export async function syncPulls(
 	name: string,
 	login: string,
@@ -234,8 +247,11 @@ export async function syncPulls(
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
 	});
 	const parsed = readPulls(input, login);
-	const texts = await cleanTexts(parsed.map((p) => p.text));
-	const read = parsed.map((p, i) => ({ ...p, text: texts[i] as HostText }));
+	const cleaned = await cleanTexts(parsed.map((p) => p.text));
+	const read = parsed.map((p, i) => ({
+		...p,
+		text: (cleaned[i] as Cleaned).text,
+	}));
 	return withDb((db) => {
 		try {
 			inTransaction(db, () => {
@@ -249,6 +265,10 @@ export async function syncPulls(
 			if (!isConstraint(e)) throw e;
 			throw reject("a pull request number repeats");
 		}
-		return `pulls=${read.length}`;
+		const held = parsed.map((p, i) => ({
+			number: p.row.number,
+			failed: (cleaned[i] as Cleaned).failed,
+		}));
+		return `pulls=${read.length}${uncleanedField("pull", held)}`;
 	});
 }

@@ -42,6 +42,7 @@ Each entry of issues:
   state: OPEN or CLOSED
   stateReason: COMPLETED when closed as done, NOT_PLANNED when closed otherwise, null when open or unknown
   title: the title
+  url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
   author: login, and is_bot, true for an automated account
   body: the body text

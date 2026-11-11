@@ -146,6 +146,7 @@ describe("sync", () => {
 			answer: null,
 			answer_id: null,
 			body: issueOf(17).body,
+			url: null,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },

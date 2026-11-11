@@ -1,5 +1,12 @@
 import { EXIT, Fail } from "./db";
-import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import {
+	inputRejected,
+	isRecord,
+	linkOrNull,
+	loginList,
+	text,
+	timeOf,
+} from "./form";
 import type { GhIssue } from "./markers";
 
 export const SYNC_LIMIT = 1000;
@@ -20,6 +27,7 @@ export type SyncIssue = Omit<GhIssue, "comments"> & {
 	state: string;
 	stateReason: string | null;
 	title: string;
+	url: string | null;
 	closedAt: string | null;
 	comments: SyncComment[];
 };
@@ -79,6 +87,7 @@ function readIssue(raw: unknown): SyncIssue {
 		state: raw.state,
 		stateReason: textOrNull(reason),
 		title: text(raw.title),
+		url: linkOrNull(raw.url),
 		createdAt: timeField(raw.createdAt, "an issue createdAt"),
 		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
 		author: login === "" ? null : { login },

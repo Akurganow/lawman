@@ -141,6 +141,7 @@ describe("open", () => {
 				work: "todo",
 				spec_id: "-",
 				body: "",
+				url: null,
 			},
 		]);
 		expect(() =>
@@ -170,6 +171,7 @@ describe("open", () => {
 				work: "todo",
 				spec_id: "-",
 				body: "",
+				url: null,
 			},
 		]);
 		db.run(
@@ -249,10 +251,10 @@ describe("open", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
-			issues: { body: "" },
-			pulls: { body: "" },
+			issues: { body: "", url: null },
+			pulls: { body: "", url: null },
 			ticks: { dispatch: null, parts: null },
-			precincts: { pulls_synced_at: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {
@@ -294,8 +296,10 @@ describe("migration 9", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
 			ticks: { dispatch: null, parts: null },
-			precincts: { pulls_synced_at: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
+			issues: { url: null },
+			pulls: { url: null },
 		};
 		for (const [table, list] of Object.entries(before)) {
 			expect(list.length).toBeGreaterThan(0);
@@ -320,7 +324,7 @@ describe("migration 10", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(10);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT * FROM precincts").all()).toEqual([
 			{
 				name: "p",
@@ -329,11 +333,44 @@ describe("migration 10", () => {
 				credit: 1,
 				synced_at: "t",
 				pulls_synced_at: null,
+				constitution_cause: null,
 			},
 		]);
 		expect(db.query("SELECT * FROM roles").all()).toEqual([
 			{ name: "patrol", every_minutes: 30, checked_at: "t", checks: 0 },
 		]);
+		db.close();
+	});
+});
+
+describe("migration 11", () => {
+	test("keeps every row of a schema 10 database and adds no constitution cause and no links", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 10)) old.run(sql);
+		old.run("PRAGMA user_version = 10");
+		for (const sql of [
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at, pulls_synced_at) VALUES ('p', 'o/p', 2, 1, 't', 'u')",
+			"INSERT INTO issues (precinct, issue, state, title, created_at, body) VALUES ('p', 7, 'OPEN', 't', 'c', 'b')",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body) VALUES ('p', 3, '7', 'up', 'ready', 'IC_2', 'b')",
+		])
+			old.run(sql);
+		const before = Object.fromEntries(
+			tables(old).map((t) => [t, old.query(`SELECT * FROM ${t}`).all()]),
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(11);
+		const added: Record<string, object> = {
+			precincts: { constitution_cause: null },
+			issues: { url: null },
+			pulls: { url: null },
+		};
+		for (const [table, list] of Object.entries(before)) {
+			if (list.length === 0) continue;
+			expect(db.query(`SELECT * FROM ${table}`).all()).toEqual(
+				list.map((row) => ({ ...(row as object), ...added[table] })),
+			);
+		}
 		db.close();
 	});
 });
@@ -354,6 +391,7 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "11"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "9"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
@@ -362,7 +400,7 @@ describe("probe", () => {
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "11"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "12"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

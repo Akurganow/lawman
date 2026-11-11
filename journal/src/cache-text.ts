@@ -22,15 +22,47 @@ export type HostText = { body: string; comments: CommentText[] };
 // a library error can quote the input, so each caller prints its own message
 export class CleanFailed extends Error {}
 
-async function cleanText(text: HostText): Promise<HostText> {
-	const [body = "", ...bodies] = await Promise.all(
-		[text.body, ...text.comments.map((c) => c.body)].map(cleanHostText),
-	);
-	return {
-		body,
-		comments: text.comments.map((c, i) => ({ ...c, body: bodies[i] ?? "" })),
-	};
+// what a role reads in place of a text that could not be cleaned
+export const WITHHELD = "This text could not be cleaned and is withheld.";
+
+export type Part = "body" | "comment";
+// a text held back: which of its parts failed, as the sync line names them
+export type Cleaned = { text: HostText; failed: Part[] };
+
+// A text that the cleaning cannot process is replaced whole, never kept raw or part cleaned.
+async function cleanPart(text: string): Promise<string | null> {
+	try {
+		return await cleanHostText(text);
+	} catch {
+		return null;
+	}
 }
+
+async function cleanText(text: HostText): Promise<Cleaned> {
+	const failed = new Set<Part>();
+	const one = async (body: string, part: Part) => {
+		const cleaned = await cleanPart(body);
+		if (cleaned !== null) return cleaned;
+		failed.add(part);
+		return WITHHELD;
+	};
+	const body = await one(text.body, "body");
+	const comments: CommentText[] = [];
+	for (const c of text.comments)
+		comments.push({ ...c, body: await one(c.body, "comment") });
+	return { text: { body, comments }, failed: [...failed] };
+}
+
+// the sync line's field for the texts held back, empty when none failed
+export const uncleanedField = (
+	kind: TextKind,
+	held: { number: number; failed: Part[] }[],
+) => {
+	const names = held.flatMap((h) =>
+		h.failed.map((part) => `${kind}:${h.number}:${part}`),
+	);
+	return names.length === 0 ? "" : ` uncleaned=${names.join(",")}`;
+};
 
 export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 	try {
@@ -40,8 +72,9 @@ export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 	}
 }
 
+// each text is cleaned alone, so one that fails stops nothing else
 export const cleanTexts = (texts: HostText[]) =>
-	cleaning(() => Promise.all(texts.map(cleanText)));
+	Promise.all(texts.map(cleanText));
 
 export function dropComments(db: Database, precinct: string, kind: TextKind) {
 	db.run("DELETE FROM comments WHERE precinct = ? AND kind = ?", [

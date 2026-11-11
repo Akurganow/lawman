@@ -5,6 +5,11 @@ import { asciiLower } from "./markers";
 
 export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 
+// the link the host reports for an issue or a pull request; anything else is no link
+const LINK = /^https?:\/\/[\x21-\x7e]{1,2000}$/;
+export const linkOrNull = (v: unknown): string | null =>
+	typeof v === "string" && LINK.test(v) ? v : null;
+
 const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
@@ -24,6 +29,7 @@ Each entry of issues:
   state: OPEN or CLOSED
   stateReason: COMPLETED when closed as done, NOT_PLANNED when closed otherwise, null when open or unknown
   title: the title
+  url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
   author: login, and is_bot, true for an automated account
   body: the body text
@@ -47,6 +53,7 @@ Fields:
 
 Each entry of pulls:
   number: the pull request number, an integer
+  url: the address that opens the pull request in a browser, as the host reports it. Leave it out when the host gives none
   author: the login of its author
   body: its body text
   closes: the numbers of the issues of the same repository that it closes when merged
@@ -78,6 +85,7 @@ const EXAMPLES: Record<FormKind, unknown> = {
 				state: "CLOSED",
 				stateReason: "COMPLETED",
 				title: "Example issue",
+				url: "https://host.example/owner/repo/issues/3",
 				createdAt: "2026-10-14T09:00:00Z",
 				closedAt: "2026-10-15T09:00:00Z",
 				author: { login: "reporter", is_bot: false },
@@ -100,6 +108,7 @@ const EXAMPLES: Record<FormKind, unknown> = {
 		pulls: [
 			{
 				number: 7,
+				url: "https://host.example/owner/repo/pull/7",
 				author: "lawman-bot",
 				body: "Example body",
 				closes: [3],

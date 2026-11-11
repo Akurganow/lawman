@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CleanFailed, printCached } from "./cache-text";
+import { CleanFailed, printCached, WITHHELD } from "./cache-text";
 import * as cleanHost from "./clean-host";
 import * as db from "./db";
 import { EXIT } from "./db";
@@ -193,28 +193,134 @@ describe("the texts in the cache", () => {
 		expect(r.out).toContain("pulls is not a list");
 	});
 
-	test("a failed cleaning leaves the cache, as code 1 in sync and clean in run", async () => {
-		await sync("a", issuesInput("kept"));
-		const before = texts("a");
+	test("a text the cleaning cannot process is stored as a placeholder and named, the rest is stored", async () => {
+		const deep = "> ".repeat(12_800);
+		const form = issuesForm([
+			{
+				number: 1,
+				state: "OPEN",
+				createdAt: AT,
+				author: { login: "reporter" },
+				body: deep,
+				comments: [
+					{ id: "IC_1", author: null, createdAt: AT, body: "fine" },
+					{ id: "IC_2", author: null, createdAt: LATER, body: deep },
+				],
+			},
+			{
+				number: 2,
+				state: "OPEN",
+				createdAt: AT,
+				author: { login: "reporter" },
+				body: "seen <!-- unseen --> text",
+			},
+		]);
+		const r = await sync("a", JSON.stringify(form));
+		expect(r).toEqual({
+			code: EXIT.OK,
+			out: "issues=2 leads=0 markers=0 invalid=0 skipped=0 uncleaned=issue:1:body,issue:1:comment\n",
+			err: "",
+		});
+		expect(texts("a")).toEqual({
+			issues: [
+				{ issue: 1, body: WITHHELD },
+				{ issue: 2, body: "seen text" },
+			],
+			pulls: [],
+			comments: [
+				{
+					kind: "issue",
+					number: 1,
+					id: "IC_1",
+					author: null,
+					at: AT,
+					body: "fine",
+				},
+				{
+					kind: "issue",
+					number: 1,
+					id: "IC_2",
+					author: null,
+					at: LATER,
+					body: WITHHELD,
+				},
+			],
+		});
+		expect(await printed("a", "issue", 1)).toContain(WITHHELD);
+		expect(await printed("a", "issue", 1)).not.toContain(">");
+	});
+
+	test("a pull request text that fails is withheld the same way, through the command", async () => {
+		const pulls = JSON.parse(pullsInput());
+		pulls.pulls[0].comments[0].body = "<div>".repeat(12_800);
+		feeding("a", "pulls", JSON.stringify(pulls));
+		const r = await run("a", "pulls", "--author", TRUSTED);
+		expect(r).toEqual({
+			code: EXIT.OK,
+			out: "pulls=1 uncleaned=pull:9:comment\n",
+			err: "",
+		});
+		expect(texts("a").pulls).toEqual([{ number: 9, body: "seen text" }]);
+		expect(texts("a").comments).toEqual([
+			{
+				kind: "pull",
+				number: 9,
+				id: "PC_1",
+				author: null,
+				at: AT,
+				body: WITHHELD,
+			},
+		]);
+	});
+
+	test("a library error never reaches the stored text or the line", async () => {
 		const failing = spyOn(cleanHost, "cleanHostText").mockRejectedValue(
 			new Error("the library quotes the input"),
 		);
 		try {
-			const piped = await sync("a", issuesInput());
-			expect(piped.code).toBe(EXIT.USAGE);
-			expect(piped.err).toBe(
-				"journal: sync: a library failed while cleaning the text; run the command again\n",
-			);
-			feeding("a", "issues", issuesInput());
-			expect(await run("a", "issues", "--author", TRUSTED)).toEqual({
-				code: EXIT.COMMAND,
-				out: "issues failed reason=clean\n~~~error\n~~~\n",
-				err: "",
-			});
+			const r = await sync("a", issuesInput());
+			expect(r.code).toBe(EXIT.OK);
+			expect(r.out + r.err).not.toContain("quotes");
+			expect(texts("a").issues).toEqual([{ issue: 1, body: WITHHELD }]);
 		} finally {
 			failing.mockRestore();
 		}
-		expect(texts("a")).toEqual(before);
+	});
+});
+
+describe("the link of an issue and a pull request", () => {
+	test("the address the host reports is stored, and one that is no web address is dropped", async () => {
+		const issues = JSON.parse(issuesInput());
+		issues.issues[0].url = "https://git.example/o/a/issues/1";
+		issues.issues.push({
+			...issues.issues[0],
+			number: 2,
+			url: "javascript:alert(1)",
+			comments: [],
+		});
+		issues.issues.push({
+			...issues.issues[0],
+			number: 3,
+			url: "https://git.example/a b",
+			comments: [],
+		});
+		issues.issues.push({ ...issues.issues[0], number: 4, comments: [] });
+		delete issues.issues[3].url;
+		expect((await sync("a", JSON.stringify(issues))).code).toBe(EXIT.OK);
+		const pulls = JSON.parse(pullsInput());
+		pulls.pulls[0].url = "http://git.example/o/a/pull/9";
+		expect((await sync("a", JSON.stringify(pulls), ["--pulls"])).code).toBe(
+			EXIT.OK,
+		);
+		expect(rows("SELECT issue, url FROM issues ORDER BY issue")).toEqual([
+			{ issue: 1, url: "https://git.example/o/a/issues/1" },
+			{ issue: 2, url: null },
+			{ issue: 3, url: null },
+			{ issue: 4, url: null },
+		]);
+		expect(rows("SELECT number, url FROM pulls")).toEqual([
+			{ number: 9, url: "http://git.example/o/a/pull/9" },
+		]);
 	});
 });
 

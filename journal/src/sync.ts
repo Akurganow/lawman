@@ -2,11 +2,12 @@ import type { Database } from "bun:sqlite";
 import { answerOf, hasMarkerLine, MARKER_PREFIX } from "./answer";
 import { check, parseArgs, usage } from "./args";
 import {
-	CleanFailed,
+	type Cleaned,
 	cleanTexts,
 	dropComments,
 	type HostText,
 	storeComments,
+	uncleanedField,
 } from "./cache-text";
 import {
 	EXIT,
@@ -25,8 +26,6 @@ import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 export { SYNC_LIMIT } from "./sync-issues";
 
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
-const CLEAN_FAILED =
-	"sync: a library failed while cleaning the text; run the command again";
 
 type SyncStats = {
 	issues: number;
@@ -114,7 +113,7 @@ function storeIssue(
 ): void {
 	const answer = answerOf(issue, trust.login, trust.writers);
 	db.run(
-		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		[
 			name,
 			issue.number,
@@ -127,6 +126,7 @@ function storeIssue(
 			answer?.answer ?? null,
 			answer?.id ?? null,
 			text.body,
+			issue.url,
 		],
 	);
 	storeComments(db, name, "issue", issue.number, text.comments, syncInput);
@@ -175,7 +175,7 @@ function takeFlag(args: string[], flag: string): [string[], boolean] {
 	return [rest, rest.length < args.length];
 }
 
-// The texts are cleaned before the transaction, so a failed cleaning leaves the cache as it was.
+// Each text is cleaned before the transaction, alone. A text that fails is stored as a placeholder and named in the line.
 export async function syncIssues(
 	name: string,
 	login: string,
@@ -186,7 +186,7 @@ export async function syncIssues(
 	const stored = issues.filter(isHuman);
 	const cleaned = await cleanTexts(stored.map(issueText));
 	const texts = new Map(
-		stored.map((issue, i) => [issue, cleaned[i] as HostText]),
+		stored.map((issue, i) => [issue, (cleaned[i] as Cleaned).text]),
 	);
 	return withDb((db) => {
 		let stats: SyncStats;
@@ -200,7 +200,11 @@ export async function syncIssues(
 				"the issues break a cache constraint, for example a repeated number",
 			);
 		}
-		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}`;
+		const held = stored.map((issue, i) => ({
+			number: issue.number,
+			failed: (cleaned[i] as Cleaned).failed,
+		}));
+		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}${uncleanedField("issue", held)}`;
 	});
 }
 
@@ -212,15 +216,10 @@ export async function sync(args: string[]): Promise<number> {
 	const name = check("precinct", pos[0]);
 	const login = check("login", opt.author);
 	const input = readStdin();
-	try {
-		out(
-			pulls
-				? await syncPulls(name, login, input)
-				: await syncIssues(name, login, input, reset),
-		);
-	} catch (e) {
-		if (e instanceof CleanFailed) throw new Fail(EXIT.USAGE, CLEAN_FAILED);
-		throw e;
-	}
+	out(
+		pulls
+			? await syncPulls(name, login, input)
+			: await syncIssues(name, login, input, reset),
+	);
 	return EXIT.OK;
 }
