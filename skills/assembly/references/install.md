@@ -133,9 +133,8 @@ The why line for the login: every role writes as this account, and only its mark
 
 Decides: ask in the question tool.
 
-- The tool, when several reach the host. The user chooses.
-- The verifier, when several fit, or whether to install one when none fits, or to decline.
-- The host, when the finds do not show it.
+- The tool, when several report an account and the notes record none. The user chooses.
+- The verifier, when the notes record no method and several fit, or whether to install one when none fits, or to decline.
 
 Stops:
 
