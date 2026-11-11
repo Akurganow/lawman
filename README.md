@@ -48,7 +48,7 @@ A precinct's `LAWMAN.md` states what is true of that repository and of no other.
 
 ## Install
 
-Lawman runs inside an agent harness, on that harness's own schedule. You need to be signed in to your repository host as the one account every role uses. The assembly skill finds the rest, including a way to verify Lawman's release, a check you may decline. After a plugin update, the journal updates itself with the same checksum and signature checks.
+Lawman runs inside an agent harness, on that harness's own schedule. You need to be signed in to your repository host as the one account every role uses, with access to github.com for Lawman's release. The assembly skill finds the rest, including a way to verify Lawman's release, a check you may decline. After a plugin update, the journal updates itself with the same checks.
 
 ### Hermes Agent
 
@@ -80,9 +80,9 @@ TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 
 The catalog check is off by default, and the assembly asks for your consent at install and again for each repository. When you say yes, the names and versions of the pinned packages of that repository, a private one too, go to the OSV service at every visit, and the service sees the installation's address. The check works on any harness whose page carries a send form. The Hermes page carries one today. On a harness without one, the patrol sends nothing and reports that the check did not run. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
-The license department is off by default. The assembly asks once for each repository. It reads the repository first. It asks how people get the project and what it earns only when no sign in the repository answers. An answer taken from a sign shows in the approval with its path and line, and "Change" asks both questions. A license source gets data only after a separate yes for that source. The assembly sends nothing to a source. The patrol finds the way to read it. See [configuration](docs/configuration.md#what-leaves-the-machine).
+The license department is off by default. The assembly asks once for each repository. It reads the repository first. It asks how people get the project and what it earns only when the repository does not show the answer. An answer taken from the repository shows in the approval with its path and line, and "Change" asks both questions. A license source gets data only after a separate yes for that source. The assembly sends nothing to a source. The patrol finds the way to read it. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
-Run the assembly again to change the installation. It offers keep as is, roles, precincts or host. Roles covers the entry files, the limits and the jobs. Precincts covers a repository's commands, proved again, and, when you ask, the late move of old precedents. Host covers the host notes and the commands of the installation.
+Run the assembly again to change the installation. Its menu offers keep as is, roles, precincts or host. Roles covers the entry files, the limits and the jobs. Precincts covers a repository's commands, proved again, and, when you ask, the late move of old precedents. Host covers the host notes and the commands of the installation.
 
 #### Update
 
@@ -94,7 +94,7 @@ hermes plugins update lawman
 
 The next tick of any role completes the update, and so does the assembly when you run it first. The sync downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
 
-After this update, run the assembly. It offers the amendment pull request for each precinct, which you merge, and asks about old precedents there. It then goes on to the later parts and ends at the menu. The menu names what the earlier release left behind, such as a job in an old form or an installation or a precinct with no command, and recommends the choice that mends it. It asks again after each part. It does not find rows of `host.md` that an earlier release wrote in an old form: choose Host once to rewrite them.
+After this update, run the assembly. It offers the amendment pull request for each precinct that is behind, and asks about old precedents there. Merge each pull request after the run. The run then asks what is still unanswered and ends at the menu, unless you skip or cancel a part. The menu names what the earlier release left behind and recommends the choice that mends it, again after each part. Then choose Host once: it rewrites `host.md`, which the menu does not check.
 
 After an update, the tick that synced the law tells you to run the assembly. You answer the license question for each precinct without an answer. A yes or a no removes that line.
 
