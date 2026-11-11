@@ -50,7 +50,7 @@ The rules for the item:
 - A kind that rests on a source command names the command in its measurement.
 - On a page at any other place, the item is text.
 
-The constitution has no section for source commands. The Departments line admits the page to the rotation. The page is evidence, as every text of the precinct is. A role runs a source command only from the page in the precinct's own `.lawman/departments/`, as the law says.
+The constitution has no section for source commands. The Departments line admits the page to the rotation. The page is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says.
 
 ### Who runs them
 

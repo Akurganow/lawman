@@ -16,7 +16,7 @@ A declined verifier leaves only the checksum from the same release. An update ac
 
 The database file `journal.sqlite` sits in the installation directory, next to `bin/`. The binary applies its schema migrations when it opens the file. A database newer than the binary is refused with exit code 6.
 
-Two environment variables serve probes and tests. `LAWMAN_DB` is the path of the database file, in place of the default `journal.sqlite` next to `bin/`. `LAWMAN_NOW` is a timestamp that replaces the clock, and it needs `LAWMAN_DB`. The command `probe` refuses both with exit 1.
+Two environment variables serve tests and throwaway runs. `LAWMAN_DB` is the path of the database file, in place of the default `journal.sqlite` next to `bin/`. `LAWMAN_NOW` is a timestamp such as `2026-01-01T00:00:00Z`. It replaces the clock and needs `LAWMAN_DB`. The command `probe` refuses both with exit 1.
 
 ## Updates
 
@@ -69,7 +69,7 @@ journal law-update <role> [--revision <revision> --state clean|changed [--tag <t
 - An answer counts only while the file of its operation is absent. A `verify` command always runs, so `passed` or `declined` does not skip it.
 - With a `--release` answer while `release` has no file, or a `--verify` answer while `verify` has no file, the pass does not call `release`. It does not build the folder. It checks the files that already lie in the folder, so the answer about the signature covers the bytes that run later.
 - `declined` takes the checksum alone. `unnamed` means the host notes name neither a verifier nor a refusal.
-- A usage error exits 1. These are usage errors: a `<role>` outside its class, an unknown option, a repeated option, an option with no value, and a word outside the list. Usage errors are also `--state` or `--tag` without `--revision`, `--revision` with a revision but no `--state`, and `--revision unreadable` with `--state` or `--tag`. A revision or a tag outside its class is a stop, not a usage error.
+- A usage error exits 1. A `<role>` outside its class is one. So are an unknown option, a repeated option, an option with no value and a word outside the list. Usage errors are also `--state` or `--tag` without `--revision`, `--revision` with a revision but no `--state`, and `--revision unreadable` with `--state` or `--tag`. A revision or a tag outside its class is a stop, not a usage error.
 
 ### The stops
 
@@ -113,15 +113,14 @@ The program prints a usage line on stderr when it gets wrong arguments, then exi
 ### Installation and health
 
 - `--version`: prints the version of the binary.
-- `probe`: opens the database, applies pending migrations and tries a write that it rolls back. It prints the version, the schema number and the journal mode. `--schema N` exits 6 when N is above the schema of the binary. It exits 1 when `LAWMAN_DB` or `LAWMAN_NOW` is set.
+- `probe`: opens the database, applies pending migrations and tries a write that it rolls back. It prints the version, the schema number and the journal mode. `--schema N` exits 6 when N is above the schema of the binary.
 - `law-sync`: the checked new binary runs it to swap itself over `bin/journal` and rewrite the sync keys of `config.yaml`. It prints `synced <tag>` and may print an `ALARM contract-changed` line. It does not touch the tracker cache, which `sync` writes.
 - `law-update`: makes one pass of the law update and prints one line from [the table](#what-law-update-prints). It runs the checks, and the `law-sync` of the checked file changes the binary and the keys. See [Updates](#updates).
 
 ```
-journal <--version|probe|precinct|role|dispatch|tick|status|sync|commands|run|run-installation|leads|seen|cap|last|case|intake|lint-body|lint-page|department-line|precedent|old-precedent|pull|handoff|clean|text|decider|form|jev|catalog|wake|law-sync|law-update> [args]
+journal <--version|probe|precinct|role|dispatch|tick|status|sync|leads|seen|cap|last|case|intake|clean|text|lint-body|lint-page|department-line|precedent|old-precedent|pull|handoff|decider|form|jev|catalog|wake|law-sync|law-update|commands|run|run-installation> [args]
 journal probe [--schema N]
 journal law-sync --tag <tag> --commit <commit> --installation <folder>
-journal law-update <role> [--revision <revision> --state clean|changed [--tag <tag>]|--revision unreadable] [--release done|missing|failed] [--verify passed|failed|not-run|declined|unnamed]
 ```
 
 ### Precincts and roles
@@ -138,7 +137,7 @@ journal role set <role> --every <minutes>
 
 - `dispatch`: `add` writes an order for a role by hand. A repeated open order exits 2. The duty desk writes the other orders.
 - `tick`: `start` opens a tick. With `--order`, it takes that order and prints the tick's input, as [the role entry](#the-role-entry) says. With `--role duty-desk` and no order, it starts the tick of the duty desk, as [the duty desk](#the-duty-desk-tick) says. Another role without `--order` exits 1. `continue` carries on an open tick of the duty desk. `input` prints a part of an input. `end` closes a tick with an outcome and a report from stdin, and closes the order it names. `list` prints ticks newest first with their reports.
-- `wake`: the role entry. It prints nothing when the role has no takeable order, and the first part of the role's input otherwise. It also records the check, which counts toward the alarms `role-silent` and `no-progress`. See [the role entry](#the-role-entry).
+- `wake`: the role entry. It prints nothing when the role has no takeable order, and the first part of the role's input otherwise. It also records the check, which counts as activity for `role-silent` and, except for the duty desk, toward `no-progress`. See [the role entry](#the-role-entry).
 
 ```
 journal dispatch add --precinct <p> --role <r> [--department <d>] [--issue <n>]
@@ -150,7 +149,7 @@ journal wake --role <r>
 
 - `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name. It then prints the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
 
-No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. The journal computes `no-progress`, `tick-hung`, `role-silent`, `tick-failing`, `broken-lead` and `decision-waiting`. The update prints `contract-changed`. [The pipeline](pipeline.md#alarms) says when each rises. The start of the duty desk prints the open alarms again, except those it raised itself.
+No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. [The pipeline](pipeline.md#alarms) lists the alarms and says who raises each. The start of the duty desk prints the open alarms again, except those it raised itself.
 
 ```
 journal status
@@ -167,11 +166,11 @@ The pull request cache holds every open pull request of the trusted login, with 
 - `seen`: answers `none`, `open #n`, `declined #n` or `fixed #n` for a finding id.
 - `cap`: prints `cap=<n> open=<k>` for a department of a precinct.
 - `last`: prints the last visit of a role to each department of a precinct.
-- `case`: prints the stage of an issue as one line of fields, in this order: `need` (the next role), `round`, `returned` (the returns), `department`, `sha` (the commit), `state`, `lead`, `related`, `priority`, `job` (the clerk's job), `action`, `pull` (the pull request), `sources` and `branch`. It ends with three fields. `kind=` is `requirement`, `defect` or `-`. `answer=` is `up`, `down`, `comment` or `-`. `answer_id=` is the id of the decider's comment for a `comment` answer. A requirement is a lead of the response unit whose id ends in `required`. The answer counts only while the newest court marker is a referral.
+- `case`: prints the stage of an issue as one line of fields. A requirement is a lead of the response unit whose id ends in `required`. The fields are in [Read the stage](../skills/lawman-law/references/tick.md#read-the-stage).
 - `intake`: prints `need=` and `state=` for one issue.
-- `pull`: prints the stage of a pull request as one line of fields, in this order: `need` (the next role), `spec` (the spec vote), `spec_id`, `work` (the executor's work state), `sources` and `priority`.
+- `pull`: prints the stage of a pull request as one line of fields. The fields are in [Read the pull stage](../skills/lawman-law/references/tick.md#read-the-pull-stage).
 - `decider`: reads the decider form on stdin and says whether the actor of the last close or reopen is a decider.
-- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. Each comment, in the issues form and in the pulls form, carries `id`, `approvedBy` and `rejectedBy`. Both lists are required on every comment. They matter only for the comments of the trusted login on open issues, and they stay empty elsewhere. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
+- `form`: prints the input form of one kind, `issues`, `pulls`, `decider` or `catalog`, with one example. The issues form holds `writers` and `issues`. Each comment, in the issues form and in the pulls form, carries `id`, `approvedBy` and `rejectedBy`. Both lists are required on every comment. In the issues form they matter only for the comments of the trusted login on open issues. In the pulls form they carry the spec vote and the work state, from the trusted login's comments on open pull requests. Elsewhere they stay empty. The journal normalises every time of an input to UTC, as `YYYY-MM-DDTHH:MM:SSZ`, and rejects a value that is not a time.
 
 ```
 journal sync <precinct> --author <login> [--reset | --pulls]
@@ -194,12 +193,13 @@ journal form <issues|pulls|decider|catalog>
 - `lint-page`: checks a constitution or a department page on stdin. Exit 8 prints the reasons. A good constitution prints one line per department with its judging document. It then prints one line that starts with `#` for each section the contract does not list. A good department page with an alarm check prints `alarm-check`.
 - `department-line`: reads a constitution on stdin and prints it with one Departments line set. Exit 8 when the result fails the page check.
 - `handoff`: builds the hand-over comment of the clerk for a pull request and prints it. With `--adopted` it cleans the old body of the pull request first. It never exits with 7.
-- `precedent`: reads the newest counted ruling of a case from the journal's cache. It writes its precedent files into the folder `.lawman/precedents/` of a tree. It prints one line for each change: `entry <name> [<reason>]`, `cancel <name or -> [missing]`, `none` or `no-entry <reason>`. The fields of each `precedent` line, `drop` and `ask` lines included, are separated by one tab. The lines of `old-precedent` use one space. A taken name gets the next free one, so no precedent is lost. The model passes no ruling text. A link or a folder in the path that is no plain file or folder gives a non-zero exit and no write. Each new file carries its original list in `departments`, as [constitution](constitution.md) says. It prints `drop <name> <department or ->` for each name the court gave that is no candidate. It prints `drop` only for a file that stays. It prints `ask <name>` for each file it wrote from a new line of the ruling as it stands. It prints `ask` when the precinct allows Jev and the original list is not empty and leaves a candidate out. With `--request <name>` it prints the TypeSafe Jev request body for that file. The body is built from its cache, the tree and the pages of the candidates outside the list. When the body cannot be built, it prints nothing and exits non-zero. With `--answer <name>` it reads the reply and its status line on stdin. It changes only the `departments` field, and only of a file that still holds its original list. It prints one line: `jev model=<model> departments=<a,b|all>`, `jev unchanged` or `jev none reason=<reason>`. A file that the gate refuses gets its cause on stderr: no `ask` line in the write, and `jev none reason=brief` in the answer. Any other error is a fault: it prints on stderr and exits non-zero. A department source in the tree that exists and cannot be read is such a fault. A failed listing of the shared department pages and a case missing from the cache are such faults too. A write call with one writes nothing. The journal sends nothing.
+- `precedent`: reads the newest counted ruling of a case from the journal's cache. It writes its precedent files into the folder `.lawman/precedents/` of a tree. It prints one line for each change: `entry <name> [<reason>]`, `cancel <name or -> [missing]`, `none` or `no-entry <reason>`. A taken name gets the next free one, so no precedent is lost. The model passes no ruling text. A link or a folder in the path that is no plain file or folder gives a non-zero exit and no write. Each new file carries its original list in `departments`, as [constitution](constitution.md) says. It prints `drop <name> <department or ->` for each name the court gave that is no candidate. It prints `drop` only for a file that stays. It prints `ask <name>` for each file it wrote from a new line of the ruling as it stands. It prints `ask` when the precinct allows Jev and the original list is not empty and leaves a candidate out. With `--request <name>` it prints the TypeSafe Jev request body for that file. The body is built from its cache, the tree and the pages of the candidates outside the list. When the body cannot be built, it prints nothing and exits non-zero. With `--answer <name>` it reads the reply and its status line on stdin. It changes only the `departments` field, and only of a file that still holds its original list. It prints one line: `jev model=<model> departments=<a,b|all>`, `jev unchanged` or `jev none reason=<reason>`. A file that the gate refuses gets its cause on stderr: no `ask` line in the write, and `jev none reason=brief` in the answer. Any other error is a fault: it prints on stderr and exits non-zero. A department source in the tree that exists and cannot be read is such a fault. A failed listing of the shared department pages and a case missing from the cache are such faults too. A write call with one writes nothing. The journal sends nothing. The lines that `precedent` prints, `entry`, `cancel`, `drop` and `ask` among them, separate their fields with one tab. The `jev` answer line and the lines of `old-precedent` use spaces.
 - `old-precedent`: moves the numbered lines of an old `## Precedents` section of `LAWMAN.md` into precedent files.
   - `list` reads a page on stdin. It prints `line <n> date=<date> link=<yes|no> position=<p>` and the rule in a `rule` fence for each numbered line, and `outside position=<p>` for an item outside the form. `<n>` is the number of the precedent in the section, not an issue. A page with no item prints `none`.
   - `added` prints the same lines for the numbered lines of the page at `--head` whose number the page at `--base` lacks. The base is the page at the merge base of a pull request. For that reason a pull request that is stale after a move gets no moved line. An edited line keeps its number and is not added. A free note is no old line.
-  - `check` reads the issues form, without the cache. The precinct's `issues` command gives it. A precinct without that command takes the form on stdin. For each `<line>:<issue>` it prints `line <n> kind=<protects|condemns>` when every counted court ruling on the issue gives one kind. Otherwise it prints `line <n> ask reason=<reason>`. The reasons are `no-issue`, `absent`, `repeated`, `no-ruling`, `mixed`, `form` and `ceiling`. A marker of another stage is no ruling. The precinct's `issues` command may fail with a reason other than `form`. Then the command prints `issues failed reason=<reason>` and an `error` fence, as [Failures and their reasons](#failures-and-their-reasons) says. It exits with the code of that failure. `move` does the same.
+  - `check` reads the issues form, without the cache. The precinct's `issues` command gives it. A precinct without that command takes the form on stdin. For each `<line>:<issue>` it prints `line <n> kind=<protects|condemns>` when every counted court ruling on the issue gives one kind. Otherwise it prints `line <n> ask reason=<reason>`. The reasons are `no-issue`, `absent`, `repeated`, `no-ruling`, `mixed`, `form` and `ceiling`. A marker of another stage is no ruling.
   - `move` takes the kind the same way, or the user's `--kind` when the rulings give none. It writes the file `<date>-<gist>.md` into `.lawman/precedents/` of the tree, or `<date>-<gist>-<k>.md` with the next free number `<k>` from 2 when that name is taken. It also takes the line out of `LAWMAN.md` of the tree: both stand, or neither does. A page that is not UTF-8 is refused. The rest of the page keeps its bytes, and a section with no item left reads `none`. The file holds `kind`, `departments: []`, `date` and `ruling`, the link of the line. A tail in parentheses that fails the link class is no link: it stays part of the rule, in the list and in the file. It prints `entry <name>` or `ask reason=<reason>`. A link or a folder in the place of `LAWMAN.md`, `.lawman` or `.lawman/precedents` gives a non-zero exit and no write.
+  - When the precinct's `issues` command itself fails, `check` and `move` print `issues failed reason=<reason>` and an `error` fence, as [Failures and their reasons](#failures-and-their-reasons) says. They exit with the code of that failure.
 - `jev`: `request` builds the request body for TypeSafe Jev from a brief on stdin. `answer` turns the reply and its status line into one `jev` evidence line. The journal sends nothing.
 - `catalog`: checks a precinct's pinned dependencies against the OSV catalog. `request` builds each request and `answer` reads each reply, for the two kinds `batch` and `record`. The journal sends nothing. See [The catalog check](#the-catalog-check).
 
@@ -381,7 +381,7 @@ The journal checks every argument against its class before the command runs. An 
 - A name of a precinct, a role or a department starts with a lowercase letter and holds lowercase letters, digits and `-`.
 - A login is a string of ASCII letters, digits, `.`, `_` and `-`. It does not start with `.` or `-`.
 - A name of a precedent is a string of ASCII letters, digits, `.`, `_` and `-`. It starts with a letter or a digit.
-- An outcome of `tick end --outcome` is one of `silent`, `ordered`, `filed`, `capped`, `failed`, `investigated`, `charged`, `returned`, `declined`, `defended`, `refuted`, `convicted`, `acquitted`, `recorded`, `admitted`, `asked`, `handed`, `shut`, `settled`, `kept`, `specified`, `out`, `executed` or `referred`, or a token `skipped-<slug>` or `stopped-<slug>`. A slug holds lowercase letters, digits and `-`. Any other token is a usage error.
+- An outcome of `tick end --outcome` is a token that [the law](../skills/lawman-law/references/LAW.md#one-tick-one-case-exit) names, or `skipped-<slug>` or `stopped-<slug>`. A slug holds lowercase letters, digits and `-`. The journal refuses any other token.
 - A revision is one string of ASCII letters, digits and `.` `_` `-` `/` `:` `+`. It does not start with `-`. Its length and shape are free, so a Git hash of 40 or 64 characters and a Subversion number both pass.
 - A path of a precinct file is a string of ASCII letters, digits and `.` `_` `-` `/`. It has no `..` segment and does not start with `/` or `-`. The command reads `./a` and `a//b` itself. A file whose name lies outside the class shows in the list of `files`, but `file` does not read it.
 - A number of an issue or a pull request is a positive integer without a leading zero.
@@ -480,7 +480,7 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 14. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field. A text longer than one part is cut, as [cut texts](#cut-texts) says.
 15. The self lines come last.
 
-A failed or empty operation prints the lines of `run` and a self line, and the start goes on, except for `fetch`, `issues` and `pulls`: there it stops at step 10. Only a usage error and a broken database exit non-zero.
+A failed or empty operation prints the lines of `run` and a self line, and the start goes on. For `fetch`, `issues` and `pulls` it stops at step 10. Only a usage error and a broken database exit non-zero.
 
 ### The outcomes the journal writes
 
@@ -538,13 +538,13 @@ The start runs these steps in order.
 
 The output is one part, framed as the tick group. It holds the `ALARM` lines, the `order` lines of the orders written, `ended <outcome>` and the lines `report <line>`. A start that stopped on self lines holds the `ALARM` lines and the self lines.
 
-`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 6 to 9 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with `no open tick with id <id> for this role`. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it. It trusts the duty desk on the law folder too, and checks nothing of it again.
+`journal tick continue <tick id>` carries on the open tick of the duty desk after the self steps. It runs steps 6 to 9 and prints no `ALARM` line. A tracker of a precinct with a weight above zero that was not synced in this tick ends the tick `stopped-sync`. An ended tick, an unknown tick and the tick of another role exit 1 with a message that names the id. They read no host and write no order. The journal does not keep the result of the identity check, so the continuation trusts the duty desk on it. It trusts the duty desk on the law folder too, and checks nothing of it again.
 
 A duty desk tick that the model ends itself uses `tick end <tick id> --outcome <token>`, as the skill says.
 
 ### The lines of the input
 
-`<form>` is the version of the input's form. It is `1`. A role tells the form of an output by it. A binary outside the form is a binary older than the law. It prints no line that starts with `lawman input`. Without work it prints the one line `idle`, where a binary of this form prints nothing. With work it prints a line `order <id>` for each order and a last line `at <time>`. So an output that is not empty, and whose first line does not start with `lawman input`, comes from a binary outside the form. The role then updates the journal by the section "Sync the law with an older journal" of `tick.md` and takes its input again. An empty output still means no work. The fields of a line are separated by one space.
+`<form>` is the version of the input's form. It is `1`. A role tells the form of an output by it. A binary outside the form is a binary older than the law. It prints no line that starts with `lawman input`. Without work it prints the one line `idle`. With work it prints a line `order <id>` for each order and a last line `at <time>`. So an output that is not empty, and whose first line does not start with `lawman input`, comes from a binary outside the form. The role then updates the journal by the section "Sync the law with an older journal" of `tick.md` and takes its input again. An empty output still means no work. The fields of a line are separated by one space.
 
 The frame of a part:
 
@@ -728,42 +728,11 @@ When no record can be shown, the journal prints `catalog none reason=<reason>`:
 | 7 | Body check rejection |
 | 8 | Page check rejection |
 
-`law-update` adds no code. A stop is an answer and exits 0, and a usage error exits 1. Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly 1000 issues is rejected, because the source may have truncated it, and the journal never truncates a list itself. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
+`law-update` adds no code. A stop is an answer and exits 0, and a usage error exits 1. Codes 3 and 4 cover `run` too, as the table of failure reasons says. Code 4 prints the form that the input broke, with an example. The issue sync ceiling is 1000 records. A list of exactly that size is rejected and never truncated. The pull request sync has no ceiling. The law lists the codes in [LAW.md](../skills/lawman-law/references/LAW.md).
 
 A role treats exit 2 as silence. Skills cite the other codes by number.
 
 ## Source files
 
-- [journal.ts](../journal/src/journal.ts): the command table.
-- [db.ts](../journal/src/db.ts): the exit codes and the database path.
-- [form.ts](../journal/src/form.ts): the input forms and their examples.
-- [migrations.ts](../journal/src/migrations.ts): the schema.
-- [args.ts](../journal/src/args.ts): the classes of the arguments.
-- [launch.ts](../journal/src/launch.ts): the places of the commands and their start, and the three operations of the installation.
-- [operations.ts](../journal/src/operations.ts): `commands`, `run`, the forms of the output and the reasons.
-- [fence.ts](../journal/src/fence.ts): the fence.
-- [cache-text.ts](../journal/src/cache-text.ts): the texts in the cache, their print and the cut of a case text.
-- [text-command.ts](../journal/src/text-command.ts): the command `text`.
-- [clean-command.ts](../journal/src/clean-command.ts): the command `clean` and its parts.
-- [input-roles.ts](../journal/src/input-roles.ts): the blocks of each role's input.
-- [input-parts.ts](../journal/src/input-parts.ts): the blocks, the parts, their frame and the cut of a case text.
-- [wake.ts](../journal/src/wake.ts): the call `wake` of the role entry.
-- [role-entry.ts](../journal/src/role-entry.ts): the role group.
-- [tick-start.ts](../journal/src/tick-start.ts): the start of a tick with an order and the tick group.
-- [duty-desk.ts](../journal/src/duty-desk.ts): the tick of the duty desk and its continuation.
-- [alarms.ts](../journal/src/alarms.ts): the alarms and `status`.
-- [sync.ts](../journal/src/sync.ts): the command `sync`.
-- [law-sync.ts](../journal/src/law-sync.ts): the command that the new binary runs to swap itself in.
-- [law-update.ts](../journal/src/law-update.ts): the pass of the law update and its stops.
-- [law-version.ts](../journal/src/law-version.ts): the form of the `law-version` output and the check of the law folder at the start of a tick.
-- [clean-host.ts](../journal/src/clean-host.ts): the cleaning of host text.
-- [clean-quote.ts](../journal/src/clean-quote.ts): the cleaning of quotes.
-- [run-installation.ts](../journal/src/run-installation.ts): the command `run-installation`.
-- [lint.ts](../journal/src/lint.ts): the page checks of `lint-page`.
-- [precedent.ts](../journal/src/precedent.ts): the command `precedent`.
-- [old-precedents.ts](../journal/src/old-precedents.ts): the command `old-precedent`.
-- [jev.ts](../journal/src/jev.ts): the command `jev`.
-- [catalog-entries.ts](../journal/src/catalog-entries.ts): the list form, the value classes and the `Source:` line.
-- [catalog.ts](../journal/src/catalog.ts): the parts, the state and the printed result.
-- [catalog-record.ts](../journal/src/catalog-record.ts): the read of one record.
+- [journal.ts](../journal/src/journal.ts): the command table. The other files of [the source folder](../journal/src/) hold one command or one part each.
 - [tick.md](../skills/lawman-law/references/tick.md): the command forms that roles run.

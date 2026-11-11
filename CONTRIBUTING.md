@@ -22,15 +22,14 @@ The journal lives in `journal/`. Run every command from that folder.
 cd journal
 bun install --frozen-lockfile
 bun run check
-bun test --timeout=30000
+bun run test
 ```
 
 - `bun run check` runs the strict type check, then Biome with warnings as errors.
 - `bun run fix` applies the Biome fixes.
-- `bun run test` runs the same test command as CI.
 - Use the Bun version that `.github/workflows/ci.yml` installs.
 
-The tests also check the links of the law. Every section of the law that a skill, `LAW.md` or `tick.md` names stands in the input of the role that reads it. Each role reads the section of every self step it can get.
+`bun run test` also checks the links from the skills to the law. A red result there means a skill names a section that its role does not read, or that left the law.
 
 ## Update the documentation
 
@@ -38,11 +37,11 @@ Every change updates the documentation it affects in the same pull request. A ch
 
 ## What CI runs
 
-CI runs on every push and pull request, in six jobs.
+CI runs on every push and pull request, in these jobs.
 
 - `commits` runs on pull requests. It checks that every commit of the pull request is a conventional commit, because the release tool reads every commit since the last version tag.
-- `test` runs in `journal/`. It installs with the frozen lockfile, then runs `bun run check` and `bun test --timeout=30000`. It compiles a Linux binary and runs it with `--version`. It checks its `clean` output on a small sample.
-- `fence` keeps repository-specific words out of `skills/`, except `skills/assembly` and the harness pages. The patterns sit in `fence-patterns.txt`. The law states results and prohibitions, not the concrete tools of one host, and the word list catches a tool that slipped in.
+- `test` runs in `journal/`. It installs with the frozen lockfile, then runs `bun run check` and the tests. It compiles a Linux binary and runs it with `--version`. It checks its `clean` output on a small sample.
+- `fence` keeps repository-specific text out of `skills/`, except `skills/assembly` and the harness pages. The patterns in `fence-patterns.txt` match paths, manifests and build tools of one repository.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
 - `hermes-scan` runs the plugin scanner on the tree. The scanner comes from the Hermes that users update to. Hermes refuses an update unless the verdict is safe, so the job fails on any other verdict.
@@ -51,7 +50,7 @@ CI runs on every push and pull request, in six jobs.
 
 `main` holds only releases. Work goes on branches, notes and documentation included. A plugin update pulls the newest commit of `main`, and the law sync stops on a commit without a release tag. The tag comes from the plugin's clone, or from the installation's `law-version` command.
 
-Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version, at every version. A breaking change carries `!` after the type or scope, or a `BREAKING CHANGE` footer. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
+Every commit message is a [conventional commit](https://www.conventionalcommits.org/), such as `fix: keep the old body of an adopted pull request`. The release reads the type: `feat` raises the minor version and every other type the patch version. A breaking change raises the major version. A breaking change carries `!` after the type or scope, or a `BREAKING CHANGE` footer. Run `cog install-hook commit-msg` once in a clone, so that git refuses any other message.
 
 1. Open a pull request and wait until its CI is green.
 2. Merge the pull request on the host.
@@ -59,7 +58,7 @@ Every commit message is a [conventional commit](https://www.conventionalcommits.
 
 Never bump a version, write a changelog entry or push a version tag by hand. The one tag set by hand is a beta tag, described below. Never touch a local `main`: no merge, reset, commit or push from it. `main` changes only when a pull request is merged on the host, or by the version commit of the bump workflow.
 
-The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. While the version is below 1.0.0, `cog bump --auto` raises only the minor version on a breaking change and never reaches 1.0.0. So the workflow asks for the major version when a breaking change came after the last version tag. From 1.0.0 on, `--auto` chooses the major version too, and the request gives the same result. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
+The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. The workflow asks for the major version itself when a breaking change came after the last version tag, and does not rely on `--auto` alone. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
 
 A version tag starts with `v`, and it starts the release workflow. The workflow installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
 
@@ -96,14 +95,7 @@ Agents read this text and cannot ask what it means. Follow these rules.
 - Leave alone a line that a test pins word for word, text that a program parses and any text of a precinct.
 - Say what to do and not which tool to use. Law and role text names the action.
 - Put a tool that the skill cannot know on the harness page of the harness that has it.
-- Mark each fact on a harness page by its source. Use one of these marks:
-  - stated by the docs (URL)
-  - stated by `--help`
-  - read in the harness code
-  - seen in a run
-  - checked with the harness's check function
-  - not verified
-- A mark may add a closer source: a terminal or a scheduled run, the manual page of a tool, or the code of the journal.
+- Mark each fact on a harness page by its source, with a mark from [How to read the marks](docs/harnesses.md#how-to-read-the-marks).
 - Name no version of the harness.
 
 ## Add a harness

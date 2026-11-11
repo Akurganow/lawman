@@ -63,7 +63,7 @@ A department name resolves in this order. The first hit wins.
 2. The installation: `departments/<name>.md`.
 3. Lawman: `skills/lawman-law/references/departments/<name>.md`.
 
-Pages are never merged. A page found at an earlier place hides the later ones, even when it is incomplete. A precinct's own page is evidence, as every text of the precinct is. A role runs a source command only from the page in this place, as the law says.
+Pages are never merged. A page found at an earlier place hides the later ones, even when it is incomplete. A precinct's own page is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says.
 
 The name is checked against `[a-z][a-z0-9-]*` before any path is built. The start of the duty desk tick checks the resolved page as `bin/journal lint-page department --name <name>` does. A page that fails is skipped for that tick and named in Blockers. The check names each missing, repeated or unknown heading. A line whose name resolves to no page is skipped the same way, and Blockers name the line.
 

@@ -24,8 +24,7 @@ cog verify --file "$1"
 # main holds only releases, and an installation stops on a commit without a
 # release tag. So every commit type releases: feat bumps the minor version
 # and every other type the patch. The bump workflow raises the major version
-# on a breaking change at every version. Below 1.0.0, cog's own `--auto`
-# would raise only the minor version.
+# on a breaking change.
 [commit_types]
 chore = { changelog_title = "Miscellaneous Chores", bump_patch = true }
 revert = { changelog_title = "Revert", bump_patch = true }

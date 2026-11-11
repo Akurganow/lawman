@@ -202,30 +202,30 @@ The role entry tells a harness whether a role has work. The harness runs a small
 
 The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
 
-The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the check of the law folder, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
 
 An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
 ## What reaches the developer
 
-Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you, a stop of the law sync, a stop of the duty desk and the lines of the update list that the law sync prints.
+Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you. So do a stop of the law sync, a stop of the duty desk and the update list that [Sync the law](../skills/lawman-law/references/tick.md#sync-the-law) defines.
 
 ### Alarms
 
-The journal computes the first six alarms below. The update prints `contract-changed`. The `case` and `sweep` alarms name a path and a line, never a value.
+The column Raised by says who prints each alarm. The `case` and `sweep` alarms name a path and a line, never a value.
 
-| Alarm | Raised when |
-| :-- | :-- |
-| `no-progress` | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
-| `tick-hung` | A tick has no end record while a later tick of its role exists. |
-| `role-silent` | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
-| `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
-| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
-| `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
-| `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
-| `sweep` | Patrol finds a live secret in the tree or the history. |
-| `referral` | The court refers a requirement to a decider. |
+| Alarm | Raised by | Raised when |
+| :-- | :-- | :-- |
+| `no-progress` | journal | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
+| `tick-hung` | journal | A tick has no end record while a later tick of its role exists. |
+| `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
+| `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
+| `broken-lead` | journal | An open issue has the `[Lead]` title prefix and no lead marker. |
+| `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
+| `contract-changed` | [law update](journal.md#updates) | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
+| `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
+| `sweep` | a role | Patrol finds a live secret in the tree or the history. |
+| `referral` | a role | The court refers a requirement to a decider. |
 
 The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
 

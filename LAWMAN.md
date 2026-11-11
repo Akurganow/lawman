@@ -17,16 +17,14 @@ contract_version: 4
 - Type check, lint and tests run on every push and pull request: .github/workflows/ci.yml (job `test`)
 - A class fence keeps words of one repository out of the law, the departments and the roles: .github/workflows/ci.yml (job `fence`)
 - A leak scan rejects home paths and GitHub tokens in every file: .github/workflows/ci.yml (job `leaks`)
-- A commit check rejects a pull request commit that is not a conventional commit: .github/workflows/ci.yml (job `commits`)
-- A check rejects a tree where `docs/gangsta/` is not ignored by git: .github/workflows/ci.yml (job `ignore`)
-- A plugin scan rejects a tree that the Hermes scanner does not rate safe: .github/workflows/ci.yml (job `hermes-scan`)
+- Commit messages, the ignore rule for `docs/gangsta/` and the Hermes plugin scan have jobs of their own: .github/workflows/ci.yml (jobs `commits`, `ignore`, `hermes-scan`)
 - The fence does not prove that a text of the law or of a skill says what it should. A rule can pass every job and still mislead a role.
 
 ## Regression proof
 
 - cd journal && bun install --frozen-lockfile
 - cd journal && bun run check
-- cd journal && bun test --timeout=30000
+- cd journal && bun run test
 
 ## Not judged
 
