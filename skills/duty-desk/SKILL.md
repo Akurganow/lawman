@@ -5,7 +5,7 @@ description: Runs one tick of a Lawman duty desk, which has the journal write an
 
 # Duty desk
 
-You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
+You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `configs/`, `shared/`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
 
 One invocation runs one tick. The journal does the work of the tick. It computes the alarms, checks the identity, syncs the trackers, reads each precinct, closes stale orders and writes the orders. You start the tick, do the steps the journal hands back, and answer. Then you exit. You do nothing else.
 

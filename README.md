@@ -22,7 +22,7 @@ Lawman installs as an Agent Plugins package, with one manifest at the repository
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds fifteen keys, among them the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds fifteen required keys and three optional ones, among them the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -94,7 +94,7 @@ hermes plugins update lawman
 
 The next tick of any role completes the update, and so does the assembly when you run it first. The sync downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
 
-After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
+After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md and write the commands of the installation. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
 
 After an update, the tick that synced the law tells you to run the assembly. You answer the license question for each precinct without an answer. A yes or a no removes that line.
 
@@ -118,7 +118,7 @@ OpenClaw runs each role as a scheduled job with an entry script. It needs its ga
    openclaw plugins install lawman --marketplace Akurganow/lawman
    ```
 
-2. In an OpenClaw chat, run the skill `assembly`. The docs name the forms `$assembly` and `/assembly`.
+2. In an OpenClaw chat, run the skill `assembly`. The OpenClaw docs name the forms `$assembly` and `/assembly` (not verified).
 
 3. The assembly asks you to create one OpenClaw agent whose workspace is the installation folder. It shows the lines and waits, because creating an agent changes OpenClaw's settings. You apply them:
 
@@ -126,7 +126,7 @@ OpenClaw runs each role as a scheduled job with an entry script. It needs its ga
    openclaw agents add <agent id> --workspace "<installation>" --non-interactive
    ```
 
-The assembly then goes on as it does on Hermes Agent. It writes one paused job for each role, with the entry script of that role and the model you chose. A job holds a copy of its script. A change to the script reaches a job only when the assembly writes the job again.
+The assembly then goes on as it does on Hermes Agent. The OpenClaw page has no send form for the catalog check, so that check cannot run on OpenClaw. The assembly writes one paused job for each role, with the entry script of that role and the model you chose. A job holds a copy of its script. A change to the script reaches a job only when the assembly writes the job again.
 
 #### Update
 

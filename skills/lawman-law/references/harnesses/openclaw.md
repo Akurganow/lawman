@@ -93,7 +93,7 @@ openclaw agents list --json
 
 Skill names are bare. A plugin skill of `lawman` is `patrol`, `court` and so on, with no plugin prefix (stated by the docs, https://docs.openclaw.ai/plugins/bundles.md; not verified). A same-named bundled, managed, agent or workspace skill overrides a plugin skill (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). The installation holds no `skills/` folder.
 
-Each run gets an `<available_skills>` block with the name, description and location of every eligible skill (read in the harness code, openclaw/src/skills/runtime/cron-snapshot.ts). The model reads a `SKILL.md` with the tool `read`. No flag binds a skill to a job (read in the harness code, openclaw/src/cli/cron-cli/register.cron-options.ts). A `$<skill name>` reference is not expanded in a cron run (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified).
+Each run gets an `<available_skills>` block with the name, description and location of every eligible skill (read in the harness code, openclaw/src/skills/runtime/cron-snapshot.ts). The model reads a `SKILL.md` with the tool `read`. No flag binds a skill to a job (read in the harness code, openclaw/src/cli/cron-cli/register.cron-options.ts). A `$<skill name>` reference is not expanded in a cron run (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). In a chat, the docs name `$<skill name>` and `/<skill name>` as the forms that run a skill (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified).
 
 A disabled plugin loads no skills (stated by the docs, https://docs.openclaw.ai/tools/skills.md; not verified). What a job then sees is (not verified). Treat a missing skill as a stop and enable the plugin.
 

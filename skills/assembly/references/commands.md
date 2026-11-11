@@ -176,8 +176,8 @@ A request that the host refuses to accept for its size, its limit or its complex
 A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives and the account. Write them into the command file when you write the command.
 
 - `host.md` and `config.yaml` hold the same facts as lines for the whole installation, and the roles and the journal read those lines. Copy the fact into the command and keep the line.
-- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to move it in the same call of approval.
-- `law-sync` moves nothing.
+- When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. Ask for the consent to copy it in the same call of approval. The line stays where it is.
+- `law-sync` copies nothing.
 - The keys `typesafe` and `typesafe_key` lie in `config.yaml`, which belongs to the whole installation. They stay there.
 
 ## Leave empty

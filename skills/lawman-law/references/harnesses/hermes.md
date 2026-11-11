@@ -239,7 +239,7 @@ Schedule forms:
 
 - A five-field cron expression, such as `0 * * * *`, recurs until removed.
 - A bare duration such as `2m` recurs. It means every 2 minutes, not once in 2 minutes.
-- A one-shot job needs `--repeat 1` on this harness (probe). The docs show repeat only as the `repeat` tool parameter and do not state a CLI flag. The docs also list `in 30m` as a one-shot form.
+- A one-shot job needs `--repeat 1` on this harness (seen in a run). The docs show repeat only as the `repeat` tool parameter and do not state a CLI flag. The docs also list `in 30m` as a one-shot form.
 
 Manage jobs with these commands:
 
@@ -385,7 +385,7 @@ Rules for every one-off job:
 - The name never starts with `[lawman] `. The assembly finds the installation by the first job with that prefix.
 - The schedule `in 24h` is a one-shot form that fires once, a day after the create (read in the harness code: `cron/jobs.py`, `parse_schedule`). The job is meant to run by the `run` call before that. `--repeat 1` makes the single run explicit.
 - The job runs a model, so each run is paid. With no `--model` the job follows `cron.model`, then the main model (stated by `hermes cron create --help`).
-- The prompt passes the same scan as any prompt. The prompts below match none of the patterns (checked with the harness's scan function).
+- The prompt passes the same scan as any prompt. The prompts below match none of the patterns of that scan (checked with the harness's check function).
 - A paused job is refused by `run`. Do not create a one-off job paused.
 
 #### Proof of a command
@@ -424,7 +424,7 @@ hermes sessions export --title "lawman-proof-<n>" --after <time before the run> 
 - `LAWMAN_DB` points the journal at the throwaway database, and the journal finds the commands beside it. The session's folder is the installation, so `bin/journal` resolves as in a tick.
 - The answer `[SILENT]` alone is the harness's silence form (see "Silence"). A model that answers otherwise changes nothing in the record of the terminal call.
 - The form holds no redirect into a file: the check refuses a redirect whose target is a system path (see "Commands in scheduled runs").
-- Each of these lines passed the harness's check function as a role would send it. They are the create line, the create line with the proof prompt filled in, and the export line. The terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder passed too (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's scan function).
+- Each of these lines passed the harness's check function as a role would send it. They are the create line, the create line with the proof prompt filled in, and the export line. The terminal command with a `run` or a `run-installation` form and a `LAWMAN_DB` under a temporary folder passed too (checked with the harness's check function). The proof prompt passes the harness's scan of cron prompts (checked with the harness's check function).
 
 Run the job and remove it as the order above says.
 
