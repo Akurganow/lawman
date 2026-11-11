@@ -2,11 +2,11 @@
 
 Lawman runs inside an agent harness, on that harness's own schedule. This page records the layout that lets one package serve every harness. It also records the facts that shaped the layout and the steps that add a harness.
 
-Lawman supports every harness of the set. Seven more harnesses follow.
+Only Hermes Agent is Supported. Every other harness in [the table](#the-harnesses) is TBD.
 
 ## How to read the marks
 
-Every fact about a harness names its source in brackets. Six marks exist.
+Every fact about a harness names its source in brackets. These marks are in use, and others may join them:
 
 - `(stated by the docs, <URL>)` means the harness's own documentation says it.
 - ``(stated by `--help`, <command>)`` means the help text of the harness's own command says it.
@@ -14,6 +14,7 @@ Every fact about a harness names its source in brackets. Six marks exist.
 - `(seen in a run)` means a command ran and printed it.
 - `(checked with the harness's check function)` means the harness's own approval check accepted the command form.
 - `(not verified)` means nobody checked it. Check it live before you rely on it.
+- A mark may add a closer source, such as a terminal, a scheduled run, the manual page of a tool or the journal code.
 
 Harnesses change fast. Read the live documentation when the work on a harness starts.
 
@@ -44,7 +45,7 @@ LICENSE
 - The standard requires only `$schema` and `name`. Its schema allows no other top-level field than the ones it lists (stated by the docs, https://agent-plugins.org/schemas/1.0.0/plugin.schema.json).
 - Lawman also fills `version`, `description`, `author.name` and `keywords`, because Kiro lists them as required (stated by the docs, https://kiro.dev/docs/powers/create).
 - Optional fields that Lawman fills are `author.url`, `homepage`, `repository` and `license`.
-- A test pins the version in `plugin.json` equal to the version of the journal program.
+- The bump workflow writes one version into `plugin.json` and into `journal/package.json`. The release workflow checks that the journal prints the version of the tag.
 
 ### The skills
 
@@ -72,7 +73,7 @@ LICENSE
 
 ### What lives outside the plugin
 
-- The installation folder holds `config.yaml`, `host.md`, `bin/journal`, `journal.sqlite`, the precinct clones and the runs. It sits outside the plugin folder.
+- The installation folder sits outside the plugin folder. [Configuration](configuration.md#where-it-lives) lists what it holds.
 - Its entry `lawman` links to the folder of the installed plugin. The harness page gives the link form.
 - The journal binary sits in `bin/` of the installation. A release provides it, with a provenance file beside it. The assembly checks the checksum at install, and the journal checks it at an update. The signature in the provenance file is checked with the verifier the user chose. That verifier is a `verify` command or the verifier that the host notes name. A declined verifier leaves only a checksum from the same release, which proves no origin.
 
@@ -107,7 +108,7 @@ The assembly asks the developer through the harness's question tool. Each row na
 | Claude Code | `AskUserQuestion` (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | yes (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) | 1 to 4 questions, 2 to 4 options (stated by the docs, https://code.claude.com/docs/en/agent-sdk/user-input) |
 | Codex | `request_user_input` (read in the harness code) | no (read in the harness code) | 1 to 3 questions, 2 to 3 options, Plan mode only by default (read in the harness code) |
 | GitHub Copilot CLI | `ask_user` (stated by the docs, https://docs.github.com/en/copilot/reference/copilot-cli-reference/cli-command-reference) | (not verified) | (not verified) |
-| OpenClaw | `ask_user` (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | yes (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | 1 to 3 questions, 2 to 4 options (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) |
+| OpenClaw | `ask_user` (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | yes (stated by the docs, https://docs.openclaw.ai/tools/ask-user.md) | 1 to 3 questions, 2 to 4 options (read in the harness code) |
 | Oh-My-Pi | `ask` (read in the harness code) | yes (read in the harness code) | no hard limit (read in the harness code) |
 | Kiro | none built in (stated by the docs, https://kiro.dev/docs/tools.md) | (not verified) | (not verified) |
 | Pi | none built in (read in the harness code) | (not verified) | (not verified) |
@@ -252,7 +253,7 @@ A new harness needs four things:
 
 A page describes only the facts its own harness needs. It holds no description of another harness. Facts that serve every harness live in this file. The page answers each question in the commands of its own harness. Its scheduling section also holds the role entry, the edit of a job and the one-off run, each answered in those commands.
 
-Every heading must stand. Its body is a fact with its source, the word none with its consequence, or a fact marked `(not verified)`. A page that has no send form or no expert call says none. A harness that adds a form gains the check or the experts with no change to the law or the skills.
+Every heading must stand. Its body is a fact with its source, the word none with its consequence, or a fact marked `(not verified)`. The page needs a section `Silence`, which role entry prints. A page that has no send form or no expert call says none. A harness that adds a form gains the check or the experts with no change to the law or the skills.
 
 The assembly step "Choose the installation" needs five things from the page. They are the detection command and the job-list commands that show each job's working directory. A page may give two commands in series, as the OpenClaw page does: the list of jobs, then the list of agents. The others are the folder and change-directory forms, the link form and the link check. The install steps need a sixth, the scheduler check.
 

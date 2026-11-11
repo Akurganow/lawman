@@ -132,7 +132,7 @@
 
 ## The weight
 
-A weight is a share of patrol visits. The duty desk does not cover a precinct of weight 0: no role gets an order there and no patrol visits it. A precinct with a weight and no merged constitution wastes its visit, because its tick ends `skipped-no-constitution`. A precinct with a new draft starts at weight 0. A precinct whose constitution is already in place starts at weight 1.
+A weight is a share of patrol visits. The duty desk does not cover a precinct of weight 0: no role gets an order there and no patrol visits it. A precinct with a weight and no merged constitution wastes its visit, because the duty desk writes no patrol order there. A precinct with a new draft starts at weight 0. A precinct whose constitution is already in place starts at weight 1.
 
 ## The own department
 

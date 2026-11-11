@@ -1,5 +1,5 @@
 import { parsePart, partOutOfRange, usage } from "./args";
-import { cleanHostText } from "./clean-host";
+import { cleanEach } from "./clean-run";
 import { EXIT, Fail, out, readStdin } from "./db";
 import { inputChars, readConfig } from "./input-files";
 import { framed, runs } from "./input-parts";
@@ -10,17 +10,9 @@ const JSON_FLAG = "--json";
 const PART_FLAG = "--part";
 const NOT_JSON =
 	"clean: the input does not parse as JSON values; read the host reply again";
-const CLEAN_FAILED =
-	"clean: a library failed while cleaning the text; run the command again";
-
-// a library error can quote the input, so its message never reaches stderr
-async function cleaned(text: string): Promise<string> {
-	try {
-		return await cleanHostText(text);
-	} catch {
-		throw new Fail(EXIT.USAGE, CLEAN_FAILED);
-	}
-}
+// a text that cannot be cleaned prints as the withheld text, as the cache holds it
+const cleaned = async (text: string) =>
+	(await cleanEach([text])).get(text)?.text ?? "";
 
 // values may follow each other with or without white space between them.
 // The parser's own error is never shown, because it can quote the input.

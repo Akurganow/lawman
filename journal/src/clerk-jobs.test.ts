@@ -212,8 +212,15 @@ describe("table rows", () => {
 		});
 	});
 
-	test("4: a conviction on a closed issue gives no job", () => {
-		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe("-");
+	test("4: a conviction on a closed issue records its precedent", () => {
+		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe(
+			"precedent",
+		);
+	});
+
+	test("a ruling with no Precedent line gives no job", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(run({ state: "CLOSED", ruling, holds: false }).job).toBe("-");
 	});
 
 	test("a referral gives no job", () => {
@@ -283,18 +290,21 @@ describe("table rows", () => {
 			markers: pairs(["handed", "7", "open"]),
 			pulls: [pull(7, 1)],
 			ruling: conviction(),
+			holds: false,
 		});
 		expect(r.job).toBe("-");
 		expect(hasPair(pairs(["handed", "7", "open"]))).toBe(true);
 	});
 
-	test("K present: no precedent and no open from the ruling", () => {
-		const open = run({
-			markers: pairs(["handed", "7", "open"]),
-			pulls: [pull(7, 1)],
-			ruling: acquittal(),
-		});
-		expect(open.job).toBe("-");
+	test("a pair does not hold back the precedent job of a ruling", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(
+				run({
+					markers: pairs(["handed", "7", "open"]),
+					pulls: [pull(7, 1)],
+					ruling,
+				}).job,
+			).toBe("precedent");
 	});
 });
 

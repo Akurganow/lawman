@@ -10,7 +10,6 @@ export const EXIT = {
 	OK: 0,
 	USAGE: 1,
 	DUPLICATE_ORDER: 2,
-	SYNC_LIMIT: 3,
 	SYNC_INPUT: 4,
 	COMMAND: 5,
 	SCHEMA: 6,
@@ -31,7 +30,6 @@ type Env = Record<string, string | undefined>;
 
 const BUSY_TIMEOUT_MS = 5000;
 export const MINUTE_MS = 60 * 1000;
-export const LEAD_PREFIX = "[Lead]";
 
 const envValue = (env: Env, name: string): string | undefined =>
 	env[name] || undefined;

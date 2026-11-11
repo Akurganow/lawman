@@ -11,6 +11,7 @@ import {
 import { CleanFailed, printCached, type TextKind as Text } from "./cache-text";
 import { caseStage } from "./cases";
 import { cleanCharacters } from "./clean";
+import { lackOf, SLUG } from "./constitution";
 import { EXIT, Fail, inTransaction, now, open, out, withDb } from "./db";
 import { type PageRead, pageAt, placeNumber } from "./department-page";
 import { type Taken, takeableOrders, takeOrder } from "./dispatch";
@@ -20,6 +21,7 @@ import { inputOf, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
+import { urlOf } from "./link";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
@@ -77,6 +79,28 @@ export function stageFor(
 		throw e;
 	}
 	return null;
+}
+
+// The stage line of a case order and, after it, the link of its issue or pull request when
+// the cache holds one. A role copies the link onto the alarm it prints about that case.
+function caseLines(
+	db: Database,
+	input: RoleInput,
+	o: Taken,
+	stage: Stage,
+): string[] {
+	const url =
+		o.issue === null
+			? null
+			: urlOf(
+					db,
+					o.precinct,
+					input.number === "pull" ? "pull" : "issue",
+					o.issue,
+				);
+	return url === null
+		? [stage.line]
+		: [stage.line, `link ${o.precinct}#${o.issue} ${url}`];
 }
 
 // the issue or the pull request whose text the role reads, by the table
@@ -329,12 +353,13 @@ export async function tickStart(args: string[]): Promise<number> {
 	const size = inputChars(config);
 	const t: Tick = {
 		role,
+		// the precinct is on the row from the start, so a stop before the take still counts on it
 		id: withDb((db) =>
 			Number(
-				db.run("INSERT INTO ticks (role, started_at) VALUES (?, ?)", [
-					role,
-					stamp,
-				]).lastInsertRowid,
+				db.run(
+					"INSERT INTO ticks (role, started_at, precinct, department) VALUES (?, ?, ?, ?)",
+					[role, stamp, order.precinct, order.department],
+				).lastInsertRowid,
 			),
 		),
 	};
@@ -369,10 +394,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	const taken = withDb((db) =>
 		inTransaction(db, () => {
 			if (!takeOrder(db, role, id, stamp)) return false;
-			db.run(
-				"UPDATE ticks SET precinct = ?, department = ?, dispatch = ? WHERE id = ?",
-				[p, order.department, id, t.id],
-			);
+			db.run("UPDATE ticks SET dispatch = ? WHERE id = ?", [id, t.id]);
 			return true;
 		}),
 	);
@@ -402,7 +424,8 @@ export async function tickStart(args: string[]): Promise<number> {
 	if (input.stage !== null) {
 		if (stage === null)
 			return ended(t, o, "failed", "The stage check failed", id);
-		o.line(stage.line);
+		for (const line of withDb((db) => caseLines(db, input, order, stage)))
+			o.line(line);
 		if (input.stale?.(stage))
 			return ended(t, o, "silent", `Order stale: ${stage.line}`, id);
 	}
@@ -415,13 +438,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		} else {
 			files = listedFiles.text;
 			if (!listed(files, CONSTITUTION))
-				return ended(
-					t,
-					o,
-					"skipped-no-constitution",
-					`No constitution at ${revision}`,
-					id,
-				);
+				return ended(t, o, SLUG.missing, `No constitution at ${revision}`, id);
 			const file = await operate(p, "file", call([revision, CONSTITUTION]));
 			if (file.text === null) {
 				o.add(...file.blocks);
@@ -430,13 +447,10 @@ export async function tickStart(args: string[]): Promise<number> {
 				const lint = await lintedPage(o, "constitution", file.text);
 				if (lint === null) o.selfs.push("constitution");
 				else if (!lint.passed) {
-					const token = lint.reasons.some((r) => r.includes("contract_version"))
-						? "skipped-contract-version"
-						: "skipped-bad-constitution";
 					return ended(
 						t,
 						o,
-						token,
+						SLUG[lackOf(lint.reasons)],
 						`Constitution check failed at ${revision}`,
 						id,
 					);
@@ -514,14 +528,12 @@ export async function tickInput(args: string[]): Promise<number> {
 	if (row === null || row.ended_at !== null)
 		throw new Fail(EXIT.USAGE, `no open tick with id ${id}`);
 	const stored = JSON.parse(row.parts ?? "[]") as string[];
+	// the part asked for; part 1 without the option
+	const k = parsePart(opt.part, TICK_INPUT_USAGE);
 	// a built group stays as it was, so its constitution and page are not lost
-	if (opt.part !== undefined || stored.length > 0) {
-		const k = parsePart(opt.part, TICK_INPUT_USAGE);
+	if (stored.length > 0) {
 		const part = stored[k - 1];
-		if (part === undefined)
-			throw stored.length === 0
-				? new Fail(EXIT.USAGE, `tick ${id} has no part ${k}`)
-				: partOutOfRange(k, stored.length);
+		if (part === undefined) throw partOutOfRange(k, stored.length);
 		out(part);
 		return EXIT.OK;
 	}
@@ -547,7 +559,10 @@ export async function tickInput(args: string[]): Promise<number> {
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
 	if (input.stage !== null) {
 		if (stage === null) o.selfs.push("stage");
-		else o.line(stage.line);
+		else {
+			for (const line of withDb((db) => caseLines(db, input, order, stage)))
+				o.line(line);
+		}
 	}
 	if (input.constitution) o.selfs.push("constitution");
 	const d = departmentOf(input, order, stage);
@@ -560,6 +575,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	);
 	o.add(...texts.blocks);
 	o.selfs.push(...texts.selfs);
-	out(storeParts(t, o.all(), size)[0] ?? "");
+	const built = storeParts(t, o.all(), size);
+	const asked = built[k - 1];
+	if (asked === undefined) throw partOutOfRange(k, built.length);
+	out(asked);
 	return EXIT.OK;
 }

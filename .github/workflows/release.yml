@@ -42,7 +42,7 @@ jobs:
         run: bun test --timeout=30000
       - name: Compile
         working-directory: journal
-        run: bun build --compile --target=${{ matrix.target }} src/journal.ts --outfile ../journal-${{ matrix.target }}
+        run: bun build --compile --target=${{ matrix.target }} src/journal.ts src/clean-worker.ts --outfile ../journal-${{ matrix.target }}
       - name: Sign ad-hoc with entitlements (macOS)
         if: runner.os == 'macOS'
         run: |

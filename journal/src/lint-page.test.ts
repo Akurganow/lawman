@@ -193,14 +193,16 @@ describe("lint-page", () => {
 			expect(lintPage("constitution", VALID).notes).toBeUndefined();
 		});
 
-		test("a department page names each one as extra", () => {
+		test("a department page reads an extra heading as a note, empty or not", () => {
 			const text = DEPARTMENT.replace(
 				"## Identity",
 				"## Notes\nx\n## Identity",
-			).concat("## Tail\ny\n");
-			expect(lintPage("department", text).reasons).toEqual([
-				`${lineOf(text, "## Notes")}: extra heading "Notes"`,
-				`${lineOf(text, "## Tail")}: extra heading "Tail"`,
+			).concat("## Tail\n");
+			const result = lintPage("department", text);
+			expect(result.reasons).toEqual([]);
+			expect(result.notes).toEqual([
+				`# ${lineOf(text, "## Notes")}: unknown section "Notes"`,
+				`# ${lineOf(text, "## Tail")}: unknown section "Tail"`,
 			]);
 		});
 

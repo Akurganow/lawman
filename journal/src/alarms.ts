@@ -1,9 +1,11 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
-import { LEAD_ORIGIN_FROM, LEAD_PREFIX, MINUTE_MS, out, withDb } from "./db";
+import { type Lack, lackText } from "./constitution";
+import { LEAD_ORIGIN_FROM, MINUTE_MS, out, withDb } from "./db";
 import { readConfig } from "./input-files";
 import { configValue } from "./law-sync";
+import { type Subject, urlOf } from "./link";
 import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
 import { progressChecks } from "./settings";
@@ -87,7 +89,7 @@ function tickFailing(db: Database): Candidate[] {
 			`WITH ranked AS (
          SELECT role, COALESCE(precinct, '-') AS precinct, outcome,
                 ROW_NUMBER() OVER (PARTITION BY role, COALESCE(precinct, '-') ORDER BY ended_at DESC, id DESC) AS n
-         FROM ticks WHERE ended_at IS NOT NULL)
+         FROM ticks WHERE ended_at IS NOT NULL AND (precinct IS NOT NULL OR role = 'duty-desk'))
        SELECT role, precinct FROM ranked WHERE n <= ${TICK_FAILING_RUN}
        GROUP BY role, precinct
        HAVING count(*) = ${TICK_FAILING_RUN}
@@ -102,21 +104,55 @@ function tickFailing(db: Database): Candidate[] {
 	}));
 }
 
-function brokenLead(db: Database): Candidate[] {
-	const broken = db
+// the duty desk records the cause at each read of a precinct
+function noConstitution(db: Database): Candidate[] {
+	const rows = db
 		.query(
-			`SELECT precinct, issue FROM issues i
-       WHERE substr(title, 1, ${LEAD_PREFIX.length}) = '${LEAD_PREFIX}' AND state = 'OPEN'
-         AND NOT EXISTS (
-           SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead')
-       ORDER BY precinct, issue`,
+			"SELECT name, constitution_cause AS cause FROM precincts WHERE weight > 0 AND constitution_cause IS NOT NULL ORDER BY name",
 		)
-		.all() as { precinct: string; issue: number }[];
-	return broken.map((b) => ({
-		kind: "broken-lead",
-		ref: `${b.precinct}#${b.issue}`,
-		detail: `title starts with ${LEAD_PREFIX} but no lead marker`,
+		.all() as { name: string; cause: string }[];
+	return rows.map((r) => ({
+		kind: "no-constitution",
+		ref: r.name,
+		detail: lackText(r.cause as Lack),
 	}));
+}
+
+// How many texts the cache withholds on a precinct, and the first of them with their links.
+const NAMED = 3;
+const COMMENT_ID = /^[A-Za-z0-9_=-]+$/;
+function withheldTexts(db: Database): Candidate[] {
+	const precincts = db
+		.query("SELECT name FROM precincts WHERE weight > 0 ORDER BY name")
+		.all() as { name: string }[];
+	return precincts.flatMap(({ name }) => {
+		const found = db
+			.query(
+				`SELECT 'issue' AS kind, issue AS number, NULL AS id FROM issues WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT 'pull', number, NULL FROM pulls WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT kind, number, id FROM comments WHERE precinct = ?1 AND withheld = 1
+         ORDER BY 2, 1, 3`,
+			)
+			.all(name) as { kind: Subject; number: number; id: string | null }[];
+		if (found.length === 0) return [];
+		const named = found.slice(0, NAMED).map((t) => {
+			const url = urlOf(db, name, t.kind, t.number);
+			const what =
+				t.id === null
+					? `${t.kind} #${t.number}`
+					: `comment ${COMMENT_ID.test(t.id) ? `${t.id} ` : ""}on ${t.kind} #${t.number}`;
+			return url === null ? what : `${what} ${url}`;
+		});
+		const more =
+			found.length > NAMED ? `, and ${found.length - NAMED} more` : "";
+		return [
+			{
+				kind: "withheld-text",
+				ref: name,
+				detail: `${found.length} text${found.length === 1 ? " is" : "s are"} withheld, because the journal could not clean ${found.length === 1 ? "it" : "them"}: ${named.join("; ")}${more}. Edit or delete each on the host.`,
+			},
+		];
+	});
 }
 
 const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
@@ -145,7 +181,15 @@ function decisionWaiting(db: Database): Candidate[] {
 			...p,
 			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
 		}));
+	// a pull request that both lists name has one alarm: the handed one wins
+	const seen = new Set<string>();
 	return [...pairs, ...precedentWaiting(db)]
+		.filter((p) => {
+			const ref = `${p.precinct}#${p.number}`;
+			if (seen.has(ref)) return false;
+			seen.add(ref);
+			return true;
+		})
 		.sort((a, b) => byText(a.precinct, b.precinct) || a.number - b.number)
 		.map((p) => ({
 			kind: "decision-waiting",
@@ -182,8 +226,9 @@ const DETECTORS = [
 	tickHung,
 	roleSilent,
 	tickFailing,
-	brokenLead,
 	decisionWaiting,
+	noConstitution,
+	withheldTexts,
 ] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
@@ -195,7 +240,17 @@ type OpenAlarm = {
 
 // a changed detail is a new condition: the old alarm clears and the new one prints
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
-const alarmLine = (a: Candidate) => `ALARM ${a.kind} ${a.ref} ${a.detail}`;
+
+// An alarm about an issue or a pull request ends with its link. The address is looked up
+// from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
+function alarmLine(db: Database, a: Candidate): string {
+	const [precinct = "", number = ""] = a.ref.split("#");
+	const url =
+		a.kind === "decision-waiting"
+			? urlOf(db, precinct, "pull", Number(number))
+			: null;
+	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
+}
 
 export function reconcileAlarms(
 	db: Database,
@@ -223,13 +278,13 @@ export function reconcileAlarms(
 			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES (?, ?, ?, ?, ?)",
 			[w.kind, w.ref, w.detail, stamp, stamp],
 		);
-		lines.push(alarmLine(w));
+		lines.push(alarmLine(db, w));
 	}
 	// the duty desk repeats an open alarm at each of its ticks; the alarms this
 	// call raised are printed once above and never repeated here
 	if (repeat)
 		for (const o of open)
-			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(o));
+			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(db, o));
 	return lines;
 }
 

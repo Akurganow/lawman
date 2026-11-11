@@ -44,8 +44,8 @@ export async function lawCheck(
 	if (commit === undefined)
 		return { outcome: "failed", report: "config.yaml has no law_commit" };
 	const facts = await lawVersion();
-	if (facts === "absent") return "self";
-	if (facts === "failed") return { outcome: DRIFT, report: COMMAND_FAILED };
+	// a command that is absent or fails leaves the facts to the role
+	if (facts === "absent" || facts === "failed") return "self";
 	// Class, change, drift: here a change stops the tick whatever the commit.
 	// law-update compares before the change, because a drift there starts an update.
 	if (!COMMIT.test(facts.revision) || !COMMIT.test(commit))

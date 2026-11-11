@@ -118,6 +118,10 @@ export function cache(...pulls: [number, number[], string?][]) {
 export const ruled = (ruling: () => string, ...rest: string[]) =>
 	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
 
+// a ruling with a Precedent line, so the clerk has a precedent to record
+export const lined = (ruling: () => string) => () =>
+	`## Precedent\n\n- new gate: A rule.\n\n${ruling()}`;
+
 export const referral = () => mark("court", "referral", ` sha=${SHA}`);
 
 export const answer = (n: number, value: string, id = "-", name = "main") =>

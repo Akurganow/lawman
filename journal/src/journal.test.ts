@@ -124,7 +124,7 @@ describe("source constraints", () => {
 				expect(source(file)).not.toContain(banned);
 	});
 
-	test("only the launch module starts a process", () => {
+	test("only the launch module starts a process, and only the cleaning starts a worker", () => {
 		expect(sources).toContain(LAUNCH);
 		for (const file of sources.filter((f) => f !== LAUNCH))
 			for (const banned of [
@@ -134,7 +134,8 @@ describe("source constraints", () => {
 				"exec(",
 				"Worker(",
 			])
-				expect(source(file)).not.toContain(banned);
+				if (!(banned === "Worker(" && file === "clean-run.ts"))
+					expect(source(file)).not.toContain(banned);
 	});
 
 	test("the launch module runs the command file itself, with no interpreter", () => {

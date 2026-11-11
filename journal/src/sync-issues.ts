@@ -1,8 +1,6 @@
-import { EXIT, Fail } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { linkOrNull } from "./link";
 import type { GhIssue } from "./markers";
-
-export const SYNC_LIMIT = 1000;
 
 const STATE_REASON = /^[A-Z_]+$/;
 // The case line prints the id as answer_id=<id> among space-separated fields.
@@ -20,6 +18,7 @@ export type SyncIssue = Omit<GhIssue, "comments"> & {
 	state: string;
 	stateReason: string | null;
 	title: string;
+	url: string | null;
 	closedAt: string | null;
 	comments: SyncComment[];
 };
@@ -79,6 +78,7 @@ function readIssue(raw: unknown): SyncIssue {
 		state: raw.state,
 		stateReason: textOrNull(reason),
 		title: text(raw.title),
+		url: linkOrNull(raw.url),
 		createdAt: timeField(raw.createdAt, "an issue createdAt"),
 		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
 		author: login === "" ? null : { login },
@@ -99,11 +99,5 @@ export function readIssues(input: string): IssuesInput {
 	const writers = new Set(logins(data.writers, "writers"));
 	if (!Array.isArray(data.issues)) throw syncInput("issues is not a list");
 	const issues = data.issues.map(readIssue);
-	if (issues.length === SYNC_LIMIT) {
-		throw new Fail(
-			EXIT.SYNC_LIMIT,
-			`${SYNC_LIMIT} issues reached the limit: the list may be truncated at the source, cache untouched`,
-		);
-	}
 	return { writers, issues };
 }

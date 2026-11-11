@@ -25,7 +25,7 @@ const visit = (department: string, at: string, role = "patrol") =>
 	seed((db) => order(db, PRECINCT, role, { department, at, outcome: "filed" }));
 const lines = (r: { out: string }) => r.out.split("\n").filter((l) => l !== "");
 let nextIssue = 1;
-// a broken lead has the title prefix but no lead marker
+// a lead without a marker has only the title prefix, and counts for nothing
 const openLead = (department: string, broken = false) =>
 	seed((db) => {
 		const n = nextIssue++;
@@ -111,13 +111,13 @@ describe("rotation", () => {
 		expect(capOf("core")).toBe(want);
 	});
 
-	test("an open broken lead counts, other departments do not", () => {
+	test("an issue with the prefix and no marker counts for no department", () => {
 		for (let i = 0; i < 2; i++) openLead("core");
 		openLead("core", true);
 		openLead("web");
 		const r = lines(rotation(["core", "web", "idle"]));
-		expect(r).toEqual(["core\t-\t1", "idle\t-\t3", "web\t-\t3"]);
-		expect(capOf("core")).toBe("1");
+		expect(r).toEqual(["core\t-\t3", "idle\t-\t3", "web\t-\t3"]);
+		expect(capOf("core")).toBe("3");
 	});
 
 	test("the rotation command is a usage error", () => {

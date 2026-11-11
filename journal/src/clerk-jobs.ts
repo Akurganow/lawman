@@ -27,6 +27,8 @@ export type ClerkInput = {
 	pulls: CachedPull[];
 	isClosed: (issue: number) => boolean;
 	ruling: CaseMarker | undefined;
+	// whether the ruling holds a Precedent line other than none, read only when needed
+	holdsPrecedent: () => boolean;
 	// the clerk markers of the other issues of the precinct, read only when needed
 	others: () => Map<number, CaseMarker[]>;
 };
@@ -128,15 +130,18 @@ function tableRow(
 	);
 	if (decided !== undefined)
 		return { ...job("decision"), pull: String(decided) };
-	if (k !== undefined || i.ruling === undefined) return NO_JOB;
-	if (i.ruling.stage === "conviction") return open ? job("open") : NO_JOB;
+	if (i.ruling === undefined) return NO_JOB;
+	if (i.ruling.stage === "conviction" && k === undefined && open)
+		return job("open");
 	const answered = i.markers.some(
 		(m) =>
 			m.role === "clerk" &&
 			ANSWERS.includes(m.stage) &&
 			m.ord > (i.ruling?.ord ?? ""),
 	);
-	return answered ? NO_JOB : { ...job("precedent"), pull: NONE };
+	return answered || !i.holdsPrecedent()
+		? NO_JOB
+		: { ...job("precedent"), pull: NONE };
 }
 
 function rowOf(

@@ -18,8 +18,8 @@ A page starts with YAML frontmatter holding exactly these keys. Both are require
 
 ## Headings
 
-A page has exactly these nine `##` headings, once each, in any order. `lint-page`
-reads this block. A page with any other `##` heading fails.
+A page has these nine `##` headings, once each, in any order. `lint-page`
+reads this block. A page that misses one or repeats one fails.
 
 - Mission
 - Kinds
@@ -32,6 +32,11 @@ reads this block. A page with any other `##` heading fails.
 - Identity
 
 A section with nothing to say contains the single word `none`.
+
+A `##` heading that this list does not name is an unknown section. It may stand
+anywhere, and it may be empty. It holds the owner's notes in the margin. A role
+may read it as context. It never overrides the law or a listed section. The
+check prints each unknown section as a note line.
 
 ## What each section holds
 
@@ -141,8 +146,8 @@ Rules:
 ## Incomplete pages
 
 The duty desk runs `lint-page department` on the resolved page. A page that
-fails is skipped for that tick. The check names each missing, repeated or
-unknown heading, and the duty desk names the page and those headings in
+fails is skipped for that tick. The check names each missing or repeated
+heading, and the duty desk names the page and those headings in
 Blockers. A name in the frontmatter that differs from the file name fails too. A line whose name resolves to no page is
 skipped the same way, and Blockers name the line.
 

@@ -38,7 +38,6 @@ import {
 	call,
 	dbFile,
 	dir,
-	issuesForm,
 	later,
 	order,
 	rows,
@@ -306,22 +305,29 @@ describe("the sync", () => {
 		expect(ticks()[0]?.outcome).toBe("stopped-sync");
 	});
 
-	test("a tracker list at the limit stops the tick as stopped-sync-limit", () => {
-		setUp({ main: 1 });
+	test("a text the cleaning cannot process stops no tick and raises one alarm", () => {
+		setUp({ alpha: 1, main: 1 });
+		const deep = "> ".repeat(12_800);
+		hostOf("alpha", {
+			...WORK,
+			issues: { ...WORK.issues, 5: { body: [deep], state: "OPEN" } },
+		});
 		hostOf("main", WORK);
-		const many = Array.from({ length: 1000 }, (_, i) => ({
-			number: i + 1,
-			state: "OPEN",
-			createdAt: "2026-10-14T09:00:00Z",
-			author: { login: TRUSTED },
-		}));
-		writeFileSync(
-			join(configs("main"), "issues.json"),
-			JSON.stringify(issuesForm(many, [TRUSTED])),
-		);
 		const r = startDesk();
-		expect(lines(r.out)).toContain("ended stopped-sync-limit");
-		expect(dispatches()).toEqual([]);
+		expect(lines(r.out)).not.toContain("ended stopped-sync");
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+		expect(
+			lines(startDesk(later(1)).out).filter((l) => l.startsWith("ALARM")),
+		).toEqual([
+			expect.stringMatching(/^ALARM withheld-text alpha 1 text is withheld/),
+		]);
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["alpha", "main"]),
+		);
+		expect(
+			rows("SELECT body FROM issues WHERE precinct = 'alpha' AND issue = 5"),
+		).toEqual([{ body: "This text could not be cleaned and is withheld." }]);
 	});
 
 	test("a failed pull request sync leaves that precinct without orders of any role, the others go on", () => {
@@ -558,12 +564,6 @@ describe("the failures of the start", () => {
 			"a value is not safe",
 		],
 		[
-			"a law-version command that fails",
-			() => command(shared(), "law-version", "exit 1"),
-			"stopped-law-drift",
-			"the law-version command failed",
-		],
-		[
 			"a config.yaml without law_commit",
 			() =>
 				writeFileSync(join(dir, "config.yaml"), `trusted_login: ${TRUSTED}\n`),
@@ -593,13 +593,21 @@ describe("the failures of the start", () => {
 		expect(startDesk(later(3)).out).toContain("ALARM tick-failing duty-desk/-");
 	});
 
-	test("without a law-version command the first self line is law-version, with no precinct", () => {
+	test("a failing law-version command keeps the self step and shows in the report of the tick", () => {
 		setUp({ main: 1 });
 		hostOf("main", WORK);
+		command(shared(), "law-version", "exit 1");
+		startDesk();
+		const done = proceed(1);
+		expect(lines(done.out)).toContain("ended ordered");
+		expect(reportOf(done.out, "Blockers")).toBe(
+			"Blockers: law-version command failed",
+		);
 		rmSync(join(shared(), "law-version"));
-		const selfs = lines(startDesk().out).filter((l) => l.startsWith("self "));
-		expect(selfs).toEqual(["self law-version"]);
-		expect(lines(proceed(1).out)).toContain("ended ordered");
+		startDesk(later(1));
+		expect(reportOf(proceed(2, later(1)).out, "Blockers")).toBe(
+			"Blockers: none",
+		);
 	});
 
 	test("an identity that differs stops the tick and writes no order", () => {
@@ -633,20 +641,6 @@ describe("the failures of the start", () => {
 			() => failing("main", "files"),
 			"main: files failed reason=exit",
 		],
-		[
-			"a tree without the constitution",
-			() => hostOf("main", { ...WORK, tree: { "README.md": "x" } }),
-			"main: skipped-no-constitution",
-		],
-		[
-			"a constitution that fails the check",
-			() =>
-				hostOf("main", {
-					...WORK,
-					tree: { "LAWMAN.md": "not a constitution" },
-				}),
-			"main: skipped-bad-constitution",
-		],
 	])(
 		"%s leaves that precinct without patrol and response-unit orders, the other roles get theirs",
 		(_name, break_, blocker) => {
@@ -665,6 +659,59 @@ describe("the failures of the start", () => {
 			expect(reportOf(r.out, "Blockers")).toContain(blocker);
 		},
 	);
+
+	test.each([
+		[
+			"a tree without the constitution",
+			() => hostOf("main", { ...WORK, tree: { "README.md": "x" } }),
+			"main: skipped-no-constitution",
+		],
+		[
+			"a constitution that fails the check",
+			() =>
+				hostOf("main", {
+					...WORK,
+					tree: { "LAWMAN.md": "not a constitution" },
+				}),
+			"main: skipped-bad-constitution",
+		],
+	])(
+		"%s: only the clerk gets orders there, the other precinct is worked",
+		(_name, break_, blocker) => {
+			setUp({ alpha: 1, main: 1 });
+			hostOf("alpha", WORK);
+			hostOf("main", WORK);
+			break_();
+			const r = startDesk();
+			expect(lines(r.out)).toContain("ended ordered");
+			const main = openOrders().filter((o) => o.precinct === "main");
+			expect(new Set(main.map((o) => o.role))).toEqual(new Set(["clerk"]));
+			expect(
+				openOrders().some((o) => o.precinct === "alpha" && o.role === "patrol"),
+			).toBe(true);
+			expect(reportOf(r.out, "Blockers")).toContain(blocker);
+		},
+	);
+
+	test("an untaken order of a role that needs the constitution is closed when the precinct loses it", () => {
+		setUp({ main: 1 });
+		hostOf("main", WORK);
+		startDesk();
+		expect(openOrders().map((o) => o.role)).toContain("court");
+		hostOf("main", { ...WORK, tree: { "README.md": "x" } });
+		startDesk(later(1));
+		expect(new Set(openOrders().map((o) => o.role))).toEqual(
+			new Set(["clerk"]),
+		);
+		const alarms = (at: string) =>
+			lines(startDesk(at).out).filter((l) => l.startsWith("ALARM"));
+		expect(alarms(later(2))).toEqual([
+			expect.stringMatching(/^ALARM no-constitution main no constitution/),
+		]);
+		hostOf("main", WORK);
+		startDesk(later(3));
+		expect(alarms(later(4))).toEqual([]);
+	});
 
 	test("a constitution of another contract version is skipped with its own cause", () => {
 		setUp({ main: 1 });

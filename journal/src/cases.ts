@@ -9,6 +9,7 @@ import {
 	pullsOf,
 } from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
+import { holdsPrecedent } from "./law-sections";
 import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
@@ -82,6 +83,33 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 
 export type CaseView = { need: Need; clerk: ClerkCase };
 
+// The cached comment whose last line is the counted marker with this ord. The
+// rank of the ord is the comment's place among the comments by time.
+export function rulingComment(
+	db: Database,
+	precinct: string,
+	issue: number,
+	ord: string,
+): string | undefined {
+	const rank = Number(ord.split("|")[ORD_RANK_PART]);
+	if (rank < 1) return undefined;
+	const raw = (
+		db
+			.query(
+				"SELECT raw FROM markers WHERE precinct = ? AND issue = ? AND ord = ?",
+			)
+			.get(precinct, issue, ord) as { raw: string } | null
+	)?.raw;
+	const body = (
+		db
+			.query(
+				"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
+			)
+			.get(precinct, issue, rank - 1) as { body: string } | null
+	)?.body;
+	return body?.trimEnd().split("\n").at(-1)?.trim() === raw ? body : undefined;
+}
+
 // A pair marker means the case left the funnel. Only the clerk is left to act.
 export function caseOf(
 	db: Database,
@@ -102,6 +130,10 @@ export function caseOf(
 		pulls: pullsOf(db, precinct),
 		isClosed: closedIn(db, precinct),
 		ruling: funnel.ruling,
+		holdsPrecedent: () => {
+			const body = rulingComment(db, precinct, issue, funnel.ruling?.ord ?? "");
+			return body !== undefined && holdsPrecedent(body);
+		},
 		others: () => clerkMarkersOf(db, precinct),
 	});
 	if (clerk.job !== "-") return { need: "clerk", clerk };

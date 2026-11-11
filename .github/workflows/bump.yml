@@ -9,8 +9,7 @@ name: bump
 # deploy-key push starts workflow runs, while a GITHUB_TOKEN push would not.
 # The tag push starts release.yml, which builds the journal from the tagged
 # commit, so its provenance names that commit. The main push starts this
-# workflow once more, which finds the head tagged and stops, and ci checks the
-# version commit.
+# workflow once more, which finds the head tagged and stops.
 on:
   push:
     branches:
@@ -53,9 +52,9 @@ jobs:
           fi
 
       # A tagged head is the version commit of an earlier run, so there is
-      # nothing to release. `cog bump --auto` never reaches 1.0.0, even on a
-      # breaking change, so a breaking change since the last version tag asks
-      # for the major version. cog parses the commits through the template, and
+      # nothing to release. A breaking change since the last version tag asks for
+      # the major version, so the choice does not rest on `--auto` alone. cog
+      # parses the commits through the template, and
       # `BREAKING:` text in a description does not count. This step commits,
       # tags and pushes nothing, and prints the version.
       - name: Choose the version

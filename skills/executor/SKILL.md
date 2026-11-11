@@ -122,7 +122,7 @@ A pull request that is not open at any read of its state ends the tick with `sil
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role executor --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 10
+      bin/journal probe --schema 11
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <pull request|->`, in the order to take. `<p>`, `<owner/repo>` and `<m>` are the precinct, the repository and the pull request of the order.
    ```

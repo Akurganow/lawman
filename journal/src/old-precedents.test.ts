@@ -109,6 +109,18 @@ describe("old-precedent list", () => {
 		);
 	});
 
+	test("an old line in an HTML block prints as outside, behind any list prefix", async () => {
+		for (const prefix of ["", "- ", "1. ", "-  ", "2) "]) {
+			const text = page(
+				"<details>",
+				`${prefix}2026-09-03 #2: Hidden.`,
+				"</details>",
+			);
+			const r = await inprocFed(BASE, ["old-precedent", "list"], text);
+			expect(r.out).toBe("outside position=1\n");
+		}
+	});
+
 	test("a page with no old line prints none", async () => {
 		expect(
 			(await inprocFed(BASE, ["old-precedent", "list"], page("none"))).out,
@@ -239,18 +251,6 @@ describe("old-precedent check", () => {
 	test.each([
 		["a form outside its shape", "[]", "form"],
 		["no JSON", "x", "form"],
-		[
-			"the ceiling of the list",
-			JSON.stringify({
-				writers: [],
-				issues: Array.from({ length: 1000 }, (_, i) => ({
-					number: i + 1,
-					state: "OPEN",
-					createdAt: T(9),
-				})),
-			}),
-			"ceiling",
-		],
 	])("%s gives ask for every line", async (_, stdin, reason) => {
 		expect((await check(stdin, "1:2", "2:1")).out).toBe(
 			`line 1 ask reason=${reason}\nline 2 ask reason=${reason}\n`,

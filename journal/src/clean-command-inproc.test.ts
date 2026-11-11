@@ -2,6 +2,7 @@ import { describe, expect, spyOn, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import * as clean from "./clean";
+import { WITHHELD } from "./clean-run";
 import * as db from "./db";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
@@ -75,7 +76,7 @@ describe("clean command in process", () => {
 	});
 
 	test.each([[[]], [["--json"]]])(
-		"a thrown cleaner error gives exit 1 and quotes no input %j",
+		"a thrown cleaner error prints the withheld text and quotes no input %j",
 		async (args) => {
 			const input = `"secret words ${TOKEN}"`;
 			const mask = spyOn(clean, "maskSecrets").mockRejectedValue(
@@ -83,10 +84,9 @@ describe("clean command in process", () => {
 			);
 			try {
 				const r = await cleanIn(input, ...args);
-				expect(r.code).toBe(EXIT.USAGE);
-				expect(r.out).toBe("");
-				expect(r.err).toContain("clean:");
-				expect(r.err).not.toContain("secret words");
+				expect(r).toMatchObject({ code: EXIT.OK, err: "" });
+				expect(r.out).toContain(WITHHELD);
+				expect(r.out).not.toContain("secret words");
 			} finally {
 				mask.mockRestore();
 			}
