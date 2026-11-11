@@ -2,9 +2,9 @@
 
 Use this reference for a precinct that said yes to the license department. It serves every run that reaches the menu and the job "Re-check a precinct". It asks the questions of `references/licenses/questions.md` that the table below names, and no others.
 
-Every such run takes the tip of the default branch for each precinct that said yes. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
+Every such run takes the tip of the default branch for each precinct that said yes. It runs "Agree the reading way" of `references/precinct.md` again and compares the result with the recorded entry. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not updated.
 
-Read the tip as items 1 to 5 of "Read the repository" of `references/licenses/questions.md` say, before any question. When the tip holds no place and no ecosystem that the entry lacks, and the section has a `use` line, end with no output. Otherwise run "Agree the reading way" of `references/precinct.md` for the differences, and ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
+Read the tip as items 1 to 5 of "Read the repository" of `references/licenses/questions.md` say, before any question. Ask the questions of the table at once. An answer or a skip does not block the menu. Then run "The sources that fit" of `references/licenses/questions.md` on the fitting rows that have no recorded answer. Ask the approval of Apply before "Write the answers".
 
 This table has these rows and no others.
 
