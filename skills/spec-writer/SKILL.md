@@ -161,6 +161,8 @@ Write the comment in this order:
 ````
 Spec
 
+<for the owner: what will be done and why, in two or three sentences. It retells Problem and Change and adds no claim and no requirement.>
+
 ## Problem
 <what is wrong at the tip, or what the repository lacks. Each claim gives its path and line at the tip. Name each precedent that fits, and the difference when the Spec needs another outcome. Then one URL per line for each comment the Spec relies on.>
 
@@ -184,7 +186,7 @@ The marker is the last line of the comment. Nothing follows it:
 
 Rules:
 
-- The title line is `Spec`. One blank line follows it.
+- The title line is `Spec`. One blank line, the paragraph for the owner and one blank line follow it.
 - A section with nothing to say holds the single word `none`.
 - Markdown and `<details>` are allowed. The body holds at most 64 KiB. Cite only the comments the Spec relies on.
 - Put every `@` inside a code span or a fenced block.
@@ -197,6 +199,8 @@ A realistic Spec:
 
 ````
 Spec
+
+An empty `retries` value reaches callers without the default. `parseConfig` in `src/config.ts` will apply the default when the input is empty.
 
 ## Problem
 `src/config.ts:41` at the tip passes an empty `retries` value on without the default. The case and the ruling both name this line:
