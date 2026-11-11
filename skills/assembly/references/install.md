@@ -18,7 +18,7 @@ The install has two phases.
 4. Delivery.
 5. Models and Schedule.
 6. Role entry: the entry files and the mode of the jobs.
-7. Limits: the numbers of jobs and progress checks. The size of a part is shown as a fact.
+7. Limits: the numbers of jobs and progress checks and the size of a part, shown with no question.
 8. TypeSafe and Catalog.
 9. The choice of repositories.
 
@@ -193,7 +193,7 @@ Run "Part Models" and "Part Schedule" of `references/roles.md` for all roles in 
 
 ## Role entry and Limits
 
-Run "Part Role entry" and "Part Limits" of `references/roles.md` for all roles in phase 1. They write nothing before the approval of this install. The entry files and the mode of the jobs follow the harness page, in the section "Role entry". The size of a part is a fact of the page, and Limits shows it without a question. Limits asks only the numbers of jobs and progress checks.
+Run "Part Role entry" and "Part Limits" of `references/roles.md` for all roles in phase 1. They write nothing before the approval of this install. The entry files and the mode of the jobs follow the harness page, in the section "Role entry". The size of a part is a fact of the page. Limits shows it with the numbers of jobs and progress checks, asks nothing and takes a typed edit.
 
 ## TypeSafe
 
