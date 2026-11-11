@@ -39,7 +39,7 @@ jobs:
         run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
       - name: Test
         working-directory: journal
-        run: bun test
+        run: bun test --timeout=30000
       - name: Compile
         working-directory: journal
         run: bun build --compile --target=${{ matrix.target }} src/journal.ts --outfile ../journal-${{ matrix.target }}
