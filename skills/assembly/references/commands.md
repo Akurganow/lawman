@@ -81,13 +81,13 @@ Show one row for each operation: how it runs, its source (found, current, propos
 
 ### Choose the method of verification
 
-The developer chooses the method together with the assembly, on the Host screen, where the verifier is found. The list is open. For example:
+The notes record the method. Ask on the Host screen only when none is recorded, none is found or several fit. With one verifier found and none recorded, the proposal row names it, and "Change" in the approval takes another choice or the refusal. The list is open. For example:
 
 - Verify the signature with a verifier that was found on this machine (recommended). Name the found verifiers.
 - Install a verifier, when none fits. Offer choices that fit this machine, and Apply installs the chosen one.
 - Decline the signature.
 
-Before the question, say the two facts of a refusal, in the developer's language.
+Before a question that offers the refusal, and when the developer declines, say the two facts of a refusal, in the developer's language.
 
 1. Only the checksum from the same release remains.
 2. That checksum cannot tell a replaced release as a whole. Whoever replaces the release replaces the sum too, so the sum does not prove where the release came from.
