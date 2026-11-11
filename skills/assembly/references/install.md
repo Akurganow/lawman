@@ -108,14 +108,13 @@ Finds:
 - For each tool that reaches the host, the account the host reports.
 - Where the chosen tool keeps its credential. Learn the place and never the value.
 - How the host keeps its issues with their templates, and what is particular to it.
-- How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
+- How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms. Find only the actions the notes lack.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
-- Three actions for the old precedents. One reads a file at a given revision of a pull request. One writes to the branch of a pull request. One turns the link of an old precedent line into the number of an issue.
 - The verifier of Lawman's release, by the paragraph above.
 
 An installation made before these actions existed has no record of one of them. The assembly finds how this machine does it, and records it in the approved Apply, as `SKILL.md` says for the merge form. It asks the user only when it cannot find a way.
 
-Proposes, as rows with their source. The rows are the notes, the recorded actions included.
+Proposes, as rows with their source. The rows are the notes, the recorded actions included. Leave out a row that does not change the notes. The notes keep it.
 
 | Row | Value | Source |
 | :-- | :-- | :-- |

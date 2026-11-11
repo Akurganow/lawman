@@ -2,7 +2,7 @@
 
 A command is an executable file that the journal runs by itself. The commands of the installation lie in `shared/`. The commands of a precinct lie in `configs/<precinct>/`. The assembly writes a command with the developer's consent, and only after it proved the file. Both kinds of command only read: a command never writes to the host. `fetch` updates the local clone, which is no write to the host.
 
-Part Host reads "Prove a command" and "Commands of the installation". The precinct jobs read "Prove a command", "Commands of a precinct", "Host limits", "Facts of the precinct" and "Leave empty". The forms of the files are in `docs/journal.md`. The forms of the output are those of `journal form issues|pulls|decider`.
+Part Host reads "Prove a command", "Commands of the installation" and "Host limits". The precinct jobs read "Prove a command", "Commands of a precinct", "Host limits", "Facts of the precinct" and "Leave empty". The forms of the files are in `docs/journal.md`. The forms of the output are those of `journal form issues|pulls|decider`.
 
 ## Prove a command
 
