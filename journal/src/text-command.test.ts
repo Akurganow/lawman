@@ -344,7 +344,7 @@ describe("the text command", () => {
 	});
 });
 
-test("an invalid input_chars exits 1 as the tick does", async () => {
+test("an invalid input_chars reads as the default, as the tick does", async () => {
 	// clean
 	const cleanIn = async (input: string, ...args: string[]) => {
 		const stdin = spyOn(db, "readStdin").mockReturnValue(input);
@@ -359,13 +359,13 @@ test("an invalid input_chars exits 1 as the tick does", async () => {
 	for (const args of [[], ["--json"]]) {
 		sized("many");
 		const r = await cleanIn('"x"', ...args);
-		expect(r).toMatchObject({ code: EXIT.USAGE, out: "" });
-		expect(r.err).toContain("invalid input_chars");
+		expect(r).toMatchObject({ code: EXIT.OK });
+		expect(r.err).toBe("");
 	}
 	// text
 	await started(16000, "alpha");
 	writeFileSync(join(dir, "config.yaml"), `${CONFIG}input_chars: many\n`);
 	const r = await text("main", "issue", "3", "body");
-	expect(r.code).toBe(1);
-	expect(r.err).toContain("invalid input_chars");
+	expect(r.code).toBe(0);
+	expect(r.err).toBe("");
 });

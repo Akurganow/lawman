@@ -1,7 +1,7 @@
 import { lstatSync } from "node:fs";
 import { join } from "node:path";
 import { fits, usage } from "./args";
-import { EXIT, Fail, out } from "./db";
+import { EXIT, out } from "./db";
 import { renderAll } from "./input-parts";
 import {
 	commandFolder,
@@ -88,11 +88,16 @@ async function ran(
 	if (operation === "release") {
 		const [repo = "", tag = ""] = args;
 		const asset = assetName(platform);
+		// the two causes before the command runs print as a failure line, as the others do
 		if (asset === null)
-			throw new Fail(EXIT.COMMAND, "no binary for this platform");
+			throw new Refused("start", EXIT.COMMAND, "no binary for this platform");
 		const folder = join(root, RELEASE_FOLDER);
 		if (!freshFolder(folder))
-			throw new Fail(EXIT.COMMAND, `cannot make the folder ${RELEASE_FOLDER}`);
+			throw new Refused(
+				"start",
+				EXIT.COMMAND,
+				`cannot make the folder ${RELEASE_FOLDER}`,
+			);
 		ranOutput(await runRelease(repo, tag, folder, asset));
 		return [`release done folder=${RELEASE_FOLDER} asset=${asset}`];
 	}

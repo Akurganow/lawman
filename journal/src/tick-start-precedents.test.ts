@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { handed, human, issuesJson, type Spec, T } from "./cases-fixture";
 import { inprocAsync, inprocFed } from "./inproc";
-import { lines } from "./input-test-fixture";
+import { CONFIG, lines } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
 import {
 	BASE,
@@ -165,6 +165,31 @@ describe("the precedents of the tick group", () => {
 			`${LINES.i}\n~~~precedent\n${PRECEDENTS["i.md"]}~~~\n`,
 		);
 	});
+
+	// each size puts the end of a part where the line of a page or a precedent stands
+	test.each([1193, 2987, 3099])(
+		"at %d characters a part ends on no line that names a page or a precedent",
+		async (size) => {
+			setUp(`${CONFIG}input_chars: ${size}\n`);
+			orderOf("patrol", { department: "fixtures" });
+			host({
+				tree: tree({
+					"a.md": PRECEDENTS["a.md"] as string,
+					"b.md": PRECEDENTS["b.md"] as string,
+				}),
+			});
+			// the start prints the first part; its last line is the one that matters
+			const all = lines(await start("patrol"));
+			const ends = all.flatMap((l, i) =>
+				l.startsWith("end part") ? [all[i - 1]] : [],
+			);
+			expect(ends).toHaveLength(1);
+			for (const last of ends) {
+				expect(last).not.toStartWith("department ");
+				expect(last).not.toStartWith("precedent ");
+			}
+		},
+	);
 
 	test("an empty or missing folder gives precedents none", async () => {
 		setUp();

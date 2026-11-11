@@ -1,7 +1,8 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { type Comment, issuesJson, T } from "./cases-fixture";
+import * as clean from "./clean";
 import { EXIT } from "./db";
 import { inprocAsync, inprocFed } from "./inproc";
 import { config } from "./input-test-fixture";
@@ -100,6 +101,22 @@ describe("old-precedent list", () => {
 			].join("\n"),
 			err: "",
 		});
+	});
+
+	test("a failed cleaning exits 1 as sync and text do, because no command ran", async () => {
+		const failing = spyOn(clean, "cleanCharacters").mockRejectedValue(
+			new Error("the library quotes the input"),
+		);
+		try {
+			const r = await inprocFed(BASE, ["old-precedent", "list"], PAGE);
+			expect(r).toEqual({
+				code: EXIT.USAGE,
+				out: "",
+				err: "journal: the cleaning library failed\n",
+			});
+		} finally {
+			failing.mockRestore();
+		}
 	});
 
 	test("an item outside the form prints by its position, and none is no item", async () => {

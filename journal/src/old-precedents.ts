@@ -65,7 +65,7 @@ async function printItems(items: OldItem[]): Promise<number> {
 		out(items.length === 0 ? "none" : renderAll(await itemBlocks(items)));
 	} catch (e) {
 		if (e instanceof CleanFailed)
-			throw new Fail(EXIT.COMMAND, "the cleaning library failed");
+			throw new Fail(EXIT.USAGE, "the cleaning library failed");
 		throw e;
 	}
 	return EXIT.OK;

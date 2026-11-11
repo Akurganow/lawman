@@ -424,16 +424,20 @@ describe("parts of the role group", () => {
 		expect(content(first.out)).toEqual((built[0] ?? "").split("\n"));
 	});
 
-	test("an input_chars outside the class exits 1 with work and changes nothing without", () => {
-		config(`${CONFIG}input_chars: 12k\n`);
-		expect(wake("court")).toMatchObject({ code: 0, out: "" });
+	test("an input_chars outside the class reads as the default size", () => {
 		orderFor("court");
-		expect(wake("court")).toMatchObject({ code: 1, out: "" });
-		expect(part("court", 2)).toMatchObject({ code: 1, out: "" });
-		for (const value of ["0", "007", "-5", "1.5"]) {
+		for (const value of ["12k", "0", "007", "-5", "1.5"]) {
 			config(`${CONFIG}input_chars: ${value}\n`);
-			expect([value, wake("court").code]).toEqual([value, 1]);
+			expect([value, wake("court").code]).toEqual([value, 0]);
+			expect(wake("court").out).toStartWith("lawman input 1 role=court ");
 		}
+	});
+
+	test("wake for a name that is no role exits 1 and prints nothing, with an order or without", () => {
+		installation();
+		orderFor("investigator");
+		expect(wake("investigator")).toMatchObject({ code: 1, out: "" });
+		expect(wake("judge")).toMatchObject({ code: 1, out: "" });
 	});
 
 	test("a part outside the group exits 1", () => {
