@@ -200,7 +200,7 @@ A realistic Spec:
 ````
 Spec
 
-An empty `retries` value reaches callers without the default. `parseConfig` in `src/config.ts` will apply the default when the input is empty.
+`src/config.ts:41` passes an empty `retries` value on without the default. `parseConfig` will apply the default when the input is empty.
 
 ## Problem
 `src/config.ts:41` at the tip passes an empty `retries` value on without the default. The case and the ruling both name this line:
