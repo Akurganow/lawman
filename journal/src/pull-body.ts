@@ -13,7 +13,6 @@ const REFUSED = [
 	/#/u, // an issue or work item (`#12`, `o/r#12`, `AB#12`); the `sources=#12` of a fingerprint line
 	/@/u, // a mention, an email address
 	/!\p{N}/u, // a merge request (`!12`)
-	/~/u, // a label, and the run that ends a fence
 	/\p{L}[\p{L}\p{N}_]*[\p{Pd}−]\p{N}/u, // a tracker key (`GH-12`, `PROJ-12`)
 	/https?:\/\/|www\./iu, // an address that a host closes by or links
 	/\p{C}/u, // a line break that whitespace misses, or a mark that hides a sign
@@ -22,7 +21,7 @@ const PLAIN = new Set(
 	"root paragraph text inlineCode emphasis strong".split(" "),
 );
 const LEFT_OUT = "The text of the ruling was left out. It stands at the link.";
-const RULE_STANDS = "the rule stands in the file";
+const RULE_LEFT_OUT = "the text of the rule was left out";
 
 // the words of a text that is one paragraph of text, code spans and emphasis
 function wordsOf(markdown: string): string | null {
@@ -59,7 +58,8 @@ export async function plainWords(markdown: string, own?: number) {
 	return REFUSED.some((re) => re.test(probe)) ? null : words;
 }
 
-// The words stand in a fence. They hold no `~`, so no line of them ends it.
+// The words stand in a fence. Each line starts with its own words, so no line of
+// them is a run of `~` that ends it.
 const fenced = (lines: string[]) => `~~~\n${lines.join("\n")}\n~~~`;
 
 export function convictionBody(
@@ -76,17 +76,15 @@ export function convictionBody(
 	return `${parts.join("\n\n")}\n`;
 }
 
+export type Change = { name: string; was: string | null; now: string | null };
+
 // One line for each changed file: its name and the rule it writes or cancels.
-export async function precedentBody(
-	source: string,
-	changes: { name: string; was: string | null; now: string | null }[],
-) {
+export async function precedentBody(source: string, changes: Change[]) {
 	const lines = await Promise.all(
 		changes.map(async ({ name, was, now }) => {
 			const verb = now === null ? "cancel" : was === null ? "new" : "refine";
 			const rule = splitPrecedent(now ?? was ?? "")?.body ?? "";
-			const head = (await plainWords(`${verb} ${name}`)) ?? `${verb} a file`;
-			return `${head}: ${(await plainWords(rule)) ?? RULE_STANDS}`;
+			return `${verb} ${name}: ${(await plainWords(rule)) ?? RULE_LEFT_OUT}`;
 		}),
 	);
 	return `Records the precedents of the court ruling ${source}. Merge it to make them binding.\n\n${fenced(lines)}\n`;

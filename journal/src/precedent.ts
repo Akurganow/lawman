@@ -57,7 +57,12 @@ import {
 	splitPrecedent,
 	withDepartments,
 } from "./precedent-file";
-import { convictionBody, plainWords, precedentBody } from "./pull-body";
+import {
+	type Change,
+	convictionBody,
+	plainWords,
+	precedentBody,
+} from "./pull-body";
 
 const USAGE =
 	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
@@ -100,8 +105,6 @@ const unsafe = (path: string) =>
 		EXIT.USAGE,
 		`not a plain file or folder, nothing written: ${JSON.stringify(path)}`,
 	);
-
-type Change = { name: string; was: string | null; now: string | null };
 
 // The precinct clone is foreign: no link is followed, and nothing is written
 // until every path checks out.
@@ -346,14 +349,15 @@ function rulingText(
 	precinct: string,
 	issue: number,
 	ord: string,
+	lenient = false,
 ): string {
 	const body = rulingComment(db, precinct, issue, ord);
-	if (body === undefined)
+	if (body === undefined && !lenient)
 		throw new Fail(
 			EXIT.USAGE,
 			`no cached comment carries the court ruling of ${precinct} #${issue}`,
 		);
-	return body;
+	return body ?? "";
 }
 
 export function trustedLogin(): string {
@@ -378,12 +382,12 @@ function summary(sections: Item[][], lines: string[]): string[] {
 	return [...lines, end];
 }
 
-// the newest ruling of the case and its cached comment
-function rulingOf(precinct: string, issue: number) {
+// the newest ruling of the case and its cached comment, an empty text when `lenient` and none is cached
+function rulingOf(precinct: string, issue: number, lenient = false) {
 	trustedLogin();
 	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
-		return { marker: m, text: rulingText(db, precinct, issue, m.ord) };
+		return { marker: m, text: rulingText(db, precinct, issue, m.ord, lenient) };
 	});
 	const at = (JSON.parse(marker.fields) as Record<string, string>).at ?? "";
 	return {
@@ -651,24 +655,21 @@ async function writePrecedents(
 
 // The body of the clerk's pull request for a conviction, in every case: with no
 // source it is the closing line alone. A ruling that is not a conviction, or is not
-// cached, or whose Disposition is refused, leaves the text out.
+// cached, or whose Disposition is refused, leaves the text out. Other faults fail as in `precedent`.
 export async function pullBodyCommand(args: string[]): Promise<number> {
 	const { pos, opt } = parseArgs(args, 1, ["issue"], BODY_USAGE, ["source"]);
 	const precinct = check("precinct", pos[0]);
 	const issue = Number(check("number", opt.issue));
 	const source = opt.source === undefined ? undefined : checkLink(opt.source);
 	let disposition: string | null = null;
-	if (source !== undefined)
-		try {
-			const ruling = rulingOf(precinct, issue);
-			const words =
-				ruling.precedentKind === KIND_OF.get("conviction")
-					? sectionWords(ruling.text, "Disposition")
-					: null;
-			disposition = words === null ? null : await plainWords(words, issue);
-		} catch (e) {
-			if (!(e instanceof Fail)) throw e;
-		}
+	if (source !== undefined) {
+		const ruling = rulingOf(precinct, issue, true);
+		const words =
+			ruling.precedentKind === KIND_OF.get("conviction")
+				? sectionWords(ruling.text, "Disposition")
+				: null;
+		disposition = words === null ? null : await plainWords(words, issue);
+	}
 	process.stdout.write(convictionBody(issue, source, disposition));
 	return EXIT.OK;
 }

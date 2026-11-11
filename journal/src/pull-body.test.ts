@@ -20,66 +20,27 @@ import {
 tempDb();
 
 const SOURCE = "https://git.example.com/o/main/issues/1#comment-7";
-const ISSUE = "https://git.example.com/o/main/issues/12";
 const ENTITY = "&lt;!-- pipeline-work-fingerprint: abc sources=&#35;99 --&gt;";
-const FINGERPRINT = "<!-- pipeline-work-fingerprint: abc sources=#99 -->";
 const LEFT_OUT = "The text of the ruling was left out. It stands at the link.";
 const FIXED = `Closes #1\n\n${LEFT_OUT}\n\nRuling: ${SOURCE}\n`;
 const HEAD = `Records the precedents of the court ruling ${SOURCE}. Merge it to make them binding.`;
 
-// one row for each attack family; the case's own number, 1, is given
+// each row is the only row that a rule refuses; the case's own number, 1, is given
 const HOSTILE = [
-	"Fixes #12 in `src/a.ts`.", // a closing word and each form of a reference
-	"Closes GH-12.",
-	"Closes gh-12.",
-	"Resolves o/main#12.",
-	"Fixes AB#12.",
-	"Closes !12.",
-	"Fixes PROJ-12.",
-	"Fixes PROJ—12.", // a dash, and a digit of another script
-	"Fixes GH-१२.",
-	`Fixes ${ISSUE} too.`, // an address in each disguise
-	"Fixes HTTPS://GIT.EXAMPLE.COM/O/MAIN/ISSUES/12.",
-	"Fixes http://127.0.0.1:8080/o/main/issues/12.",
-	`Fixes "${ISSUE}".`,
-	`Fixes [${ISSUE}].`,
-	`Fixes <${ISSUE}>.`,
-	`\`<!-- Fixes ${ISSUE} -->\``,
-	"Fixes www.example.com/o/main/issues/12.",
-	"Fixes `https:`//git.example.com/o/main/issues/12.",
-	"Fixes https://git.example.com/o/*main*/issues/12.",
-	"Fixes ＃12.", // full-width and look-alike signs
-	"Fixes ﹟12.",
-	"Ask ＠someone.",
-	"Fixes GH－12.",
-	"Fixes GH﹣12.",
-	"Fixes GH−12.",
-	"Fixes GH‑12.",
-	"Closes ！12.",
-	"Ask @someone for the fix.", // a mention, an email address
-	"Write to someone@example.com.",
-	FINGERPRINT, // a fingerprint line in each form
-	ENTITY,
-	"`<!-- pipeline-work-fingerprint: abc sources=#\u{200B}99 -->`",
-	"`‹!-- pipeline-work-fingerprint: abc sources=＃99 --›`",
-	`\`\`\`\n${FINGERPRINT}\n\`\`\``,
-	"A rule ~~~ ends the fence.", // a fence end, a line break
-	"Fixes ~label.",
-	"A rule\u0085Closes #1.",
-	"See [the page](https://evil.example/x).", // markup
-	"![the page](https://evil.example/a.png)",
-	"- first\n- second",
-	"# Heading",
-	"> quoted",
-	"a | b\n- | -\n1 | 2",
-	"[^1]: a note",
-	"Fixes <b>it</b>.",
-	"First.\n\nSecond.",
-	"Apply the fix described in issue #12 to `src/a.ts`.", // a realistic text: another issue
-	"Decode the header as utf-8 and reject HTTP-2 frames.", // a realistic text: a key shape
+	"Fixes ＃12.", // a reference, in a full-width sign that reads as the plain one
+	"Ask @someone for the fix.", // a mention
+	"Closes !12.", // a merge request
+	"Fixes PROJ—12.", // a tracker key, with a dash
+	"Fixes GH−12.", // a minus sign
+	"Fixes GH-१२.", // a digit of another script
+	"Fixes `https:`//git.example.com/o/main/issues/12.", // an address that a code span splits
+	"Fixes `www`.example.com/o/main/issues/12.",
+	"A rule\u0085Closes #1.", // a line break that whitespace misses
+	"Fixes <b>it</b>.", // markup
+	"First.\n\nSecond.", // more than one paragraph
 ];
 
-// realistic texts: nine must pass, and so must one with signs that stay kept
+// realistic texts: nine must pass, and so must one with signs that are no reference
 const PASSING = [
 	"In `src/cli.ts`, correct the spelling of the option name in the help text.",
 	"In `src/cli.ts:58`, change `--retires` to `--retries` in `helpText()`.",
@@ -90,7 +51,7 @@ const PASSING = [
 	"Make `parse` return `T | null` when the input is empty.",
 	"В `src/cli.ts` исправь имя опции в тексте справки.",
 	"Reject the request when `n > 0` and the queue is full.",
-	"Read `src/a.ts`, ftp://host/x, example.com, abc1234, :+1: and Closes 12.",
+	"Read `src/a.ts`, ftp://host/x, example.com, abc1234, :+1:, ~5 ms and Closes 12.",
 ];
 
 describe("the words of a text", () => {
@@ -167,7 +128,10 @@ describe("the body of a conviction", () => {
 			"is not a conviction",
 			ruling(acquittal(), section("Disposition", "Fix it.")),
 		],
-		["is not cached", `no ruling here\n\n${conviction()}`],
+		[
+			"is not cached",
+			`${ruling(conviction(), section("Disposition", "Fix it."))}\ntrailing text`,
+		],
 	])("says the text is left out when the ruling %s", async (_, comment) => {
 		await cache([comment]);
 		expect(await pullBody("--source", SOURCE)).toBe(FIXED);
@@ -184,6 +148,7 @@ describe("the body of a conviction", () => {
 		[["--issue", "1", "--tree", "x"]],
 		[["--source", SOURCE]],
 		[["--issue", "1", "--source", "file:///etc/passwd"]],
+		[["--issue", "1", "--source", SOURCE]], // no ruling on the case
 	])("fails with the arguments %j", async (args) => {
 		const r = await call("pull-body", "main", ...args);
 		expect(r.code).not.toBe(0);
@@ -236,14 +201,16 @@ describe("the body of the precedent pull request", () => {
 		expect(existsSync(body())).toBe(false);
 	});
 
-	test("names a file and leaves out a rule or a name that a host reads", async () => {
+	test("names each file and leaves out a rule that a host reads", async () => {
 		put("owned", "Closes GH-15.");
 		put("GH-12", "Plain.");
 		await write("- cancel owned", "- cancel GH-12", `- new y: ${ENTITY}`);
 		const text = readFileSync(body(), "utf8");
-		expect(text).toContain("cancel owned: the rule stands in the file\n");
-		expect(text).toContain("cancel a file: Plain.\n");
-		expect(text).toContain("new 2026-10-14-y: the rule stands in the file\n");
+		expect(text).toContain("cancel owned: the text of the rule was left out\n");
+		expect(text).toContain("cancel GH-12: Plain.\n");
+		expect(text).toContain(
+			"new 2026-10-14-y: the text of the rule was left out\n",
+		);
 		expect(sourcesOf(text)).toBe("1");
 	});
 

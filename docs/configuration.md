@@ -190,7 +190,7 @@ Ticks read the keys they need.
 - The start of every tick reads `law_commit` and `trusted_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
 - The update reads `law_commit` and `release_repo`.
 - The duty desk reads `license_precincts` when it picks the department of a patrol order. The law's page for licenses serves only a precinct with a pair.
-- The commands `precedent` and `old-precedent` read `trusted_login`.
+- The commands `precedent`, `pull-body` and `old-precedent` read `trusted_login`.
 - The command `precedent` reads `typesafe` and `typesafe_precincts` for the Jev request. It reads `license_precincts` for the pages it reads.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The clerk applies the same rule through the journal, which reads `typesafe` and `typesafe_precincts` itself. The clerk reads only `typesafe_key`.
