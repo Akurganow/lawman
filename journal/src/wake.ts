@@ -1,16 +1,13 @@
 import { check, parseArgs } from "./args";
-import { EXIT, Fail, now, withDb } from "./db";
+import { EXIT, now, withDb } from "./db";
 import { takeableOrders } from "./dispatch";
-import { DUTY_DESK, inputOf } from "./input-roles";
+import { DUTY_DESK } from "./input-roles";
 
 // No work prints nothing and loads nothing, so the idle check stays the same
 // and fast. Work loads the parser inside this command only.
 export function wake(args: string[]): number | Promise<number> {
 	const { opt } = parseArgs(args, 0, ["role"], "wake --role <r>");
 	const roleName = check("role", opt.role);
-	// the same refusal as `tick input --role`, before anything is written
-	if (roleName !== DUTY_DESK && inputOf(roleName) === undefined)
-		throw new Fail(EXIT.USAGE, `no input for role ${roleName}`);
 	const stamp = now();
 	// stdout is written only after every database step succeeded, so a failure prints nothing
 	const orders = withDb((db) => {

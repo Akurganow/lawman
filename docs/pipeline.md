@@ -221,7 +221,7 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
 | `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
 | `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
-| `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears in the tick that finds the constitution usable. |
+| `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
 | `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
 | `contract-changed` | [law update](journal.md#updates) | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
 | `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
@@ -253,8 +253,6 @@ The funnel runs without you until a decision needs a person. On a pull request, 
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
 - **Close a pull request to decline it.** The clerk then closes its open source issues as not planned.
 - **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing.
-- **Give a precinct a usable constitution.** The alarm `no-constitution` names the precinct and the cause. Merge the constitution, or fix the failed check. The alarm clears at the next duty desk tick, and the orders come back.
-- **Fix a withheld text.** The alarm `withheld-text` names the precinct, the count and the first texts with their links. The role reads a fixed line in place of each text. Edit or delete the text on the host, and the next sync cleans it again.
 - **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live

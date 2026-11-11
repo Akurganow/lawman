@@ -2,14 +2,7 @@ import type { Database } from "bun:sqlite";
 import { reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
 import { consents, licensesAllowed } from "./consent";
-import {
-	type Lack,
-	lackingPrecincts,
-	lackOf,
-	needsConstitution,
-	recorded,
-	SLUG,
-} from "./constitution";
+import { type Lack, lackingPrecincts, lackOf, SLUG } from "./constitution";
 import { EXIT, Fail, inTransaction, now, out, withDb } from "./db";
 import {
 	departmentNames,
@@ -58,11 +51,7 @@ type Precinct = {
 type Reading = { revision: string; files: string; lines: string[] };
 // What one read of a precinct found. `cause` is the recorded lack of an unusable constitution.
 // A read that failed before the constitution has neither a reading nor a cause.
-type Read = {
-	reading: Reading | null;
-	cause: string | null;
-	lack: Lack | null;
-};
+type Read = { reading: Reading | null; cause: Lack | null };
 type Visit = Read & { department: string | null };
 type Written = Taken & { role: string };
 
@@ -94,22 +83,13 @@ function ended(
 	outcome: string,
 	report: string,
 ): number {
-	const stamp = now();
-	const settled = withDb((db) =>
-		inTransaction(db, () => {
-			db.run(
-				"UPDATE ticks SET ended_at = ?, outcome = ?, report = ? WHERE id = ? AND ended_at IS NULL",
-				[stamp, outcome, report, t.id],
-			);
-			return reconcileAlarms(db, stamp, "end");
-		}),
+	withDb((db) =>
+		db.run(
+			"UPDATE ticks SET ended_at = ?, outcome = ?, report = ? WHERE id = ? AND ended_at IS NULL",
+			[now(), outcome, report, t.id],
+		),
 	);
-	return print(t, [
-		...alarms,
-		...settled,
-		`ended ${outcome}`,
-		`report ${report}`,
-	]);
+	return print(t, [...alarms, `ended ${outcome}`, `report ${report}`]);
 }
 
 // The shared department pages of the law. A failed listing leaves none and says so.
@@ -124,10 +104,10 @@ function sharedPages(blockers: string[]): string[] {
 
 // The fetch and the constitution of one precinct. No reading, with the cause in Blockers, when either fails.
 async function readPrecinct(p: string, blockers: string[]): Promise<Read> {
-	const unread: Read = { reading: null, cause: null, lack: null };
-	const lacking = (lack: Lack, reasons: string[] = []): Read => {
-		blockers.push(`${p}: ${SLUG[lack]}`);
-		return { reading: null, cause: recorded(lack, reasons), lack };
+	const unread: Read = { reading: null, cause: null };
+	const lacking = (cause: Lack): Read => {
+		blockers.push(`${p}: ${SLUG[cause]}`);
+		return { reading: null, cause };
 	};
 	const fetched = await operate(p, "fetch", call([]));
 	if (fetched.text === null) {
@@ -147,8 +127,7 @@ async function readPrecinct(p: string, blockers: string[]): Promise<Read> {
 		return unread;
 	}
 	const lint = lintPage("constitution", file.text);
-	if (lint.reasons.length > 0)
-		return lacking(lackOf(lint.reasons), lint.reasons);
+	if (lint.reasons.length > 0) return lacking(lackOf(lint.reasons));
 	return {
 		reading: {
 			revision,
@@ -156,7 +135,6 @@ async function readPrecinct(p: string, blockers: string[]): Promise<Read> {
 			lines: lint.departments.map(([name]) => name),
 		},
 		cause: null,
-		lack: null,
 	};
 }
 
@@ -237,7 +215,7 @@ function closeUnneeded(
      WHERE id = ?2 AND outcome IS NULL AND taken_at IS NULL`,
 	);
 	const unneeded = (role: string, o: Taken): boolean => {
-		if (needsConstitution(role) && lacking.has(o.precinct)) return true;
+		if (ROLES[role]?.constitution && lacking.has(o.precinct)) return true;
 		const input = ROLES[role];
 		if (input?.stale === undefined) return false;
 		const stage = stageFor(db, input, o);
@@ -288,7 +266,7 @@ function writeOrders(
 	};
 	// a role that cannot work without the constitution gets no order on a precinct that lacks one
 	const mayOrder = (role: string, precinct: string) =>
-		!(needsConstitution(role) && lacking.has(precinct));
+		!(ROLES[role]?.constitution && lacking.has(precinct));
 	for (const role of CASE_ROLES)
 		for (const e of dueEntries(db, role))
 			if (visits.has(e.precinct) && mayOrder(role, e.precinct))
@@ -349,7 +327,6 @@ async function finish(
 						name,
 					]);
 			const lacking = lackingPrecincts(db);
-			const raised = reconcileAlarms(db, stamp, "end");
 			const closed = closeUnneeded(db, new Set(visits.keys()), lacking, stamp);
 			const written = writeOrders(db, precincts, visits, lacking, stamp);
 			const byRole = new Map<string, number>();
@@ -369,12 +346,11 @@ async function finish(
 			).changes;
 			if (changed === 0)
 				throw new Fail(EXIT.USAGE, `no open tick with id ${t.id}`);
-			return { written, outcome, report, raised };
+			return { written, outcome, report };
 		}),
 	);
 	return print(t, [
 		...alarms,
-		...done.raised,
 		...done.written.map(orderLine),
 		`ended ${done.outcome}`,
 		...done.report.map((line) => `report ${line}`),
@@ -397,7 +373,7 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 		),
 	};
 	const alarms = withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, "start")),
+		inTransaction(db, () => reconcileAlarms(db, stamp, true)),
 	);
 	const config = readConfig();
 	if (config === null)

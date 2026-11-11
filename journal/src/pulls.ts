@@ -246,8 +246,7 @@ export async function syncPulls(
 	const parsed = readPulls(input, login);
 	const cleaned = await cleanTexts(
 		name,
-		"pull",
-		parsed.map((p) => ({ item: p, number: p.row.number, text: p.text })),
+		parsed.map((p) => ({ item: p, text: p.text })),
 	);
 	const read = cleaned.map(({ item, done }) => ({ ...item, text: done }));
 	return withDb((db) => {

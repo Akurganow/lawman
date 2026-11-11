@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import pkg from "../package.json";
 import { fits } from "./args";
 import { cleanCharacters, countSecretMarks } from "./clean";
-import { type Cleaned, CleanFailed, cleanEach } from "./clean-run";
+import { cleanEach } from "./clean-run";
 import { type Fail, isConstraint, withDb } from "./db";
 import {
 	type Block,
@@ -25,73 +25,58 @@ export type Done = { text: string; sha: string; withheld: boolean };
 export type CommentDone = Omit<CommentText, "body"> & { done: Done };
 export type TextDone = { body: Done; comments: CommentDone[] };
 
-export { CleanFailed } from "./clean-run";
+// a library error can quote the input, so each caller prints its own message
+export class CleanFailed extends Error {}
 
 // the hash covers the journal version, so a new cleaning cleans again what the old one cleaned
 const shaOf = (raw: string) =>
 	new Bun.CryptoHasher("sha256").update(`${pkg.version}\n${raw}`).digest("hex");
 
-type Prior = { sha: string | null; text: string; withheld: number };
-
-// what the cache holds now, by issue or pull number and by comment id
-function priorTexts(
-	db: Database,
-	precinct: string,
-	kind: TextKind,
-): Map<string, Prior> {
-	const prior = new Map<string, Prior>();
-	const table = kind === "issue" ? "issues" : "pulls";
-	const number = kind === "issue" ? "issue" : "number";
-	for (const r of db
-		.query(
-			`SELECT ${number} AS n, raw_sha AS sha, body AS text, withheld FROM ${table} WHERE precinct = ?`,
-		)
-		.all(precinct) as (Prior & { n: number })[])
-		prior.set(String(r.n), r);
-	for (const r of db
-		.query(
-			"SELECT number AS n, id, raw_sha AS sha, body AS text, withheld FROM comments WHERE precinct = ? AND kind = ?",
-		)
-		.all(precinct, kind) as (Prior & { n: number; id: string })[])
-		prior.set(`${r.n}\0${r.id}`, r);
+// what the cache of the precinct holds, by the hash of the raw text each cleaned text came from
+function priorTexts(db: Database, precinct: string): Map<string, Done> {
+	const prior = new Map<string, Done>();
+	for (const table of ["issues", "pulls", "comments"])
+		for (const r of db
+			.query(
+				`SELECT raw_sha AS sha, body AS text, withheld FROM ${table} WHERE precinct = ? AND raw_sha IS NOT NULL`,
+			)
+			.all(precinct) as { sha: string; text: string; withheld: number }[])
+			prior.set(r.sha, {
+				text: r.text,
+				sha: r.sha,
+				withheld: r.withheld === 1,
+			});
 	return prior;
 }
 
-// The texts of one kind, each cleaned alone and only when it changed since the cache holds it.
+// The texts of one sync, each cleaned alone and only when the cache holds no cleaning of the same raw text.
 // A text that cannot be cleaned, or does not finish in time, comes back withheld.
 export async function cleanTexts<I>(
 	precinct: string,
-	kind: TextKind,
-	items: { item: I; number: number; text: HostText }[],
+	items: { item: I; text: HostText }[],
 ): Promise<{ item: I; done: TextDone }[]> {
-	const prior = withDb((db) => priorTexts(db, precinct, kind));
-	type Unit = { key: string; raw: string };
-	const units = items.flatMap(({ number, text }): Unit[] => [
-		{ key: String(number), raw: text.body },
-		...text.comments.map((c) => ({ key: `${number}\0${c.id}`, raw: c.body })),
+	const prior = withDb((db) => priorTexts(db, precinct));
+	const raws = items.flatMap(({ text }) => [
+		text.body,
+		...text.comments.map((c) => c.body),
 	]);
-	const fresh = units.filter((u) => prior.get(u.key)?.sha !== shaOf(u.raw));
-	const cleaned = await cleanEach([...new Set(fresh.map((u) => u.raw))]);
-	const done = new Map<string, Done>();
-	for (const u of units) {
-		const sha = shaOf(u.raw);
-		const old = prior.get(u.key);
-		if (old?.sha === sha)
-			done.set(u.key, { text: old.text, sha, withheld: old.withheld === 1 });
-		else {
-			const c = cleaned.get(u.raw) as Cleaned;
-			done.set(u.key, { text: c.text, sha, withheld: c.withheld });
-		}
-	}
-	return items.map(({ item, number, text }) => ({
+	const cleaned = await cleanEach(raws.filter((r) => !prior.has(shaOf(r))));
+	const doneOf = (raw: string): Done => {
+		const sha = shaOf(raw);
+		const c = cleaned.get(raw);
+		return c === undefined
+			? (prior.get(sha) as Done)
+			: { text: c.text, sha, withheld: c.withheld };
+	};
+	return items.map(({ item, text }) => ({
 		item,
 		done: {
-			body: done.get(String(number)) as Done,
-			comments: text.comments.map((c) => ({
-				id: c.id,
-				author: c.author,
-				at: c.at,
-				done: done.get(`${number}\0${c.id}`) as Done,
+			body: doneOf(text.body),
+			comments: text.comments.map(({ id, author, at, body }) => ({
+				id,
+				author,
+				at,
+				done: doneOf(body),
 			})),
 		},
 	}));

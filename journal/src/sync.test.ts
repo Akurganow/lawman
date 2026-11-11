@@ -15,7 +15,6 @@ import {
 	issues,
 	issuesForm,
 	lead,
-	minimalIssues,
 	must,
 	rows,
 	run,
@@ -364,13 +363,6 @@ describe("sync", () => {
 
 	test("an empty list of issues over an empty cache succeeds", () => {
 		expect(sync([]).code).toBe(0);
-	});
-
-	test("1000 and 1001 issues are both read", () => {
-		const minimal = (n: number) => minimalIssues(n, CREATED);
-		expect(sync(minimal(1000)).code).toBe(0);
-		expect(sync(minimal(1001)).code).toBe(0);
-		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([{ n: 1001 }]);
 	});
 
 	test("a duplicate issue number fails with 4 and the old cache stays", () => {

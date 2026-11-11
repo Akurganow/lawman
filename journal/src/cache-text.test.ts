@@ -199,61 +199,26 @@ describe("the texts in the cache", () => {
 		expect(r.out).toContain("pulls is not a list");
 	});
 
-	test("a text the cleaning cannot process is stored as a placeholder and named, the rest is stored", async () => {
-		const deep = "FAULT in this text";
+	test("a text the cleaning cannot process is stored as a placeholder, and the rest is stored", async () => {
 		const form = issuesForm([
 			{
 				number: 1,
 				state: "OPEN",
 				createdAt: AT,
 				author: { login: "reporter" },
-				body: deep,
+				body: "FAULT in this text",
 				comments: [
 					{ id: "IC_1", author: null, createdAt: AT, body: "fine" },
-					{ id: "IC_2", author: null, createdAt: LATER, body: deep },
+					{ id: "IC_2", author: null, createdAt: LATER, body: "FAULT" },
 				],
-			},
-			{
-				number: 2,
-				state: "OPEN",
-				createdAt: AT,
-				author: { login: "reporter" },
-				body: "seen <!-- unseen --> text",
 			},
 		]);
 		const r = await onlyFaultFails(() => sync("a", JSON.stringify(form)));
-		expect(r).toEqual({
-			code: EXIT.OK,
-			out: "issues=2 leads=0 markers=0 invalid=0 skipped=0 withheld=2\n",
-			err: "",
-		});
-		expect(texts("a")).toEqual({
-			issues: [
-				{ issue: 1, body: WITHHELD },
-				{ issue: 2, body: "seen text" },
-			],
-			pulls: [],
-			comments: [
-				{
-					kind: "issue",
-					number: 1,
-					id: "IC_1",
-					author: null,
-					at: AT,
-					body: "fine",
-				},
-				{
-					kind: "issue",
-					number: 1,
-					id: "IC_2",
-					author: null,
-					at: LATER,
-					body: WITHHELD,
-				},
-			],
-		});
-		expect(await printed("a", "issue", 1)).toContain(WITHHELD);
-		expect(await printed("a", "issue", 1)).not.toContain(">");
+		expect(r.out).toBe(
+			"issues=1 leads=0 markers=0 invalid=0 skipped=0 withheld=2\n",
+		);
+		expect(texts("a").issues).toEqual([{ issue: 1, body: WITHHELD }]);
+		expect(texts("a").comments.map((c) => c.body)).toEqual(["fine", WITHHELD]);
 	});
 
 	test("a pull request text that fails is withheld the same way, through the command", async () => {
@@ -263,72 +228,8 @@ describe("the texts in the cache", () => {
 		const r = await onlyFaultFails(() =>
 			run("a", "pulls", "--author", TRUSTED),
 		);
-		expect(r).toEqual({
-			code: EXIT.OK,
-			out: "pulls=1 withheld=1\n",
-			err: "",
-		});
-		expect(texts("a").pulls).toEqual([{ number: 9, body: "seen text" }]);
-		expect(texts("a").comments).toEqual([
-			{
-				kind: "pull",
-				number: 9,
-				id: "PC_1",
-				author: null,
-				at: AT,
-				body: WITHHELD,
-			},
-		]);
-	});
-
-	test("a cleaning that fails for a good text too is a failed command, and the cache stays as it was", async () => {
-		const failing = spyOn(cleanHost, "cleanHostText").mockRejectedValue(
-			new Error("the library quotes the input"),
-		);
-		try {
-			const r = await sync("a", issuesInput());
-			expect(r.code).toBe(EXIT.COMMAND);
-			expect(r.out + r.err).not.toContain("quotes");
-			expect(texts("a").issues).toEqual([]);
-		} finally {
-			failing.mockRestore();
-		}
-	});
-});
-
-describe("the link of an issue and a pull request", () => {
-	test("the address the host reports is stored, and one that is no web address is dropped", async () => {
-		const issues = JSON.parse(issuesInput());
-		issues.issues[0].url = "https://git.example/o/a/issues/1";
-		issues.issues.push({
-			...issues.issues[0],
-			number: 2,
-			url: "javascript:alert(1)",
-			comments: [],
-		});
-		issues.issues.push({
-			...issues.issues[0],
-			number: 3,
-			url: "https://git.example/a b",
-			comments: [],
-		});
-		issues.issues.push({ ...issues.issues[0], number: 4, comments: [] });
-		delete issues.issues[3].url;
-		expect((await sync("a", JSON.stringify(issues))).code).toBe(EXIT.OK);
-		const pulls = JSON.parse(pullsInput());
-		pulls.pulls[0].url = "http://git.example/o/a/pull/9";
-		expect((await sync("a", JSON.stringify(pulls), ["--pulls"])).code).toBe(
-			EXIT.OK,
-		);
-		expect(rows("SELECT issue, url FROM issues ORDER BY issue")).toEqual([
-			{ issue: 1, url: "https://git.example/o/a/issues/1" },
-			{ issue: 2, url: null },
-			{ issue: 3, url: null },
-			{ issue: 4, url: null },
-		]);
-		expect(rows("SELECT number, url FROM pulls")).toEqual([
-			{ number: 9, url: "http://git.example/o/a/pull/9" },
-		]);
+		expect(r.out).toBe("pulls=1 withheld=1\n");
+		expect(texts("a").comments.map((c) => c.body)).toEqual([WITHHELD]);
 	});
 });
 
@@ -406,46 +307,27 @@ describe("cleaning once", () => {
 		expect(texts("a").issues).toEqual([{ issue: 1, body: "seen text\n!" }]);
 	});
 
-	test("a withheld text stays withheld until it changes, and the new text is cleaned", async () => {
-		const faulty = () => issuesInput("FAULT in this text");
-		await onlyFaultFails(() => sync("a", faulty()));
-		expect(texts("a").issues).toEqual([{ issue: 1, body: WITHHELD }]);
-		const again = await onlyFaultFails(() => sync("a", faulty()));
-		expect(again.out).toEndWith("withheld=2\n");
-		await onlyFaultFails(() => sync("a", issuesInput("fixed text")));
-		expect(texts("a").issues).toEqual([{ issue: 1, body: "fixed text" }]);
-		expect(rows("SELECT withheld FROM comments WHERE id = 'IC_2'")).toEqual([
-			{ withheld: 0 },
-		]);
-	});
-
-	test("a text that passes its time budget is withheld, and a short one never waits for the child", async () => {
+	test("a text that passes its time budget is withheld", async () => {
 		const long = `${"word ".repeat(100)}end`;
-		const done = await cleanEach([long, "short"], 1);
+		const done = await cleanEach([long], 1);
 		expect(done.get(long)).toEqual({ text: WITHHELD, withheld: true });
-		expect(done.get("short")).toEqual({ text: "short", withheld: false });
-		const roomy = await cleanEach([long]);
-		expect(roomy.get(long)?.withheld).toBe(false);
+		expect((await cleanEach([long])).get(long)?.withheld).toBe(false);
 	});
 });
 
 describe("the alarm of withheld texts", () => {
-	const faulty = (body = "FAULT in this text") => {
-		const form = JSON.parse(issuesInput(body));
-		form.issues[0].url = "https://git.example/o/a/issues/1";
-		return JSON.stringify(form);
-	};
-
-	test("one alarm names the precinct, the count and the first texts with their links, and it clears with the text", async () => {
-		await onlyFaultFails(() => sync("a", faulty()));
-		const first = alarm(AT, "--end").out;
-		expect(first).toBe(
+	test("one alarm names the count and the first texts with their links, and clears with the text", async () => {
+		const form = (body: string) => {
+			const f = JSON.parse(issuesInput(body));
+			f.issues[0].url = "https://git.example/o/a/issues/1";
+			return JSON.stringify(f);
+		};
+		await onlyFaultFails(() => sync("a", form("FAULT")));
+		expect(alarm(AT).out).toBe(
 			"ALARM withheld-text a 2 texts are withheld, because the journal could not clean them: issue #1 https://git.example/o/a/issues/1; comment IC_2 on issue #1 https://git.example/o/a/issues/1. Edit or delete each on the host. The next sync cleans it again.\n",
 		);
-		expect(alarm(LATER, "--end").out).toBe(first);
-		expect(alarm(LATER, "--repeat").out).toBe("");
-		await sync("a", faulty("fixed text"));
-		expect(alarm(LATER, "--end").out).toBe("");
+		await sync("a", form("fixed"));
+		expect(alarm(LATER).out).toBe("");
 		expect(rows("SELECT cleared_at FROM alarms")).toEqual([
 			{ cleared_at: LATER },
 		]);
@@ -453,6 +335,6 @@ describe("the alarm of withheld texts", () => {
 
 	test("a body that holds the fixed sentence raises no alarm", async () => {
 		await sync("a", issuesInput(WITHHELD));
-		expect(alarm(AT, "--end").out).toBe("");
+		expect(alarm(AT).out).toBe("");
 	});
 });

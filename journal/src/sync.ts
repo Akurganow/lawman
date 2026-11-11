@@ -2,7 +2,6 @@ import type { Database } from "bun:sqlite";
 import { answerOf, hasMarkerLine, MARKER_PREFIX } from "./answer";
 import { check, parseArgs, usage } from "./args";
 import {
-	CleanFailed,
 	cleanTexts,
 	dropComments,
 	type HostText,
@@ -24,8 +23,6 @@ import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
-const CLEAN_FAILED =
-	"sync: the cleaning library failed on a text that is known to be good, so the cache is untouched; the installation needs repair";
 const SYNC_USAGE = "sync <precinct> --author <login> [--reset | --pulls]";
 
 type SyncStats = {
@@ -189,12 +186,7 @@ export async function syncIssues(
 	const stored = issues.filter(isHuman);
 	const cleaned = await cleanTexts(
 		name,
-		"issue",
-		stored.map((issue) => ({
-			item: issue,
-			number: issue.number,
-			text: issueText(issue),
-		})),
+		stored.map((issue) => ({ item: issue, text: issueText(issue) })),
 	);
 	const texts = new Map(cleaned.map(({ item, done }) => [item, done]));
 	return withDb((db) => {
@@ -222,15 +214,10 @@ export async function sync(args: string[]): Promise<number> {
 	const name = check("precinct", pos[0]);
 	const login = check("login", opt.author);
 	const input = readStdin();
-	try {
-		out(
-			pulls
-				? await syncPulls(name, login, input)
-				: await syncIssues(name, login, input, reset),
-		);
-	} catch (e) {
-		if (e instanceof CleanFailed) throw new Fail(EXIT.COMMAND, CLEAN_FAILED);
-		throw e;
-	}
+	out(
+		pulls
+			? await syncPulls(name, login, input)
+			: await syncIssues(name, login, input, reset),
+	);
 	return EXIT.OK;
 }

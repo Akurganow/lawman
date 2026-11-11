@@ -1,7 +1,5 @@
-import { Database } from "bun:sqlite";
 import { beforeEach, describe, expect, test } from "bun:test";
 import { handed, human, put } from "./cases-fixture";
-import { MIGRATIONS } from "./migrations";
 import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
 	addPrecincts,
@@ -9,7 +7,6 @@ import {
 	BASE,
 	cachePull,
 	call,
-	dbFile,
 	later,
 	mark,
 	order,
@@ -141,49 +138,13 @@ describe("alarms and status", () => {
 			expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
 		});
 
-		test("three stopped ticks of the duty desk raise tick-failing, and ticks of a role without a precinct raise none", () => {
+		test("three stopped ticks without a precinct raise tick-failing under duty-desk/-", () => {
 			seed((db) => {
-				for (const role of ["duty-desk", "patrol"]) {
-					tick(db, role, later(0), later(0, 60), "stopped-law-drift");
-					tick(db, role, later(1), later(1, 60), "stopped-dirty-law");
-					tick(db, role, later(2), later(2, 60), "stopped-host-auth");
-				}
+				tick(db, "duty-desk", later(0), later(0, 60), "stopped-law-drift");
+				tick(db, "duty-desk", later(1), later(1, 60), "stopped-dirty-law");
+				tick(db, "duty-desk", later(2), later(2, 60), "stopped-host-auth");
 			});
 			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
-		});
-
-		test("an alarm of legacy ticks without a precinct clears on a database that release 0.17 built", () => {
-			const old = new Database(dbFile);
-			for (const sql of MIGRATIONS.slice(0, 10)) old.run(sql);
-			old.run("PRAGMA user_version = 10");
-			for (let i = 0; i < 3; i++)
-				tick(old, "court", later(i), later(i, 60), "stopped-law-drift");
-			old.run(
-				"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('tick-failing', 'court/-', 'last 3 ticks stopped, skipped or failed', ?, ?)",
-				[later(3), later(3)],
-			);
-			old.close();
-			expect(alarm(later(4)).out).toBe("");
-			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
-				{ cleared_at: later(4) },
-			]);
-		});
-
-		test("an issue with the lead prefix and no marker raises no alarm, and a left-over broken-lead row clears", () => {
-			seed((db) => {
-				db.run(
-					"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', 7, 'OPEN', '[Lead] broken', ?)",
-					[BASE],
-				);
-				db.run(
-					"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('broken-lead', 'a#7', 'title starts with [Lead] but no lead marker', ?, ?)",
-					[BASE, BASE],
-				);
-			});
-			expect(alarm(BASE).out).toBe("");
-			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
-				{ cleared_at: BASE },
-			]);
 		});
 	});
 
@@ -363,33 +324,15 @@ describe("decision-waiting", () => {
 		]);
 	});
 
-	test("an alarm about a pull request ends with the link the host reported, and the repeat carries it", () => {
-		waitingSpec();
-		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
-		const expected = line(
-			"main#7",
-			`${WAITS_SPEC} https://git.example/o/main/pull/7`,
-		);
-		expect(alarm(BASE).out).toBe(expected);
-		const repeat = call(later(1), ["tick", "start", "--role", "duty-desk"]);
-		expect(repeat.out).toContain(expected.trim());
-	});
-
-	test("a link that arrives or changes later is no new condition", () => {
+	test("an alarm about a pull request ends with the link the host reported; a link that arrives later opens no new alarm", () => {
 		waitingSpec();
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
 		expect(alarm(later(1)).out).toBe("");
-		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pulls/7'");
-		expect(alarm(later(2)).out).toBe("");
-		expect(rows("SELECT ref FROM alarms WHERE cleared_at IS NULL")).toEqual([
-			{ ref: "main#7" },
-		]);
-	});
-
-	test("a pull request with no link in the cache keeps the line as it was", () => {
-		waitingSpec();
-		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
+		const repeat = call(later(2), ["tick", "start", "--role", "duty-desk"]);
+		expect(repeat.out).toContain(
+			line("main#7", `${WAITS_SPEC} https://git.example/o/main/pull/7`).trim(),
+		);
 	});
 
 	test.each([

@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { convicted, human, issuesJson, T } from "./cases-fixture";
+import { convicted, human, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
@@ -305,7 +305,7 @@ describe("the sync", () => {
 		expect(ticks()[0]?.outcome).toBe("stopped-sync");
 	});
 
-	test("a text the cleaning cannot process stops no tick: one alarm names it and every precinct gets its orders", () => {
+	test("a text the cleaning cannot process stops no tick and raises one alarm", () => {
 		setUp({ alpha: 1, main: 1 });
 		const deep = "> ".repeat(12_800);
 		hostOf("alpha", {
@@ -317,7 +317,9 @@ describe("the sync", () => {
 		expect(lines(r.out)).not.toContain("ended stopped-sync");
 		expect(lines(r.out)).toContain("ended ordered");
 		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
-		expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+		expect(
+			lines(startDesk(later(1)).out).filter((l) => l.startsWith("ALARM")),
+		).toEqual([
 			expect.stringMatching(/^ALARM withheld-text alpha 1 text is withheld/),
 		]);
 		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
@@ -326,38 +328,6 @@ describe("the sync", () => {
 		expect(
 			rows("SELECT body FROM issues WHERE precinct = 'alpha' AND issue = 5"),
 		).toEqual([{ body: "This text could not be cleaned and is withheld." }]);
-	});
-
-	test("five prefixed issues by an outsider change neither the cap nor the alarms, and each gets its intake order", () => {
-		setUp({ main: 1 });
-		hostOf("main", { ...WORK, issues: {} });
-		const cap = () =>
-			call(BASE, ["cap", "main", "--department", "abstraction"]).out;
-		const first = startDesk();
-		expect(cap()).toBe("cap=3 open=0\n");
-		const issues = JSON.parse(
-			issuesJson(
-				Object.fromEntries(
-					[1, 2, 3, 4, 5].map((n) => [n, { body: ["please look"] }]),
-				),
-			),
-		);
-		for (const issue of issues.issues) {
-			issue.title = `[Lead] abstraction: outsider ${issue.number}`;
-			issue.author = { login: "outsider", is_bot: false };
-		}
-		writeFileSync(join(configs("main"), "issues.json"), JSON.stringify(issues));
-		const second = startDesk(later(1));
-		expect(cap()).toBe("cap=3 open=0\n");
-		expect(lines(second.out).filter((l) => l.startsWith("ALARM"))).toEqual(
-			lines(first.out).filter((l) => l.startsWith("ALARM")),
-		);
-		expect(
-			openOrders()
-				.filter((o) => o.role === "response-unit")
-				.map((o) => o.issue)
-				.sort(),
-		).toEqual([1, 2, 3, 4, 5]);
 	});
 
 	test("a failed pull request sync leaves that precinct without orders of any role, the others go on", () => {
@@ -623,33 +593,6 @@ describe("the failures of the start", () => {
 		expect(startDesk(later(3)).out).toContain("ALARM tick-failing duty-desk/-");
 	});
 
-	test.each([
-		["exits non-zero", "exit 1"],
-		["prints outside its form", "echo nonsense"],
-	])(
-		"a law-version command that %s gives the same self line as an absent one",
-		(_name, body) => {
-			setUp({ main: 1 });
-			hostOf("main", WORK);
-			command(shared(), "law-version", body);
-			const r = startDesk();
-			expect(lines(r.out).filter((l) => l.startsWith("self "))).toEqual([
-				"self law-version",
-			]);
-			expect(r.out).not.toContain("stopped-law-drift");
-			expect(dispatches()).toEqual([]);
-		},
-	);
-
-	test("without a law-version command the first self line is law-version, with no precinct", () => {
-		setUp({ main: 1 });
-		hostOf("main", WORK);
-		rmSync(join(shared(), "law-version"));
-		const selfs = lines(startDesk().out).filter((l) => l.startsWith("self "));
-		expect(selfs).toEqual(["self law-version"]);
-		expect(lines(proceed(1).out)).toContain("ended ordered");
-	});
-
 	test("a failing law-version command keeps the self step and shows in the report of the tick", () => {
 		setUp({ main: 1 });
 		hostOf("main", WORK);
@@ -722,7 +665,6 @@ describe("the failures of the start", () => {
 			"a tree without the constitution",
 			() => hostOf("main", { ...WORK, tree: { "README.md": "x" } }),
 			"main: skipped-no-constitution",
-			"no constitution on the main branch",
 		],
 		[
 			"a constitution that fails the check",
@@ -732,11 +674,10 @@ describe("the failures of the start", () => {
 					tree: { "LAWMAN.md": "not a constitution" },
 				}),
 			"main: skipped-bad-constitution",
-			"the constitution fails its check",
 		],
 	])(
-		"%s: only the clerk gets orders there, one alarm names the precinct and the cause, the other precinct is worked",
-		(_name, break_, blocker, alarm) => {
+		"%s: only the clerk gets orders there, the other precinct is worked",
+		(_name, break_, blocker) => {
 			setUp({ alpha: 1, main: 1 });
 			hostOf("alpha", WORK);
 			hostOf("main", WORK);
@@ -749,38 +690,8 @@ describe("the failures of the start", () => {
 				openOrders().some((o) => o.precinct === "alpha" && o.role === "patrol"),
 			).toBe(true);
 			expect(reportOf(r.out, "Blockers")).toContain(blocker);
-			expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
-				expect.stringMatching(
-					new RegExp(`^ALARM no-constitution main ${alarm}`),
-				),
-			]);
 		},
 	);
-
-	test("the alarm for a missing constitution repeats at each duty desk tick, raises no tick-failing, and closes in the tick that finds it back", () => {
-		setUp({ main: 1 });
-		hostOf("main", { ...WORK, tree: { "README.md": "x" } });
-		const alarm = (out: string) =>
-			lines(out).filter((l) => l.startsWith("ALARM"));
-		const first = startDesk();
-		expect(alarm(first.out)).toHaveLength(1);
-		const orders = dispatches().length;
-		for (const n of [1, 2, 3, 4]) {
-			const r = startDesk(later(n));
-			expect(alarm(r.out)).toEqual(alarm(first.out));
-			expect(dispatches()).toHaveLength(orders);
-		}
-		expect(rows("SELECT kind FROM alarms WHERE cleared_at IS NULL")).toEqual([
-			{ kind: "no-constitution" },
-		]);
-		hostOf("main", WORK);
-		const fixed = startDesk(later(5));
-		expect(alarm(fixed.out)).toEqual([]);
-		expect(rows("SELECT kind FROM alarms WHERE cleared_at IS NULL")).toEqual(
-			[],
-		);
-		expect(openOrders().map((o) => o.role)).toContain("investigation");
-	});
 
 	test("an untaken order of a role that needs the constitution is closed when the precinct loses it", () => {
 		setUp({ main: 1 });
@@ -792,6 +703,14 @@ describe("the failures of the start", () => {
 		expect(new Set(openOrders().map((o) => o.role))).toEqual(
 			new Set(["clerk"]),
 		);
+		const alarms = (at: string) =>
+			lines(startDesk(at).out).filter((l) => l.startsWith("ALARM"));
+		expect(alarms(later(2))).toEqual([
+			expect.stringMatching(/^ALARM no-constitution main no constitution/),
+		]);
+		hostOf("main", WORK);
+		startDesk(later(3));
+		expect(alarms(later(4))).toEqual([]);
 	});
 
 	test("a constitution of another contract version is skipped with its own cause", () => {

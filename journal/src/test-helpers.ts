@@ -6,9 +6,7 @@ import {
 	copyFileSync,
 	mkdirSync,
 	mkdtempSync,
-	readdirSync,
 	rmSync,
-	statSync,
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
@@ -74,37 +72,13 @@ export function env(
 // when `LAWMAN_DB` is unset. A copy of the runtime in a folder of its own keeps a
 // run with no database path off the files of the machine.
 let runtime: string | undefined;
-
-// copies that an earlier run left behind, such as one that was killed outright
-function sweepOldRuntimes(keep: string): void {
-	const hour = 60 * 60 * 1000;
-	for (const name of readdirSync(tmpdir())) {
-		const path = join(tmpdir(), name);
-		if (!name.startsWith("lawman-runtime-") || path === keep) continue;
-		try {
-			if (Date.now() - statSync(path).mtimeMs > hour)
-				rmSync(path, { recursive: true, force: true });
-		} catch {
-			// another run may have removed it already
-		}
-	}
-}
-
 function ownRuntime(): string {
 	if (runtime === undefined) {
 		const root = mkdtempSync(join(tmpdir(), "lawman-runtime-"));
 		mkdirSync(join(root, "bin"));
 		runtime = join(root, "bin", "bun");
 		copyFileSync(process.execPath, runtime, constants.COPYFILE_FICLONE);
-		const remove = () => rmSync(root, { recursive: true, force: true });
-		process.on("exit", remove);
-		// a run that is stopped by a signal or a timeout leaves no copy behind
-		for (const signal of ["SIGINT", "SIGTERM", "SIGHUP"] as const)
-			process.on(signal, () => {
-				remove();
-				process.exit(1);
-			});
-		sweepOldRuntimes(root);
+		process.on("exit", () => rmSync(root, { recursive: true, force: true }));
 	}
 	return runtime;
 }
@@ -226,15 +200,7 @@ export function alarm(clock: string, ...flags: string[]) {
 	const db = open(dbFile);
 	try {
 		const lines = inTransaction(db, () =>
-			reconcileAlarms(
-				db,
-				clock,
-				flags.includes("--end")
-					? "end"
-					: flags.includes("--repeat")
-						? "start"
-						: "none",
-			),
+			reconcileAlarms(db, clock, flags.includes("--repeat")),
 		);
 		return { code: 0, out: lines.map((l) => `${l}\n`).join(""), err: "" };
 	} finally {

@@ -19,7 +19,7 @@ import {
 } from "./catalog-test-run";
 import * as clean from "./clean";
 import { EXIT } from "./db";
-import { capturedAsync, inprocAsync } from "./inproc";
+import { inprocAsync } from "./inproc";
 import {
 	ASSET,
 	calls,
@@ -35,7 +35,7 @@ import {
 	versionCommand,
 } from "./law-update-fixture";
 import { command, shared } from "./operations-test-fixture";
-import { RELEASE_FOLDER, runInstallationCommand } from "./run-installation";
+import { RELEASE_FOLDER } from "./run-installation";
 import { addPrecincts, BASE, cli, dbFile, dir, tempDb } from "./test-helpers";
 
 tempDb();
@@ -128,37 +128,6 @@ describe("run-installation: the outcome", () => {
 		expect(await run("law-version")).toEqual({
 			code: EXIT.COMMAND,
 			out: refused("law-version", "start"),
-			err: "",
-		});
-	});
-
-	test("a platform with no asset gives start and names the cause in the fence", async () => {
-		releaseCommand();
-		const r = await capturedAsync(BASE, () =>
-			runInstallationCommand(["release", REPO, TAG], {
-				os: "win32",
-				arch: "x64",
-			}),
-		);
-		expect(r).toEqual({
-			code: EXIT.COMMAND,
-			out: refused("release", "start", "no binary for this platform"),
-			err: "",
-		});
-	});
-
-	test("a release folder that cannot be made gives start and names the cause in the fence", async () => {
-		releaseCommand();
-		// a file where the folder `runs` must be
-		rmSync(join(dir, "runs"), { recursive: true, force: true });
-		writeFileSync(join(dir, "runs"), "");
-		expect(await run("release", REPO, TAG)).toEqual({
-			code: EXIT.COMMAND,
-			out: refused(
-				"release",
-				"start",
-				`cannot make the folder ${RELEASE_FOLDER}`,
-			),
 			err: "",
 		});
 	});

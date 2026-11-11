@@ -96,8 +96,4 @@ export function main(argv: string[]): number | Promise<number> {
 	}
 }
 
-if (import.meta.main) {
-	if (process.env.LAWMAN_CLEAN_WORKER === "1")
-		await (await import("./clean-worker")).serveCleaning();
-	else process.exitCode = await main(process.argv.slice(2));
-}
+if (import.meta.main) process.exitCode = await main(process.argv.slice(2));

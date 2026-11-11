@@ -179,8 +179,8 @@ describe("the stale orders", () => {
 			const r = startDesk();
 			expect(r.code).toBe(0);
 			const mine = dispatches().filter((o) => o.role === role);
-			// an issue or a pull request that is not in the cache needs no role, so its order is stale
-			const absent = ["silent", BASE];
+			// a pull request that is not in the cache has the stage "none", so its order is stale; an issue has no stage then
+			const absent = pulls ? ["silent", BASE] : [null, null];
 			expect(mine.map((o) => [o.issue, o.outcome, o.closed_at])).toEqual([
 				[first, "silent", BASE],
 				[first + 1, null, null],
@@ -189,7 +189,7 @@ describe("the stale orders", () => {
 			]);
 			expect(ticks().map((t) => t.role)).toEqual(["duty-desk"]);
 			expect(reportOf(r.out, "Coverage")).toContain(
-				`closed stale: ${CLOSED_ROLES.map((x) => `${x} ${x === role ? 2 : 0}`).join(", ")}`,
+				`closed stale: ${CLOSED_ROLES.map((x) => `${x} ${x === role ? (pulls ? 2 : 1) : 0}`).join(", ")}`,
 			);
 		},
 	);

@@ -38,13 +38,3 @@ export function urlOf(
 		.get(precinct, number) as { url: string | null } | null;
 	return row?.url ?? null;
 }
-
-export function linkLine(
-	db: Database,
-	precinct: string,
-	kind: Subject,
-	number: number,
-): string | null {
-	const url = urlOf(db, precinct, kind, number);
-	return url === null ? null : `link ${precinct}#${number} ${url}`;
-}

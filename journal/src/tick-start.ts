@@ -21,7 +21,7 @@ import { inputOf, type RoleInput, type StageFields } from "./input-roles";
 import { intakeStage } from "./intake";
 import { configValue } from "./law-sync";
 import { lawCheck } from "./law-version";
-import { linkLine } from "./link";
+import { urlOf } from "./link";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
@@ -49,26 +49,6 @@ const SYNC_STEPS = ["fetch", "issues", "pulls"];
 type Stage = StageFields & { department: string; pull: string; line: string };
 type Tick = { id: number; role: string };
 
-// An issue that left the cache needs no role, as a pull request that left it does not.
-// The commands `case` and `intake` still refuse an unknown issue, so the answer lives here.
-const GONE: Stage = {
-	need: "none",
-	state: NONE,
-	department: NONE,
-	pull: NONE,
-	line: "need=none",
-};
-const leftTheCache = (
-	db: Database,
-	input: RoleInput,
-	precinct: string,
-	issue: number,
-) =>
-	(input.stage === "case" || input.stage === "intake") &&
-	db
-		.query("SELECT 1 FROM issues WHERE precinct = ? AND issue = ?")
-		.get(precinct, issue) === null;
-
 // the stage of an order from the cache, null when the cache cannot give it
 export function stageFor(
 	db: Database,
@@ -76,7 +56,6 @@ export function stageFor(
 	o: Taken,
 ): Stage | null {
 	const n = o.issue ?? 0;
-	if (leftTheCache(db, input, o.precinct, n)) return GONE;
 	try {
 		if (input.stage === "case") return caseStage(db, o.precinct, n);
 		if (input.stage === "intake")
@@ -110,16 +89,18 @@ function caseLines(
 	o: Taken,
 	stage: Stage,
 ): string[] {
-	const link =
+	const url =
 		o.issue === null
 			? null
-			: linkLine(
+			: urlOf(
 					db,
 					o.precinct,
 					input.number === "pull" ? "pull" : "issue",
 					o.issue,
 				);
-	return link === null ? [stage.line] : [stage.line, link];
+	return url === null
+		? [stage.line]
+		: [stage.line, `link ${o.precinct}#${o.issue} ${url}`];
 }
 
 // the issue or the pull request whose text the role reads, by the table
@@ -271,15 +252,13 @@ async function lintedPage(
 	kind: PageKind,
 	page: string,
 	name?: string,
-	// the line that names the page travels with the first fence, so no part ends between them
-	head?: string,
 ): Promise<{ passed: boolean; reasons: string[] } | null> {
 	const lint = lintPage(kind, page, name);
 	const passed = lint.reasons.length === 0;
 	const lines = await characters(pageLines(lint).join("\n"));
 	const text = passed ? await characters(page) : "";
 	if (lines === null || text === null) return null;
-	o.add(fencedBlock("lint", lines, head));
+	o.add(fencedBlock("lint", lines));
 	if (passed) o.add(fencedBlock(kind, text));
 	return { passed, reasons: lint.reasons };
 }
@@ -345,13 +324,10 @@ async function precedentBlocks(
 			missed = true;
 			continue;
 		}
-		o.add(
-			fencedBlock(
-				"precedent",
-				text,
-				`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
-			),
+		o.line(
+			`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
 		);
+		o.add(fencedBlock("precedent", text));
 		shown++;
 	}
 	if (missed) o.selfs.push(SELF_PRECEDENTS);
@@ -389,7 +365,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	};
 	const o = new Output();
 	for (const line of withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, "none")),
+		inTransaction(db, () => reconcileAlarms(db, stamp, false)),
 	))
 		o.line(line);
 	if (config === null)
@@ -505,19 +481,10 @@ export async function tickStart(args: string[]): Promise<number> {
 					});
 		const page = found?.kind === "page" ? found.page : null;
 		const self = found === null || found.kind === "failed";
-		const placeLine =
-			page === null ? null : `department ${d} place=${placeNumber(page.place)}`;
+		if (page !== null)
+			o.line(`department ${d} place=${placeNumber(page.place)}`);
 		const lint =
-			page === null
-				? null
-				: await lintedPage(
-						o,
-						"department",
-						page.text,
-						d,
-						placeLine ?? undefined,
-					);
-		if (placeLine !== null && lint === null) o.line(placeLine);
+			page === null ? null : await lintedPage(o, "department", page.text, d);
 		if (self || (page !== null && lint === null))
 			o.selfs.push(`department ${d}`);
 		else if (lint === null || !lint.passed)

@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
-import { lackText } from "./constitution";
+import { type Lack, lackText } from "./constitution";
 import { LEAD_ORIGIN_FROM, MINUTE_MS, out, withDb } from "./db";
 import { readConfig } from "./input-files";
 import { configValue } from "./law-sync";
@@ -114,7 +114,7 @@ function noConstitution(db: Database): Candidate[] {
 	return rows.map((r) => ({
 		kind: "no-constitution",
 		ref: r.name,
-		detail: lackText(r.cause),
+		detail: lackText(r.cause as Lack),
 	}));
 }
 
@@ -241,10 +241,6 @@ type OpenAlarm = {
 // a changed detail is a new condition: the old alarm clears and the new one prints
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 
-// The alarm kinds whose truth the duty desk settles during its tick, so it repeats them at
-// the end of the tick and not at the start.
-const SETTLED_AT_END = ["no-constitution", "withheld-text"];
-
 // An alarm about an issue or a pull request ends with its link. The address is looked up
 // from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
 const SUBJECTS: Record<string, Subject> = { "decision-waiting": "pull" };
@@ -257,29 +253,18 @@ function alarmLine(db: Database, a: Candidate): string {
 	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
 }
 
-// "none": no repeat. "start": the duty desk's start repeats the open alarms except those it
-// settles at its end. "end": its end repeats those.
-export type Repeat = "none" | "start" | "end";
-
 export function reconcileAlarms(
 	db: Database,
 	stamp: string,
-	repeat: Repeat,
+	repeat: boolean,
 ): string[] {
 	const nowMs = Date.parse(stamp);
-	// the duty desk settles two kinds at the end of its tick, after its own sync and reads
-	const mine = (kind: string) =>
-		repeat !== "start" || !SETTLED_AT_END.includes(kind);
-	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs)).filter((a) =>
-		mine(a.kind),
-	);
-	const open = (
-		db
-			.query(
-				"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
-			)
-			.all() as OpenAlarm[]
-	).filter((o) => mine(o.kind));
+	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
+	const open = db
+		.query(
+			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+		)
+		.all() as OpenAlarm[];
 	const wantedKeys = new Set(wanted.map(alarmKey));
 	const openKeys = new Set(open.map(alarmKey));
 	const lines: string[] = [];
@@ -298,11 +283,9 @@ export function reconcileAlarms(
 	}
 	// the duty desk repeats an open alarm at each of its ticks; the alarms this
 	// call raised are printed once above and never repeated here
-	const repeated = (kind: string) =>
-		repeat === "end" ? SETTLED_AT_END.includes(kind) : repeat === "start";
-	for (const o of open)
-		if (wantedKeys.has(alarmKey(o)) && repeated(o.kind))
-			lines.push(alarmLine(db, o));
+	if (repeat)
+		for (const o of open)
+			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(db, o));
 	return lines;
 }
 

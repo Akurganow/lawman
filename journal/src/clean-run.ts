@@ -1,6 +1,4 @@
-import { dirname, join } from "node:path";
 import { cleanHostText } from "./clean-host";
-import { WORKER_ENV } from "./clean-worker";
 
 // The most time one text may take to clean. The slowest ordinary text measured at the
 // largest size a host accepts (65 536 characters of a table) took 357 ms, so the
@@ -15,9 +13,6 @@ const SHORT_TEXT = 300;
 // what a role reads in place of a text that was withheld
 export const WITHHELD = "This text could not be cleaned and is withheld.";
 
-// a library error can quote the input, so each caller prints its own message
-export class CleanFailed extends Error {}
-
 export type Cleaned = { text: string; withheld: boolean };
 
 const withheld: Cleaned = { text: WITHHELD, withheld: true };
@@ -30,93 +25,47 @@ async function inProcess(text: string): Promise<Cleaned> {
 	}
 }
 
-// The command of the child: this journal with the worker variable set.
-function workerCommand(): string[] {
-	const compiled = import.meta.path.startsWith("/$bunfs/");
-	return compiled
-		? [process.execPath]
-		: [process.execPath, join(dirname(import.meta.path), "journal.ts")];
-}
-
-type Reply = { ok: string } | { err: true };
-
-class Child {
-	constructor(private readonly budget: number) {}
-	private readonly proc = Bun.spawn(workerCommand(), {
-		stdin: "pipe",
-		stdout: "pipe",
-		stderr: "ignore",
-		env: { ...process.env, [WORKER_ENV]: "1" },
-	});
-	private readonly lines = this.proc.stdout.getReader();
-	private buffer = "";
-	killed = false;
-
-	// the reply to one text, or null when the budget passed first
-	async ask(text: string): Promise<Reply | null> {
-		this.proc.stdin.write(`${JSON.stringify(text)}\n`);
-		this.proc.stdin.flush();
-		const timer = setTimeout(() => this.kill(), this.budget);
-		try {
-			for (;;) {
-				const end = this.buffer.indexOf("\n");
-				if (end >= 0) {
-					const line = this.buffer.slice(0, end);
-					this.buffer = this.buffer.slice(end + 1);
-					return JSON.parse(line) as Reply;
-				}
-				const { done, value } = await this.lines.read();
-				if (done) {
-					if (this.killed) return null;
-					throw new CleanFailed();
-				}
-				this.buffer += new TextDecoder().decode(value);
-			}
-		} finally {
-			clearTimeout(timer);
-		}
-	}
-
-	kill(): void {
-		this.killed = true;
-		this.proc.kill(9);
-	}
-}
-
-// The texts that are not short, one at a time in a child that is ended at the budget.
-async function inChild(
+// The texts that are not short, one at a time in a worker that is ended at the budget.
+async function inWorker(
 	texts: string[],
 	budget: number,
 ): Promise<Map<string, Cleaned>> {
 	const done = new Map<string, Cleaned>();
-	let child: Child | null = null;
+	let worker: Worker | null = null;
 	try {
 		for (const text of texts) {
-			child ??= new Child(budget);
-			const reply = await child.ask(text);
-			if (reply === null) child = null;
+			worker ??= new Worker(new URL("./clean-worker.ts", import.meta.url));
+			const w = worker;
+			const reply = await new Promise<string | null>((resolve) => {
+				const timer = setTimeout(() => {
+					worker = null;
+					w.terminate();
+					resolve(null);
+				}, budget);
+				w.onerror = () => {
+					clearTimeout(timer);
+					worker = null;
+					resolve(null);
+				};
+				w.onmessage = (e) => {
+					clearTimeout(timer);
+					resolve(e.data);
+				};
+				w.postMessage(text);
+			});
 			done.set(
 				text,
-				reply === null || "err" in reply
-					? withheld
-					: { text: reply.ok, withheld: false },
+				reply === null ? withheld : { text: reply, withheld: false },
 			);
 		}
 	} finally {
-		child?.kill();
+		worker?.terminate();
 	}
 	return done;
 }
 
-// A withheld text is the text's own fault only when the cleaning works on a good one.
-async function cleaningWorks(): Promise<void> {
-	const good = await inProcess("ok");
-	if (good.withheld || good.text !== "ok") throw new CleanFailed();
-}
-
 // Each text is cleaned alone. A text that cannot be cleaned, or does not finish within the
-// budget, is withheld whole, never kept raw or part cleaned. A cleaning that fails for a good
-// text too is no text's fault and throws.
+// budget, is withheld whole, never kept raw or part cleaned.
 export async function cleanEach(
 	texts: string[],
 	budget = CLEAN_BUDGET_MS,
@@ -126,12 +75,7 @@ export async function cleanEach(
 	for (const text of unique.filter((t) => t.length <= SHORT_TEXT))
 		done.set(text, await inProcess(text));
 	const long = unique.filter((t) => t.length > SHORT_TEXT);
-	for (const [text, result] of await inChild(long, budget))
+	for (const [text, result] of await inWorker(long, budget))
 		done.set(text, result);
-	if ([...done.values()].some((r) => r.withheld)) await cleaningWorks();
 	return done;
-}
-
-export async function cleanOne(text: string): Promise<Cleaned> {
-	return (await cleanEach([text])).get(text) as Cleaned;
 }

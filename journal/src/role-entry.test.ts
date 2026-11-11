@@ -436,13 +436,6 @@ describe("parts of the role group", () => {
 		}
 	});
 
-	test("wake for a name that is no role exits 1 and prints nothing, with an order or without", () => {
-		installation();
-		orderFor("investigator");
-		expect(wake("investigator")).toMatchObject({ code: 1, out: "" });
-		expect(wake("judge")).toMatchObject({ code: 1, out: "" });
-	});
-
 	test("a part outside the group exits 1", () => {
 		orderFor("court");
 		sized(WIDE);

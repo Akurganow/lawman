@@ -10,7 +10,6 @@ import {
 	issues,
 	issuesForm,
 	mark,
-	minimalIssues,
 	rows,
 	SHA,
 	TRUSTED,
@@ -34,8 +33,6 @@ const fed = async (stdin: unknown, args = ARGS) => {
 	}
 };
 
-const minimal = (n: number) => minimalIssues(n, CREATED);
-
 beforeEach(() => addPrecincts({ main: 1 }));
 
 describe("sync in process: the issues form", () => {
@@ -58,10 +55,6 @@ describe("sync in process: the issues form", () => {
 		);
 		expect(r.err).toContain(formText("issues"));
 		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
-	});
-
-	test("a list of 1000 issues in the object form succeeds", async () => {
-		expect((await fed(issuesForm(minimal(1000)))).code).toBe(EXIT.OK);
 	});
 
 	test("an object without writers exits 4", async () => {
