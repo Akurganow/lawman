@@ -1207,10 +1207,10 @@ describe("the request lines of the write", () => {
 		});
 	});
 
-	test("a repeated call writes a copy and asks for neither file", async () => {
+	test("a repeated call finds the file standing and asks for neither file", async () => {
 		await written();
 		const again = await record();
-		expect(linesOf(again)).toEqual([`entry\t${NAME}-2\tname-taken`]);
+		expect(linesOf(again)).toEqual(["no-entry\tno-change"]);
 	});
 
 	test("a ruling with two new lines writes both files with their original lists", async () => {

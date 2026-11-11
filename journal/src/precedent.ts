@@ -129,6 +129,9 @@ class Folder {
 		this.state.set(name, text);
 	}
 
+	stands = (name: string, text: string) =>
+		entryKind(this.path(name)) === "file" && this.disk(name) === text;
+
 	free(base: string): string {
 		for (let k = 1; ; k++) {
 			const name = k === 1 ? base : `${base}-${k}`;
@@ -244,22 +247,23 @@ function apply(
 		named: Named,
 		reason?: string,
 	) => {
+		const original = originalOf(named);
+		const content = buildPrecedent(
+			{
+				kind: ruling.precedentKind,
+				departments: original,
+				issue: ruling.issue,
+				date: ruling.date,
+				ruling: ruling.source,
+			},
+			text,
+		);
+		// a precedent that already stands is no change
+		if (reason === undefined && folder.stands(base, content))
+			return { name: base, original };
 		const name = folder.free(base);
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		const original = originalOf(named);
-		folder.set(
-			name,
-			buildPrecedent(
-				{
-					kind: ruling.precedentKind,
-					departments: original,
-					issue: ruling.issue,
-					date: ruling.date,
-					ruling: ruling.source,
-				},
-				text,
-			),
-		);
+		folder.set(name, content);
 		if (why !== undefined) reasons.set(name, why);
 		created.set(name, named);
 		return { name, original };
