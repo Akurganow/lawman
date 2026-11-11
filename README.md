@@ -48,7 +48,7 @@ A precinct's `LAWMAN.md` states what is true of that repository and of no other.
 
 ## Install
 
-Lawman runs inside an agent harness, on that harness's own schedule. You need three things. First, a way to reach the repository host, signed in as the one account every role uses. Second, access to github.com for Lawman's release. Third, a way to verify a Sigstore signature, or your choice to run unverified. The assembly skill finds each with you and sets up the rest. After a plugin update, the journal updates itself with the same checksum and signature checks.
+Lawman runs inside an agent harness, on that harness's own schedule. You need to be signed in to your repository host as the one account every role uses. The assembly skill finds the rest, including a way to verify Lawman's release, a check you may decline. After a plugin update, the journal updates itself with the same checksum and signature checks.
 
 ### Hermes Agent
 
@@ -66,11 +66,11 @@ Hermes Agent runs each role as a scheduled job. It needs its gateway running.
    /agent-plugin-lawman-492e59eb:assembly
    ```
 
-The assembly finds what it can by itself, then sends one message for each part of the setup. You decide with choices, then approve before it writes. The installation is one round and one approval. Each repository then gets its own calls and its own approval.
+The assembly finds what it can by itself, then sends one message for each part of the setup. You decide with choices, then approve before it writes. Each repository then gets its own calls and its own approval.
 
 After you approve, the assembly writes the host notes in `host.md` and installs the [journal](docs/journal.md). It proves the commands of the installation, which update the journal, and writes them into `shared/`. It writes [`config.yaml`](docs/configuration.md), the entry file of each role and one paused job for each role of the [pipeline](docs/pipeline.md). Where the harness allows it, each job starts with its entry file.
 
-For each chosen repository the assembly proves the commands of the [precinct](docs/journal.md#commands-of-the-installation-and-the-precincts) on a temporary database, then writes them into `configs/<precinct>/`. A command that fails its proof is never written, and an operation without a command stays a step of the role. The issues and the pull requests may live in another tracker than the repository host. A proof in the scheduler's environment is a short paid run of the harness's default model. The assembly asks once for each pass whether it may run it.
+For each chosen repository the assembly proves the commands of the [precinct](docs/journal.md#commands-of-the-installation-and-the-precincts) on a temporary database, then writes them into `configs/<precinct>/`. A command that fails its proof is never written, and an operation without a command stays a step of the role. The issues and the pull requests may live in another tracker than the repository host. A proof in the scheduler's environment is a paid run of the harness's default model. The assembly asks once for each pass whether it may run it.
 
 For each chosen repository without a [constitution](docs/constitution.md), the assembly opens a pull request with a draft. A repository whose constitution is already in place joins at weight 1, and the assembly offers to resume the jobs. When the constitution holds old numbered lines under `## Precedents`, the assembly asks whether to move them into files in `.lawman/precedents`. A move opens the pull request "Move the precedents to files". An open pull request of the old form gets the files by a commit in its branch. If you keep them as notes, nothing is written.
 
@@ -80,9 +80,9 @@ TypeSafe Jev is off by default. See [configuration](docs/configuration.md).
 
 The catalog check is off by default, and the assembly asks for your consent at install and again for each repository. When you say yes, the names and versions of the pinned packages of that repository, a private one too, go to the OSV service at every visit, and the service sees the installation's address. The check works on any harness whose page carries a send form. The Hermes page carries one today. On a harness without one, the patrol sends nothing and reports that the check did not run. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
-The license department is off by default. The assembly asks once for each repository. It reads the repository first, asks each question that has no answer on record and recommends the answer that a file shows, with its path and line. A license source gets data only after a separate yes for that source. The assembly sends nothing to a source. The patrol finds the way to read it. See [configuration](docs/configuration.md#what-leaves-the-machine).
+The license department is off by default. The assembly asks once for each repository. It reads the repository first. It asks how people get the project and what it earns only when no sign in the repository answers. An answer taken from a sign shows in the approval with its path and line, and "Change" asks both questions. A license source gets data only after a separate yes for that source. The assembly sends nothing to a source. The patrol finds the way to read it. See [configuration](docs/configuration.md#what-leaves-the-machine).
 
-Run the assembly again to change the installation. It offers keep as is, roles, precincts or host. Roles covers the entry files, the limits and the jobs. Precincts covers a repository's commands, proved again, and the late move of old precedents. Host covers the host notes and the commands of the installation.
+Run the assembly again to change the installation. It offers keep as is, roles, precincts or host. Roles covers the entry files, the limits and the jobs. Precincts covers a repository's commands, proved again, and, when you ask, the late move of old precedents. Host covers the host notes and the commands of the installation.
 
 #### Update
 
@@ -94,7 +94,7 @@ hermes plugins update lawman
 
 The next tick of any role completes the update, and so does the assembly when you run it first. The sync downloads the journal of the new release, checks it and records the new commit. When the release changes the constitution contract, the assembly amends the precinct constitutions.
 
-After this update, run the assembly, open the amendment pull request it offers for each precinct, merge it, then choose Host once to rewrite host.md and write the commands of the installation. The assembly asks about old precedents when a precinct holds them. Choose Roles to move a job in monitor mode to its entry file. Choose Precincts, then re-check a precinct, to write the commands of a precinct that has none.
+After this update, run the assembly. It offers the amendment pull request for each precinct, which you merge, and asks about old precedents there. It then goes on to the later parts and ends at the menu. The menu names what the earlier release left behind, such as a job in an old form or an installation or a precinct with no command, and recommends the choice that mends it. It asks again after each part. It does not find rows of `host.md` that an earlier release wrote in an old form: choose Host once to rewrite them.
 
 After an update, the tick that synced the law tells you to run the assembly. You answer the license question for each precinct without an answer. A yes or a no removes that line.
 
