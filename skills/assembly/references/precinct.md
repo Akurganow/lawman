@@ -395,8 +395,9 @@ The work happens in a copy under `runs/add-department-<name>/`, never in the liv
 
 ### Step 1. Choose the precinct
 
-1. Choose the precinct from `bin/journal precinct list`.
+1. Take the precinct from `bin/journal precinct list`. Ask which one only when several stand and the user named none.
 2. Fetch the repository's latest state into `precincts/<p>`, and stop if it fails.
+3. Stop, naming the open constitution pull request, when `LAWMAN.md` is absent at the tip of the default branch.
 
 ### Step 2. Check the name
 
@@ -405,11 +406,11 @@ The work happens in a copy under `runs/add-department-<name>/`, never in the liv
 
 ### Step 3. Choose the place
 
-1. Ask in the question tool: "Where does the department live?" Offer these three places as the choices.
+1. Take place (c) when the name is a shared department of Lawman, and place (a) otherwise. Place (b) is the user's choice: take it when the user names the installation, or on "Change" in Step 8. The places are:
    - (a) A page in this precinct's `.lawman/departments/`, added by pull request.
    - (b) A page in the installation's `departments/`, added with no pull request, and this precinct gets a line by pull request.
    - (c) A shared department of Lawman, and this precinct gets only a line with its judging document, by pull request.
-2. Ask in the question tool for the path of the document that judges the department, or `none`.
+2. Propose the document that judges the department by the mission match of the section "Departments" of the add path, or `none`. For a new page, match it after Step 4 has drafted the page. Step 8 shows it, and "Change" edits it.
 
 For place (b), this run attaches the chosen precinct only. Run the job again for each further precinct. Each run reuses the installation page.
 
@@ -442,7 +443,7 @@ When the judging document is not `none`, check that its path exists in the copy.
 ### Step 8. Approve, commit and open the pull request
 
 1. Include `LAWMAN.md` in the change of the copy, plus `.lawman/departments/<name>.md` for place (a).
-2. Show the developer the diff of the change. For place (b), show the page and `departments/<name>.md` as its destination too.
+2. Name the files of the change and, for place (b), the destination `departments/<name>.md`. Show a diff only for what Step 4 did not show.
 3. Ask in the question tool, and offer "Open the pull request" (recommended) and "Change".
 4. On change, apply the changes. Then go back to step 4 for a new page, or to step 3 for place (c) and for a reused page.
 5. For place (b), on approval, when the page is new, create `departments/` in the installation when it is missing, then copy the draft to `departments/<name>.md`.
