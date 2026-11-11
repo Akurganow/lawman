@@ -154,6 +154,7 @@ The section `## Precedent` of a court ruling holds its precedent lines. A ruling
 - An empty element in `<departments>` makes a line that fits no form.
 - The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds the list only as the department of the case, when no other name counts.
 - `refine` and `cancel` carry no names.
+- A `cancel` whose name is outside the class of `<name>` cancels nothing. The journal reports it as `cancel` with no name and `missing`.
 - A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
 - The journal writes the files. The writer never numbers, names or copies a rule into a file.
 
