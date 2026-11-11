@@ -1,5 +1,5 @@
 ---
-contract_version: 3
+contract_version: 4
 ---
 
 # Constitution of example/widgets
@@ -45,7 +45,3 @@ none
 
 - `needs-human` (owner attention): Lawman cannot decide this issue alone. A person decides on it.
 
-## Precedents
-
-- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it.
-- 2026-09-20 #2: Duplicate fixtures under test/data are accepted debt. Each test file owns its copy.

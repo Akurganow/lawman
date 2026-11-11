@@ -30,7 +30,7 @@ unknown_key: kept as it is
 # the login of the scheduled session
 trusted_login: octocat-lawman
 typesafe: yes
-contract_version: 3
+contract_version: 4
 `;
 
 export const constitution = (version: string) => `---
@@ -62,7 +62,7 @@ export function put(root: string, relative: string, text: string): string {
 }
 
 export function lay(root: string, layout: Layout = {}): void {
-	const { config = CONFIG, contract = "3", schemas = [3, 4, 5, 6] } = layout;
+	const { config = CONFIG, contract = "4", schemas = [3, 4, 5, 6] } = layout;
 	put(root, "bin/journal", OLD_BINARY);
 	if (config !== null) put(root, "config.yaml", config);
 	put(

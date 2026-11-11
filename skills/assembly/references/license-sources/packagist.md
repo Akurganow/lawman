@@ -12,11 +12,11 @@ repo.packagist.org
 
 ## Limits and terms
 
-At most 10 concurrent requests, 20 for static files only. Asks for a User-Agent with a contact and for no jobs at the start of an hour or at midnight. The static file is cached for 900 seconds. packagist.org has no terms of use of its own. The terms of packagist.com cover another product (read 2026-11-01)
+At most 10 concurrent requests, 20 for static files only. packagist.org asks for a User-Agent with a contact and for no jobs at the start of an hour or at midnight. The static file is cached for 900 seconds. packagist.org has no terms of use of its own. The terms of packagist.com cover another product (read 2026-11-01)
 
 ## Traps
 
-The file is minified: a version leaves out a field equal to the one in the version above it, so the role expands the list before it reads a version. `symfony/console` has 788 versions and the field `license` sits in one of them (379 417 bytes, measured 2026-11-01). The version key keeps its `v`. An array of more than one license means OR, and a string with `and` in parentheses means AND and stays one expression (Composer schema, read 2026-11-01). Largest reply seen: 1 639 626 bytes.
+The file is minified: a version leaves out a field equal to the one in the version above it. The role expands the list before it reads a version. `symfony/console` has 788 versions and the field `license` sits in one of them (379 417 bytes, measured 2026-11-01). The version key keeps its `v`. An array of more than one license means OR. A string with `and` in parentheses means AND and stays one expression (Composer schema, read 2026-11-01). Largest reply seen: 1 639 626 bytes.
 
 ## Fits when
 

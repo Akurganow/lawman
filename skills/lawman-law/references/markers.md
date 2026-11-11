@@ -42,7 +42,7 @@ id=<path>::<symbol>::<kind>
 - The value matches `^P::P::P$`, with `P = ([A-Za-z0-9._/-]|%[0-9A-F]{2})+`.
 - Parsing requires the canonical form. Decode each part to bytes, encode it again, and compare. A difference makes the marker invalid.
 - Lowercase hex (`%3a`) and an encoded safe byte (`%41`) are not canonical.
-- `-` is a safe byte and stays bare, with one exception: in a run of two or more hyphens, every hyphen after the first is encoded as `%2D`. So `a--b` is written `a-%2Db`, and `a---b` is written `a-%2D%2Db`. This keeps `--` out of every value.
+- `-` is a safe byte and stays bare, with one exception. In a run of two or more hyphens, every hyphen after the first is encoded as `%2D`. So `a--b` is written `a-%2Db`, and `a---b` is written `a-%2D%2Db`. This keeps `--` out of every value.
 - Canonical form follows the same rule. Decoding `a-%2Db` gives `a--b`, and encoding it again gives `a-%2Db`.
 
 ## When a marker counts
@@ -87,7 +87,7 @@ The body's creation time is the issue's. A comment's is its own.
 
 ## Defined markers
 
-A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds 40 lowercase hex digits of the analysed commit, or of the pushed head for `ready`. A closing or returning stage (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
+A stage that leaves the case standing (lead, case, charge, defence, conviction, referral, spec, ready) carries `sha`. It holds a revision of the class `^(?!-)[A-Za-z0-9._/:+-]+$`: the analysed commit, or the pushed head for `ready`. A stage that hands the case on or closes it (return, decline, refute, acquittal) carries none. The clerk stages `entry`, `no-entry`, `final`, `handoff`, `handed`, `shut`, `settled` and `kept` and the response-unit stages `await` and `out` carry none either.
 
 Each marker is the last line of the issue body or comment that its role writes.
 
@@ -106,26 +106,65 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
 | `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
-| `clerk` | `entry` | the comment after it opens a precedent pull request | none |
-| `clerk` | `no-entry` | the comment when the ruling holds no valid precedent line | none |
+| `clerk` | `entry` | the comment after it opens a precedent pull request | `pull` |
+| `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
+| `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
-| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair | `pull`, `issue` |
+| `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair. A `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
 | `spec-writer` | `spec` | the `Spec` comment on a pull request | `sha` |
 | `executor` | `ready` | the `Executor` comment on a pull request | `sha` |
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` now follow an acquittal only.
+- `entry` and `no-entry` follow a ruling, conviction or acquittal, whose Precedent section holds a line other than `none`.
+- `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
 - The response-unit lead writes `department=-` and `id=<path>::<symbol>::<kind>`. The kind is `reported` for a defect and `required` for a requirement. `-` is a value token, also as the path or the symbol.
-- `reason` is `injection` or `other`. The parser keeps any value, so an older `feature` stays valid.
+- `reason` is `injection` or `other`. The parser keeps any value.
 - `to` matches `[a-z][a-z0-9-]*`. `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
 - The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.
 
 A stage not defined here is parsed and kept.
+
+## Precedent
+
+The section `## Precedent` of a court ruling holds its precedent lines. A ruling is a comment with a `conviction` or an `acquittal` marker. No other role writes the section.
+
+- The journal reads every `## Precedent` section of the ruling, in order. A body runs to the next heading of level 2 or higher.
+- A fenced block hides a heading. A marker line and an HTML comment belong to no body.
+- A list item is one line. A paragraph with one line is one line. Any other non-empty node is a line that fits no form.
+- The line `none` means the ruling adds no precedent. `None`, `none.` and any other word fit no form.
+
+| Line | Result |
+| :-- | :-- |
+| `new <gist>: <rule>` | a new precedent |
+| `new <gist> for <departments>: <rule>` | a new precedent that binds the named departments |
+| `refine <name>: <rule>` | the rule text of an existing precedent changes |
+| `cancel <name>` | an existing precedent is deleted |
+
+- `<gist>` matches `[a-z0-9]+(-[a-z0-9]+)*`. `<name>` matches `[A-Za-z0-9][A-Za-z0-9._-]*`. `<rule>` is non-empty text to the end of the line.
+- `<departments>` is a list of department names separated by commas, or the word `all`. It stands before the first colon, so no character of the rule reads as a name, and the rule keeps every character after `: `. The names never enter the rule.
+- A `new` line without names is a valid line.
+- The list of a new precedent is the named departments the journal knows. Without one it knows, the list is the department of the case, or every department when the case has none. Jev may add a department when its probability for that department reaches the threshold that the journal holds, and never removes one from the list.
+- `all` is reserved: it means every department and never names a department called `all`. A list that holds `all` beside names means every department too, and its other names count for nothing.
+- An empty element in `<departments>` makes a line that fits no form.
+- The journal checks each name against the departments the precedent may serve. A name that is none of them is dropped and reported, and it counts as no name. The file holds the list only as the department of the case, when no other name counts.
+- `refine` and `cancel` carry no names.
+- A `cancel` whose name is outside the class of `<name>` cancels nothing. The journal reports it as `cancel` with no name and `missing`.
+- A line that fits no form becomes a new precedent. Its text is the rule. The journal never drops a precedent.
+- The journal writes the files. The writer never numbers, names or copies a rule into a file.
+
+Example:
+
+```
+## Precedent
+
+- new empty-test-double-conformances for dead-code: An empty conformance of a test double to a protocol is not dead code.
+- cancel 2026-09-02-unused-parameter-in-callbacks
+```
 
 ## Examples
 
@@ -176,11 +215,13 @@ Valid. `E12` is a conviction, `E13` an acquittal.
 <!-- lawman: role=court stage=acquittal at=2026-10-16T10:30:00Z -->
 ```
 
-Valid. `E14` is an entry, `E15` a no-entry.
+Valid. `E14` is an entry, `E15` a no-entry, `E20` a final, `E21` a kept without `issue`.
 
 ```
-<!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=entry pull=7 at=2026-10-16T10:45:00Z -->
 <!-- lawman: role=clerk stage=no-entry at=2026-10-16T11:00:00Z -->
+<!-- lawman: role=clerk stage=final pull=7 at=2026-10-16T11:30:00Z -->
+<!-- lawman: role=clerk stage=kept pull=7 at=2026-10-16T11:45:00Z -->
 ```
 
 Valid. `E16` is a response-unit lead, `E17` an await, `E18` an out.

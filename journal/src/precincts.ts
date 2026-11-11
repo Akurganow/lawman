@@ -1,15 +1,7 @@
 import type { Database } from "bun:sqlite";
-import {
-	check,
-	count,
-	parseArgs,
-	splitExcluded,
-	subcommand,
-	usage,
-} from "./args";
+import { check, count, parseArgs, subcommand, usage } from "./args";
 import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
 
-const NEXT_USAGE = "next --role <role> [--exclude <precinct>]…";
 const PRECINCT_USAGE =
 	"precinct <add <name> --repo <owner/repo> --weight <n>|set <name> --weight <n>|list>";
 
@@ -94,50 +86,22 @@ export function role(args: string[]): void {
 	});
 }
 
-type Admitted = { name: string; repo: string; weight: number; credit: number };
-
-export function pickNext(
+// every admitted precinct gains its weight, the chosen one loses their sum
+export function creditVisit(
 	db: Database,
-	roleName: string,
-	excluded: string[] = [],
-): { name: string; repo: string } | null {
-	return inTransaction(db, () => {
-		const rows = db
-			.query(
-				`SELECT name, repo, weight, credit FROM precincts p
-         WHERE weight > 0 AND NOT EXISTS (
-           SELECT 1 FROM dispatches d
-           WHERE d.precinct = p.name AND d.role = ? AND d.outcome IS NULL AND d.issue IS NULL)
-         ORDER BY name`,
-			)
-			.all(roleName) as Admitted[];
-		const admitted = rows.filter((p) => !excluded.includes(p.name));
-		if (admitted.length === 0) return null;
-		const total = admitted.reduce((sum, p) => sum + p.weight, 0);
-		const bump = db.query(
-			"UPDATE precincts SET credit = credit + weight WHERE name = ?",
-		);
-		for (const p of admitted) {
-			bump.run(p.name);
-			p.credit += p.weight;
-		}
-		const chosen = admitted.reduce((best, p) =>
-			p.credit > best.credit ? p : best,
-		);
-		db.run("UPDATE precincts SET credit = credit - ? WHERE name = ?", [
-			total,
-			chosen.name,
-		]);
-		return { name: chosen.name, repo: chosen.repo };
-	});
-}
-
-export function next(args: string[]): void {
-	const { excluded, rest } = splitExcluded(args, NEXT_USAGE);
-	const { opt } = parseArgs(rest, 0, ["role"], NEXT_USAGE);
-	const roleName = check("role", opt.role);
-	withDb((db) => {
-		const pick = pickNext(db, roleName, excluded);
-		if (pick) out(pick.name, pick.repo);
-	});
+	admitted: string[],
+	chosen: string,
+): void {
+	const bump = db.query(
+		"UPDATE precincts SET credit = credit + weight WHERE name = ? RETURNING weight",
+	);
+	const total = admitted.reduce(
+		(sum, name) =>
+			sum + ((bump.get(name) as { weight: number } | null)?.weight ?? 0),
+		0,
+	);
+	db.run("UPDATE precincts SET credit = credit - ? WHERE name = ?", [
+		total,
+		chosen,
+	]);
 }

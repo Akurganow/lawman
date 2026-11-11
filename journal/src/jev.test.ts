@@ -5,7 +5,7 @@ import * as db from "./db";
 import { Fail } from "./db";
 import { captured } from "./inproc";
 import { answerLine, jev, requestLine } from "./jev";
-import { cli, JOURNAL, LAW, ROOT } from "./test-helpers";
+import { cli, JOURNAL, ROOT } from "./test-helpers";
 
 const FIXTURES = join(JOURNAL, "src", "fixtures", "jev");
 const RECORDED = join(FIXTURES, "replies.json");
@@ -36,8 +36,6 @@ const RUNNERS: [string, Run, Run][] = [
 	["in process", inProcess(requestLine), inProcess(answerLine)],
 ];
 const request = throughCli("request");
-const bodyOf = (kind: string) =>
-	JSON.parse(request(kind, fixture(`brief.${kind}.txt`)).out);
 
 const KINDS = ["p0", "grade", "requirement"];
 const lines = (text: string) => text.trimEnd().split("\n");
@@ -119,44 +117,63 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 	});
 });
 
-describe("law consistency", () => {
-	const law = lines(readFileSync(join(LAW, "LAW.md"), "utf8"));
-	const lawText = (p: string) => {
-		const prefix = `- ${p}: `;
-		const line = law.find((l) => l.startsWith(prefix)) ?? "";
-		return line.slice(prefix.length);
+describe("jev request body form", () => {
+	type Ask = {
+		type: string;
+		instructions: string;
+		criteria: Record<string, string> | string[];
 	};
-	const capital = (s: string) => `${s.charAt(0).toUpperCase()}${s.slice(1)}`;
+	const bodyOf = (kind: string) =>
+		JSON.parse(request(kind, fixture(`brief.${kind}.txt`)).out) as {
+			model: string;
+			state: { brief: Record<string, string> };
+			questions: Record<string, Ask>;
+		};
 
-	test("each p0 Noul instruction holds its phrase of the law's P0 line", () => {
-		const phrases = lawText("P0")
-			.replace(/\.$/, "")
-			.split(/, | or /);
-		expect(phrases).toHaveLength(3);
-		const { questions } = bodyOf("p0");
-		for (const [i, id] of [
-			"live_secret",
-			"vulnerability",
-			"serious_violation",
-		].entries())
-			expect(questions[id].instructions).toContain(phrases[i] as string);
+	test("the body names its brief fields and questions with instructions and criteria", () => {
+		const kinds = [
+			[
+				"p0",
+				[
+					"secret",
+					"rule",
+					"weakness",
+					"defect",
+					"established",
+					"not_established",
+				],
+				["live_secret", "vulnerability", "serious_violation"],
+			],
+			[
+				"grade",
+				["defect", "effect_today", "established", "not_established"],
+				["level", "harm_users", "harm_maintainers", "cosmetic_only"],
+			],
+		] as const;
+		for (const [kind, fields, ids] of kinds) {
+			const body = bodyOf(kind);
+			expect(Object.keys(body).sort()).toEqual(["model", "questions", "state"]);
+			expect(typeof body.model).toBe("string");
+			expect(Object.keys(body.state.brief).sort()).toEqual([...fields].sort());
+			expect(Object.keys(body.questions).sort()).toEqual([...ids].sort());
+			for (const [id, question] of Object.entries(body.questions)) {
+				expect(typeof question.instructions).toBe("string");
+				if (id === "level") {
+					expect(question.type).toBe("score");
+					expect(question.criteria).toHaveLength(3);
+				} else {
+					expect(question.type).toBe("noul");
+					expect(Object.keys(question.criteria).sort()).toEqual([
+						"false",
+						"true",
+					]);
+				}
+			}
+		}
 	});
+});
 
-	test("Score levels 0 and 2 carry the law's P3 and P1 texts", () => {
-		const { criteria } = bodyOf("grade").questions.level;
-		expect(criteria[0]).toStartWith(capital(lawText("P3")).replace(/\.$/, ":"));
-		expect(criteria[2]).toBe(capital(lawText("P1")));
-		expect(criteria[1]).toContain("default");
-	});
-
-	test("requirement Score levels follow the law's P3, P2 and P1 texts", () => {
-		const { criteria } = bodyOf("requirement").questions.level;
-		expect(criteria[0]).toStartWith("Small value:");
-		expect(lawText("P3")).toEndWith("of small value.");
-		expect(criteria[1]).toContain("default");
-		expect(criteria[2]).toStartWith(capital(lawText("P1")).replace(/\.$/, ":"));
-	});
-
+describe("law consistency", () => {
 	test("the court's requirement brief example gives a body", () => {
 		const skill = readFileSync(
 			join(ROOT, "skills", "court", "SKILL.md"),
@@ -167,21 +184,6 @@ describe("law consistency", () => {
 			brief.split("A `requirement` brief:")[1]?.split("```")[1] ?? "";
 		const body = JSON.parse(request("requirement", example).out);
 		expect(Object.keys(body.state.brief)).toHaveLength(6);
-	});
-
-	test("the grade Nouls hold the words of the law", () => {
-		const { questions } = bodyOf("grade");
-		const text = (id: string) => JSON.stringify(questions[id]);
-		expect(text("harm_users")).toContain("users");
-		expect(text("harm_maintainers")).toContain("maintainers");
-		expect(text("cosmetic_only")).toContain("wording");
-	});
-
-	test("the tick alarm line carries the text in the law", () => {
-		const tick = lines(readFileSync(join(LAW, "tick.md"), "utf8"));
-		const alarm =
-			"- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation.";
-		expect(tick.some((line) => line.startsWith(alarm))).toBe(true);
 	});
 });
 

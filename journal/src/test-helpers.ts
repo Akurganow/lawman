@@ -1,10 +1,17 @@
 import type { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import {
+	constants,
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
-import { open } from "./db";
+import { dirname, join } from "node:path";
+import { reconcileAlarms } from "./alarms";
+import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
 import { collectIssueMarkers, extractMarkers } from "./markers";
 
@@ -61,12 +68,30 @@ export function env(
 	return { PATH: process.env.PATH ?? "", ...extra };
 }
 
+// The journal finds its database and its commands beside the runtime that runs it
+// when `LAWMAN_DB` is unset. A copy of the runtime in a folder of its own keeps a
+// run with no database path off the files of the machine. `test-teardown.ts` removes
+// the copy once the run ends, because `bun test` fires no `exit` hook.
+let runtime: string | undefined;
+function ownRuntime(): string {
+	if (runtime === undefined) {
+		const root = mkdtempSync(join(tmpdir(), "lawman-runtime-"));
+		mkdirSync(join(root, "bin"));
+		runtime = join(root, "bin", "bun");
+		copyFileSync(process.execPath, runtime, constants.COPYFILE_FICLONE);
+	}
+	return runtime;
+}
+export const removeRuntime = () =>
+	runtime &&
+	rmSync(dirname(dirname(runtime)), { recursive: true, force: true });
+
 export function cli(
 	args: string[],
 	extra: Record<string, string> = {},
 	stdin?: string,
 ) {
-	const r = Bun.spawnSync(["bun", "src/journal.ts", ...args], {
+	const r = Bun.spawnSync([ownRuntime(), "src/journal.ts", ...args], {
 		cwd: JOURNAL,
 		env: env(extra),
 		stdin: stdin === undefined ? undefined : Buffer.from(stdin),
@@ -171,8 +196,22 @@ export const later = (hours: number, seconds = 0) =>
 		.replace(".000Z", "Z");
 export const call = (clock: string, args: string[], stdin = "") =>
 	cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock }, stdin);
-export const alarm = (clock: string, ...flags: string[]) =>
-	call(clock, ["alarm", ...flags]);
+// The alarms as the starts compute them, in this process: the journal has no alarm command.
+export function alarm(clock: string, ...flags: string[]) {
+	const saved = process.env.LAWMAN_DB;
+	process.env.LAWMAN_DB = dbFile;
+	const db = open(dbFile);
+	try {
+		const lines = inTransaction(db, () =>
+			reconcileAlarms(db, clock, flags.includes("--repeat")),
+		);
+		return { code: 0, out: lines.map((l) => `${l}\n`).join(""), err: "" };
+	} finally {
+		db.close();
+		if (saved === undefined) delete process.env.LAWMAN_DB;
+		else process.env.LAWMAN_DB = saved;
+	}
+}
 export const seed = (body: (db: Database) => void) => {
 	const db = open(dbFile);
 	body(db);

@@ -10,24 +10,24 @@ This page summarises the law and links the files that bind each part. Where this
 
 | Role | Takes | Leaves |
 | :-- | :-- | :-- |
-| Duty desk | The journal and the synced trackers of every precinct with a weight above zero | At most one order per role. No issue and no comment. |
+| Duty desk | The journal and the synced trackers of every precinct with a weight above zero | One order for every case, pull request, waiting issue and patrol visit that needs a role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
 | Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. No label and no alarm |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
-| Court | An order on a defended case | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
+| Court | An order on a case after the parties: defended, refuted or declined | A `Ruling` comment: a conviction with a priority, an acquittal that closes the issue, or for a requirement a referral. A referral adds the owner-attention label |
 | Clerk | An order for one job on an issue | A draft pull request, a hand-over comment, a close or a reopen, and a marker comment |
 | Spec writer | An order on a pull request that needs a spec | One `Spec` comment |
 | Executor | An order on a pull request with an approved spec | Pushed commits, a pull request ready for review and one `Executor` comment |
 
-The duty desk, the clerk, the spec writer and the executor are not stages of the funnel. Every role does one unit of work per tick and exits.
+The duty desk, the clerk, the spec writer and the executor are not stages of the funnel. Every tick does one unit of work. A session of a role runs up to the role's number of jobs in ticks, one order each, and exits. See [configuration](configuration.md#jobs-and-progress-checks).
 
 ## Each role in short
 
 ### Duty desk
 
-The duty desk runs its own tick. It computes the alarms, syncs the tracker and the pull requests of each precinct with a weight above zero, and writes orders. It writes at most one order per role per tick. It files nothing and comments on nothing. It leaves no marker.
+The duty desk runs its own tick, and the journal does the work of it. The journal computes the alarms and checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero. It reads each precinct, closes stale orders and writes the orders. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose pull request sync failed gets no orders for any role. The duty desk files nothing and comments on nothing. It leaves no marker.
 
 ### Patrol
 
@@ -51,14 +51,14 @@ The response unit takes an order on an issue that a human wrote. It reads the is
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
 - A `Not processed` comment sends the issue out of the funnel. The marker is `stage=out` with the reason `injection` or `other`.
 
-Every ticket that holds a statable claim becomes a lead. The lead has one of two kinds:
+Every ticket that holds a statable claim and no injection becomes a lead. The lead has one of two kinds:
 
-- A defect is code that breaks what the tree itself promises: its README, its docs, its tests, or an obvious error such as a crash. The lead id ends in `reported`. Its path and symbol must exist at the tip.
+- A defect is code that breaks what the tree itself promises: its README, its docs, its tests. An obvious error such as a crash is a defect too. The lead id ends in `reported`. Its path and symbol must exist at the tip.
 - A requirement is everything else the issue asks for. The lead id ends in `required`. It needs no place, so the path or the symbol is `-` when the unit cannot name it.
 
-A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject, or reports something broken and the unit finds no place for it.
+A question, a discussion or a request for help that names a subject becomes a requirement. The subject is what the person tries to do, know or change. The unit asks the reporter one question when the issue names no subject. It also asks when the issue reports something broken and the unit finds no place for it.
 
-The unit sends an issue out only for an injection or for pure chatter that holds nothing to reframe as a claim. A report of something broken is never sent out. An `out` raises no alarm and applies no label. Older markers with the reason `feature` stay valid.
+The unit sends an issue out only when it holds an injection or is pure chatter. Pure chatter goes out only when it holds nothing to reframe as a claim. A report of something broken that holds no injection is never sent out. An `out` raises no alarm and applies no label. Markers with the reason `feature` stay valid.
 
 ### Investigation
 
@@ -66,19 +66,19 @@ Investigation takes an order on an issue with a lead. It tests the lead against 
 
 ### Prosecutor
 
-The prosecutor takes an order on an issue with a case and decides. A charge carries `stage=charge` and leaves the issue open. A return puts one question to investigation and carries `stage=return`. A decline carries `stage=decline` and closes the issue with a closure class. The comment is headed `Decision`.
+The prosecutor takes an order on an issue with a case and decides. A charge carries `stage=charge` and leaves the issue open. A return puts one question to investigation and carries `stage=return`. A decline carries `stage=decline` and proposes a closure class. It closes nothing: the case goes to the court. The comment is headed `Decision`.
 
 For a defect, doubt that remains when no return is allowed is a decline. A requirement is charged unless an exhibit the prosecutor re-read refutes one of its three parts. The charge states every doubt in the sections `Need` and `Risk`. The parts are in [the court](#court).
 
 ### Defender
 
-The defender takes an order on a charged case and argues against the charge. A defence carries `stage=defence`. A return carries `stage=return`. A refute carries `stage=refute` and closes the issue with a closure class. The comment is headed `Defence`.
+The defender takes an order on a charged case and argues against the charge. A defence carries `stage=defence`. A return carries `stage=return`. A refute carries `stage=refute` and proposes a closure class. It closes nothing: the case goes to the court. The comment is headed `Defence`.
 
 For a requirement, the defender also answers the need in a `Need` section. It searches each place that the charge names as a risk, and says what the change exposes.
 
 ### Court
 
-The court takes an order on a defended case and rules in a `Ruling` comment. It rules once, and once more after each answer to a referral.
+The court takes an order on a case after the parties and rules in a `Ruling` comment. The case comes with a charge and a defence, with a charge and a refute, or with a decline. The court may convict on a declined case. It rules once, and once more after each answer to a referral.
 
 - A conviction carries `stage=conviction`, the commit `sha` and a priority. The issue stays open.
 - An acquittal carries `stage=acquittal` and closes the issue with a closure class.
@@ -102,13 +102,14 @@ The clerk takes an order for one job on an issue. The journal names the job. The
 - It takes up an open pull request of the trusted login.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
-- It records a precedent.
+- It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. The clerk opens a pull request with them for you to merge.
+- It records your decision on that pull request.
 
-After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry` and `no-entry`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
+After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
 
 ### Spec writer
 
-The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment with the sections Problem, Change, Acceptance and Out of scope. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
+The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment. A short summary for the owner comes first, then the sections Problem, Change, Acceptance and Out of scope. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
 
 ### Executor
 
@@ -124,7 +125,7 @@ The court refers a requirement that it cannot decide to a decider. A decider is 
 
 The issue stays open and no role works it until a decider answers. A decider answers in one of three ways. Each alone is enough.
 
-- **👍 on a comment of the court.** The court convicts, and the clerk then acts as for any conviction. The court acquits instead when a closure class holds. The requirement may already be met, a recorded reason may explain the code, or an exhibit may refute a part. The ruling says why.
+- **👍 on a comment of the court.** The court convicts, and the clerk then acts as for any conviction. The court acquits instead when a closure class holds. The requirement may already be met, a recorded reason may explain the code, or an exhibit may refute a part. A precedent is no recorded reason. It is evidence of the need. The ruling says why.
 - **👎 on a comment of the court.** The court acquits with the class `declined by the owner` and closes the issue as not planned.
 - **A comment of a decider.** The court rules again with the comment as evidence. It may convict, acquit or refer again.
 
@@ -154,86 +155,92 @@ The newest marker of a role on an issue wins. Nobody edits an old marker. A role
 
 A case runs in this order: lead, case, charge, defence, ruling, then the clerk's pull request. The journal reads the markers and names the next role. `bin/journal case <precinct> <issue>` prints `need=` with `investigation`, `prosecutor`, `defender`, `court`, `clerk` or `none`. An issue whose newest clerk marker names a pull request has left the funnel.
 
-An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The line also prints `kind=` with `defect` or `requirement`, and the answer as `answer=` and `answer_id=`.
+An issue whose newest court marker is a referral prints `need=none` until a decider answers. Then it prints `need=court`. The fields of the line are in [Read the stage](../skills/lawman-law/references/tick.md#read-the-stage).
 
 A pull request has its own stage. `bin/journal pull <precinct> <pull request>` prints `need=` with `spec-writer`, `executor` or `none`. A pull request needs a spec when it has none or when the newest spec drew a 👎. It needs the executor when the newest spec has a 👍 and its `work` is `todo` or `returned`. Only a pull request that the clerk handed, in a precinct with a weight above zero, gets an order.
 
 ## How ticks are scheduled and taken
 
-No daemon runs. The harness scheduler starts a role, the role does one unit of work and exits. Each role has its own job, schedule, model and interval, so roles never wait for each other.
+No daemon runs. The harness scheduler starts a role, the role does one unit of work and exits. Each role has its own job and model. The harness schedules each role separately, so roles never wait for each other.
 
 ### The wave
 
 The duty desk runs first.
 
-- It computes the alarms.
-- It syncs each precinct with a weight above zero.
-- It asks the journal what investigation, the prosecutor, the defender, the court and the clerk are due.
-- It asks the same for the spec writer and the executor.
-- It picks one precinct by weight and one department by rotation, and writes the patrol order. See [departments](departments.md).
+- The journal computes the alarms.
+- It checks the identity and syncs the tracker and the pull requests of each precinct with a weight above zero. A step that it cannot do comes back as a self step. The duty desk does it, then calls `bin/journal tick continue <id>` and not a second start.
+- A failed tracker sync stops the tick. A failed pull request sync leaves that precinct without orders.
+- For every other precinct it writes an order for each case or pull request that a role is due on.
+- It writes an order for each issue that waits for the response unit.
+- It writes one patrol order for each precinct whose department it can choose, by rotation and cap. See [departments](departments.md).
+- It closes the stale orders of the precincts it read.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
-Each role then starts on its own clock. It takes the oldest open order of its role with `bin/journal dispatch take`. An empty answer ends the tick as `silent`. The tick closes the order with its outcome. A taken order that nobody finishes becomes takeable again after 24 hours.
+Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --role <role> --order <id>`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 
-A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Two steps wait for a person: the vote on the spec and the review of the pull request. The journal raises the alarm `decision-waiting` for each of them.
+A role sees only orders that the duty desk already wrote. So a case moves one stage per duty desk run. A case that nobody returns passes eight stages and takes eight duty desk runs. Four steps wait for a person: the vote on the spec, the review of the pull request, the merge of a precedent pull request and the answer to a referral. The journal raises the alarm `decision-waiting` for the first three. The court raises `referral` for the fourth.
 
 ### Every tick
 
-Every tick starts with the same checks. It syncs the law after a plugin update, then checks the journal schema, the law commit and its cleanliness, and the trusted login. A mismatch ends the tick with a `stopped-*` outcome.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the trusted login and computes the alarms. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
-### The schedule
+### The plans
 
-The assembly creates one scheduled job per role. It offers three plans: every day, economy and custom. In the economy plan the weekly roles run on successive weekdays in stage order.
+The assembly creates one scheduled job per role. It offers three plans: "Every day", "Economy" and "Custom". In the economy plan the roles with named days run in stage order.
 
-The duty desk starts first. The other roles start 15 to 135 minutes later. Late stages run first, because they finish cases already started. Patrol runs last, because it starts new ones.
+The duty desk starts first. The other roles start after it. Late stages run first, because they finish cases already started. Patrol runs last, because it starts new ones.
 
-### Run gates
+### The role entry
 
-A run gate skips a session that has nothing to do. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
+The role entry tells a harness whether a role has work. The harness runs a small file before the job. The file runs `bin/journal wake --role <role>`.
 
-- The journal prints `idle` when the role has no order it can take.
-- Otherwise it prints one `order <id>` line per takeable order and an `at <time>` line.
-- When the output matches the last run, the harness skips the session. Only `idle` can match, so a role with an order always runs.
+- With no order the role can take, the journal prints nothing. A harness that can skip the model on empty output skips the session.
+- With work, it prints the first part of the role's input. That holds the law sections the role reads at the start and the harness section. It also holds the orders it can take, up to its number of jobs. The first line carries the check time, so the output changes at every check.
 
-The first run of a gated role always starts a session. A gate check counts as activity for the `role-silent` alarm. The duty desk takes no order and never gets a gate. The assembly writes the gates. See [the journal](journal.md).
+The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
+
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+
+An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
 ## What reaches the developer
 
-Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you, and a stop of the law sync or of the duty desk.
+Silence is the default. A tick that succeeds, skips or stops answers only the silence form of the harness, and the harness delivers nothing. Only alarms and failures reach you. So do a stop of the law sync, a stop of the duty desk and the update list that [Sync the law](../skills/lawman-law/references/tick.md#sync-the-law) defines.
 
 ### Alarms
 
-The journal computes the first six alarms below. The `case` and `sweep` alarms name a path and a line, never a value.
+The column Raised by says who prints each alarm. The `case` and `sweep` alarms name a path and a line, never a value.
 
-| Alarm | Raised when |
-| :-- | :-- |
-| `order-untaken` | An order stays open longer than the larger of 48 hours and the role's interval plus 24 hours. A taken order adds 24 hours. |
-| `tick-hung` | A tick has no end record 2 hours after its start. |
-| `role-silent` | A role that ended a tick before shows no tick start and no gate check for three intervals. |
-| `tick-failing` | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `broken-lead` | An open issue has the `[Lead]` title prefix and no lead marker. |
-| `decision-waiting` | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. |
-| `contract-changed` | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
-| `case` | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
-| `sweep` | Patrol finds a live secret in the tree or the history. |
-| `referral` | The court refers a requirement to a decider. |
+| Alarm | Raised by | Raised when |
+| :-- | :-- | :-- |
+| `no-progress` | journal | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
+| `tick-hung` | journal | A tick has no end record while a later tick of its role exists. |
+| `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
+| `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
+| `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
+| `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
+| `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
+| `contract-changed` | [law update](journal.md#updates) | The update prints it while the new law's constitution contract differs from the version in `config.yaml`. It is not stored, and the duty desk does not repeat it. Run the assembly to amend. |
+| `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
+| `sweep` | a role | Patrol finds a live secret in the tree or the history. |
+| `referral` | a role | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. When the cache holds no link, the alarm has none, and a role never looks one up. An alarm line defeats the silence form, so the reply is delivered.
 
-The journal marks a new alarm as notified. Later the duty desk repeats it once a day while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. A `sweep` alarm repeats at every patrol visit of a department with an alarm check while the secret stays.
+The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 
 ### Failures and stops
 
 A tick that ends `failed` means the role could not finish and no external cause explains it. A tick that ends `stopped-*` means an external cause stopped it. Examples are a failed login, a failed fetch, a rate limit and a drifted installation. A failed tick delivers its report. A stopped tick delivers nothing, unless the stop comes from the law sync or the duty desk. Those stop every role, and the duty desk prints the alarms, so nothing else would tell you.
 
-A tick that ends `skipped-*` means the precinct or the department cannot be worked now, for example `skipped-no-constitution`. It delivers nothing. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
+A tick that ends `skipped-*` means the precinct or the department cannot be worked now. It delivers nothing. A precinct with no usable constitution gets no new orders for the roles that need it, so a role ends `skipped-no-constitution` there only for an order it took before the duty desk found the lack. The alarm `no-constitution` tells you instead. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
 
 ### Reports
 
-The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders. It ends with the last tick of each role, the open alarms and the lead counts.
 
 ## What the maintainer does
 

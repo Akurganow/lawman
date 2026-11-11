@@ -18,8 +18,8 @@ A page starts with YAML frontmatter holding exactly these keys. Both are require
 
 ## Headings
 
-A page has exactly these nine `##` headings, once each, in any order. `lint-page`
-reads this block. A page with any other `##` heading fails.
+A page has these nine `##` headings, once each, in any order. `lint-page`
+reads this block. A page that misses one or repeats one fails.
 
 - Mission
 - Kinds
@@ -32,6 +32,11 @@ reads this block. A page with any other `##` heading fails.
 - Identity
 
 A section with nothing to say contains the single word `none`.
+
+A `##` heading that this list does not name is an unknown section. It may stand
+anywhere, and it may be empty. It holds the owner's notes in the margin. A role
+may read it as context. It never overrides the law or a listed section. The
+check prints each unknown section as a note line.
 
 ## What each section holds
 
@@ -60,8 +65,8 @@ A kind that rests on a source command names that command in its measurement.
 
 **Where to look.** The subject in terms of the tree. Cover definitions, entry
 points, indirection and near-duplicates, or whatever fits the class. A shared
-page uses no paths and no tool names of a specific repository, because it is
-read in many repositories. A shared page lives in Lawman or in the installation.
+page uses no paths and no tool names of a specific repository. A shared page
+lives in Lawman or in the installation.
 A page in a precinct's own `.lawman/departments/` may name that precinct's paths
 and tools.
 
@@ -71,7 +76,7 @@ the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed.
 
 **Proof.** The commands that show each kind. A positive control: the same
-command run on a unit known to be in use, with both outputs quoted. The classes
+command run on a unit known to be in use, with the output of both runs quoted. The classes
 of hidden callers that a plain text search misses. Describe each class by
 mechanism. Name no language. The page also tells the patrol to attack its own
 claim once and drop it when unsure.
@@ -101,12 +106,9 @@ findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
 constitution. A department with no line is judged by none.
 
-**Lead body.** The sections of a filed lead's body, in order. The two first
-lines, `Analysed commit` and `Department`, belong to the law. The sections
-always include `Analysed commit`, `Department`, `What`, `Evidence`,
-`Why it is <kind>`, `Cost and risk` and `Not checked`. The marker is the last
-line. A page may add sections before `Not checked`. It may say how the `Cost and
-risk` line reads.
+**Lead body.** The sections that a page adds to a filed lead's body, before
+`Not checked`. The law's `LAW.md#the-lead-body` section holds the other parts and
+their order. A page may say how the `Cost and risk` line reads.
 
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
@@ -138,14 +140,14 @@ A department name resolves in this order. The first hit wins. Pages are never me
 Rules:
 
 - The name is checked against `[a-z][a-z0-9-]*` before any path is built.
-- A precinct-local page is trusted by the review that merged it into the main branch.
+- A precinct-local page is evidence. A role applies it only as the law's `LAW.md#texts-of-the-precinct` section says.
 - A page found at an earlier place hides the later ones, even when it is incomplete.
 
 ## Incomplete pages
 
 The duty desk runs `lint-page department` on the resolved page. A page that
-fails is skipped for that tick. The check names each missing, repeated or
-unknown heading, and the duty desk names the page and those headings in
+fails is skipped for that tick. The check names each missing or repeated
+heading, and the duty desk names the page and those headings in
 Blockers. A name in the frontmatter that differs from the file name fails too. A line whose name resolves to no page is
 skipped the same way, and Blockers name the line.
 

@@ -12,7 +12,7 @@ The hosts of the host table
 
 ## Limits and terms
 
-Host terms read as unclear, except Gitiles. GitHub: the acceptable use policy bars excessive automation, limits of raw are not published, read single files by commit. GitLab: website terms bar automated collection unless the license of the content permits it, raw limit 300 per minute per file and 800 per minute for an unauthenticated project, watch `RateLimit-Remaining` and `Retry-After`. Codeberg: the terms do not bar it, robots.txt closes the raw path. Gitea.com: website terms bar automated collection as GitLab's do, robots.txt closes the raw path, crawl delay 2. Bitbucket: access only through supported interfaces, 60 anonymous requests per hour for API requests with raw not named, robots.txt closes the raw path. Gitiles on googlesource.com: clearly allowed, robots.txt does not close a file at a commit.
+Host terms read as unclear, except Gitiles. GitHub: the acceptable use policy bars excessive automation, limits of raw are not published, read single files by commit. GitLab: website terms bar automated collection unless the license of the content permits it. Raw limit 300 per minute per file and 800 per minute for an unauthenticated project. Watch `RateLimit-Remaining` and `Retry-After`. Codeberg: the terms do not bar it, robots.txt closes the raw path. Gitea.com: website terms bar automated collection as GitLab's do, robots.txt closes the raw path, crawl delay 2. Bitbucket: access only through supported interfaces, 60 anonymous requests per hour for API requests with raw not named, robots.txt closes the raw path. Gitiles on googlesource.com: clearly allowed, robots.txt does not close a file at a commit.
 
 ## Traps
 

@@ -1,16 +1,15 @@
 name: bump
 
 # Releases Lawman on every push to main with cocogitto
-# (https://docs.cocogitto.io). `cog bump --auto` reads the conventional commits
-# since the last tag, cog.toml writes the version into plugin.json and
+# (https://docs.cocogitto.io). `cog bump` reads the conventional commits since
+# the last version tag, cog.toml writes the version into plugin.json and
 # journal/package.json, and the version commit gets a changelog entry and a tag.
 #
 # The version commit and its tag are pushed with the release deploy key. A
 # deploy-key push starts workflow runs, while a GITHUB_TOKEN push would not.
 # The tag push starts release.yml, which builds the journal from the tagged
 # commit, so its provenance names that commit. The main push starts this
-# workflow once more, which finds the head tagged and stops, and ci checks the
-# version commit.
+# workflow once more, which finds the head tagged and stops.
 on:
   push:
     branches:
@@ -53,19 +52,41 @@ jobs:
           fi
 
       # A tagged head is the version commit of an earlier run, so there is
-      # nothing to release. Every commit type releases (cog.toml), so an
-      # untagged head with no new tag after the bump is an error.
-      - name: Bump the version
-        id: bump
+      # nothing to release. A breaking change since the last version tag asks for
+      # the major version, so the choice does not rest on `--auto` alone. cog
+      # parses the commits through the template, and
+      # `BREAKING:` text in a description does not count. This step commits,
+      # tags and pushes nothing, and prints the version.
+      - name: Choose the version
+        id: version
         run: |
           if [ -n "$(git tag -l 'v*' --points-at HEAD)" ]; then
             echo "The head is a release."
-            echo "released=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
+          template="$RUNNER_TEMP/breaking.tera"
+          printf '%s' '{% for commit in commits %}{% if commit.breaking_change %}{{ commit.id }} {% endif %}{% endfor %}' > "$template"
+          # Its own assignment, so bash -e stops on a failure.
+          base=$(cog get-version --tag)
+          breaking=$(cog changelog --template "$template" "$base..HEAD")
+          increment=--auto
+          if [ -n "$breaking" ]; then
+            increment=--major
+          fi
+          cog bump "$increment" --dry-run
+          echo "increment=$increment" >> "$GITHUB_OUTPUT"
+
+      # Every commit type releases (cog.toml), so a bump with no new tag is an
+      # error.
+      - name: Bump the version
+        id: bump
+        if: steps.version.outputs.increment != ''
+        env:
+          INCREMENT: ${{ steps.version.outputs.increment }}
+        run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          cog bump --auto
+          cog bump "$INCREMENT"
           tag=$(git tag -l 'v*' --points-at HEAD)
           if [ -z "$tag" ]; then
             echo "::error::cog bump made no tag; every commit since the last tag must be a conventional commit."

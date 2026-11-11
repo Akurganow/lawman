@@ -17,16 +17,18 @@ jobs:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5.1.0
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: 1.4.2
+          bun-version: 1.4.3
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - run: bun test
-      - run: bun build --compile --target=bun-linux-x64 src/journal.ts --outfile journal-smoke
+      - run: bun run test
+      - run: bun build --compile --target=bun-linux-x64 src/journal.ts src/clean-worker.ts --outfile journal-smoke
       - run: ./journal-smoke --version
       - name: Clean through the compiled binary
-        run: test "$(printf 'a <!-- hidden --> ![x](https://e.example/i.png)' | ./journal-smoke clean)" = "a [x](https://e.example/i.png)"
+        run: |
+          long=$(head -c 400 /dev/zero | tr '\0' b)
+          test "$(printf 'a <!-- hidden --> ![x](https://e.example/i.png) %s' "$long" | ./journal-smoke clean)" = "a [x](https://e.example/i.png) $long"
 
-  # The release workflow's cog bump reads every commit since the last tag
+  # The bump workflow's cog bump reads every commit since the last tag
   # (cog.toml), so each commit of a pull request must be a conventional commit.
   commits:
     if: github.event_name == 'pull_request'

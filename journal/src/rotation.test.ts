@@ -1,32 +1,31 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
-import {
-	cli,
-	dbFile,
-	order,
-	precinct,
-	ROOT,
-	seed,
-	tempDb,
-} from "./test-helpers";
+import { open } from "./db";
+import { rotationOrder } from "./rotation";
+import { cli, dbFile, order, precinct, seed, tempDb } from "./test-helpers";
 
 const PRECINCT = "main";
 
 tempDb();
 beforeEach(() => seed((db) => precinct(db, PRECINCT)));
 
-const rotation = (names: string[], role = "patrol") =>
-	cli(
-		["rotation", PRECINCT, "--role", role],
-		{ LAWMAN_DB: dbFile },
-		names.map((n) => `${n}\n`).join(""),
-	);
+// the lines the old command printed: department, last visit or a dash, cap
+const rotation = (names: string[], role = "patrol") => {
+	const db = open(dbFile);
+	try {
+		return {
+			out: rotationOrder(db, PRECINCT, role, names)
+				.map((t) => `${t.department}\t${t.at ?? "-"}\t${t.cap}\n`)
+				.join(""),
+		};
+	} finally {
+		db.close();
+	}
+};
 const visit = (department: string, at: string, role = "patrol") =>
 	seed((db) => order(db, PRECINCT, role, { department, at, outcome: "filed" }));
 const lines = (r: { out: string }) => r.out.split("\n").filter((l) => l !== "");
 let nextIssue = 1;
-// a broken lead has the title prefix but no lead marker
+// a lead without a marker has only the title prefix, and counts for nothing
 const openLead = (department: string, broken = false) =>
 	seed((db) => {
 		const n = nextIssue++;
@@ -56,7 +55,6 @@ describe("rotation", () => {
 		visit("core", "2026-09-01T00:00:00Z");
 		visit("api", "2026-10-05T00:00:00Z");
 		const r = rotation(["web", "zeta", "api", "core", "beta"]);
-		expect(r.code).toBe(0);
 		expect(lines(r)).toEqual([
 			"beta\t-\t3",
 			"zeta\t-\t3",
@@ -97,21 +95,8 @@ describe("rotation", () => {
 		]);
 	});
 
-	test("a name outside the class exits 1 with empty stdout", () => {
-		for (const bad of ["Web", "9lives", "a_b", "a b", "../x"]) {
-			const r = rotation(["api", bad]);
-			expect(r.code).toBe(1);
-			expect(r.out).toBe("");
-			expect(r.err).toContain("invalid department");
-		}
-	});
-
-	test("empty input prints nothing and exits 0", () => {
-		for (const input of [[], [""]]) {
-			const r = rotation(input);
-			expect(r.code).toBe(0);
-			expect(r.out).toBe("");
-		}
+	test("empty input gives no turn", () => {
+		expect(rotation([]).out).toBe("");
 	});
 
 	test.each([
@@ -126,32 +111,19 @@ describe("rotation", () => {
 		expect(capOf("core")).toBe(want);
 	});
 
-	test("an open broken lead counts, other departments do not", () => {
+	test("an issue with the prefix and no marker counts for no department", () => {
 		for (let i = 0; i < 2; i++) openLead("core");
 		openLead("core", true);
 		openLead("web");
 		const r = lines(rotation(["core", "web", "idle"]));
-		expect(r).toEqual(["core\t-\t1", "idle\t-\t3", "web\t-\t3"]);
-		expect(capOf("core")).toBe("1");
+		expect(r).toEqual(["core\t-\t3", "idle\t-\t3", "web\t-\t3"]);
+		expect(capOf("core")).toBe("3");
 	});
 
-	test("a missing role exits 1", () => {
-		expect(
-			cli(["rotation", PRECINCT], { LAWMAN_DB: dbFile }, "api\n").code,
-		).toBe(1);
-	});
-});
-
-describe("rotation fed by the page directory and the precinct lines", () => {
-	const skill = readFileSync(
-		join(ROOT, "skills", "duty-desk", "SKILL.md"),
-		"utf8",
-	);
-	const step6 =
-		(skill.split(/^### Step 6/m)[1] ?? "").split(/^### Step 7/m)[0] ?? "";
-
-	test("step 6 hands over the shared pages, with no shell utility", () => {
-		expect(step6).toMatch(/shared department pages/);
-		expect(step6).not.toMatch(/\b(ls|sed|printf)\b/);
+	test("the rotation command is a usage error", () => {
+		const r = cli(["rotation", PRECINCT, "--role", "patrol"], {
+			LAWMAN_DB: dbFile,
+		});
+		expect(r.code).toBe(1);
 	});
 });

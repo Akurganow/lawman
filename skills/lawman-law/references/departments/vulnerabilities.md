@@ -17,7 +17,7 @@ tree pins at this place?
 ## Where to look
 Every place in the precinct's tree that lists dependencies, as the
 installation's record for the precinct says. The patrol takes the list by that
-record, sends it through the journal and files what the journal prints as new.
+record, sends it through the journal and files each new match the journal prints.
 A path in Not judged is not read.
 
 ## Not findings
@@ -31,7 +31,8 @@ entries sent.
 
 A match with a record is a confirmed fact. No step of doubt, attack or
 confidence cuts it. Only a recorded reason closes a candidate: a precinct's
-recorded answer, Not judged, or a precedent.
+recorded answer or Not judged. A precedent closes no candidate. The lead names
+the precedents that fit it, as the law's Precedents section says.
 
 An empty list for a tree that names dependencies proves nothing. Report it in
 Blockers. It is never clean.

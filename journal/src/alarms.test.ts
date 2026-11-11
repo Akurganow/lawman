@@ -8,6 +8,7 @@ import {
 	cachePull,
 	call,
 	later,
+	mark,
 	order,
 	precinct,
 	rows,
@@ -28,39 +29,29 @@ const alarmsOnce = (at: string, pattern: RegExp) => {
 
 describe("alarms and status", () => {
 	describe("alarm kinds", () => {
-		test("order-untaken fires after 48 hours and not before", () => {
+		test("an untaken order of any age raises nothing", () => {
 			seed((db) => {
 				precinct(db, "a");
 				order(db, "a", "patrol");
 			});
-			expect(alarm(later(48))).toMatchObject({ code: 0, out: "" });
-			expect(alarm(later(48, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
+			expect(alarm(later(48, 1))).toMatchObject({ code: 0, out: "" });
+			expect(alarm(later(24 * 30)).out).toBe("");
 		});
 
-		test("an order that was taken or closed does not alarm", () => {
+		test("a tick with no end record alarms when a later tick of its role exists", () => {
 			seed((db) => {
-				precinct(db, "a");
-				order(db, "a", "patrol", { takenAt: BASE });
-				order(db, "a", "duty-desk", { outcome: "silent" });
+				tick(db, "patrol", BASE, null, null);
+				tick(db, "patrol", later(1), null, null);
 			});
-			expect(alarm(later(72)).out).toBe("");
+			alarmsOnce(
+				later(3),
+				new RegExp(`^ALARM tick-hung 1 patrol started ${BASE}\\n$`),
+			);
 		});
 
-		test("a taken order whose claim expired alarms 48 hours after the claim TTL", () => {
-			seed((db) => precinct(db, "a"));
-			expect(
-				call(BASE, ["dispatch", "add", "--precinct", "a", "--role", "patrol"])
-					.code,
-			).toBe(0);
-			expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(0);
-			expect(alarm(later(72)).out).toBe("");
-			expect(alarm(later(72, 1)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
-		});
-
-		test("tick-hung fires after 2 hours and not before", () => {
+		test("a tick with no end record and no later tick of its role raises nothing", () => {
 			seed((db) => tick(db, "patrol", BASE, null, null));
-			expect(alarm(later(2)).out).toBe("");
-			expect(alarm(later(2, 1)).out).toMatch(/^ALARM tick-hung 1 .+\n$/);
+			expect(alarm(later(3)).out).toBe("");
 		});
 
 		test("role-silent fires after three intervals and not before", () => {
@@ -147,122 +138,71 @@ describe("alarms and status", () => {
 			expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
 		});
 
-		test("three stopped ticks without a precinct raise tick-failing under role/-", () => {
+		test("three stopped ticks without a precinct raise tick-failing under duty-desk/-", () => {
 			seed((db) => {
-				tick(db, "patrol", later(0), later(0, 60), "stopped-law-drift");
-				tick(db, "patrol", later(1), later(1, 60), "stopped-dirty-law");
-				tick(db, "patrol", later(2), later(2, 60), "stopped-host-auth");
+				tick(db, "duty-desk", later(0), later(0, 60), "stopped-law-drift");
+				tick(db, "duty-desk", later(1), later(1, 60), "stopped-dirty-law");
+				tick(db, "duty-desk", later(2), later(2, 60), "stopped-host-auth");
 			});
-			alarmsOnce(later(3), /^ALARM tick-failing patrol\/- .+\n$/);
-		});
-
-		test("broken-lead fires for a [Lead] issue without a lead marker", () => {
-			seed((db) => {
-				const issue = (n: number, title: string) =>
-					db.run(
-						"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', ?, 'OPEN', ?, ?)",
-						[n, title, BASE],
-					);
-				const marker = (n: number, stage: string) =>
-					db.run(
-						"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('a', ?, '1', 'patrol', ?, '{}', 'raw')",
-						[n, stage],
-					);
-				issue(7, "[Lead] broken");
-				issue(8, "[Lead] fine");
-				marker(8, "lead");
-				issue(9, "ordinary issue about [Lead]");
-				issue(10, "[Lead] only a later stage");
-				marker(10, "verify");
-			});
-			const r = alarm(BASE);
-			expect(
-				r.out
-					.trim()
-					.split("\n")
-					.map((l) => l.split(" ").slice(0, 3).join(" ")),
-			).toEqual(["ALARM broken-lead a#7", "ALARM broken-lead a#10"]);
+			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
 		});
 	});
 
 	describe("alarm lifecycle", () => {
-		const untaken = () =>
+		// the tick-hung example: a tick with no end record while a later tick of its role exists
+		const dead = () =>
 			seed((db) => {
-				precinct(db, "a");
-				order(db, "a", "patrol");
+				tick(db, "clerk", BASE, null, null);
+				tick(db, "clerk", later(1), null, null);
 			});
+		const HUNG = `ALARM tick-hung 1 clerk started ${BASE}\n`;
 
 		test("a new alarm prints once and is silent without --repeat", () => {
-			untaken();
-			expect(alarm(later(49)).out).toMatch(/^ALARM order-untaken 1 .+\n$/);
-			expect(alarm(later(50)).out).toBe("");
+			dead();
+			expect(alarm(later(2)).out).toBe(HUNG);
+			expect(alarm(later(3)).out).toBe("");
 			expect(alarm(later(80)).out).toBe("");
 			expect(
-				rows(
-					"SELECT kind, ref, raised_at, notified_at, cleared_at FROM alarms",
-				),
+				rows("SELECT kind, ref, raised_at, cleared_at FROM alarms"),
 			).toEqual([
-				{
-					kind: "order-untaken",
-					ref: "1",
-					raised_at: later(49),
-					notified_at: later(49),
-					cleared_at: null,
-				},
+				{ kind: "tick-hung", ref: "1", raised_at: later(2), cleared_at: null },
 			]);
 		});
 
-		test("--repeat prints an open alarm only after 24 hours and renews the notice time", () => {
-			untaken();
-			alarm(later(49));
-			expect(alarm(later(72), "--repeat").out).toBe("");
-			expect(alarm(later(73), "--repeat").out).toBe("");
-			expect(alarm(later(73, 1), "--repeat").out).toMatch(
-				/^ALARM order-untaken 1 .+\n$/,
-			);
-			expect(alarm(later(73, 2), "--repeat").out).toBe("");
-			expect(rows("SELECT notified_at FROM alarms")).toEqual([
-				{ notified_at: later(73, 1) },
-			]);
+		test("--repeat prints an open alarm once at every call, whatever the times", () => {
+			dead();
+			alarm(later(2));
+			expect(alarm(later(3), "--repeat").out).toBe(HUNG);
+			expect(alarm(later(4), "--repeat").out).toBe(HUNG);
+			expect(alarm(later(5)).out).toBe("");
 		});
 
 		test("--repeat prints a new alarm once, not twice", () => {
-			untaken();
-			expect(alarm(later(49), "--repeat").out.trim().split("\n")).toHaveLength(
-				1,
-			);
+			dead();
+			expect(alarm(later(2), "--repeat").out).toBe(HUNG);
 		});
 
 		test("the alarm clears when the condition ends and returns as new if it comes back", () => {
-			untaken();
-			alarm(later(49));
-			call(later(50), ["dispatch", "take", "--role", "patrol"]);
-			expect(alarm(later(51), "--repeat").out).toBe("");
+			dead();
+			alarm(later(2));
+			seed((db) =>
+				db.run("UPDATE ticks SET ended_at = ? WHERE id = 1", [later(3)]),
+			);
+			expect(alarm(later(4), "--repeat").out).toBe("");
 			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
-				{ cleared_at: later(51) },
+				{ cleared_at: later(4) },
 			]);
-			seed((db) => db.run("UPDATE dispatches SET taken_at = NULL"));
-			expect(alarm(later(52)).out).toMatch(/^ALARM order-untaken 1 /);
+			// the condition returns: the tick 2 gets a later tick of its role
+			seed((db) => tick(db, "clerk", later(5), null, null));
+			expect(alarm(later(6)).out).toMatch(/^ALARM tick-hung 2 /);
 			expect(rows("SELECT cleared_at FROM alarms ORDER BY id")).toEqual([
-				{ cleared_at: later(51) },
+				{ cleared_at: later(4) },
 				{ cleared_at: null },
 			]);
 		});
 
-		test("alarm prints order-untaken when every precinct has an open order and next is empty", () => {
-			untaken();
-			expect(call(later(49), ["next", "--role", "patrol"]).out).toBe("");
-			expect(alarm(later(49)).out).toMatch(/^ALARM order-untaken 1 /);
-		});
-
-		test("bad arguments exit 1", () => {
-			for (const args of [
-				["alarm", "--bogus"],
-				["alarm", "--repeat", "x"],
-				["alarm", "x"],
-			]) {
-				expect([args, call(BASE, args).code]).toEqual([args, 1]);
-			}
+		test("the alarm command is a usage error", () => {
+			expect(call(BASE, ["alarm"]).code).toBe(1);
 		});
 	});
 
@@ -274,10 +214,13 @@ describe("alarms and status", () => {
 				db.run("UPDATE precincts SET synced_at = ? WHERE name = 'alpha'", [
 					BASE,
 				]);
-				order(db, "alpha", "patrol", { department: "billing" });
+				order(db, "alpha", "patrol", { department: "billing", takenAt: BASE });
+				order(db, "beta", "patrol", { at: later(1) });
 				tick(db, "patrol", BASE, later(0, 60), "filed", "alpha");
 				tick(db, "patrol", later(1), null, null);
 				tick(db, "duty-desk", later(1), later(1, 60), "ordered", "alpha");
+				tick(db, "clerk", later(2), null, null);
+				tick(db, "clerk", later(3), null, null);
 				const issue = (n: number, state: string) =>
 					db.run(
 						"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('alpha', ?, ?, '[Lead] t', ?)",
@@ -302,17 +245,23 @@ describe("alarms and status", () => {
 			expect(r.code).toBe(0);
 			const lines = r.out.trim().split("\n");
 			expect(lines.filter((l) => l.startsWith("precinct "))).toEqual([]);
-			expect(lines.filter((l) => l.startsWith("order "))).toHaveLength(1);
+			expect(lines.filter((l) => l.startsWith("order "))).toHaveLength(2);
 			expect(lines).toContain(
-				`order 1 alpha patrol billing - since ${BASE} untaken`,
+				`order 1 alpha patrol billing - since ${BASE} taken ${BASE}`,
 			);
+			expect(lines).toContain(
+				`order 2 beta patrol - - since ${later(1)} untaken`,
+			);
+			expect(lines.filter((l) => l.startsWith("queue "))).toEqual([
+				`queue patrol 2 oldest ${BASE}`,
+			]);
 			expect(lines).toContain(`last-tick patrol running since ${later(1)}`);
 			expect(lines).toContain(`last-tick duty-desk ordered at ${later(1, 60)}`);
 			expect(
 				lines
 					.filter((l) => l.startsWith("alarm "))
 					.map((l) => l.split(" ").slice(0, 3).join(" ")),
-			).toEqual(["alarm order-untaken 1", "alarm tick-hung 2"]);
+			).toEqual(["alarm tick-hung 4"]);
 			expect(lines).toContain("leads billing 2");
 			expect(lines).toContain("leads search 1");
 		});
@@ -358,6 +307,32 @@ describe("decision-waiting", () => {
 		put({ 3: handed(7) });
 		cachePull("main", 7, [3], "waiting", "ready");
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+	});
+
+	test("a handed pull request that a precedent entry marker also names raises one alarm, and the tick start does not fail", () => {
+		put({
+			3: handed(7),
+			4: human("CLOSED", mark("clerk", "entry", " pull=7")),
+		});
+		cachePull("main", 7, [3], "waiting");
+		const r = alarm(BASE);
+		expect(r.code).toBe(0);
+		expect(r.out).toBe(line("main#7", WAITS_SPEC));
+		expect(alarm(later(1))).toMatchObject({ code: 0, out: "" });
+		expect(rows("SELECT ref FROM alarms WHERE cleared_at IS NULL")).toEqual([
+			{ ref: "main#7" },
+		]);
+	});
+
+	test("an alarm about a pull request ends with the link the host reported; a link that arrives later opens no new alarm", () => {
+		waitingSpec();
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
+		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
+		expect(alarm(later(1)).out).toBe("");
+		const repeat = call(later(2), ["tick", "start", "--role", "duty-desk"]);
+		expect(repeat.out).toContain(
+			line("main#7", `${WAITS_SPEC} https://git.example/o/main/pull/7`).trim(),
+		);
 	});
 
 	test.each([
@@ -410,7 +385,7 @@ describe("decision-waiting", () => {
 			{ ref: "main#7", cleared_at: later(1) },
 			{ ref: "main#7", cleared_at: null },
 		]);
-		expect(alarm(later(26), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
+		expect(alarm(later(2), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
 	});
 
 	test("finished work after an unseen vote raises the review alarm in place of the vote alarm", () => {
@@ -472,14 +447,12 @@ describe("decision-waiting", () => {
 		});
 	});
 
-	test("the daily repeat prints only with --repeat", () => {
+	test("the repeat prints only with --repeat, at every repeat call", () => {
 		waitingSpec();
 		alarm(BASE);
-		expect(alarm(later(24, 1)).out).toBe("");
-		expect(alarm(later(24, 1), "--repeat").out).toBe(
-			line("main#7", WAITS_SPEC),
-		);
-		expect(alarm(later(25), "--repeat").out).toBe("");
+		expect(alarm(later(1)).out).toBe("");
+		expect(alarm(later(1), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
+		expect(alarm(later(2), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
 	});
 
 	test("candidates come in the order of precinct, then pull request number", () => {

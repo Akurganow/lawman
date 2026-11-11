@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { check, subcommand } from "./args";
+import { check, checkLink, subcommand } from "./args";
 import { EXIT, Fail, normalizeTime } from "./db";
 
 describe("argument validators", () => {
@@ -189,5 +189,79 @@ describe("normalizeTime", () => {
 			"0",
 		];
 		for (const v of bad) expect(normalizeTime(v)).toBeNull();
+	});
+});
+
+describe("the classes of a command argument", () => {
+	const passes = (kind: Parameters<typeof check>[0], value: string) => {
+		try {
+			return check(kind, value) === value;
+		} catch {
+			return false;
+		}
+	};
+
+	test.each([
+		"0123456789abcdef0123456789abcdef01234567",
+		"0123456789abcdef".repeat(4),
+		"4521",
+		"r4521",
+		"v1.2.3+build:7",
+		"origin/main",
+	])("a revision accepts %s", (value) => {
+		expect(passes("revision", value)).toBe(true);
+	});
+
+	test.each(["", "a b", "-a", "a'b", 'a"b', "a`b", "a\nb", "a\u0000b"])(
+		"a revision rejects %j",
+		(value) => {
+			expect(passes("revision", value)).toBe(false);
+		},
+	);
+
+	test.each([
+		"docs/a-b_c.md",
+		".lawman/departments/x.md",
+		"./a",
+		"a//b",
+		"a..b",
+	])("a path accepts %s", (value) => {
+		expect(passes("path", value)).toBe(true);
+	});
+
+	test.each(["", "..", "a/../b", "a/..", "/a", "-a", "a b", "a;b", "a$b", "é"])(
+		"a path rejects %j",
+		(value) => {
+			expect(passes("path", value)).toBe(false);
+		},
+	);
+
+	test.each(["1", "42"])("a number accepts %s", (value) => {
+		expect(passes("number", value)).toBe(true);
+	});
+
+	test.each(["0", "01", "-1", "1e3", "", "1 "])(
+		"a number rejects %j",
+		(value) => {
+			expect(passes("number", value)).toBe(false);
+		},
+	);
+
+	test.each(["https://example.com/a?b=c", "http://example.com"])(
+		"a link accepts %s",
+		(value) => {
+			expect(checkLink(value)).toBe(value);
+		},
+	);
+
+	test.each([
+		"file:///a",
+		"https://example.com/a b",
+		"https://example.com/\n",
+		"ftp://example.com",
+		"example.com",
+		"",
+	])("a link rejects %j", (value) => {
+		expect(() => checkLink(value)).toThrow(Fail);
 	});
 });

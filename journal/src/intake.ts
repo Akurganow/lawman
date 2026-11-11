@@ -4,7 +4,7 @@ import { type CaseMarker, markersOf } from "./cases";
 import { hasPair } from "./clerk-jobs";
 import { EXIT, Fail, out, withDb } from "./db";
 
-const INTAKE_USAGE = "intake <precinct> [--issue <n>]";
+const INTAKE_USAGE = "intake <precinct> --issue <n>";
 const RESPONSE_UNIT = "response-unit";
 const ORD_SEPARATOR = "|";
 
@@ -51,31 +51,37 @@ function candidates(db: Database, precinct: string, issue: number | null) {
 		.all(RESPONSE_UNIT, precinct, issue, issue) as Row[];
 }
 
-const orderIsOpen = (db: Database, precinct: string) =>
-	db
-		.query(
-			"SELECT 1 FROM dispatches WHERE role = ? AND precinct = ? AND outcome IS NULL",
-		)
-		.get(RESPONSE_UNIT, precinct) !== null;
+type IntakeStage = {
+	need: "intake" | "none";
+	state: string;
+	line: string;
+};
+
+// The intake need of one cached issue. An issue missing from the cache fails with code 1.
+export function intakeStage(
+	db: Database,
+	precinct: string,
+	issue: number,
+): IntakeStage {
+	const row = candidates(db, precinct, issue)[0];
+	if (row === undefined)
+		throw new Fail(
+			EXIT.USAGE,
+			`unknown issue ${precinct} #${issue} is missing from the cache`,
+		);
+	const need = waits(db, precinct, row) ? "intake" : "none";
+	return { need, state: row.state, line: `need=${need} state=${row.state}` };
+}
+
+// The issues of a precinct that wait for intake, the one ordered longest ago first.
+export const intakeWaiting = (db: Database, precinct: string): number[] =>
+	candidates(db, precinct, null)
+		.filter((r) => waits(db, precinct, r))
+		.map((r) => r.issue);
 
 export function intakeCommand(args: string[]): void {
-	const { pos, opt } = parseArgs(args, 1, [], INTAKE_USAGE, ["issue"]);
+	const { pos, opt } = parseArgs(args, 1, ["issue"], INTAKE_USAGE);
 	const precinct = check("precinct", pos[0]);
-	const issue = opt.issue === undefined ? null : count(opt.issue, "issue", 1);
-	withDb((db) => {
-		const rows = candidates(db, precinct, issue);
-		if (issue === null) {
-			const next = orderIsOpen(db, precinct)
-				? undefined
-				: rows.find((r) => waits(db, precinct, r));
-			if (next !== undefined) out(next.issue);
-			return;
-		}
-		const row = rows[0];
-		if (row === undefined)
-			throw new Fail(EXIT.USAGE, `unknown issue ${precinct} #${issue}`);
-		out(
-			`need=${waits(db, precinct, row) ? "intake" : "none"} state=${row.state}`,
-		);
-	});
+	const issue = count(opt.issue, "issue", 1);
+	withDb((db) => out(intakeStage(db, precinct, issue).line));
 }

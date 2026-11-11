@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { takeOrder } from "./dispatch";
 import { COMMANDS } from "./journal";
 import {
 	addPrecincts,
@@ -7,7 +8,9 @@ import {
 	call,
 	later,
 	rows,
+	seed,
 	tempDb,
+	tick,
 } from "./test-helpers";
 
 tempDb();
@@ -22,6 +25,11 @@ describe("registration", () => {
 		"catalog",
 		"wake",
 		"law-sync",
+		"law-update",
+		"commands",
+		"run",
+		"run-installation",
+		"old-precedent",
 	])("%s is a registered command", (name) => {
 		expect(Object.keys(COMMANDS)).toContain(name);
 	});
@@ -37,15 +45,30 @@ describe("registration", () => {
 			"catalog",
 			"wake",
 			"law-sync",
+			"law-update",
+			"commands",
+			"run",
+			"run-installation",
+			"old-precedent",
 		])
 			expect(err).toContain(name);
+	});
+
+	test("precedent names its write, request and answer forms in its usage", () => {
+		const err = call(BASE, ["precedent"]).err;
+		for (const form of [
+			"--source <ruling comment URL> --tree <folder>",
+			"--tree <folder> --request <name>",
+			"--tree <folder> --answer <name>",
+		])
+			expect(err).toContain(form);
 	});
 
 	test.each(["handed", "shut", "settled", "kept", "specified"])(
 		"tick end accepts the outcome %s",
 		(outcome) => {
-			const id = call(BASE, ["tick", "start", "--role", "clerk"]).out.trim();
-			const end = call(BASE, ["tick", "end", id, "--outcome", outcome]);
+			seed((db) => tick(db, "clerk", BASE, null, null));
+			const end = call(BASE, ["tick", "end", "1", "--outcome", outcome]);
 			expect(end.code).toBe(0);
 			expect(rows("SELECT outcome FROM ticks")).toEqual([{ outcome }]);
 		},
@@ -55,7 +78,6 @@ describe("registration", () => {
 		addPrecincts({ main: 1 });
 		const ok = (args: string[]) => expect(call(BASE, args).code).toBe(0);
 		ok(["role", "set", "spec-writer", "--every", "5"]);
-		ok(["tick", "start", "--role", "spec-writer"]);
 		ok([
 			"dispatch",
 			"add",
@@ -66,7 +88,7 @@ describe("registration", () => {
 			"--issue",
 			"7",
 		]);
-		ok(["dispatch", "take", "--role", "spec-writer"]);
+		seed((db) => expect(takeOrder(db, "spec-writer", 1, BASE)).toBe(true));
 		expect(rows("SELECT role, issue FROM dispatches")).toEqual([
 			{ role: "spec-writer", issue: 7 },
 		]);
@@ -76,9 +98,9 @@ describe("registration", () => {
 		expect(
 			call(BASE, ["role", "set", "executor", "--every", "1440"]).code,
 		).toBe(0);
-		const id = call(BASE, ["tick", "start", "--role", "executor"]).out.trim();
+		seed((db) => tick(db, "executor", BASE, null, null));
 		expect(
-			call(later(0, 60), ["tick", "end", id, "--outcome", "executed"]).code,
+			call(later(0, 60), ["tick", "end", "1", "--outcome", "executed"]).code,
 		).toBe(0);
 		expect(alarm(later(72)).out).toBe("");
 		expect(alarm(later(72, 1)).out).toMatch(/^ALARM role-silent executor /);

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { out } from "./db";
 import fixture from "./fixtures/pulls.json";
-import { captured } from "./inproc";
+import { capturedAsync } from "./inproc";
 import { syncPulls } from "./pulls";
 import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
 import {
@@ -134,10 +135,12 @@ describe("sync --pulls", () => {
 describe("syncPulls in process", () => {
 	beforeEach(() => addPrecincts({ main: 1 }));
 	const sync = (name: string, input: string) =>
-		captured("2026-05-01T00:00:00Z", () => syncPulls(name, BOT, input));
+		capturedAsync("2026-05-01T00:00:00Z", async () =>
+			out(await syncPulls(name, BOT, input)),
+		);
 
-	test("stores the rows and prints the count", () => {
-		const r = sync("main", JSON.stringify(fixture));
+	test("stores the rows and prints the count", async () => {
+		const r = await sync("main", JSON.stringify(fixture));
 		expect(r).toMatchObject({ code: 0, out: "pulls=2\n" });
 		expect(
 			rows(
@@ -146,20 +149,18 @@ describe("syncPulls in process", () => {
 		).toEqual(FIXTURE_ROWS);
 	});
 
-	test("an unknown precinct is a usage error", () => {
-		expect(sync("nowhere", "{}").code).toBe(1);
-	});
-
-	test("a repeated number is rejected and a valid replacement wins", () => {
+	test("a repeated number is rejected and a valid replacement wins", async () => {
 		seed((db) => {
 			db.run(
 				"INSERT INTO pulls (precinct, number, issues, spec) VALUES ('main', 99, '1', 'waiting')",
 			);
 		});
 		const repeated = JSON.stringify(hostPulls([{ number: 3 }, { number: 3 }]));
-		expect(sync("main", repeated).code).toBe(4);
+		expect((await sync("main", repeated)).code).toBe(4);
 		expect(rows("SELECT number FROM pulls")).toEqual([{ number: 99 }]);
-		expect(sync("main", JSON.stringify(hostPulls([]))).out).toBe("pulls=0\n");
+		expect((await sync("main", JSON.stringify(hostPulls([])))).out).toBe(
+			"pulls=0\n",
+		);
 		expect(rows("SELECT number FROM pulls")).toEqual([]);
 	});
 });

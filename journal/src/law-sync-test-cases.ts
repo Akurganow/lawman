@@ -34,6 +34,8 @@ const NO_ACCESS = 0o000;
 const OWNER_ONLY = 0o600;
 const ALL_WRITABLE = 0o755;
 const PERMISSION_BITS = 0o777;
+const JOBS =
+	"jobs: patrol=1 response-unit=2 investigation=1 prosecutor=1 defender=1 court=1 clerk=3 spec-writer=1 executor=1\nprogress_checks: 3\n";
 const alarmLine = (law: string, config: string) =>
 	`ALARM contract-changed installation constitution contract ${law}, precincts at ${config}, run the assembly to amend\n`;
 
@@ -102,16 +104,16 @@ export function defineCases(runner: Runner): void {
 			lay(root);
 			const sum = syncedSum();
 			expect(configOf(root)).toBe(
-				`${CONFIG.replace(OLD_COMMIT, LAW_COMMIT)}release_tag: ${TAG}\njournal_sha256: ${sum}\ntypesafe_key: ${TYPESAFE_ENV}\namended_law_commit: ${OLD_COMMIT}\n`,
+				`${CONFIG.replace(OLD_COMMIT, LAW_COMMIT)}release_tag: ${TAG}\njournal_sha256: ${sum}\ntypesafe_key: ${TYPESAFE_ENV}\namended_law_commit: ${OLD_COMMIT}\n${JOBS}`,
 			);
 		});
 
 		test("replaces present keys in place and never overwrites a present default", () => {
-			const text = `release_tag: v0.1.0\nlaw_commit: ${OLD_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: 0\namended_law_commit: ${"a".repeat(40)}\n`;
+			const text = `release_tag: v0.1.0\nlaw_commit: ${OLD_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: 0\namended_law_commit: ${"a".repeat(40)}\njobs: clerk=2\nprogress_checks: 5\n`;
 			lay(root, { config: text });
 			const sum = syncedSum();
 			expect(configOf(root)).toBe(
-				`release_tag: ${TAG}\nlaw_commit: ${LAW_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: ${sum}\namended_law_commit: ${"a".repeat(40)}\n`,
+				`release_tag: ${TAG}\nlaw_commit: ${LAW_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: ${sum}\namended_law_commit: ${"a".repeat(40)}\njobs: clerk=2\nprogress_checks: 5\n`,
 			);
 		});
 
@@ -174,21 +176,21 @@ export function defineCases(runner: Runner): void {
 
 	describe("contract", () => {
 		test("reads the frontmatter value, not the example below it", () => {
-			lay(root, { contract: "3" });
+			lay(root, { contract: "4" });
 			expect(synced("tick1").out).toBe(SYNCED);
 		});
 
 		test("a different value prints the alarm first and keeps the value", () => {
 			lay(root, {
-				config: CONFIG.replace("contract_version: 3", "contract_version: 1"),
+				config: CONFIG.replace("contract_version: 4", "contract_version: 3"),
 			});
-			expect(synced("tick1").out).toBe(`${alarmLine("3", "1")}${SYNCED}`);
-			expect(configOf(root)).toContain("contract_version: 1\n");
+			expect(synced("tick1").out).toBe(`${alarmLine("4", "3")}${SYNCED}`);
+			expect(configOf(root)).toContain("contract_version: 3\n");
 		});
 
 		test("an absent key prints the alarm with none, is not written and repeats", () => {
-			lay(root, { config: CONFIG.replace("contract_version: 3\n", "") });
-			const expected = `${alarmLine("3", "none")}${SYNCED}`;
+			lay(root, { config: CONFIG.replace("contract_version: 4\n", "") });
+			const expected = `${alarmLine("4", "none")}${SYNCED}`;
 			expect(synced("tick1").out).toBe(expected);
 			expect(configOf(root)).not.toContain("contract_version");
 			expect(synced("tick2").out).toBe(expected);

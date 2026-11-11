@@ -9,6 +9,7 @@ import {
 	pullsOf,
 } from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
+import { holdsPrecedent } from "./law-sections";
 import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
@@ -51,6 +52,19 @@ const newestOf = (markers: CaseMarker[], role: string, stage?: string) =>
 
 type Funnel = { need: Exclude<Need, "clerk">; ruling?: CaseMarker };
 
+function courtAfter(
+	markers: CaseMarker[],
+	after: CaseMarker,
+	answered: boolean,
+): Funnel {
+	const r = newestOf(markers, "court");
+	if (r === undefined || r.ord < after.ord) return { need: "court" };
+	if (r.stage === "referral") return { need: answered ? "court" : "none" };
+	const ruled = r.stage === "conviction" || r.stage === "acquittal";
+	return { need: "none", ...(ruled ? { ruling: r } : {}) };
+}
+
+// a decline or a refute hands the case to the court, which alone writes the precedent
 function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 	const c = newestOf(markers, "investigation", "case");
 	if (c === undefined) return { need: "investigation" };
@@ -58,19 +72,43 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 	if (p !== undefined && p.ord > c.ord && backToInvestigation(p))
 		return { need: "investigation" };
 	if (p === undefined || p.ord < c.ord) return { need: "prosecutor" };
+	if (p.stage === "decline") return courtAfter(markers, p, answered);
 	if (p.stage !== "charge") return { need: "none" };
 	const d = newestOf(markers, "defender");
 	if (d === undefined || d.ord < p.ord) return { need: "defender" };
 	if (backToInvestigation(d)) return { need: "investigation" };
-	if (d.stage !== "defence") return { need: "none" };
-	const r = newestOf(markers, "court");
-	if (r === undefined || r.ord < d.ord) return { need: "court" };
-	if (r.stage === "referral") return { need: answered ? "court" : "none" };
-	const ruled = r.stage === "conviction" || r.stage === "acquittal";
-	return { need: "none", ...(ruled ? { ruling: r } : {}) };
+	if (d.stage !== "defence" && d.stage !== "refute") return { need: "none" };
+	return courtAfter(markers, d, answered);
 }
 
 export type CaseView = { need: Need; clerk: ClerkCase };
+
+// The cached comment whose last line is the counted marker with this ord. The
+// rank of the ord is the comment's place among the comments by time.
+export function rulingComment(
+	db: Database,
+	precinct: string,
+	issue: number,
+	ord: string,
+): string | undefined {
+	const rank = Number(ord.split("|")[ORD_RANK_PART]);
+	if (rank < 1) return undefined;
+	const raw = (
+		db
+			.query(
+				"SELECT raw FROM markers WHERE precinct = ? AND issue = ? AND ord = ?",
+			)
+			.get(precinct, issue, ord) as { raw: string } | null
+	)?.raw;
+	const body = (
+		db
+			.query(
+				"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
+			)
+			.get(precinct, issue, rank - 1) as { body: string } | null
+	)?.body;
+	return body?.trimEnd().split("\n").at(-1)?.trim() === raw ? body : undefined;
+}
 
 // A pair marker means the case left the funnel. Only the clerk is left to act.
 export function caseOf(
@@ -92,6 +130,10 @@ export function caseOf(
 		pulls: pullsOf(db, precinct),
 		isClosed: closedIn(db, precinct),
 		ruling: funnel.ruling,
+		holdsPrecedent: () => {
+			const body = rulingComment(db, precinct, issue, funnel.ruling?.ord ?? "");
+			return body !== undefined && holdsPrecedent(body);
+		},
 		others: () => clerkMarkersOf(db, precinct),
 	});
 	if (clerk.job !== "-") return { need: "clerk", clerk };
@@ -183,35 +225,59 @@ const NO_LEAD = {
 	kind: "-",
 };
 
+type CaseStage = {
+	need: Need;
+	department: string;
+	state: string;
+	pull: string;
+	line: string;
+};
+
+// The stage of one cached issue. An issue missing from the cache fails with code 1.
+// The command's argument goes to the lookup as it came, as before.
+export function caseStage(
+	db: Database,
+	name: string,
+	asked: number | string,
+): CaseStage {
+	const issue = Number(asked);
+	const row = db
+		.query(
+			"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
+		)
+		.get(name, asked) as {
+		state: string;
+		answer: string | null;
+		answer_id: string | null;
+	} | null;
+	if (row === null)
+		throw new Fail(
+			EXIT.USAGE,
+			`unknown issue ${name} #${asked} is missing from the cache`,
+		);
+	const markers = markersOf(db, name, issue);
+	const lead = leadFields(db, name, issue, markers);
+	const { need, clerk } = caseOf(
+		db,
+		name,
+		issue,
+		row.state,
+		markers,
+		row.answer,
+		lead !== null,
+	);
+	const l = lead ?? NO_LEAD;
+	return {
+		need,
+		department: String(l.department),
+		state: row.state,
+		pull: clerk.pull,
+		line: `need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch} kind=${l.kind} answer=${row.answer ?? "-"} answer_id=${row.answer_id ?? "-"}`,
+	};
+}
+
 export function caseCommand(args: string[]): void {
 	if (args.length !== 2) throw usage(CASE_USAGE);
 	const [name, issue] = args as [string, string];
-	withDb((db) => {
-		const row = db
-			.query(
-				"SELECT state, answer, answer_id FROM issues WHERE precinct = ? AND issue = ?",
-			)
-			.get(name, issue) as {
-			state: string;
-			answer: string | null;
-			answer_id: string | null;
-		} | null;
-		if (row === null)
-			throw new Fail(EXIT.USAGE, `unknown issue ${name} #${issue}`);
-		const markers = markersOf(db, name, Number(issue));
-		const lead = leadFields(db, name, Number(issue), markers);
-		const { need, clerk } = caseOf(
-			db,
-			name,
-			Number(issue),
-			row.state,
-			markers,
-			row.answer,
-			lead !== null,
-		);
-		const l = lead ?? NO_LEAD;
-		out(
-			`need=${need} round=${l.round} returned=${l.returned} department=${l.department} sha=${l.sha} state=${row.state} lead=${l.lead} related=${l.related} priority=${clerk.priority} job=${clerk.job} action=${clerk.action} pull=${clerk.pull} sources=${clerk.sources} branch=${clerk.branch} kind=${l.kind} answer=${row.answer ?? "-"} answer_id=${row.answer_id ?? "-"}`,
-		);
-	});
+	withDb((db) => out(caseStage(db, name, issue).line));
 }

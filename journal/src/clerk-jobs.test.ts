@@ -212,8 +212,15 @@ describe("table rows", () => {
 		});
 	});
 
-	test("4: a conviction on a closed issue gives no job", () => {
-		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe("-");
+	test("4: a conviction on a closed issue records its precedent", () => {
+		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe(
+			"precedent",
+		);
+	});
+
+	test("a ruling with no Precedent line gives no job", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(run({ state: "CLOSED", ruling, holds: false }).job).toBe("-");
 	});
 
 	test("a referral gives no job", () => {
@@ -238,7 +245,9 @@ describe("table rows", () => {
 			expect(run({ state, ruling: acquittal() })).toMatchObject({
 				job: "precedent",
 				action: "-",
-				branch: "-",
+				pull: "-",
+				sources: "-",
+				branch: "lawman/precedent-1-1",
 			});
 	});
 
@@ -281,24 +290,83 @@ describe("table rows", () => {
 			markers: pairs(["handed", "7", "open"]),
 			pulls: [pull(7, 1)],
 			ruling: conviction(),
+			holds: false,
 		});
 		expect(r.job).toBe("-");
 		expect(hasPair(pairs(["handed", "7", "open"]))).toBe(true);
 	});
 
-	test("K present: no precedent and no open from the ruling", () => {
-		const open = run({
-			markers: pairs(["handed", "7", "open"]),
-			pulls: [pull(7, 1)],
-			ruling: acquittal(),
-		});
-		expect(open.job).toBe("-");
+	test("a pair does not hold back the precedent job of a ruling", () => {
+		for (const ruling of [conviction(), acquittal()])
+			expect(
+				run({
+					markers: pairs(["handed", "7", "open"]),
+					pulls: [pull(7, 1)],
+					ruling,
+				}).job,
+			).toBe("precedent");
+	});
+});
+
+describe("the precedent pull request", () => {
+	const entry = (i: number, pull?: string) =>
+		marker("clerk", "entry", i, pull === undefined ? {} : { pull });
+	const decision = { job: "decision", pull: "5", sources: "-", branch: "-" };
+
+	test("an entry whose pull request left the cache gives the decision job", () => {
+		for (const state of ["OPEN", "CLOSED"])
+			expect(
+				run({ state, markers: [entry(3, "5")], ruling: acquittal(2) }),
+			).toMatchObject(decision);
 	});
 
-	test("kept issue=open over settled gives no job", () => {
+	test("an entry whose pull request is still open gives no job", () => {
 		const r = run({
-			markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
+			markers: [entry(3, "5")],
+			pulls: [pull(5)],
+			ruling: acquittal(2),
 		});
 		expect(r.job).toBe("-");
+	});
+
+	test.each(["final", "kept"])(
+		"%s after the entry ends the decision job",
+		(stage) => {
+			const markers = [entry(3, "5"), marker("clerk", stage, 4, { pull: "5" })];
+			expect(run({ markers, ruling: acquittal(2) }).job).toBe("-");
+		},
+	);
+
+	test("an entry after a final asks again", () => {
+		const markers = [marker("clerk", "final", 3, { pull: "5" }), entry(4, "5")];
+		expect(run({ markers, ruling: acquittal(2) })).toMatchObject(decision);
+	});
+
+	test("two entries waiting give the smallest pull request", () => {
+		const markers = [entry(3, "7"), entry(4, "5")];
+		expect(run({ markers, ruling: acquittal(2) })).toMatchObject(decision);
+	});
+
+	test("an entry of the old form without a pull request gives no decision", () => {
+		expect(run({ markers: [entry(3)], ruling: acquittal(2) }).job).toBe("-");
+	});
+
+	test("a pull field outside its class gives no decision", () => {
+		expect(run({ markers: [entry(3, "05")], ruling: acquittal(2) }).job).toBe(
+			"-",
+		);
+	});
+
+	test("a pair job comes before the decision", () => {
+		const markers = [...pairs(["handed", "7", "open"]), entry(3, "5")];
+		expect(run({ markers }).job).toBe("settle");
+	});
+
+	test("the precedent branch counts the entries of the case", () => {
+		const markers = [entry(1, "5"), marker("clerk", "final", 2, { pull: "5" })];
+		expect(run({ markers, ruling: acquittal(3) })).toMatchObject({
+			job: "precedent",
+			branch: "lawman/precedent-1-2",
+		});
 	});
 });

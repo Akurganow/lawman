@@ -10,7 +10,7 @@ import {
 	inputRejected,
 	loginList,
 } from "./form";
-import { inproc } from "./inproc";
+import { inproc, inprocAsync } from "./inproc";
 import { readPulls } from "./pulls";
 import { addPrecincts, BASE, cli, dbFile, rows, tempDb } from "./test-helpers";
 
@@ -42,6 +42,7 @@ Each entry of issues:
   state: OPEN or CLOSED
   stateReason: COMPLETED when closed as done, NOT_PLANNED when closed otherwise, null when open or unknown
   title: the title
+  url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
   author: login, and is_bot, true for an automated account
   body: the body text
@@ -118,7 +119,7 @@ describe("each example passes its reader", () => {
 
 	test("pulls", () => {
 		const input = exampleOf("pulls");
-		expect(readPulls(input, "lawman-bot")).toEqual([
+		expect(readPulls(input, "lawman-bot").map((p) => p.row)).toEqual([
 			{
 				number: 7,
 				issues: "3",
@@ -224,17 +225,17 @@ describe("the readers in process", () => {
 	beforeEach(() => addPrecincts({ main: 1 }));
 
 	// readStdin reads file descriptor 0, so the test answers that read
-	const fed = (stdin: string, args: string[]) => {
+	const fed = async (stdin: string, args: string[]) => {
 		const spy = spyOn(fs, "readFileSync").mockReturnValue(stdin);
 		try {
-			return inproc(BASE, args);
+			return await inprocAsync(BASE, args);
 		} finally {
 			spy.mockRestore();
 		}
 	};
 
-	test("decider reads its example", () => {
-		const r = fed(exampleOf("decider"), ["decider"]);
+	test("decider reads its example", async () => {
+		const r = await fed(exampleOf("decider"), ["decider"]);
 		expect(r).toEqual({
 			code: 0,
 			out: "decider=yes actor=maintainer\n",
@@ -242,8 +243,8 @@ describe("the readers in process", () => {
 		});
 	});
 
-	test("sync reads the example of issues", () => {
-		const r = fed(exampleOf("issues"), [
+	test("sync reads the example of issues", async () => {
+		const r = await fed(exampleOf("issues"), [
 			"sync",
 			"main",
 			"--author",
@@ -252,10 +253,10 @@ describe("the readers in process", () => {
 		expect(r.out).toBe("issues=1 leads=0 markers=0 invalid=0 skipped=0\n");
 	});
 
-	test("sync rejects bad issue input and prints the form", () => {
+	test("sync rejects bad issue input and prints the form", async () => {
 		const args = ["sync", "main", "--author", "lawman-bot"];
 		for (const stdin of ["{", "{}", "[{}]", '[{"number":1,"state":"OPEN"}]']) {
-			const r = fed(stdin, args);
+			const r = await fed(stdin, args);
 			expect(r.code).toBe(EXIT.SYNC_INPUT);
 			expect(r.err).toContain(formText("issues"));
 		}

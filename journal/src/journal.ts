@@ -1,23 +1,19 @@
 import pkg from "../package.json";
-import { alarm, status } from "./alarms";
+import { status } from "./alarms";
 import { pick } from "./args";
 import { caseCommand } from "./cases";
 import { checkEnv, EXIT, Fail, out, probe } from "./db";
 import { decider } from "./decider";
 import { departmentLineCommand } from "./department-line";
 import { dispatch, tick } from "./dispatch";
-import { dueCommand } from "./due";
 import { form } from "./form";
 import { intakeCommand } from "./intake";
 import { jev } from "./jev";
 import { lawSync } from "./law-sync";
 import { cap, last, leads, seen } from "./leads";
 import { lintPageCommand } from "./lint";
-import { precedentCommand, precedentMergeCommand } from "./precedent";
-import { next, precinct, role } from "./precincts";
+import { precinct, role } from "./precincts";
 import { pullCommand } from "./pull-stage";
-import { rotation } from "./rotation";
-import { sync } from "./sync";
 import { wake } from "./wake";
 
 export { open } from "./db";
@@ -33,35 +29,42 @@ export const COMMANDS: Record<string, Handler> = {
 	probe,
 	precinct,
 	role,
-	next,
 	dispatch,
 	tick,
-	alarm,
 	status,
-	sync,
+	sync: async (args) => (await import("./sync")).sync(args),
+	commands: async (args) =>
+		(await import("./operations")).commandsCommand(args),
+	run: async (args) => (await import("./operations")).runCommand(args),
+	"run-installation": async (args) =>
+		(await import("./run-installation")).runInstallationCommand(args),
 	leads,
 	seen,
 	cap,
 	last,
-	rotation,
 	case: caseCommand,
-	due: dueCommand,
 	intake: intakeCommand,
 	"lint-body": async (args) =>
 		(await import("./lint-body")).lintBodyCommand(args),
 	"lint-page": lintPageCommand,
 	"department-line": departmentLineCommand,
-	precedent: precedentCommand,
-	"precedent-merge": precedentMergeCommand,
+	precedent: async (args) =>
+		(await import("./precedent")).precedentCommand(args),
+	"pull-body": async (args) =>
+		(await import("./precedent")).pullBodyCommand(args),
+	"old-precedent": async (args) =>
+		(await import("./old-precedents")).oldPrecedentCommand(args),
 	pull: pullCommand,
 	handoff: async (args) => (await import("./handoff")).handoffCommand(args),
 	clean: async (args) => (await import("./clean-command")).cleanCommand(args),
+	text: async (args) => (await import("./text-command")).textCommand(args),
 	decider,
 	form,
 	jev,
 	catalog: async (args) => (await import("./catalog")).catalog(args),
 	wake,
 	"law-sync": lawSync,
+	"law-update": async (args) => (await import("./law-update")).lawUpdate(args),
 };
 
 function failed(e: unknown): number {

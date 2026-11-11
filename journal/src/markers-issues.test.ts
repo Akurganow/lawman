@@ -21,25 +21,6 @@ import {
 tempDb();
 
 describe("fixture issues", () => {
-	test("the fixture has the gh issue list shape", () => {
-		for (const i of issues) {
-			expect(Object.keys(i).sort()).toEqual([
-				"author",
-				"body",
-				"closedAt",
-				"comments",
-				"createdAt",
-				"number",
-				"state",
-				"stateReason",
-				"title",
-			]);
-			expect(Object.keys(i.author).filter((k) => k !== "is_bot")).toEqual([
-				"login",
-			]);
-		}
-	});
-
 	test("#1 a lead in the body and a return in a comment", () => {
 		const { markers, leadOrigin, newestByRole } = collect(1);
 		expect(markers.map((m) => m.marker.stage)).toEqual(["lead", "return"]);

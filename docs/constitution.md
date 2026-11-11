@@ -2,13 +2,13 @@
 
 A constitution holds what is true of one repository and of no other. Each precinct carries one, as `LAWMAN.md` at the repository root. Everything specific to the repository lives there and never in the law.
 
-The roles read the constitution from the main branch of the precinct. A reviewed merge put it there, so the roles trust its listed sections as instructions. A constitution points at files by path. It never restates them.
+The roles read the constitution from the main branch of the precinct. It is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says. A constitution points at files by path. It never restates them.
 
 The contract is [constitution.md](../skills/lawman-law/references/constitution.md). It sets the version and the shape. This repository's own [LAWMAN.md](../LAWMAN.md) is a working example.
 
 ## What it must contain
 
-The file starts with frontmatter that holds `contract_version: 3`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come nine `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
+The file starts with frontmatter that holds `contract_version: 4`. Next comes the title line `# Constitution of <owner>/<repo>`. Then come eight `##` headings, as listed below, once each, in any order. A section with nothing to say holds the single word `none`.
 
 | Section | Holds | Read by |
 | :-- | :-- | :-- |
@@ -20,7 +20,8 @@ The file starts with frontmatter that holds `contract_version: 3`. Next comes th
 | Execution | Where a role may run the tree's code, and which toolchain the tree expects. | Investigation, executor |
 | Executor loads | Skills and rules of the repository that the executor loads before it changes code. | Executor |
 | Labels | The labels that mean something to a person or to a role, one per line. The line marked `(owner attention)` names the label that tells a person an issue waits for them. | Court |
-| Precedents | Settled questions, one per line: `- <YYYY-MM-DD> #<n>: <ruling>`. | Patrol, response unit, investigation, prosecutor, defender, court, spec writer |
+
+Precedents are not a section. Each precedent is a file in `.lawman/precedents/<name>.md`, with frontmatter fields `kind`, `departments`, `date`, and optionally `issue` and `ruling`. The court names the departments of its precedent, or says all. The journal checks each name and writes the names it knows into `departments`. Without any, it writes the department of the case, or an empty list for all departments when the case has none. TypeSafe Jev may add departments when the precinct allows Jev, and never removes one. You may write a precedent by hand under a free name. An old `## Precedents` section stays valid as a note in the margin, and the assembly can move its numbered lines into files (see [How it changes](#how-it-changes)).
 
 A path is relative to the repository root. It holds no `..` segment and has no leading slash. A role reads a referenced file only at the analysed commit.
 
@@ -30,7 +31,7 @@ You may add your own `##` section to `LAWMAN.md`: among the listed sections, bef
 
 The check rejects a file in which a listed heading is missing or stands twice. The order of the sections does not matter. The check does not read an unknown section. `bin/journal lint-page constitution` prints each one as a line that starts with `#`, and the assembly shows it to you.
 
-The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 3. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
+The section `## Licenses` is the one named exception. It holds three lines, `reaches`, `use` and `sources`. The roles read them as data and not as instructions. The `sources` line only narrows what a role sends. A `sources` value outside its form reads as `none`, and a `reaches` or `use` value outside its form reads as absent. The `reaches` and `use` lines are facts of the precinct and send nothing. The contract version stays 4. The Departments line carries nothing extra. The check does not read the section. The assembly does not show the note of that section.
 
 ## What it must not hold
 
@@ -46,23 +47,25 @@ Four per-precinct settings live outside the constitution for this reason. The we
 The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`. You review it. The assembly merges it only when you explicitly ask it to.
 
 - It clones the precinct and reads its agent files, rules, CI workflows and review documents.
-- It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the nine headings.
+- It drafts `LAWMAN.md` on the branch `lawman/constitution`, with the frontmatter, the title and the eight headings.
 - It fills each section except Departments and Labels with paths and short facts.
-- It asks which label tells a person that an issue waits for them, and which other labels matter. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
+- It asks which label tells a person that an issue waits for them, unless the host already names one. It asks which other labels matter when the host has others. It writes a line only for a label you pick. It recommends `needs-human` and creates it after your approval when the repository has none. It explains that the court applies the label to a requirement that it refers to a person, and removes it when it rules.
 - It writes `none` where nothing applies.
 - It adds the section `## Licenses` to the same draft when you answer yes to the license question for the precinct.
 - It drops each line whose path is missing.
 - It proposes the sections and the judging documents of the shared departments in one proposal. You keep, change or add lines. The proposal notes that "Add a department" follows the merge.
 - It checks the draft with `bin/journal lint-page constitution`.
-- It shows you the full draft and waits for your approval.
+- It shows you the draft as a table of its eight sections, each line with the file it came from. It waits for your approval: open the pull request, change or skip.
 - It commits, pushes and opens the pull request "Add the Lawman constitution".
 
-Merge that pull request. Until then every tick on the precinct ends `skipped-no-constitution`. A precinct with a weight and no merged constitution wastes its slot. So a precinct with a new draft starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
+The commands of the precinct are no part of the constitution. The assembly proves them and writes them into the installation, as [configuration](configuration.md#the-commands) says.
+
+Merge that pull request. Until then the duty desk writes no order on the precinct for a role that needs the constitution, and the alarm `no-constitution` names the precinct. A precinct with a weight and no merged constitution wastes its slot. So a precinct with a new draft starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
 
 The assembly reads the repository's `LAWMAN.md` before it drafts one. The file is in one of three states:
 
 - **Absent.** The assembly drafts the constitution, as the list above shows.
-- **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no pull request follow. You add the precinct at weight 1, or skip it. The assembly then offers to resume any paused job. It shows each note line that the check printed. It never edits a passing file, so to add a label you edit the file by pull request.
+- **Passes lint at the law's contract version.** The proposal shows the row "Constitution found, passes lint". No draft and no constitution pull request follow. You add the precinct at weight 1, or skip it. The assembly then offers to resume any paused job. It shows each note line that the check printed. It edits a passing file only to move old precedent lines, by pull request and only when you say so. To add a label you edit the file by pull request.
 - **Fails lint.** The assembly shows the reasons. The assembly skips the repository and overwrites nothing. Fix the file by pull request, then add the precinct again.
 
 ## How it changes
@@ -71,12 +74,19 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 - **The assembly amends it.** When the law carries a new constitution contract version, the precinct's ticks end `skipped-contract-version`. The assembly drafts an amendment for each precinct that is behind, on the branch `lawman/constitution-v<n>`. It carries every section over as it is and changes only what the new contract requires. The sections that the contract added or changed appear as rows of the proposal. A section of yours that the new contract lists, such as `Labels`, becomes the listed section and keeps its lines. Merge the pull request to bring the precinct back. While it stays unmerged, the precinct stays stopped. A hand edit of the file also brings it back. The order for an existing installation is in the README section [Update](../README.md#update).
 
   Version 3 also touches the owner-attention label. When its line carries exactly the old purpose, the amendment replaces it with the new one. The proposal then shows a row that sets the new description of the label on the host. The write follows the pull request, after your approval. Any other purpose text stays your words.
+- **The assembly moves the old precedents.** An old precedent is a numbered line `<date> #<n>: <rule> (<link>)` in a `## Precedents` section. The `#<n>` numbers the precedent in the section and names no issue. The assembly asks once for each precinct that holds such lines, on the first add and in the amend run. "Re-check a precinct" asks only when you ask to move them now. It first says that precedents are now files, that the old lines become a note that binds no role and what each answer does.
+  - **Keep as notes.** The assembly writes nothing and touches no pull request. The lines stay as a note in the margin.
+  - **Move.** The assembly reads the issue from the link of each line, through the host. It finds the kind from the court's rulings on that issue. A kind that all counted rulings share is used. Mixed rulings, no ruling, a line without a link or an issue missing from the issues list make the assembly ask about that line alone: protects, condemns or leave it as a note. The journal writes `.lawman/precedents/<date>-<gist>.md` and takes the line out of `LAWMAN.md` in one step. The rest of the page keeps its bytes, and a section with no line left reads `none`.
+  - **The file.** It holds `kind`, `date`, `ruling` when the link passes the link check, and `departments: []`. The empty list means all departments, because the old lines name none, and TypeSafe Jev is not asked about such a file.
+  - **The pull request.** The assembly commits to the branch `lawman/move-precedents` and opens the pull request "Move the precedents to files". When no line moved, it opens none. You merge it.
+  - **Open pull requests of the old form.** A pull request of the trusted account that adds an old line, measured against its merge base, gets the files by an ordinary commit in its branch. The commits already there stay. If the assembly cannot write to the branch, it names the pull request to you, changes nothing and leaves its lines as notes.
+  - **Several pull requests.** The move, an amendment and a pull request of the old form edit the same file. No lock or order stands between them. Merge them in any order. A conflict shows in the pull request.
 - **The assembly amends the license facts.** For an existing constitution, the assembly opens a pull request from the branch `lawman/licenses-sources`. It checks the file with `bin/journal lint-page constitution`. After the edit, the diff changes only the section `## Licenses`. A merge by you may narrow `sources` or change `use`, and the assembly asks no question about it.
-- **The court adds precedents.** A ruling may carry one line in its Precedent section. The clerk assigns the number, adds the link to the ruling comment and opens a pull request. The number is one more than the highest in the section, and the first is 1. Numbers never repeat. A precedent binds the roles only after you merge its pull request.
+- **The court adds precedents.** A ruling may carry lines in its Precedent section: a new precedent with the departments it binds, a refinement of one or the cancellation of one. The journal writes the files under `.lawman/precedents/`. The clerk opens a pull request with them. A taken name gets the next free one, so no precedent is lost. A precedent binds the roles only after you merge its pull request.
 
-A precedent is a recorded reason. A recorded reason protects a shape, so patrol and the other roles drop a finding that a precedent settles.
+A precedent is no recorded reason and drops no finding. It is a question the court has already decided for your repository, so the same dispute is not argued again in every case. A protecting precedent says that a shape is not a violation, and a condemning one says that it is. The roles rely on it, and a role that needs a different outcome shows how the new case differs or asks to cancel the precedent. The facts of each new case are still proved by evidence.
 
-If a constitution fails the check for any other reason, the precinct's ticks end `skipped-bad-constitution`. A listed heading that is missing or stands twice is one such reason. Run the job "re-check a precinct" to see the reasons.
+If a constitution fails the check for any other reason, the precinct gets the same alarm and no orders for those roles. A listed heading that is missing or stands twice is one such reason. Run the job "re-check a precinct" to see the reasons.
 
 ## Example
 
@@ -85,6 +95,7 @@ The contract holds a complete example for a fictional repository. This repositor
 ## Source files
 
 - [constitution.md](../skills/lawman-law/references/constitution.md): the contract.
-- [precinct.md](../skills/assembly/references/precinct.md): the assembly's "Add a precinct" and "Re-check a precinct" jobs.
-- [amend.md](../skills/assembly/references/amend.md): the amendment to a new contract version.
+- [precinct.md](../skills/assembly/references/precinct.md): the assembly's "Add a precinct" and "Re-check a precinct" jobs, and the move of the old precedents.
+- [old-precedents.ts](../journal/src/old-precedents.ts): the journal commands that list, check and move the numbered lines.
+- [amend.md](../skills/assembly/references/amend.md): the amendment to a new contract version, and the question about old precedents that comes with it.
 - [LAWMAN.md](../LAWMAN.md): the constitution of this repository.

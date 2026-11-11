@@ -1,6 +1,15 @@
 import type { Database } from "bun:sqlite";
-import { EXIT, Fail, inTransaction, isConstraint, out, withDb } from "./db";
+import {
+	cleanTexts,
+	dropComments,
+	type HostText,
+	storeComments,
+	type TextDone,
+	withheldCount,
+} from "./cache-text";
+import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { linkOrNull } from "./link";
 import { asciiLower, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
@@ -24,6 +33,7 @@ type Comment = {
 };
 type Pull = {
 	number: number;
+	url: string | null;
 	body: string;
 	closes: number[];
 	comments: Comment[];
@@ -73,6 +83,7 @@ function readReview(raw: unknown): Pull["changesRequested"][number] {
 function readPull(raw: Obj): Pull {
 	return {
 		number: raw.number as number,
+		url: linkOrNull(raw.url),
 		body: text(raw.body),
 		closes: list(raw.closes, "closes").map((n) => {
 			if (!Number.isInteger(n)) throw reject("closes holds a non-integer");
@@ -162,46 +173,96 @@ function workOf(
 		: "ready";
 }
 
-export function readPulls(input: string, login: string): PullRow[] {
+export type ReadPull = { row: PullRow; text: HostText; url: string | null };
+type StoredPull = Omit<ReadPull, "text"> & { text: TextDone };
+
+const pullText = (pull: Pull): HostText => ({
+	body: pull.body,
+	comments: pull.comments.map((c) => ({
+		id: c.id,
+		author: c.author === "" ? null : c.author,
+		at: c.createdAt,
+		body: c.body,
+	})),
+});
+
+export function readPulls(input: string, login: string): ReadPull[] {
 	const { writers, pulls } = readForm(input);
-	const rows: PullRow[] = [];
+	const read: ReadPull[] = [];
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
 		if (asciiLower(text(raw.author)) !== asciiLower(login)) continue;
 		const pull = readPull(raw);
 		const spec = newestMarker(pull, login, SPEC);
-		rows.push({
-			number: pull.number,
-			issues: sourceNumbers(pull),
-			spec: specVote(spec, writers),
-			work: workOf(pull, login, writers, spec),
-			spec_id: spec?.comment.id ?? NO_SPEC_ID,
+		read.push({
+			row: {
+				number: pull.number,
+				issues: sourceNumbers(pull),
+				spec: specVote(spec, writers),
+				work: workOf(pull, login, writers, spec),
+				spec_id: spec?.comment.id ?? NO_SPEC_ID,
+			},
+			text: pullText(pull),
+			url: pull.url,
 		});
 	}
-	return rows;
+	return read;
 }
 
-function replacePulls(db: Database, name: string, rows: PullRow[]): void {
+function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
-	for (const row of rows)
+	dropComments(db, name, "pull");
+	for (const { row, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES (?, ?, ?, ?, ?, ?)",
-			[name, row.number, row.issues, row.spec, row.work, row.spec_id],
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			[
+				name,
+				row.number,
+				row.issues,
+				row.spec,
+				row.work,
+				row.spec_id,
+				text.body.text,
+				url,
+				text.body.sha,
+				Number(text.body.withheld),
+			],
 		);
+		storeComments(db, name, "pull", row.number, text.comments, reject);
+	}
 }
 
-export function syncPulls(name: string, login: string, input: string): void {
+// Each text is cleaned before the transaction, alone, and only when it changed. A text that fails is stored withheld.
+export async function syncPulls(
+	name: string,
+	login: string,
+	input: string,
+): Promise<string> {
 	withDb((db) => {
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
-		const rows = readPulls(input, login);
+	});
+	const parsed = readPulls(input, login);
+	const cleaned = await cleanTexts(
+		name,
+		parsed.map((p) => ({ item: p, text: p.text })),
+	);
+	const read = cleaned.map(({ item, done }) => ({ ...item, text: done }));
+	return withDb((db) => {
 		try {
-			inTransaction(db, () => replacePulls(db, name, rows));
+			inTransaction(db, () => {
+				replacePulls(db, name, read);
+				db.run("UPDATE precincts SET pulls_synced_at = ? WHERE name = ?", [
+					now(),
+					name,
+				]);
+			});
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
 			throw reject("a pull request number repeats");
 		}
-		out(`pulls=${rows.length}`);
+		const held = withheldCount(cleaned);
+		return `pulls=${read.length}${held > 0 ? ` withheld=${held}` : ""}`;
 	});
 }

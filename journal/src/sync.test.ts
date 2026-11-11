@@ -1,15 +1,20 @@
-import { beforeEach, describe, expect, test } from "bun:test";
+import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import * as fs from "node:fs";
+import { mkdirSync, rmSync } from "node:fs";
+import { EXIT } from "./db";
 import { formText } from "./form";
+import { inprocAsync } from "./inproc";
 import { collectIssueMarkers } from "./markers";
-import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
+	BASE,
 	cli,
 	dbFile,
+	dir,
+	issueOf,
 	issues,
 	issuesForm,
 	lead,
-	minimalIssues,
 	must,
 	rows,
 	run,
@@ -33,7 +38,40 @@ const withTimes = (over: Record<string, unknown>) => [
 
 const EMPTY_FORM = JSON.stringify(issuesForm([]));
 const OLD_FORM_REASON =
-	"the issues form is now one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
+	"the issues form is one object with writers and issues. Run the assembly, finish any amendment it offers, then choose Host once to rewrite host.md.";
+
+// readStdin reads file descriptor 0, so the test answers that read
+const fed = async (
+	stdin: unknown,
+	args = ["sync", "main", "--author", TRUSTED],
+) => {
+	const spy = spyOn(fs, "readFileSync").mockReturnValue(
+		typeof stdin === "string" ? stdin : JSON.stringify(stdin),
+	);
+	try {
+		return await inprocAsync(BASE, args);
+	} finally {
+		spy.mockRestore();
+	}
+};
+const reacted = () => ({ approvedBy: [], rejectedBy: [] });
+const commented = (comment: Record<string, unknown>) => ({
+	writers: [],
+	issues: [
+		{
+			number: 1,
+			state: "OPEN",
+			createdAt: CREATED,
+			author: { login: TRUSTED },
+			comments: [{ createdAt: CREATED, ...comment }],
+		},
+	],
+});
+// the state one test got from the hooks: a new folder for the database
+const fresh = () => {
+	rmSync(dir, { recursive: true, force: true });
+	mkdirSync(dir);
+};
 
 describe("sync", () => {
 	const PRECINCT = "main";
@@ -104,6 +142,10 @@ describe("sync", () => {
 			replied_at: null,
 			answer: null,
 			answer_id: null,
+			body: issueOf(17).body,
+			url: null,
+			raw_sha: expect.any(String),
+			withheld: 0,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
@@ -195,40 +237,80 @@ describe("sync", () => {
 		).toEqual([{ n: 2 }]);
 	});
 
-	test.each([
-		["empty stdin", ""],
-		["not json", "not json"],
-		["truncated json", JSON.stringify(issues).slice(0, 200)],
-		["an empty json object", "{}"],
-		["a json string", '"x"'],
-		["an element without a number", [{ state: "OPEN" }]],
-		["a fractional number", [{ number: 1.5, state: "OPEN" }]],
-		["an element without a state", [{ number: 1 }]],
-		["a null element", [null]],
-		["an issue without createdAt", [{ number: 1, state: "OPEN" }]],
-		[
-			"an issue with a createdAt that is no time",
-			withTimes({ createdAt: "soon" }),
-		],
-		["a closedAt that is no time", withTimes({ closedAt: "later" })],
-		["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
-		["a lowercase state", withTimes({ state: "open" })],
-		["a state outside the form", withTimes({ state: "opened" })],
-		[
-			"a lowercase stateReason",
-			withTimes({ state: "CLOSED", stateReason: "completed" }),
-		],
-		[
-			"a stateReason that is no string",
-			withTimes({ state: "CLOSED", stateReason: 42 }),
-		],
-	])("%s exits 4 and leaves the cache", (_name, input) => {
-		sync(issues);
-		const before = snapshot();
-		const r = sync(input);
-		expect(r.code).toBe(4);
-		expect(r.err).toContain("journal:");
-		expect(snapshot()).toEqual(before);
+	test("%s exits 4 and leaves the cache", async () => {
+		// sync through the program
+		for (const [name, input] of [
+			["empty stdin", ""],
+			["not json", "not json"],
+			["truncated json", JSON.stringify(issues).slice(0, 200)],
+			["an empty json object", "{}"],
+			["a json string", '"x"'],
+			["an element without a number", [{ state: "OPEN" }]],
+			["a fractional number", [{ number: 1.5, state: "OPEN" }]],
+			["an element without a state", [{ number: 1 }]],
+			["a null element", [null]],
+			["an issue without createdAt", [{ number: 1, state: "OPEN" }]],
+			[
+				"an issue with a createdAt that is no time",
+				withTimes({ createdAt: "soon" }),
+			],
+			["a closedAt that is no time", withTimes({ closedAt: "later" })],
+			["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
+			["a lowercase state", withTimes({ state: "open" })],
+			["a state outside the form", withTimes({ state: "opened" })],
+			[
+				"a lowercase stateReason",
+				withTimes({ state: "CLOSED", stateReason: "completed" }),
+			],
+			[
+				"a stateReason that is no string",
+				withTimes({ state: "CLOSED", stateReason: 42 }),
+			],
+		] as [string, unknown][]) {
+			fresh();
+			addPrecincts({ [PRECINCT]: 1 });
+			sync(issues);
+			const before = snapshot();
+			const r = sync(input);
+			expect([name, r.code, r.err]).toEqual([
+				name,
+				4,
+				expect.stringContaining("journal:"),
+			]);
+			expect(snapshot()).toEqual(before);
+		}
+		// sync in process
+		for (const [name, input] of [
+			["no writers", { issues: [] }],
+			["no issues", { writers: [] }],
+			["writers that is no list", { writers: "maintainer", issues: [] }],
+			["a writers entry that is no text", { writers: [1], issues: [] }],
+			["issues that is no list", { writers: [], issues: {} }],
+			["a comment without an id", commented({})],
+			["a comment with an empty id", commented({ id: "", ...reacted() })],
+			["a comment without approvedBy", commented({ id: "c1", rejectedBy: [] })],
+			["a comment without rejectedBy", commented({ id: "c1", approvedBy: [] })],
+			[
+				"a comment with approvedBy that is no list",
+				commented({ id: "c1", ...reacted(), approvedBy: "x" }),
+			],
+			[
+				"a comment with a reactor that is no text",
+				commented({ id: "c1", ...reacted(), rejectedBy: [7] }),
+			],
+		] as [string, unknown][]) {
+			fresh();
+			addPrecincts({ [PRECINCT]: 1 });
+			await fed(issuesForm(issues));
+			const before = rows("SELECT * FROM issues ORDER BY issue");
+			const r = await fed(input);
+			expect([name, r.code, r.err]).toEqual([
+				name,
+				EXIT.SYNC_INPUT,
+				expect.stringContaining(formText("issues")),
+			]);
+			expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
+		}
 	});
 
 	test("an upper-case stateReason outside the form is stored", () => {
@@ -281,20 +363,6 @@ describe("sync", () => {
 
 	test("an empty list of issues over an empty cache succeeds", () => {
 		expect(sync([]).code).toBe(0);
-	});
-
-	test("exactly the sync limit exits 3 and one fewer succeeds", () => {
-		sync(issues);
-		const before = snapshot();
-		const minimal = (n: number) => minimalIssues(n, CREATED);
-		const r = sync(minimal(SYNC_LIMIT));
-		expect(r.code).toBe(3);
-		expect(r.err).toContain("the list may be truncated");
-		expect(snapshot()).toEqual(before);
-		expect(sync(minimal(SYNC_LIMIT - 1)).code).toBe(0);
-		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
-			{ n: SYNC_LIMIT - 1 },
-		]);
 	});
 
 	test("a duplicate issue number fails with 4 and the old cache stays", () => {
@@ -381,22 +449,5 @@ describe("sync", () => {
 			.out.split("\n")
 			.filter((l) => l.startsWith("leads "));
 		expect(got).toEqual([...want].sort().map(([d, n]) => `leads ${d} ${n}`));
-	});
-
-	test("alarm raises broken-lead for an open [Lead] issue without a marker and not for a closed one", () => {
-		const bare = (number: number, state: string) => ({
-			number,
-			state,
-			title: "[Lead] no marker",
-			createdAt: CREATED,
-			author: { login: TRUSTED },
-			body: "",
-			comments: [],
-		});
-		sync([...issues, bare(101, "OPEN"), bare(102, "CLOSED")]);
-		const r = run(["alarm"]);
-		expect(r.out).toContain("ALARM broken-lead main#101");
-		expect(r.out).not.toContain("main#102");
-		expect(r.out).not.toContain("main#1 ");
 	});
 });

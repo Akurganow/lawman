@@ -1,4 +1,5 @@
 import { spyOn } from "bun:test";
+import * as fs from "node:fs";
 import { EXIT, Fail } from "./db";
 import { main } from "./journal";
 import { dbFile } from "./test-helpers";
@@ -73,3 +74,27 @@ export const inproc = (clock: string, args: string[]): Result =>
 
 export const inprocAsync = (clock: string, args: string[]): Promise<Result> =>
 	capturedAsync(clock, () => main(args));
+
+// readStdin reads file descriptor 0, so the run answers that read and no other
+export async function inprocFed(
+	clock: string,
+	args: string[],
+	stdin: string,
+): Promise<Result> {
+	const read = fs.readFileSync;
+	const spy = spyOn(fs, "readFileSync").mockImplementation(((
+		path: fs.PathOrFileDescriptor,
+		...rest: unknown[]
+	) =>
+		path === 0
+			? stdin
+			: (read as (...a: unknown[]) => unknown)(
+					path,
+					...rest,
+				)) as typeof fs.readFileSync);
+	try {
+		return await inprocAsync(clock, args);
+	} finally {
+		spy.mockRestore();
+	}
+}

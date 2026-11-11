@@ -50,7 +50,7 @@ The rules for the item:
 - A kind that rests on a source command names the command in its measurement.
 - On a page at any other place, the item is text.
 
-The constitution has no section for source commands. The Departments line admits the page to the rotation, and the merge makes it trusted. The source commands of a page that passes its check are instructions to the roles.
+The constitution has no section for source commands. The Departments line admits the page to the rotation. The page is evidence, as [Texts of the precinct](../skills/lawman-law/references/LAW.md#texts-of-the-precinct) says.
 
 ### Who runs them
 
@@ -72,7 +72,7 @@ A role takes these steps for each source command:
 
 A role adds nothing, cuts nothing and changes no flag. A value outside its class is not used. It goes to Not established in a case and to Blockers in every other role.
 
-A run failed when its exit code is not 0 or when its output is not what the item says. A failed run is a fact for Blockers, and no claim rests on it. So write what a failed run looks like into the item. The internal-affairs page does this for its session commands.
+A run failed when its exit code is not 0 or when its output is not what the item says. A failed run is a fact for Blockers, and no claim rests on it. So write what a failed run looks like into the item.
 
 A role that re-reads a quoted output runs the same command again. Each quoted line must be in the new output.
 
@@ -90,33 +90,31 @@ A placeholder takes a value of its class and nothing else. The classes are in [e
 | `<name>`, `<d>` | `^[a-z][a-z0-9-]*$` |
 | `<utc>` | `^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}Z$` |
 | `<id>` | `^[A-Za-z0-9_-]{1,64}$` |
-| `<sha>` | `^[0-9a-f]{7,40}$` |
+| `<sha>` | `^(?!-)[A-Za-z0-9._/:+-]+$` |
 | `<path>` | `^[A-Za-z0-9._/-]+$`, no `..` segment, no leading `/` |
 
 ## Adding one
 
-The assembly offers a special department when it adds a precinct. The repository proposal holds an own-department row. The assembly explains the idea only when you ask.
-
 The summary names "Add a department" as the step after the constitution's pull request merges. The job reads `LAWMAN.md` from the main branch.
 
-The job asks where the department lives. Choose the place that is a page in the precinct's `.lawman/departments/`. [Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
+[Departments](departments.md#add-a-department) lists the steps and what the pull request holds. The assembly also runs `lint-page department` on the draft and fixes the reasons it prints.
 
 ## How the duty desk rotates it
 
-A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses. [Departments](departments.md#the-rotation) gives the rotation steps, the cap rule and the `Alarm check:` skip. A new special department has never been visited, so it comes first.
+A special department has no weight and no cap of its own. The weight belongs to the precinct, and the cap table is the one that every department uses. [Departments](departments.md#the-rotation) gives the rotation steps, the cap rule and the `Alarm check:` skip. A special department with no recorded visit comes first.
 
 ## Worked example: internal-affairs
 
 This repository's own page, [internal-affairs](../.lawman/departments/internal-affairs.md), is a special department. The constitution names it with the line `- internal-affairs: judged by none`.
 
-**What it watches.** The page judges the text of Lawman by what Lawman's roles did with it. Its evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their scheduled runs. The test asks whether a line of the law, a skill or the harness page causes or allows what a source command shows. The page lists five kinds: `exhibit-error`, `wrong-closure`, `template-misread`, `tick-turns` and `outcome-gap`.
+**What it watches.** The page judges the text of Lawman by what Lawman's roles did with it. Its evidence is the comments the roles left on trackers, the reports they stored in the journal and the turns of their runs. The test asks whether a line of the law, a skill or the harness page causes or allows what a source command shows. The page lists five kinds: `exhibit-error`, `wrong-closure`, `template-misread`, `tick-turns` and `outcome-gap`.
 
 **Why it is a special page.** Its evidence lies outside the clone. The page names the paths `skills/` and `journal/src/` and the tools `bin/journal`, `hermes`, `gh` and `git`. A shared page may not.
 
 **Its source commands.** They read five places:
 
 - The journal: `bin/journal tick list` in three forms, and `bin/journal precinct list`.
-- The scheduled sessions of the harness: `hermes sessions export`, to list, outline and slice a session.
+- The sessions of the harness: `hermes sessions export`, to list, outline and slice a session.
 - The trackers: `gh api` for the state of an issue and for the comments of the roles.
 - The clones of the precincts: numbered lines of a file at a commit.
 - The law clone: its reflog, to find the law commit that a tick ran under.
@@ -149,7 +147,7 @@ The checks catch little of this. `lint-page department` reads the frontmatter, t
 - [exhibits.md](../skills/lawman-law/references/exhibits.md): "Run a source" and "Source values".
 - [LAW.md](../skills/lawman-law/references/LAW.md): the evidence rules, the leak rule and the cap table.
 - [tick.md](../skills/lawman-law/references/tick.md): "Resolve the department page".
-- [duty desk](../skills/duty-desk/SKILL.md): steps 6 to 8 choose the department.
+- [duty desk](../journal/src/duty-desk.ts): the start of the duty desk tick chooses the department.
 - [precinct.md](../skills/assembly/references/precinct.md): "Add a department".
 - [lint.ts](../journal/src/lint.ts): the page check.
 - [lint-body.ts](../journal/src/lint-body.ts): the body check.

@@ -76,8 +76,8 @@ recorded answers):
   that is installed or published.
 - A version that is behind, and nothing more.
 
-File drift that changes what is installed or published. File a workaround, a
-detour or a promise of several lines, or of a whole step. When the best finding
+File drift that changes what is installed or published. File a workaround or
+a detour. File a promise of several lines, or of a whole step. When the best finding
 of the sweep is small, the correct output is no lead.
 
 ## Proof
@@ -135,8 +135,8 @@ Risk is the chance that the change breaks something.
 - Risk 5: the change alters what the automation installs or what a release
   publishes.
 
-Threshold: value 4 or more, and risk 3 or less, or a plan that splits the risk
-into steps a reviewer can take one at a time. Value 4 is the lowest that
+Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
+splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
 qualifies. It means a whole step or a whole detour, never a line. These numbers
 are a starting value, not measured.
 

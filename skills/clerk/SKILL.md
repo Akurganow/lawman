@@ -1,11 +1,11 @@
 ---
 name: clerk
-description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
+description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, decision, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
 ---
 
 # Clerk
 
-One tick takes one order on an issue and does the one job that `bin/journal case` names for it. The clerk is the only role that opens a pull request and the only role that writes the link from an issue to its pull request.
+One tick takes one order on an issue and does the one job that `bin/journal case` names for it. The clerk is the only role that opens a pull request. It is also the only role that writes the link from an issue to its pull request.
 
 The clerk reads and writes comments, pull requests and issue states. It writes one branch through a worktree that it removes at the end.
 
@@ -16,22 +16,24 @@ The clerk reads and writes comments, pull requests and issue states. It writes o
 - Never add or remove a reaction, and never edit a `Spec` comment.
 - One job per tick. An empty tick is a success. Silence is the default.
 
-The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's Tick outcomes section.
+The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `lawman/skills/lawman-law/references/tick.md` govern this skill. Obey them. Do not restate them. The outcome tokens come from the law's `LAW.md#role-clerk` and `LAW.md#one-tick-one-case-exit` sections.
 
 ## Working rules
 
-- In a clone, only bring it up to date, update its record of the host's default branch, read commits and file contents, add the tree of the tick, remove it and read whether the clone holds a change.
-- In the tree `runs/<tick id>/tree`, only record one commit, empty or holding `LAWMAN.md`, and publish the one branch of the open or precedent recipe.
-- Never change what a clone has checked out, discard a change, create or move a branch or tag other than that one branch, merge, set changes aside or publish another ref.
+- In a clone, only bring it up to date, update its record of the host's default branch, and read commits and file contents. In a clone, only add the tree of the tick, remove it and read whether the clone holds a change.
+- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents` and record one commit, empty or holding that folder. In the tree `runs/<tick id>/tree`, only publish the one branch of the open or precedent recipe.
+- Never change what a clone has checked out, discard a change, or create or move a branch or tag other than that one branch. Never merge, set changes aside or publish another ref.
 - Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
+- Read the place of the TypeSafe API key from the line `typesafe_key:` of `config.yaml`, only for the Jev requests of the precedent files.
+- Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the `jobs.md#write-the-precedent-files` section says. Send no other.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
-  - Read the issues, the pull requests, the writers and the last actor as the "Sync the tracker", "Sync the pull requests" and "Check the decider" sections of `tick.md` say.
+  - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections say.
   - Read the comments of an issue, and the state of an issue.
-  - Read one comment by its id, for the ruling body and the read-back.
-  - Read the state, the merge commit, the draft state and the body of a pull request, or fewer of these.
-  - Open a draft pull request with the fixed title and the fixed body.
-  - Open a pull request that is not a draft, with the fixed precedent title and body, for the precedent job only.
+  - Read one comment by its id, for the read-back.
+  - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
+  - Open a draft pull request with the title and the body of the open recipe.
+  - Open a pull request that is not a draft, with the title and the body of the precedent recipe, for the precedent job only.
   - Replace the body of a pull request with the fixed body only.
   - Return a pull request to draft, comment on a pull request, close a pull request and reopen one.
   - Comment on an issue, close an issue with the reason of its class and reopen an issue.
@@ -51,86 +53,82 @@ A value that reaches a command or a comment passes its check first. A failed che
 | `<owner/repo>` | The order's value. The journal checked it with `check("repo")` when the precinct was added. |
 | `<login>` | `trusted_login`. The journal runs `check("login")` in `sync` and `decider`. |
 | Issue, pull request and source numbers | Digits as `case` prints them. In a marker they match `^[1-9][0-9]*$`. A marker with any other number counts for nothing. |
-| Pull request link from the host's reply to an open | `^https://` and ends with the pull request number. |
+| Pull request link from the host's reply to an open, or from a read | `^https://` and ends with the pull request number. |
 | Pull request number from that reply | `^[1-9][0-9]*$`. |
 | Comment id | The id the host's reply gives, matching `^[1-9][0-9]*$`. |
 | Merge commit | `^[0-9a-f]{40}$`. It enters comment text only. |
 | Branch | The `branch` of `case`, which is built from integers. Never read the branch name from the host's pull request. |
 | Reaction | The clerk reads none. The journal compares reactions with two constants. |
-| Ruling, old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Old pull request body | The host reply goes to the journal unread. Never an argument. |
+| Name of an `ask` line | The name the journal printed in the line, passed to the journal unchanged. |
+| Jev reply | The service reply goes to the journal unread. Never an argument. |
+| Ruling URL | The URL of the ruling comment, as the host returned it. It passes the journal's link check. |
 | Comments | Stdin or a quoted heredoc only. Never an argument. |
 
 ## Tick
 
-Run steps 0 to 8 in order. Every started tick ends exactly once, at step 8. Items 3 to 6 of step 0 end the tick when they fail. Read `lawman/skills/lawman-law/references/tick.md` then, and end the tick as its "End the tick" section says.
+Run items 1 and 2 of step 0 once per session. Then run one tick for each order of the group, in turn. A tick runs from item 3 of step 0 to step 8, every step between included. The group lists at most as many orders as the role has runs of work. Read it once, apart from the second read that item 2 names. Every started tick ends exactly once, at step 8. A step that fails after the start ends the tick as the `tick.md#end-the-tick` section says. Its items 1 and 2 end each tick. After a tick, go on with the next order of the group. A tick that ends `stopped-*` ends the session. Its item 3, the answer, comes once, after the last tick of the session. It puts the `ALARM` lines of every tick first. The harness page is `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`.
 
-### Step 0: guards
+### Step 0: the input and the order
 
-1. Sync the law, then check the journal schema.
-   1. Sync the law as the section "Sync the law" of `lawman/skills/lawman-law/references/tick.md` says. A stop there is answered, not recorded, because no tick exists yet.
+1. Take the input. Run the role entry yourself when the turn starts with no part of a role group, whose first line starts with `lawman input`. Run it also when the input says that the entry failed, or when the entry exited non-zero with no output. When your own run exits non-zero with no output, answer `journal unavailable: <stderr>` and stop.
+   ```
+   bin/journal wake --role clerk
+   ```
+   Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   ```
+   bin/journal tick input --role clerk --part <k>
+   ```
+   A group without an `order` line means no work. Answer only the silence form of its `Silence` section, and stop.
+2. Sync the law, then check the journal schema.
+   1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 4
+      bin/journal probe --schema 11
       ```
-2. Start the tick. Keep the printed tick id. A non-zero exit: answer `journal unavailable: <stderr>` and stop.
+3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order to take. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
-   bin/journal tick start --role clerk
+   bin/journal tick start --role clerk --order <id>
    ```
-3. Read `law_commit` and `trusted_login` from `config.yaml`. Each is one `key: value` line. A missing file or key ends the tick with `failed`.
-4. Check the law folder. Read the commit that it holds and whether it has a local change. A commit that differs from `law_commit`, or a commit that cannot be read, ends the tick with `stopped-law-drift`. A local change in the folder, or a state that cannot be read, ends it with `stopped-dirty-law`.
-5. Check the identity. Ask the host which account the tool in the host notes acts as. A failed ask ends the tick with `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, ends it with `stopped-identity-changed`.
-6. Compute the alarms before any work. Never pass `--repeat`. Keep every `ALARM` line for the answer.
+   - `order <id> untakeable` alone means that no tick started. Start with the next order the same way. With no order left, the session is over: give the answer.
+   - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
+   - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=clerk tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
+   - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
+4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`.
+5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
-   bin/journal alarm
+   bin/journal tick input <tick id> --part <k>
    ```
 
-### Step 1: take an order
+### Step 1: the tip
 
-Take the oldest open order. The output is `id<TAB>precinct<TAB>repo<TAB>department<TAB>issue`.
+The `revision=` line gives the fetched commit. It is the tip, and `<ref>` is the tip.
 
-```
-bin/journal dispatch take --role clerk
-```
+### Step 2: the issue
 
-Empty output with exit 0 ends the tick with `silent`. Read no file. Send the report `No order.` to `tick end`. A failed `dispatch take`: read `lawman/skills/lawman-law/references/tick.md`, then end the tick with `failed`.
+The tick group prints issue `<n>` with its comments. With a line `self issue <n>`, read it from the host instead, as the host notes record, with its comments, every page. A failed read gives `stopped-issue-read`.
 
-```
-bin/journal tick end <tick id> --outcome silent <<'LAWMAN_<tick id>_0000000'
-No order.
-LAWMAN_<tick id>_0000000
-```
+### Step 3: the pull request
 
-`tick end` prints nothing, and exit 0 confirms the record. A failed `tick end`: answer `journal unavailable: <stderr>` and stop. Otherwise answer as item 3 of the "End the tick" section of `lawman/skills/lawman-law/references/tick.md` says.
+When the stage names a pull request in `pull`, the tick group prints it with its comments. With a line `self pull <m>`, read it from the host instead, as the host notes record, with its comments, every page. A failed read gives `stopped-issue-read`.
 
-With an order, read `lawman/skills/lawman-law/references/tick.md` and obey it for the whole tick. An order without an issue number ends the tick with `failed`. A failed command in this step ends the tick with `failed`, as the "End the tick" section of `tick.md` says.
+### Step 4: the stage
 
-### Step 2: fetch the precinct
+The `case` line is the stage, as the `tick.md#read-the-stage` section says. Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
 
-Run the "Fetch the precinct" section. The fetched commit is the tip, and `<ref>` is the tip.
+### Step 5: a stale order
 
-### Step 3: sync the tracker
-
-Run the "Sync the tracker" section.
-
-### Step 4: sync the pull requests
-
-Run the "Sync the pull requests" section.
-
-### Step 5: read the stage
-
-Run the "Read the stage" section.
-
-The order is stale unless `need` is `clerk`. `state` may be `OPEN` or `CLOSED`, and both are valid. A stale order ends the tick with `silent` and the report `Order stale: <the line>`.
-
-Keep `job`, `action`, `pull`, `sources`, `branch` and `state` of the line.
+The journal ends a stale order itself. After a self step `fetch`, `issues`, `pulls` or `stage`, the order is stale unless `need` is `clerk`. `state` may be `OPEN` or `CLOSED`, and both are valid. End a stale order with `silent` and the report `Order stale: <the line>`.
 
 ### Step 6: choose the recipe
 
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
-1. `job=state`: run the "Check the decider" section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
-2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author, the trusted login, can reopen a pull request.
-3. `job=adopt`, `settle`, `open` or `precedent`: run the recipe of that name.
+1. `job=state`: run the `tick.md#check-the-decider` section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
+2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author can reopen a pull request. The author is the trusted login.
+3. `job=adopt`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
 | `action` | Recipe |
 | :-- | :-- |
@@ -150,12 +148,13 @@ The outcome is the token below. After a failed step it is the token that the ste
 | Recipe | Outcome |
 | :-- | :-- |
 | **precedent** | `recorded` after an opened pull request and a read-back `entry` comment. `silent` after a read-back `no-entry` comment. |
+| **decision** | `settled` after a merge. `shut` after a close by a decider. `kept` after a close by anyone else. `silent` for an open pull request. |
 | **open**, **adopt**, **reopen**, **reopen-issue** | `handed` |
 | **close-pull** | `shut`. `silent` when the pull request is not open. |
 | **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
 | **kept** | `kept` |
 
-Run the "End the tick" section. The harness page names the silence form.
+Run the `tick.md#end-the-tick` section.
 
 ## Comment format
 
@@ -175,10 +174,13 @@ The precedent comment is written on the issue. Its sentence and marker:
 
 | Form | Sentence | Marker |
 | :-- | :-- | :-- |
-| Entry | `Precedent <number> is proposed in <pull request URL>. It takes effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry at=<UTC> -->` |
+| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> at=<UTC> -->` |
 | No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry at=<UTC> -->` |
+| Final, merged | `The owner merged <pull request URL>. The precedents are binding.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
+| Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
+| Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
 
-The pair comment is written on a source issue. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
+The pair comment is written on a source issue. The `kept` of the pair carries `issue`, the `kept` of a precedent pull request does not. Its marker is `<!-- lawman: role=clerk stage=<stage> pull=<m> issue=<open|closed> at=<UTC> -->`. `issue` is the state in which the clerk leaves the issue.
 
 | Stage | Sentence |
 | :-- | :-- |
@@ -193,9 +195,9 @@ A realistic entry comment:
 ````
 Clerk
 
-Precedent 3 is proposed in https://git.example.com/example/widgets/pull/31. It takes effect when the owner merges it.
+The precedents are proposed in https://git.example.com/example/widgets/pull/31. They take effect when the owner merges it.
 
-<!-- lawman: role=clerk stage=entry at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=entry pull=31 at=2026-10-16T10:45:00Z -->
 ````
 
 A realistic pair comment:
@@ -210,7 +212,7 @@ Pull request #31 carries this issue.
 
 Rules:
 
-- The no-entry reason goes to Blockers, never to the comment.
+- The reasons and the `drop` lines of the precedent output, `missing` included, go to Blockers, never to the comment.
 - Write no home path, no installation path, no token and no login.
 
 ## Report
@@ -220,7 +222,7 @@ Three lines:
 ```
 Coverage: <tip>, issue #<n>.
 Written: <comment, pull request and issue URLs, or the closures and reopenings with their reasons, or none>.
-Blockers: <tool, source or tracker errors, the stop token, the no-entry reason, any facts about evidence, the state of the clone>.
+Blockers: <tool, source or tracker errors, the stop token, the reasons of the precedent output, the drop lines, the jev none lines and their reasons, any facts about evidence, the state of the clone>.
 ```
 
-When the order is empty or stale, the report is the one line of step 1 or step 5.
+When the order is stale, the report is the one line of step 5.

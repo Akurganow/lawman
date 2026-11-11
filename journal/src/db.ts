@@ -10,8 +10,8 @@ export const EXIT = {
 	OK: 0,
 	USAGE: 1,
 	DUPLICATE_ORDER: 2,
-	SYNC_LIMIT: 3,
 	SYNC_INPUT: 4,
+	COMMAND: 5,
 	SCHEMA: 6,
 	LINT_BODY: 7,
 	LINT_PAGE: 8,
@@ -30,9 +30,6 @@ type Env = Record<string, string | undefined>;
 
 const BUSY_TIMEOUT_MS = 5000;
 export const MINUTE_MS = 60 * 1000;
-export const HOUR_MS = 60 * MINUTE_MS;
-export const CLAIM_TTL_MS = 24 * HOUR_MS;
-export const LEAD_PREFIX = "[Lead]";
 
 const envValue = (env: Env, name: string): string | undefined =>
 	env[name] || undefined;
@@ -93,7 +90,7 @@ function userVersion(db: Database): number {
 function tooNew(found: number): Fail {
 	return new Fail(
 		EXIT.SCHEMA,
-		`database schema ${found} is newer than this binary (${MIGRATIONS.length})`,
+		`database schema ${found} is newer than this binary's schema (${MIGRATIONS.length})`,
 	);
 }
 
@@ -187,7 +184,7 @@ export function requireSchema(needed: number): void {
 	if (needed > MIGRATIONS.length)
 		throw new Fail(
 			EXIT.SCHEMA,
-			`schema ${needed} is newer than this binary (${MIGRATIONS.length})`,
+			`schema ${needed} is newer than this binary's schema (${MIGRATIONS.length})`,
 		);
 }
 

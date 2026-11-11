@@ -25,7 +25,7 @@ describe("lint-page", () => {
 	};
 	const BROKEN = {
 		badDepartmentLine: VALID.replace("- docs-drift:", "- Docs_Drift:"),
-		badVersion: VALID.replace("contract_version: 3", "contract_version: 1"),
+		badVersion: VALID.replace("contract_version: 4", "contract_version: 1"),
 		dotdot: VALID.replace(
 			"- README.md\n",
 			"- README.md\n- ../outside/secrets.md\n",
@@ -35,8 +35,8 @@ describe("lint-page", () => {
 			"",
 		),
 		fencedHeading: VALID.replace(
-			/## Precedents\n[\s\S]*/,
-			"```markdown\n## Precedents\n\n- 2026-09-02 #1: hidden in a fence\n```\n",
+			/## Labels\n[\s\S]*/,
+			"```markdown\n## Labels\n\n- `x`: hidden in a fence\n```\n",
 		),
 		missingHeading: without(VALID, "## Fence"),
 	};
@@ -57,7 +57,7 @@ describe("lint-page", () => {
 	test("the constant heading lists equal the contract blocks", () => {
 		expect(CONSTITUTION_HEADINGS).toEqual(headingsOf("constitution.md"));
 		expect(DEPARTMENT_HEADINGS).toEqual(headingsOf("departments.md"));
-		expect(CONSTITUTION_HEADINGS).toHaveLength(9);
+		expect(CONSTITUTION_HEADINGS).toHaveLength(8);
 		expect(DEPARTMENT_HEADINGS).toHaveLength(9);
 	});
 
@@ -100,6 +100,11 @@ describe("lint-page", () => {
 		expectPagesPass(join(ROOT, ".lawman", "departments"));
 	});
 
+	test("an old Precedents section stays an owner section of version 4", () => {
+		const text = `${VALID}\n## Precedents\n\n- 2026-09-02 #1: An old rule. (https://git.example.com/o/r/issues/1)\n`;
+		expect(constitutionReasons(text)).toEqual([]);
+	});
+
 	test("a missing heading is named at the last line", () => {
 		expect(constitutionReasons(BROKEN.missingHeading)).toEqual([
 			`${lastLine(BROKEN.missingHeading)}: missing heading "Fence"`,
@@ -107,18 +112,18 @@ describe("lint-page", () => {
 	});
 
 	test("missing headings print in contract order", () => {
-		const text = without(without(VALID, "## Precedents"), "## Fence");
+		const text = without(without(VALID, "## Labels"), "## Fence");
 		const last = lastLine(text);
 		expect(constitutionReasons(text)).toEqual([
 			`${last}: missing heading "Fence"`,
-			`${last}: missing heading "Precedents"`,
+			`${last}: missing heading "Labels"`,
 		]);
 	});
 
 	test("a repeated heading is named at its own line", () => {
-		const text = `${VALID}\n## Precedents\n\nnone\n`;
+		const text = `${VALID}\n## Labels\n\nnone\n`;
 		expect(constitutionReasons(text)).toEqual([
-			`${lineOf(text, "## Precedents")}: repeated heading "Precedents"`,
+			`${lineOf(text, "## Labels")}: repeated heading "Labels"`,
 		]);
 	});
 
@@ -172,7 +177,7 @@ describe("lint-page", () => {
 		test("a failing page prints no note", () => {
 			const text = BROKEN.badVersion.concat("\n## contract_version notes\n");
 			const result = lintPage("constitution", text);
-			expect(result.reasons).toEqual(["2: contract_version must be 3"]);
+			expect(result.reasons).toEqual(["2: contract_version must be 4"]);
 			expect(result.notes).toBeUndefined();
 		});
 
@@ -188,14 +193,16 @@ describe("lint-page", () => {
 			expect(lintPage("constitution", VALID).notes).toBeUndefined();
 		});
 
-		test("a department page names each one as extra", () => {
+		test("a department page reads an extra heading as a note, empty or not", () => {
 			const text = DEPARTMENT.replace(
 				"## Identity",
 				"## Notes\nx\n## Identity",
-			).concat("## Tail\ny\n");
-			expect(lintPage("department", text).reasons).toEqual([
-				`${lineOf(text, "## Notes")}: extra heading "Notes"`,
-				`${lineOf(text, "## Tail")}: extra heading "Tail"`,
+			).concat("## Tail\n");
+			const result = lintPage("department", text);
+			expect(result.reasons).toEqual([]);
+			expect(result.notes).toEqual([
+				`# ${lineOf(text, "## Notes")}: unknown section "Notes"`,
+				`# ${lineOf(text, "## Tail")}: unknown section "Tail"`,
 			]);
 		});
 
@@ -213,7 +220,7 @@ describe("lint-page", () => {
 			"1: frontmatter missing or not closed",
 		]);
 		expect(
-			lintPage("constitution", `---\ncontract_version: 3\n${body}`).reasons,
+			lintPage("constitution", `---\ncontract_version: 4\n${body}`).reasons,
 		).toEqual(["1: frontmatter missing or not closed"]);
 		expect(
 			lintPage("constitution", `---\nother: 1\n---\n${body}`).reasons,
@@ -237,7 +244,7 @@ describe("lint-page", () => {
 
 	test("a heading inside a fence counts for neither the list nor a section", () => {
 		expect(constitutionReasons(BROKEN.fencedHeading)).toEqual([
-			`${lastLine(BROKEN.fencedHeading)}: missing heading "Precedents"`,
+			`${lastLine(BROKEN.fencedHeading)}: missing heading "Labels"`,
 		]);
 		const text = VALID.replace(
 			"## Fence\n",
@@ -267,7 +274,7 @@ describe("lint-page", () => {
 		const late = VALID.replace(
 			"# Constitution of example/widgets\n\n",
 			"",
-		).replace("## Precedents", "# Constitution of a/b\n## Precedents");
+		).replace("## Labels", "# Constitution of a/b\n## Labels");
 		expect(lintPage("constitution", late).reasons).toEqual([
 			'4: title line "# Constitution of <owner>/<repo>" missing',
 		]);
@@ -347,7 +354,7 @@ describe("lint-page", () => {
 		expect(
 			lintPage(
 				"department",
-				text.replace("contract_version: 1", "contract_version: 3"),
+				text.replace("contract_version: 1", "contract_version: 4"),
 			).reasons,
 		).toEqual(["3: contract_version must be 1"]);
 	});
@@ -415,7 +422,7 @@ describe("lint-page", () => {
 			const r = feed(["constitution"], BROKEN.badVersion);
 			expect(r).toEqual({
 				code: EXIT.LINT_PAGE,
-				out: "2: contract_version must be 3\n",
+				out: "2: contract_version must be 4\n",
 				err: "",
 			});
 		});

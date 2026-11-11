@@ -64,14 +64,16 @@ describe("parseMarker", () => {
 		).toBeNull();
 	});
 
-	test("a lead needs role patrol, department, id and a lowercase 40 hex sha", () => {
+	test("a lead needs role patrol, department, id and a revision as sha", () => {
 		expect(parseMarker(lead())).not.toBeNull();
 		expect(parseMarker(lead().replace("role=patrol", "role=judge"))).toBeNull();
 		expect(parseMarker(lead().replace(" department=core", ""))).toBeNull();
 		expect(parseMarker(lead().replace(` id=${LEAD_ID}`, ""))).toBeNull();
 		expect(parseMarker(lead().replace(` sha=${SHA}`, ""))).toBeNull();
-		expect(parseMarker(lead().replace(SHA, SHA.toUpperCase()))).toBeNull();
-		expect(parseMarker(lead().replace(SHA, SHA.slice(1)))).toBeNull();
+		for (const revision of ["r4521", "4521", SHA.toUpperCase(), "a".repeat(64)])
+			expect(parseMarker(lead().replace(SHA, revision))).not.toBeNull();
+		for (const revision of ["-x", "a--b", "a::b", "a'b"])
+			expect(parseMarker(lead().replace(SHA, revision))).toBeNull();
 	});
 
 	test("a response-unit lead is valid with department -, and no other role is", () => {
@@ -434,15 +436,18 @@ describe("law examples", () => {
 		expect(must(found[1]).fields).not.toHaveProperty("sha");
 	});
 
-	test("E14 and E15 are valid clerk markers without sha", () => {
+	test("E14, E15, E20 and E21 are valid clerk markers without sha", () => {
 		const lines = must(blocks[6]).split("\n");
-		expect(lines).toHaveLength(2);
+		expect(lines).toHaveLength(4);
 		const found = lines.map((l) => must(parseMarker(l)));
 		expect(found).toMatchObject([
-			{ role: "clerk", stage: "entry" },
+			{ role: "clerk", stage: "entry", fields: { pull: "7" } },
 			{ role: "clerk", stage: "no-entry" },
+			{ role: "clerk", stage: "final", fields: { pull: "7" } },
+			{ role: "clerk", stage: "kept", fields: { pull: "7" } },
 		]);
 		for (const marker of found) expect(marker.fields).not.toHaveProperty("sha");
+		expect(must(found[3]).fields).not.toHaveProperty("issue");
 	});
 
 	test("E16, E17 and E18 are valid response-unit markers", () => {

@@ -2,23 +2,32 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	cache,
 	closed,
+	due,
 	fields,
 	human,
+	issuesJson,
+	lined,
 	need,
 	needOnly,
 	pairMark,
 	put,
 	ruled,
 	type Spec,
+	T,
 	withLead,
 } from "./cases-fixture";
+import { pairs, run } from "./clerk-jobs-fixture";
 import {
 	acquittal,
 	addPrecincts,
+	BASE,
+	call,
 	caseMark,
 	charge,
 	conviction,
 	defence,
+	lead,
+	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -38,6 +47,8 @@ const jobOf = (n: number) => {
 	return JOBS.map((k) => f[k]).join(" ");
 };
 const tail = (n: number) => need(n).split(" ").slice(-9).join(" ");
+const pair = (stage: string, issue: string, pull = 5) =>
+	pairMark(stage, pull, issue);
 
 describe("case: the line of a clerk job", () => {
 	test("an open conviction prints the open job and its branch", () => {
@@ -48,14 +59,37 @@ describe("case: the line of a clerk job", () => {
 	});
 
 	test("an unanswered acquittal prints the precedent job", () => {
-		put({ 1: ruled(acquittal) });
-		expect(jobOf(1)).toBe("precedent - - - -");
+		put({ 1: ruled(lined(acquittal)) });
+		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
+	});
+
+	test("of two open precedent cases of one priority the older goes first", () => {
+		put({
+			1: { ...ruled(lined(acquittal)), createdAt: T(8) },
+			2: { ...ruled(lined(acquittal)), createdAt: T(7) },
+		});
+		expect(due("clerk")).toBe("main\t2\n");
 	});
 
 	test("a closed conviction gives no job and no clerk", () => {
 		put({ 1: closed(ruled(conviction)) });
 		expect(jobOf(1)).toBe("- - - - -");
 		expect(needOnly(1)).toBe("need=none");
+	});
+
+	// a marker row exists only for the trusted login, so only its comment is the ruling
+	test("a copy of the ruling marker by an outsider changes nothing", () => {
+		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
+		const asOutsider = (spec: Spec, at: number) => {
+			const form = JSON.parse(issuesJson({ 1: spec }));
+			form.issues[0].comments[at].author = { login: "outsider" };
+			call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
+			expect(jobOf(1)).toBe("- - - - -");
+		};
+		asOutsider(closed(ruled(conviction, copy)), 4);
+		// a ruling marker in the issue body has no comment, whoever comments first
+		const body = [lead(), caseMark(), charge(), defence(), conviction()];
+		asOutsider({ state: "CLOSED", body, comments: [[T(10), copy]] }, 0);
 	});
 
 	test("an open pull request of an open issue is adopted from any stage", () => {
@@ -127,7 +161,9 @@ describe("case: leaving the funnel", () => {
 	});
 
 	test("a pair after an acquittal leaves the funnel, even without a pull request", () => {
-		put({ 1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))) });
+		put({
+			1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))),
+		});
 		expect(needOnly(1)).toBe("need=none");
 	});
 
@@ -154,8 +190,6 @@ describe("case: leaving the funnel", () => {
 });
 
 describe("case: states of the pair", () => {
-	const pair = (stage: string, issue: string, pull = 5) =>
-		pairMark(stage, pull, issue);
 	const states = [
 		["handed", "open", "CLOSED", "state close-pull"],
 		["handed", "open", "OPEN", "- -"],
@@ -232,13 +266,6 @@ describe("case: states of the pair", () => {
 		expectJobs(steps);
 	});
 
-	test("kept issue=open over settled gives no job", () => {
-		put({
-			1: human("OPEN", pair("settled", "closed"), pair("kept", "open")),
-		});
-		expect(`${fields(1).job} ${fields(1).action}`).toBe("- -");
-	});
-
 	test("a pull request closed outside, reopened, merged: the next draft is -2", () => {
 		const shut = pair("shut", "closed");
 		const handed = pair("handed", "open");
@@ -258,4 +285,17 @@ describe("case: states of the pair", () => {
 		put({ 1: human("OPEN", handed, shut, handed, settled) });
 		expect(jobOf(1)).toBe("state open 5 - lawman/execute-1-2");
 	});
+});
+
+test("kept issue=open over settled gives no job", () => {
+	// case
+	put({
+		1: human("OPEN", pair("settled", "closed"), pair("kept", "open")),
+	});
+	expect(`${fields(1).job} ${fields(1).action}`).toBe("- -");
+	// clerk jobs
+	const r = run({
+		markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
+	});
+	expect(r.job).toBe("-");
 });

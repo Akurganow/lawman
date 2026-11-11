@@ -9,17 +9,18 @@ This reference sets up the scheduled job of each role. It follows the shape of e
 - New job: a role in `<scope>` without a job. The run creates it.
 - Edit: a role in `<scope>` with a job. Only the menu job has these. The run edits the job.
 - `<S>`: the start time of the duty desk, in the harness's time zone.
-- `<scripts directory>`: the directory for gate files. Derive it with the command that the harness page names under "Run gate".
+- Entry file: the entry of a role. The harness page gives its place, its name and its form under "Role entry", with the placeholders of that form.
+- Monitor mode: the old mode of a job, when the page names one under "Editing a job". The list shows it as the page describes. A page that names no old mode has no job in monitor mode.
 
 ## Rules
 
 - Take every harness command, flag and fact from the harness page. Never guess one. Name no harness and no vendor. The one exception to the ban on guessing is the means that verifies a model name in part Models.
-- Read the page by subsection name under its scheduling section. The names are "Editing a job", "Schedule forms and time zone", "Models", "Paused jobs", "Run gate" and "Order and overlap".
+- Read the page by subsection name under its scheduling section. The names are "Editing a job", "Schedule forms and time zone", "Models", "Paused jobs", "Role entry", "One-off run" and "Order and overlap".
 - Skip the effort level when the page names none.
-- When the page names no run gate, drop the part Gates, "Write and prove", every gate flag and the Gate column.
-- Run each command as this reference writes it. Never start a shell or an interpreter with `-c`. Never feed a heredoc to a shell. Scheduled runs refuse those forms.
-- Create and edit jobs in this interactive session only, because scheduled sessions cannot do it.
-- The tiers, the plans, the clock order and the gate recommendation are advice. The developer may override each one.
+- When the page names no role entry, drop the part Role entry, "Write and prove", every entry flag and the Entry column. A new job is then created without an entry file, and the role calls its entry itself.
+- Run each command as this reference writes it. Never start a shell or an interpreter with `-c`. Never feed a heredoc to a shell. The commands of this reference avoid these forms, because a harness may refuse them. The page names the cause for its harness.
+- Create and edit jobs in this interactive session only. The page gives the cause for its harness.
+- The tiers, the plans and the clock order are advice. The developer may override each one. The entry is no advice: every job gets it, and the developer is asked nothing about its mode.
 - The sections "Command forms" and "Create or edit" use two words for answers. A keep answer is the choice "Keep as is". A default answer is the choice "Use the harness default".
 
 Before the first part, stop if "Schedule forms and time zone" names no schedule form, and tell the developer the page lacks one.
@@ -28,9 +29,9 @@ Before the first part, stop if "Schedule forms and time zone" names no schedule 
 
 One table holds the defaults of every role, in clock order. The roles form that table, never a list of choices. Each part below shows its columns of it as the proposal.
 
-| Role | Tier | Model | Days | Economy | Start | Gate |
+| Role | Tier | Model | Days | Economy | Start | Entry |
 | :-- | :-- | :-- | :-- | :-- | :-- | :-- |
-| Duty desk | light | harness default | daily | daily | +0 | no |
+| Duty desk | light | harness default | daily | daily | +0 | yes |
 | Executor | strong | harness default | daily | Monday | +15 | yes |
 | Spec writer | medium | harness default | daily | Friday | +30 | yes |
 | Clerk | light | harness default | daily | daily | +45 | yes |
@@ -44,7 +45,7 @@ One table holds the defaults of every role, in clock order. The roles form that 
 - Start is the number of minutes after `<S>`. The create commands run in the order of this table.
 - Mark each value shown with its source: found, current, default, recommended or yours.
 - One role changes by an edit of its row.
-- The duty desk never gets a gate.
+- Every role gets an entry file, the duty desk included. The entry of the duty desk is never empty.
 
 ## Part Models
 
@@ -53,11 +54,11 @@ One table holds the defaults of every role, in clock order. The roles form that 
 - The default model and provider of scheduled jobs, as "Models" gives them. An unset value shows as unset.
 - The providers that hold a credential, by name only.
 - The effort levels, when "Models" names them.
-- On a rerun, the model that each job uses. When "Editing a job" says the job list shows no model, the models in use stay unknown.
+- On a rerun, the model, provider and effort of each job, from the place the page names. Where it names none, they stay unknown.
 
 When "Models" names no way to read the default, say so. Then ask for model names only, with no provider and no effort.
 
-**Proposes.** Send the Role, Tier and Model columns of the defaults table. Put every role on the harness default. State that one model serves all roles. Name the default model and the providers found. On a rerun, show the model of each job as "as set".
+**Proposes.** Send the Role, Tier and Model columns of the defaults table. Put every role on the harness default. State that one model serves all roles. Name the default model and the providers found. When "Models" names a condition on the window of a model, state it in one line with the models offered, and reject no model. On a rerun, show the model, provider and effort of each job as current, or as unknown.
 
 **Decides.** Ask in the question tool. Give the meaning of the tiers in the question, in one line: light runs fixed commands, medium reads and writes text, strong decides.
 
@@ -92,7 +93,7 @@ Why: the model sets the quality and the cost of every run.
 
 **Finds.**
 
-- The time zone, as "Schedule forms and time zone" gives it.
+- The time zone, as "Schedule forms and time zone" gives it. When the page names no way to read it, ask the developer in the question tool. Offer the machine's zone, shown by the shell, as the first option.
 - The schedule of each existing job, and the plan it matches.
 - The start time of the existing duty desk job, when one exists.
 
@@ -106,7 +107,7 @@ Why: the model sets the quality and the cost of every run.
 4. In the menu, put the choice "Keep as is" first, and move the recommendation to it.
 5. Take a new start time or one role's days as a typed edit of the proposal.
 
-Why: a role takes one case per run, so its days set the speed and the cost.
+Why: a run takes up to its role's number of jobs (`jobs` in `config.yaml`, see `docs/configuration.md`), so its days set the speed and the cost.
 
 **Never.**
 
@@ -115,101 +116,145 @@ Why: a role takes one case per run, so its days set the speed and the cost.
 
 Compute the interval of each role by "Interval by form". Record it by "Create or edit". Ask nothing about it.
 
-## Part Gates
+## Part Role entry
 
 **Finds.**
 
-- The scripts directory, shown as a path.
-- Each gate file, marked by "Gate file marks".
-- The roles that gain from a gate: every role but the duty desk.
-- In the menu, the gate of each job, by "Gate read and clear".
+- The place of the entries and their names, as "Role entry" gives them. Show a path when the page gives one. Derive a place with the command the page names, when it names one.
+- Each entry file that "Entry file marks" names, with its mark.
+- In the menu, the mode of each job, by "Entry mode".
 
-**Proposes.** Send the Role and Gate columns of the defaults table, with the mark of each gate file. Propose the recommended set. The duty desk never gets a gate.
+**Proposes.** Send the Role and Entry columns of the defaults table, with the mark of each entry file. Each new job gets the entry file in the mode that the page names for new jobs. Each job to translate appears as a translation to that mode. The proposal says that Apply checks the conditions of "Translation" before it changes the job. A failed condition leaves the job as it is.
 
-**Decides.**
+**Decides.** Ask nothing here. The developer cannot judge the modes. Take a typed edit of the proposal, such as leaving one job untranslated.
 
-1. In install, ask nothing here. Take an edit of the Gate column as a typed edit of the proposal.
-2. In the roles mode, ask in the question tool, and offer the choice "All but the duty desk" as the recommendation, and the choice "None".
-3. In the menu, offer the choices "Keep as is", "All but the duty desk" and "None", with "Keep as is" first as the recommendation.
-4. Refuse the duty desk, and ask again.
-
-Why: an empty run costs a short session.
-
-**Shows.** The content of each different file, before Apply.
+Why: the entry file starts a role with its input already in place, and a role with no work costs no session.
 
 **Never.**
 
 - Overwrite a different file that the developer has not seen.
-- Gate the duty desk.
+- Translate a job when a condition of "Translation" fails.
+- Change a mode silently.
+
+## Part Limits
+
+Install and the menu job run this part. The roles mode skips it.
+
+**Finds.**
+
+- The keys `input_chars`, `jobs` and `progress_checks` in `config.yaml`, when they exist.
+- The size of a part that the page names under "Role entry". The page may name none.
+- The table of jobs in "Jobs and progress checks" of `lawman/docs/configuration.md`. It holds nine roles and no duty desk.
+
+**Proposes.** Send the size of a part when the page names one, as found on the page, or current when the key exists. Show the values of `jobs` and `progress_checks`, each as current or default. The default of `progress_checks` is 3.
+
+**Decides.** Ask nothing. Take a change as a typed edit of the proposal. A value that is not a whole number above zero is asked again.
+
+**Writes.** The install reference writes the keys with `config.yaml`. The menu job writes them into the existing `config.yaml` in Apply.
+
+- Write `input_chars` when the page names a size and the key is absent. A key that exists is shown as current and is never overwritten.
+- Write `jobs` and `progress_checks` only when the developer changed the value. An answer equal to the value in force writes nothing, because `law-sync` fills the defaults itself.
+- Write `jobs` as one line of nine pairs, in the order of the table.
+
+**Never.**
+
+- Ask about the size of a part.
+- Write a value the developer did not change.
 
 ## Apply
 
-The gate files sit outside the installation, so the approval names them.
+Where the page puts the entry files outside the installation, the approval names them.
 
-1. Build every create or edit command with "Command forms".
-2. List `<scripts directory>`, each file with its mark, and each job to create or edit, with its model when known.
-3. Show the content of each different file.
-4. Ask for one approval. Ask in the question tool, and offer apply and change.
-5. After approval, run "Write and prove".
-6. Then run "Create or edit".
+1. When the page's "Installing the plugin" names a Lawman agent for the jobs, find the agent. Its working folder is `<installation>`. Find it by the list form of that section. Use its id in the commands. When none is found, the approval carries the page's lines for a new agent, with a name that no agent uses yet.
+2. Build every create or edit command with "Command forms".
+3. List each entry file with its place and its mark, and each job to create or edit, with its model when known. Name each job to translate, with its change to the entry mode of the page. Name the keys that part Limits writes, with their values.
+4. Show the content of each different file.
+5. Say each of these only where the page's "Role entry" says it. A job keeps a copy of the entry. Editing the entry file does not change the copy. The entry first runs at a scheduled slot. A failure shows in the run history. A manual run skips the entry.
+6. When the approval carries the lines of a new agent, say three things. A job has no folder of its own. Creating the agent changes the harness settings. The installation gains the start-context files that the page names.
+7. Ask for one approval. Ask in the question tool, and offer apply and change.
+8. After approval, when the approval carried the lines of a new agent, wait for the developer to run them and to say so. Then find the agent again. When none is found, stop and name the lines.
+9. Then run "Write and prove".
+10. Then run "Create or edit".
+11. In the menu job, then write the keys of part Limits.
 
 Write no file that carries the mark identical.
 
 ## Day forms
 
 1. Take the form from the free text of "Custom". The forms are every day, chosen weekdays with the days named, or one day of the month from 1 to 28. In the menu job, also accept `keep`.
-2. Accept no form that runs more often than daily.
+2. Accept no form that runs more often than the shortest form.
 
 ## Interval by form
 
 1. Set the interval by the form. Every day: 1440. Chosen weekdays: the longest gap between two chosen days, counted cyclically, in days times 1440. One day of the month: 44640. One weekday gives 10080, and Monday and Thursday give 5760.
 
-## Gate read and clear
+## Entry mode
 
-1. In the menu job, read each job's gate from the `Monitor:` line of the list command's output.
-2. In the menu job, mark a role for clearing when it has a gate and the answer leaves it out. Clear it with the page's clear form.
+1. In the menu job, read each job's mode. Take it from the output of the list command or of the page's read form for one job, as the page's "Editing a job" describes. Where the page names an old mode, a job the list marks with it is in monitor mode. A job with an entry and no mark of the old mode has the entry mode that the page names for new jobs. A job with neither has no entry.
+2. Read the mark of the old mode only to find a job to translate.
+3. A job with no entry stays as it is, unless "Translation" takes it.
 
-## Gate file marks
+## Translation
 
-1. For each gated role in `<scope>`, read `<scripts directory>/lawman-<role>.sh` when it exists. Mark the file new when it is missing, identical when it holds the gate file form under "Run gate" of the harness page, and different otherwise.
+Translate a job in monitor mode when all three conditions hold. A job with no entry joins it when the page names a form that gives an entry to a job that has none.
+
+1. The journal is of the new version. The probe of step 1 in "Write and prove" exits with zero. The command `--version` does not tell the versions apart. When the probe fails, the journal is older than the law. Say that, name one run of a role, which updates the journal. The harness page gives its form under "Running a role once". Change no job.
+2. The entry file is in place and proven. A new or different file passed "Write and prove". A file marked identical is not written again: its run proved it when it was written, and the probe covers the new journal.
+3. The developer approved the change in Apply, which named the job and its change.
+
+Translate with the page's translation form for one job id, in one call. A job with no entry takes the page's form that gives an entry to a job that has none. The call sets the entry file and clears the monitor together. It changes no schedule, skill, model, delivery or pause. When the harness refuses, stop, show its message, and say that the job stays as it was. Use no other way and change no harness setting.
+
+## Entry file marks
+
+1. For each role whose job is new, read its entry file at the place and by the name that "Role entry" gives, when it exists. Do the same for a role whose job is to translate. Where the page says that a job keeps its own copy of the entry, also read that copy for every role that has a job. Use the form the page gives. The copy counts as the entry file. Mark the entry file new when it is missing. Mark it identical when it holds the entry file form under "Role entry" of the harness page. Otherwise mark it different.
+2. Offer the rewrite of a different copy in every pass, by the page's edit form for the entry. The approval shows the text. Rewrite no copy that the approval did not name.
 
 ## Command forms
 
-1. A create command is this line, with the page's create form:
+1. A create command is the page's create form. The job it makes carries these, and the page gives the flag of each and their order:
 
-```
-<create command from the page> "<cron expression>" "<Role name> tick." --name "[lawman] <role>" --skill <role skill name> --workdir "<installation>" --deliver <deliver from config.yaml>
-```
+- the name `[lawman] <role>`;
+- the schedule from item 3, with the time zone where the page's create form takes one;
+- the tick text `<Role name> tick.`, with the words that the page's create form adds on the role's skill;
+- the role's skill `<role skill name>`, where the page binds one;
+- the installation, by the working folder or by the agent of "Apply";
+- the pause, by item 5;
+- the model, provider and effort, by item 4;
+- the delivery, as `deliver` in `config.yaml` gives it;
+- the entry, by item 5.
 
 2. `<Role name>` is the role folder name with hyphens as spaces and a capital first letter. Every job name carries the prefix `[lawman] `.
 3. Build `<cron expression>` from the forms in "Schedule forms and time zone". The minute and the hour are `<S>` plus the role's minutes. Every day keeps the day fields open. Chosen weekdays fill the weekday field. A day of the month fills the day field.
 4. Add the model, provider and effort flags that the page names for each answer other than `default`.
-5. The create line gains `--monitor-script lawman-<role>.sh` for a gated role and `--paused` while no precinct has a weight. An edit adds `--monitor-script lawman-<role>.sh`, or `--monitor-script ''` to clear a gate.
+5. The create line gains the entry as the page's create form takes it, for every role. It gains the page's paused form while no precinct has a weight. An edit never touches the entry, except in two ways. One is the page's translation form of "Translation", or its form that gives an entry to a job that has none. The other is the page's edit form for a copy that "Entry file marks" names and the approval showed.
 6. Count the precincts with a weight above zero: run `bin/journal precinct list`, and read the third field of each line.
-7. When `typesafe` is `yes` in `config.yaml`, run the skill listing command the page gives. When it shows `typesafe-ai`, add `--skill typesafe-ai` to the court's create line.
-8. An edit command is the page's edit form for one job id, from the list command. Pass `--schedule "<cron expression>"` for a changed schedule. Omit the flag of every `keep` answer. For `default`, pass the page's clear form of the flag.
+7. When `typesafe` is `yes` in `config.yaml`, run the skill listing command the page gives. When it shows `typesafe-ai`, attach it to the court's create line by the form the page gives for a skill. When the page gives no such form, add nothing.
+8. An edit command is the page's edit form for one job id, from the list command. Pass the page's schedule flag with `<cron expression>` for a changed schedule. Omit the flag of every `keep` answer. For `default`, pass the page's clear form of the flag.
 9. Skip the edit of a role with nothing to change.
+10. An edit that only translates a job changes no schedule.
 
 ## Write and prove
 
-Skip this step when no file is new or different. A gate file asks the journal whether the role has an order it can take now, and it ends with the journal's exit status.
+Run step 1 whenever a file is new or different, or a job will be translated. Run steps 2 and 3 only when a file is new or different. An entry file asks the journal whether the role has an order it can take now, and it fails when the journal fails.
 
-1. Run `bin/journal probe --schema 6`. Stop if it exits non-zero, and tell the developer to run one role once, then run the assembly again.
-2. For each new or different file, write and run the gate file by the form that the harness page gives under "Run gate". Replace the placeholders.
-3. Show the output of each run.
-4. Stop at the first non-zero exit, name the file, and show its output.
+1. Run `bin/journal probe --schema <n>`. Read the number on the lines of `probe --schema` in the skills of the roles, take the largest, and keep no copy of it. Stop if it exits non-zero, and tell the developer to run one role once, then run the assembly again. Change no job.
+2. For each new or different file, write and run the entry file by the form that the harness page gives under "Role entry". Replace the placeholders. Where the page has the job hold the entry as text, write that text to a temporary file in `runs/` of the installation. Never use a heredoc to a shell. Then run the journal command that the text calls. The file stays until "Create or edit" has used it.
+3. Stop at the first non-zero exit, name the file, and show its output. Remove each temporary entry file before you stop.
 
 ## Create or edit
 
-1. Run each create or edit command of "Command forms" for the roles in `<scope>`, in the clock order of the defaults table.
-2. Stop at the first failure, show its message, and tell the developer to run the assembly again.
-3. After a command succeeds, run `bin/journal role set <role> --every <minutes>`. Skip it for a role with a `keep` schedule.
+1. Run each create or edit command of "Command forms" for the roles in `<scope>`, in the clock order of the defaults table. Run each translation of "Translation" in the same order.
+2. Stop at the first failure, show its message, and tell the developer to run the assembly again. Remove each temporary entry file before you stop.
+3. After a command succeeds, run `bin/journal role set <role> --every <minutes>`. Skip it for a role with a `keep` schedule, and for a translation.
 4. When `role set` fails, stop, name the command, and tell the developer to run it by hand.
-5. When the court's create fails with `--skill typesafe-ai`, create the court job without it. Then show the add-skill command that "Editing a job" gives, with the court's job id and `typesafe-ai`.
+5. When the court's create fails with the skill attached, create the court job without it. Then show the add-skill form that "Editing a job" gives, with the court's job id and `typesafe-ai`. Skip this item when the page gives no such form.
 6. List the jobs again with the list command the page gives, and stop if a job is missing.
+7. Remove each temporary entry file of "Write and prove", on every outcome.
 
 ## Finish
 
-1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say that a job created paused first runs at its next slot. The page's "Paused jobs" gives the resume form.
-2. Name every file written outside the installation, with its path. Say that this assembly never deletes them.
-3. List the jobs that changed and what changed.
+1. Name the jobs still paused, if any, and the job that resumes them: "Raise a weight" under "Precincts". Say what the page's "Paused jobs" gives for the first run of a job created paused, with the mark that the page puts on it. The page gives the resume form.
+2. Name every file written outside the installation, with its path, where the page puts any there. Say that this assembly never deletes them.
+3. List the jobs that changed and what changed. Name each job that was translated.
+4. Name each job to translate that was left as it is, and say why. Where the page names an old mode, say that a job in monitor mode keeps the cut and the extra run that the page's "Role entry" names for monitor mode. That holds until the Roles part translates it.
+5. Where the page's "Role entry" says that a manual run skips the entry, say that a manual run skips it.

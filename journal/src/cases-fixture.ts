@@ -1,10 +1,12 @@
 import { expect } from "bun:test";
-import { inproc } from "./inproc";
+import { open } from "./db";
+import { dueEntries } from "./due";
 import {
 	BASE,
 	call,
 	caseMark,
 	charge,
+	dbFile,
 	defence,
 	issuesForm,
 	lead,
@@ -30,7 +32,8 @@ export type Spec = {
 export const T = (hour: number) =>
 	`2026-10-14T${String(hour).padStart(2, "0")}:00:00Z`;
 
-export function put(specs: Record<number, Spec>, precinct = "main") {
+// the issues form that sync reads, for the given issues
+export function issuesJson(specs: Record<number, Spec>): string {
 	const data = Object.entries(specs).map(([n, s]) => ({
 		number: Number(n),
 		state: s.state ?? "OPEN",
@@ -50,10 +53,14 @@ export function put(specs: Record<number, Spec>, precinct = "main") {
 			}),
 		),
 	}));
+	return JSON.stringify(issuesForm(data, [TRUSTED]));
+}
+
+export function put(specs: Record<number, Spec>, precinct = "main") {
 	const r = call(
 		BASE,
 		["sync", precinct, "--author", TRUSTED],
-		JSON.stringify(issuesForm(data, [TRUSTED])),
+		issuesJson(specs),
 	);
 	expect(r.code).toBe(0);
 }
@@ -111,6 +118,10 @@ export function cache(...pulls: [number, number[], string?][]) {
 export const ruled = (ruling: () => string, ...rest: string[]) =>
 	withLead(caseMark(), charge(), defence(), ruling(), ...rest);
 
+// a ruling with a Precedent line, so the clerk has a precedent to record
+export const lined = (ruling: () => string) => () =>
+	`## Precedent\n\n- new gate: A rule.\n\n${ruling()}`;
+
 export const referral = () => mark("court", "referral", ` sha=${SHA}`);
 
 export const answer = (n: number, value: string, id = "-", name = "main") =>
@@ -137,23 +148,16 @@ export function expectRoundKept(spec: Spec) {
 	]);
 }
 
-export function dueOut(
-	run: (args: string[]) => { code: number; out: string },
-	role: string,
-	exclude: string[],
-): string {
-	const r = run([
-		"due",
-		"--role",
-		role,
-		...exclude.flatMap((p) => ["--exclude", p]),
-	]);
-	expect(r.code).toBe(0);
-	return r.out;
+// The first case or pull request the role is due on, as the duty desk would order it first.
+export function due(role: string): string {
+	const db = open(dbFile);
+	try {
+		const first = dueEntries(db, role)[0];
+		return first === undefined ? "" : `${first.precinct}\t${first.number}\n`;
+	} finally {
+		db.close();
+	}
 }
-
-export const dueIn = (role: string, ...exclude: string[]) =>
-	dueOut((args) => inproc(BASE, args), role, exclude);
 
 export const order = (role: string, issue: number, at: string, open = false) =>
 	seed((db) =>

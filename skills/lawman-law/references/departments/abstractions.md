@@ -148,11 +148,11 @@ that defines the unit. List each with its short hash, date, subject and changed
 file names. Find the commit that last changed the lines around its
 last use. Take no search string from the tree. Quote the
 commit that removed the last caller. Say whether the unit was ever wired in or
-was cut loose, because the two need different remedies.
+was cut loose.
 
 **What counts as a caller.** Take the rule from the judging document. An
-interface that runs ahead of its caller is not kept alive by its own tests, by
-examples that ship with it, or by a binary built from it.
+interface that is used without its caller is not kept alive by its own tests.
+Nor is it kept alive by examples that ship with it, or by a binary built from it.
 
 **Name the symptom.** Put the objection in the design vocabulary's words. An
 objection with no symptom is withdrawn.
@@ -177,8 +177,8 @@ Risk is the chance that the removal breaks something.
   release job, a name that other packages import, or a script that a package
   installs on a user's machine.
 
-Threshold: value 4 or more, and risk 3 or less, or a plan that splits the risk
-into steps a reviewer can take one at a time. Value 4 is the lowest that
+Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
+splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
 qualifies. It means a whole unit, never a part of one. These numbers are a
 starting value, not measured.
 

@@ -1,5 +1,5 @@
 ---
-contract_version: 3
+contract_version: 4
 ---
 
 # Contract of the constitution
@@ -8,13 +8,13 @@ contract_version: 3
 
 A constitution holds what is true of one repository and of no other.
 Each repository Lawman patrols carries one, as `LAWMAN.md` at its root.
-The assembly writes a draft once. The owner reviews it. Later amendments come from the owner and from court rulings.
+The assembly writes a draft once. The owner reviews it. Later amendments come from the owner, and from the assembly when the contract version moves.
 A constitution points at files by path. It never restates them.
 
 ## File shape
 
-The file starts with frontmatter that holds `contract_version: 3`. Next comes the title line `# Constitution of <owner>/<repo>`.
-Then come the nine `##` headings listed below, once each, in any order. Any other `##` heading is a note in the margin.
+The file starts with frontmatter that holds `contract_version: 4`. Next comes the title line `# Constitution of <owner>/<repo>`.
+Then come the eight `##` headings listed below, once each, in any order. Any other `##` heading is a note in the margin.
 A section with nothing to say holds the single word `none`.
 
 ## Headings
@@ -29,9 +29,8 @@ A section with nothing to say holds the single word `none`.
 - Execution
 - Executor loads
 - Labels
-- Precedents
 
-## The nine sections
+## The eight sections
 
 ### Read first
 
@@ -53,7 +52,7 @@ A line names a department of this repository. It may also name the document that
 The name matches `[a-z][a-z0-9-]*`. The path is the document that judges the department's findings.
 `none` means no document judges it yet.
 
-The name `licenses` joins a rotation by either test only under two conditions. It resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
+The name `licenses` joins a rotation by either test only under two conditions. One is that the name resolves to Lawman's page. The key `license_precincts` of the installation holds the whole token `<precinct>=yes`. A page of the precinct or of the installation needs no such token. A missing key or a missing pair reads as "no".
 
 ### Fence
 
@@ -86,11 +85,26 @@ The labels of the repository that mean something to a person or to a role, as th
 
 The mark `(owner attention)` stands right after the label's closing backtick. It names the label that tells a person an issue waits for them. The court applies that label to a requirement it refers to a decider. It removes the label before it convicts or acquits a requirement. When no line or more than one line carries the mark, it applies and removes no label. No role acts on a line without the mark. Those lines are reference for people. The check reads no label line and checks no mark. A section with no label holds `none`.
 
-### Precedents
+## Precedent files
 
-Settled questions. One per line: `- <YYYY-MM-DD> #<n>: <ruling>`.
-A line from a court ruling ends with a link to the ruling comment, in parentheses: `- <YYYY-MM-DD> #<n>: <ruling> (<link to the ruling comment>)`. An owner's amendment line may have no link.
-A court ruling carries a line in the form above, without its number and without its link. The clerk assigns the number, adds the link and opens a pull request. The number is one more than the highest in the section, and the first is 1. The owner merges the pull request. Numbers never repeat.
+A precedent is a file. It lives in `.lawman/precedents/<name>.md` in the repository. The file name without `.md` is the precedent's name.
+Only direct files of that folder are precedents. A role reads no subfolder.
+
+The name matches `[A-Za-z0-9][A-Za-z0-9._-]*` and holds no `/`.
+The file opens with frontmatter between two `---` lines. The rule text follows it.
+
+| Field | Value | Required |
+| :-- | :-- | :-- |
+| `kind` | `protects` or `condemns` | yes |
+| `departments` | list of department names; an empty list means all departments | yes |
+| `issue` | issue number | no |
+| `date` | `YYYY-MM-DD` | yes |
+| `ruling` | link to the ruling comment | no |
+
+The owner writes an owner's precedent by hand. Its name is free of the court's `<date>-<gist>` form. It may carry no `issue` and no `ruling`.
+A court ruling adds, refines or cancels a precedent through the clerk's pull request. The owner merges that pull request.
+A field beyond the five stays in the file. A role ignores it.
+An old `## Precedents` section of `LAWMAN.md` is a note in the margin.
 
 ## Notes in the margin
 
@@ -100,7 +114,7 @@ An unknown section holds the owner's notes in the margin. A role may read it as 
 
 The check rejects a file in which a listed heading is missing or stands more than once. It checks the order of no heading. It does not read the body of an unknown section. It prints each unknown section as a note line. The roles ignore a note line, and the assembly shows it to the owner.
 
-The section `## Licenses` is the one exception. It holds three lines, `reaches`, `use` and `sources`, and a role reads them as data. The contract version stays 3. The check does not read the section and prints it as a plain note. A role cites a line as `LAWMAN.md:<line>`.
+The section `## Licenses` is the one exception. It holds three lines, `reaches`, `use` and `sources`, and a role reads them as data. The check does not read the section and prints it as a plain note. A role cites a line as `LAWMAN.md:<line>`.
 
 ## Path rules
 
@@ -122,7 +136,7 @@ The `Not judged` section says `none`.
 
 ````markdown
 ---
-contract_version: 3
+contract_version: 4
 ---
 
 # Constitution of example/widgets
@@ -167,9 +181,4 @@ none
 ## Labels
 
 - `needs-human` (owner attention): Lawman cannot decide this issue alone. A person decides on it.
-
-## Precedents
-
-- 2026-09-02 #1: The legacy adapter in src/compat stays. Two released versions still call it. (https://git.example.com/example/widgets/issues/7#comment-1048576301)
-- 2026-09-20 #2: Duplicate fixtures under test/data are accepted debt. Each test file owns its copy.
 ````

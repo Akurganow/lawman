@@ -1,3 +1,5 @@
+import { REVISION } from "./args";
+
 export type Fields = {
 	role: string;
 	stage: string;
@@ -33,7 +35,6 @@ const MARKER_LINE = new RegExp(
 export const NAME = /^[a-z][a-z0-9-]*$/;
 const STAMP = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z$/;
 const POSITIVE = /^[1-9][0-9]*$/;
-const SHA_HEX = /^[0-9a-f]{40}$/;
 const ID_SAFE_BYTE = /[A-Za-z0-9._/-]/;
 const ID_PART = /^(?:[A-Za-z0-9._/-]|%[0-9A-F]{2})+$/;
 const ID_PARTS = 3;
@@ -139,7 +140,7 @@ function validLead(f: Record<string, string>): boolean {
 		LEAD_ROLES.includes(f.role ?? "") &&
 		f.department !== undefined &&
 		f.id !== undefined &&
-		matches(SHA_HEX, f.sha) &&
+		matches(REVISION, f.sha) &&
 		(f.of === undefined || POSITIVE.test(f.of))
 	);
 }
@@ -257,7 +258,7 @@ export function extractMarkers(
 	return found;
 }
 
-const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
+export const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 export function collectIssueMarkers(issue: GhIssue, trustedLogin: string) {
 	const comments = [...issue.comments].sort((a, b) =>

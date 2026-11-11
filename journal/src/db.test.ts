@@ -19,8 +19,8 @@ describe("exit codes", () => {
 			OK: 0,
 			USAGE: 1,
 			DUPLICATE_ORDER: 2,
-			SYNC_LIMIT: 3,
 			SYNC_INPUT: 4,
+			COMMAND: 5,
 			SCHEMA: 6,
 			LINT_BODY: 7,
 			LINT_PAGE: 8,
@@ -139,6 +139,10 @@ describe("open", () => {
 				spec: "up",
 				work: "todo",
 				spec_id: "-",
+				body: "",
+				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		expect(() =>
@@ -167,6 +171,10 @@ describe("open", () => {
 				spec: "up",
 				work: "todo",
 				spec_id: "-",
+				body: "",
+				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		db.run(
@@ -184,7 +192,7 @@ describe("open", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT * FROM roles").all()).toEqual([
-			{ name: "patrol", every_minutes: 30, checked_at: null },
+			{ name: "patrol", every_minutes: 30, checked_at: null, checks: 0 },
 		]);
 		db.close();
 	});
@@ -192,8 +200,7 @@ describe("open", () => {
 	test("migration 7 keeps the issues of a schema 6 database and adds empty answer and answer_id", () => {
 		seedSchema(6);
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(7);
-		expect(MIGRATIONS.length).toBe(7);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(
 			db.query("SELECT issue, title, answer, answer_id FROM issues").all(),
 		).toEqual([{ issue: 7, title: "t", answer: null, answer_id: null }]);
@@ -223,6 +230,121 @@ describe("open", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		db.close();
 	});
+
+	test("migration 8 keeps every row of a schema 7 database and adds empty texts", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 7)) old.run(sql);
+		old.run("PRAGMA user_version = 7");
+		for (const sql of [
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
+			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
+			"INSERT INTO dispatches (at, precinct, role, issue) VALUES ('t', 'p', 'patrol', 7)",
+			"INSERT INTO ticks (role, precinct, started_at, outcome, report) VALUES ('patrol', 'p', 't', 'silent', 'r')",
+			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('k', 'r', 'd', 't', 't')",
+			"INSERT INTO pauses (started_at) VALUES ('t')",
+			"INSERT INTO issues (precinct, issue, state, title, created_at, replied_at, answer, answer_id) VALUES ('p', 7, 'OPEN', 't', 'c', 'r', 'up', 'IC_1')",
+			"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('p', 7, 'o', 'patrol', 'lead', '{}', 'raw')",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id) VALUES ('p', 3, '7', 'up', 'ready', 'IC_2')",
+		])
+			old.run(sql);
+		const before = Object.fromEntries(
+			tables(old).map((t) => [t, old.query(`SELECT * FROM ${t}`).all()]),
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
+		const added: Record<string, object> = {
+			issues: { body: "", url: null, raw_sha: null, withheld: 0 },
+			pulls: { body: "", url: null, raw_sha: null, withheld: 0 },
+			ticks: { dispatch: null, parts: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
+			roles: { checks: 0 },
+		};
+		for (const [table, list] of Object.entries(before)) {
+			expect(list).toHaveLength(1);
+			const after = db.query(`SELECT * FROM ${table}`).all();
+			expect(after).toEqual(
+				list.map((row) => ({ ...(row as object), ...added[table] })),
+			);
+		}
+		expect(db.query("SELECT * FROM comments").all()).toEqual([]);
+		db.close();
+	});
+});
+
+describe("migration 9", () => {
+	test("keeps every row of a schema 8 database and adds no order and no parts to its ticks", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 8)) old.run(sql);
+		old.run("PRAGMA user_version = 8");
+		for (const sql of [
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
+			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
+			"INSERT INTO dispatches (at, precinct, role, issue, taken_at) VALUES ('t', 'p', 'patrol', 7, 't')",
+			"INSERT INTO ticks (role, precinct, department, started_at, ended_at, outcome, report) VALUES ('patrol', 'p', 'core', 't', 'e', 'silent', 'r')",
+			"INSERT INTO ticks (role, started_at) VALUES ('clerk', 't')",
+			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('k', 'r', 'd', 't', 't')",
+			"INSERT INTO pauses (started_at) VALUES ('t')",
+			"INSERT INTO issues (precinct, issue, state, title, created_at, replied_at, answer, answer_id, body) VALUES ('p', 7, 'OPEN', 't', 'c', 'r', 'up', 'IC_1', 'b')",
+			"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('p', 7, 'o', 'patrol', 'lead', '{}', 'raw')",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body) VALUES ('p', 3, '7', 'up', 'ready', 'IC_2', 'b')",
+			"INSERT INTO comments (precinct, kind, number, id, author, at, body) VALUES ('p', 'issue', 7, 'IC_1', 'a', 't', 'b')",
+		])
+			old.run(sql);
+		const before = Object.fromEntries(
+			tables(old).map((t) => [t, old.query(`SELECT * FROM ${t}`).all()]),
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
+		const added: Record<string, object> = {
+			ticks: { dispatch: null, parts: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
+			roles: { checks: 0 },
+			issues: { url: null, raw_sha: null, withheld: 0 },
+			pulls: { url: null, raw_sha: null, withheld: 0 },
+			comments: { raw_sha: null, withheld: 0 },
+		};
+		for (const [table, list] of Object.entries(before)) {
+			expect(list.length).toBeGreaterThan(0);
+			expect(db.query(`SELECT * FROM ${table}`).all()).toEqual(
+				list.map((row) => ({ ...(row as object), ...added[table] })),
+			);
+		}
+		db.close();
+	});
+});
+
+describe("migration 10", () => {
+	test("keeps every row of a schema 9 database and adds no pull sync time and no checks", () => {
+		const old = new Database(dbFile);
+		for (const sql of MIGRATIONS.slice(0, 9)) old.run(sql);
+		old.run("PRAGMA user_version = 9");
+		old.run(
+			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
+		);
+		old.run(
+			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
+		);
+		old.close();
+		const db = open(dbFile);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
+		expect(db.query("SELECT * FROM precincts").all()).toEqual([
+			{
+				name: "p",
+				repo: "o/p",
+				weight: 2,
+				credit: 1,
+				synced_at: "t",
+				pulls_synced_at: null,
+				constitution_cause: null,
+			},
+		]);
+		expect(db.query("SELECT * FROM roles").all()).toEqual([
+			{ name: "patrol", every_minutes: 30, checked_at: "t", checks: 0 },
+		]);
+		db.close();
+	});
 });
 
 describe("probe", () => {
@@ -241,12 +363,16 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "11"]).code).toBe(0);
+		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
+		expect(cli(["probe", "--schema", "9"]).code).toBe(0);
+		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "7"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "6"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "8"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "12"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

@@ -12,6 +12,7 @@ import {
 import { join, resolve } from "node:path";
 import { parseArgs, usage } from "./args";
 import { EXIT, Fail, out, requireSchema } from "./db";
+import { jobsLine, PROGRESS_CHECKS } from "./settings";
 
 const USAGE = "law-sync --tag <tag> --commit <commit> --installation <folder>";
 const TAG = /^[A-Za-z0-9._-]+$/;
@@ -36,11 +37,11 @@ type Default = [key: string, value: (config: string) => string];
 
 const lineOf = (key: string) => new RegExp(`^${key}:[ \\t]*(.*)$`, "m");
 
-function configValue(text: string, key: string): string | undefined {
+export function configValue(text: string, key: string): string | undefined {
 	return text.match(lineOf(key))?.[1]?.trim() || undefined;
 }
 
-// The defaults of this release, in the order the config receives them.
+// The shipped defaults, in the order the config receives them.
 // A later release adds its own keys here. The values read the config before the rewrite.
 const DEFAULTS: Default[] = [
 	[
@@ -49,6 +50,8 @@ const DEFAULTS: Default[] = [
 			configValue(config, "typesafe") === "yes" ? TYPESAFE_ENVIRONMENT : ABSENT,
 	],
 	["amended_law_commit", (config) => configValue(config, "law_commit") ?? ""],
+	["jobs", jobsLine],
+	["progress_checks", () => String(PROGRESS_CHECKS)],
 ];
 
 function rewriteConfig(config: string, release: Release): string {

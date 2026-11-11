@@ -6,14 +6,31 @@ const PATTERNS = {
 	department: /^[a-z][a-z0-9-]*$/,
 	repo: /^(?!(?:.*\/)?\.{1,2}(?:\/|$))[A-Za-z0-9._-]+(?:\/[A-Za-z0-9._-]+)+$/,
 	login: /^[A-Za-z0-9_][A-Za-z0-9._-]*$/,
+	revision: /^(?!-)[A-Za-z0-9._/:+-]+$/,
+	path: /^(?![/-])(?!(?:.*\/)?\.\.(?:\/|$))[A-Za-z0-9._/-]+$/,
+	number: /^[1-9][0-9]*$/,
+	precedent: /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
 	outcome:
 		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|defended|refuted|convicted|acquitted|recorded|admitted|asked|handed|shut|settled|kept|specified|out|executed|referred|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
 
+export const fits = (kind: keyof typeof PATTERNS, value: string) =>
+	PATTERNS[kind].test(value);
+
 export function check(kind: keyof typeof PATTERNS, value: string): string {
-	if (!PATTERNS[kind].test(value)) {
+	if (!fits(kind, value)) {
 		throw new Fail(EXIT.USAGE, `invalid ${kind}: ${JSON.stringify(value)}`);
 	}
+	return value;
+}
+
+export const REVISION = PATTERNS.revision;
+
+// a local file or another scheme never reaches a command
+export function checkLink(value: string): string {
+	const scheme = URL.parse(value)?.protocol;
+	if (/[\s\p{Cc}]/u.test(value) || (scheme !== "https:" && scheme !== "http:"))
+		throw new Fail(EXIT.USAGE, `invalid link: ${JSON.stringify(value)}`);
 	return value;
 }
 
@@ -21,21 +38,22 @@ export function usage(text: string): Fail {
 	return new Fail(EXIT.USAGE, `usage: journal ${text}`);
 }
 
-// --exclude repeats, which parseArgs does not allow
-export function splitExcluded(
-	args: string[],
-	text: string,
-): { excluded: string[]; rest: string[] } {
-	const excluded: string[] = [];
-	const rest: string[] = [];
-	for (let i = 0; i < args.length; i += 2) {
-		const [flag, value] = [args[i], args[i + 1]];
-		if (flag !== "--exclude") rest.push(...args.slice(i, i + 2));
-		else if (value === undefined) throw usage(text);
-		else excluded.push(check("precinct", value));
-	}
-	return { excluded, rest };
+// the number of `--part <k>`: 1 when the option is absent, a usage error when it is no count from 1
+export function parsePart(
+	given: string | undefined,
+	usageText: string,
+): number {
+	if (given === undefined) return 1;
+	if (!fits("number", given) || !Number.isSafeInteger(Number(given)))
+		throw usage(usageText);
+	return Number(given);
 }
+
+export const partOutOfRange = (k: number, parts: number) =>
+	new Fail(
+		EXIT.USAGE,
+		`part ${k} is out of range; there ${parts === 1 ? "is 1 part" : `are ${parts} parts`}`,
+	);
 
 type Parsed<P extends 0 | 1, N extends string, O extends string> = {
 	pos: P extends 1 ? [string] : [];

@@ -1,14 +1,16 @@
+import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { rmSync } from "node:fs";
-import { now, open } from "./db";
-import { pickNext } from "./precincts";
+import { open } from "./db";
+import { takeableOrders, takeOrder } from "./dispatch";
+import { creditVisit } from "./precincts";
 import {
 	addPrecincts,
-	cli,
 	dbFile,
 	must,
 	order,
 	run,
+	seed,
 	tempDb,
 } from "./test-helpers";
 
@@ -29,7 +31,22 @@ function tally(picks: (string | undefined)[]): Record<string, number> {
 }
 
 const START_MS = Date.parse("2026-03-01T00:00:00Z");
+const iso = (ms: number) => new Date(ms).toISOString().replace(".000Z", "Z");
+const START = iso(START_MS);
 const UNEVEN_STEP_SECONDS = (i: number) => ((i * 7919) % 100003) + 1;
+
+// One patrol take as the start does it; the closed order is replaced by a new one on the precinct.
+function visit(db: Database, stamp: string): string | undefined {
+	const first = takeableOrders(db, "patrol")[0];
+	if (first === undefined) return undefined;
+	takeOrder(db, "patrol", first.id, stamp);
+	db.run(
+		"UPDATE dispatches SET outcome = 'silent', closed_at = ? WHERE id = ?",
+		[stamp, first.id],
+	);
+	order(db, first.precinct, "patrol", { at: stamp });
+	return first.precinct;
+}
 
 function cycles(
 	weights: Record<string, number>,
@@ -43,19 +60,13 @@ function cycles(
 			`o/${name}`,
 			weight,
 		]);
+		order(db, name, "patrol", { at: START });
 	}
 	const picks: string[] = [];
 	let ms = START_MS;
 	for (let i = 0; i < count; i++) {
 		ms += stepSeconds(i) * 1000;
-		const clock = { LAWMAN_DB: "x", LAWMAN_NOW: new Date(ms).toISOString() };
-		const pick = must(pickNext(db, "patrol"));
-		picks.push(pick.name);
-		order(db, pick.name, "patrol", { at: now(clock) });
-		db.run(
-			"UPDATE dispatches SET outcome = 'silent', closed_at = ? WHERE outcome IS NULL",
-			[now(clock)],
-		);
+		picks.push(String(visit(db, iso(ms))));
 	}
 	db.close();
 	return picks;
@@ -109,8 +120,6 @@ describe("precinct and role commands", () => {
 			["role", "set", "patrol", "--every", "1.5"],
 			["role", "set", "Patrol", "--every", "5"],
 			["role", "set", "patrol"],
-			["next"],
-			["next", "--role", "Bad"],
 		];
 		for (const args of bad) expect([args, run(args).code]).toEqual([args, 1]);
 	});
@@ -140,7 +149,7 @@ describe("precinct and role commands", () => {
 
 	test("precinct set updates weight and resets every credit to 0", () => {
 		addPrecincts({ a: 2, b: 1 });
-		run(["next", "--role", "patrol"]);
+		seed((db) => creditVisit(db, ["a", "b"], "a"));
 		expect(Object.values(credits()).some((c) => c !== 0)).toBe(true);
 		expect(run(["precinct", "set", "b", "--weight", "7"]).code).toBe(0);
 		expect(credits()).toEqual({ a: 0, b: 0 });
@@ -148,19 +157,22 @@ describe("precinct and role commands", () => {
 	});
 });
 
-describe("next", () => {
-	test("prints name and repo separated by a tab, nothing when no precinct is admitted", () => {
-		expect(run(["next", "--role", "patrol"])).toMatchObject({
-			code: 0,
-			out: "",
-		});
+describe("the patrol take", () => {
+	const takeable = () => {
+		const db = open(dbFile);
+		const names = takeableOrders(db, "patrol").map((o) => o.precinct);
+		db.close();
+		return names;
+	};
+
+	test("a precinct of weight 0 and an empty journal have no takeable patrol order", () => {
+		expect(takeable()).toEqual([]);
 		addPrecincts({ idle: 0 });
-		expect(run(["next", "--role", "patrol"])).toMatchObject({
-			code: 0,
-			out: "",
-		});
+		seed((db) => order(db, "idle", "patrol"));
+		expect(takeable()).toEqual([]);
 		addPrecincts({ busy: 1 });
-		expect(run(["next", "--role", "patrol"]).out).toBe("busy\to/busy\n");
+		seed((db) => order(db, "busy", "patrol"));
+		expect(takeable()).toEqual(["busy"]);
 	});
 
 	test("weights 4/3/2: the first nine picks hold each precinct 4, 3 and 2 times", () => {
@@ -168,137 +180,86 @@ describe("next", () => {
 		expect(tally(picks)).toEqual({ a: 4, b: 3, c: 2 });
 	});
 
-	test.each([
-		["4/3/2", { a: 4, b: 3, c: 2 }, 900, { a: 400, b: 300, c: 200 }],
-		["5/3/2", { a: 5, b: 3, c: 2 }, 1000, { a: 500, b: 300, c: 200 }],
-	])(
-		"weights %s over the given cycles keep their shares and ignore the clock",
-		(_label, weights, count, shares) => {
-			const frozen = cycles(weights, count, () => 0);
-			expect(tally(frozen)).toEqual(shares);
-			rmSync(dbFile);
-			const advancing = cycles(weights, count, UNEVEN_STEP_SECONDS);
-			expect(advancing).toEqual(frozen);
-		},
-		60_000,
-	);
-
-	test("the command line gives the same nine picks under a frozen and an advancing LAWMAN_NOW", () => {
-		const sequence = (nowFor: (i: number) => string) => {
-			addPrecincts({ a: 4, b: 3, c: 2 });
-			const db = open(dbFile);
-			const picks: string[] = [];
-			for (let i = 0; i < 9; i++) {
-				const r = cli(["next", "--role", "patrol"], {
-					LAWMAN_DB: dbFile,
-					LAWMAN_NOW: nowFor(i),
-				});
-				const name = must(r.out.split("\t")[0]);
-				picks.push(name);
-				order(db, name, "patrol");
-				db.run(
-					"UPDATE dispatches SET outcome = 'silent' WHERE outcome IS NULL",
-				);
-			}
-			db.close();
-			rmSync(dbFile);
-			return picks;
-		};
-		const frozen = sequence(() => "2026-03-01T00:00:00Z");
-		const advancing = sequence((i) =>
-			new Date(
-				START_MS + UNEVEN_STEP_SECONDS(i) * 1000 * (i + 1),
-			).toISOString(),
-		);
-		expect(tally(frozen)).toEqual({ a: 4, b: 3, c: 2 });
-		expect(advancing).toEqual(frozen);
+	test("the first takeable order is the precinct with the most credit plus weight", () => {
+		const db = open(dbFile);
+		for (const [name, weight] of [
+			["a", 4],
+			["b", 3],
+			["c", 2],
+		] as const) {
+			db.run("INSERT INTO precincts (name, repo, weight) VALUES (?, ?, ?)", [
+				name,
+				`o/${name}`,
+				weight,
+			]);
+			order(db, name, "patrol");
+		}
+		const picks = [];
+		for (let i = 0; i < 3; i++) picks.push(visit(db, START));
+		db.close();
+		expect(picks).toEqual(["a", "b", "c"]);
 	});
+
+	test("weights 5/3/2 over 1000 cycles keep their shares and ignore the clock", () => {
+		const weights = { a: 5, b: 3, c: 2 };
+		const frozen = cycles(weights, 1000, () => 0);
+		expect(tally(frozen)).toEqual({ a: 500, b: 300, c: 200 });
+		rmSync(dbFile);
+		expect(cycles(weights, 1000, UNEVEN_STEP_SECONDS)).toEqual(frozen);
+	}, 60_000);
 
 	test("weight 0 is never picked", () => {
 		const picks = cycles({ a: 1, z: 0, b: 1 }, 50, () => 1);
 		expect(picks).not.toContain("z");
 	});
 
-	test("a precinct with an open order of this role is skipped and the others move as if it were absent", () => {
+	test("a precinct with a taken patrol order is admitted and untaken orders come first", () => {
 		addPrecincts({ a: 3, b: 2, c: 1 });
 		const db = open(dbFile);
-		order(db, "a", "patrol");
-		for (let i = 0; i < 4; i++) run(["next", "--role", "patrol"]);
-		const withOrder = credits();
-		db.close();
-		rmSync(dbFile);
-		addPrecincts({ b: 2, c: 1 });
-		for (let i = 0; i < 4; i++) run(["next", "--role", "patrol"]);
-		const absent = credits();
-		expect(withOrder).toEqual({ a: 0, ...absent });
+		try {
+			order(db, "a", "patrol", { takenAt: START });
+			order(db, "b", "patrol");
+			order(db, "c", "patrol");
+			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
+				"b",
+				"c",
+				"a",
+			]);
+			const first = must(takeableOrders(db, "patrol")[0]);
+			takeOrder(db, "patrol", first.id, START);
+		} finally {
+			db.close();
+		}
+		// every admitted precinct gains its weight, the taken one loses the sum
+		expect(credits()).toEqual({ a: 3, b: -4, c: 1 });
 	});
 
 	test("an open order of another role does not exclude the precinct", () => {
 		addPrecincts({ a: 1 });
-		const db = open(dbFile);
-		order(db, "a", "duty-desk");
-		db.close();
-		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
+		seed((db) => {
+			order(db, "a", "duty-desk", { takenAt: START });
+			order(db, "a", "patrol");
+		});
+		expect(takeable()).toEqual(["a"]);
 	});
 
-	test("an open order for an issue does not exclude the precinct", () => {
+	test("an open order for an issue is takeable", () => {
 		addPrecincts({ a: 1 });
-		const db = open(dbFile);
-		order(db, "a", "patrol", { issue: 5 });
-		db.close();
-		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
+		seed((db) => order(db, "a", "patrol", { issue: 5 }));
+		expect(takeable()).toEqual(["a"]);
 	});
 
 	test("ties go to the smaller name", () => {
 		addPrecincts({ b: 1, a: 1 });
-		expect(run(["next", "--role", "patrol"]).out).toBe("a\to/a\n");
-	});
-});
-
-describe("next --exclude", () => {
-	const next = (...excluded: string[]) =>
-		run([
-			"next",
-			"--role",
-			"patrol",
-			...excluded.flatMap((name) => ["--exclude", name]),
-		]);
-
-	test("an excluded precinct is skipped", () => {
-		addPrecincts({ a: 1, b: 1 });
-		expect(next("a").out).toBe("b\to/b\n");
+		seed((db) => {
+			order(db, "b", "patrol");
+			order(db, "a", "patrol");
+		});
+		expect(takeable()).toEqual(["a", "b"]);
 	});
 
-	test("the flag repeats", () => {
-		addPrecincts({ a: 1, b: 1, c: 1 });
-		expect(next("a", "b").out).toBe("c\to/c\n");
-	});
-
-	test("all precincts excluded prints nothing and changes no credit", () => {
-		addPrecincts({ a: 3, b: 1 });
-		expect(next("a", "b")).toMatchObject({ code: 0, out: "" });
-		expect(credits()).toEqual({ a: 0, b: 0 });
-	});
-
-	test("an excluded precinct gets no credit change", () => {
-		addPrecincts({ a: 3, b: 2, c: 1 });
-		expect(next("a").out).toBe("b\to/b\n");
-		expect(credits()).toEqual({ a: 0, b: -1, c: 1 });
-	});
-
-	test("a name that is no precinct changes nothing", () => {
+	test("the next command is a usage error", () => {
 		addPrecincts({ a: 1 });
-		expect(next("ghost").out).toBe("a\to/a\n");
-	});
-
-	test("a flag without a value or with a bad name exits 1", () => {
-		addPrecincts({ a: 1 });
-		for (const args of [
-			["next", "--role", "patrol", "--exclude"],
-			["next", "--role", "patrol", "--exclude", "Bad"],
-			["next", "--role", "patrol", "--bogus", "a"],
-		])
-			expect([args, run(args).code]).toEqual([args, 1]);
-		expect(credits()).toEqual({ a: 0 });
+		expect(run(["next", "--role", "patrol"]).code).toBe(1);
 	});
 });

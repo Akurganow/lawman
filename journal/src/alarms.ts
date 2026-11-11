@@ -1,78 +1,51 @@
 import type { Database } from "bun:sqlite";
 import { usage } from "./args";
-import {
-	CLAIM_TTL_MS,
-	HOUR_MS,
-	inTransaction,
-	isoSeconds,
-	LEAD_ORIGIN_FROM,
-	LEAD_PREFIX,
-	MINUTE_MS,
-	now,
-	out,
-	withDb,
-} from "./db";
+import { awaitingDecision, clerkMarkersOf } from "./clerk-jobs";
+import { type Lack, lackText } from "./constitution";
+import { LEAD_ORIGIN_FROM, MINUTE_MS, out, withDb } from "./db";
+import { readConfig } from "./input-files";
+import { configValue } from "./law-sync";
+import { type Subject, urlOf } from "./link";
+import { byText } from "./markers";
 import { isHanded, sourceMarkers } from "./pull-stage";
+import { progressChecks } from "./settings";
 
-const ORDER_UNTAKEN_MS = 48 * HOUR_MS;
-const ORDER_INTERVAL_GRACE_MS = 24 * HOUR_MS;
-const TICK_HUNG_MS = 2 * HOUR_MS;
 const ROLE_SILENT_INTERVALS = 3;
 const TICK_FAILING_RUN = 3;
-const ALARM_REPEAT_MS = 24 * HOUR_MS;
+const NO_PROGRESS = "checks found a takeable order and the role took none";
 
 type Candidate = { kind: string; ref: string; detail: string };
 function ageMs(nowMs: number, since: string): number {
 	return nowMs - Date.parse(since);
 }
 
-function orderUntaken(db: Database, nowMs: number): Candidate[] {
-	const open = db
-		.query(
-			`SELECT d.id, d.precinct, d.role, d.at, d.taken_at, r.every_minutes
-       FROM dispatches d LEFT JOIN roles r ON r.name = d.role
-       WHERE d.outcome IS NULL`,
-		)
-		.all() as {
-		id: number;
-		precinct: string;
-		role: string;
-		at: string;
-		taken_at: string | null;
-		every_minutes: number | null;
-	}[];
-	const limit = (o: {
-		taken_at: string | null;
-		every_minutes: number | null;
-	}) =>
-		Math.max(
-			ORDER_UNTAKEN_MS,
-			(o.every_minutes ?? 0) * MINUTE_MS + ORDER_INTERVAL_GRACE_MS,
-		) + (o.taken_at === null ? 0 : CLAIM_TTL_MS);
-	return open
-		.filter((o) => ageMs(nowMs, o.taken_at ?? o.at) > limit(o))
-		.map((o) => ({
-			kind: "order-untaken",
-			ref: String(o.id),
-			detail: `${o.precinct} ${o.role} ordered ${o.at}`,
-		}));
+function noProgress(db: Database): Candidate[] {
+	const n = progressChecks(configValue(readConfig() ?? "", "progress_checks"));
+	const stuck = db
+		.query("SELECT name FROM roles WHERE checks >= ? ORDER BY name")
+		.all(n) as { name: string }[];
+	return stuck.map((r) => ({
+		kind: "no-progress",
+		ref: r.name,
+		detail: NO_PROGRESS,
+	}));
 }
 
-function tickHung(db: Database, nowMs: number): Candidate[] {
-	const open = db
-		.query("SELECT id, role, started_at FROM ticks WHERE ended_at IS NULL")
-		.all() as {
-		id: number;
-		role: string;
-		started_at: string;
-	}[];
-	return open
-		.filter((t) => ageMs(nowMs, t.started_at) > TICK_HUNG_MS)
-		.map((t) => ({
-			kind: "tick-hung",
-			ref: String(t.id),
-			detail: `${t.role} started ${t.started_at}`,
-		}));
+// a tick is dead when it has no end record and a later tick of its role exists
+function tickHung(db: Database): Candidate[] {
+	const dead = db
+		.query(
+			`SELECT t.id, t.role, t.started_at FROM ticks t
+       WHERE t.ended_at IS NULL
+         AND EXISTS (SELECT 1 FROM ticks l WHERE l.role = t.role AND l.id > t.id)
+       ORDER BY t.id`,
+		)
+		.all() as { id: number; role: string; started_at: string }[];
+	return dead.map((t) => ({
+		kind: "tick-hung",
+		ref: String(t.id),
+		detail: `${t.role} started ${t.started_at}`,
+	}));
 }
 
 function roleSilent(db: Database, nowMs: number): Candidate[] {
@@ -116,7 +89,7 @@ function tickFailing(db: Database): Candidate[] {
 			`WITH ranked AS (
          SELECT role, COALESCE(precinct, '-') AS precinct, outcome,
                 ROW_NUMBER() OVER (PARTITION BY role, COALESCE(precinct, '-') ORDER BY ended_at DESC, id DESC) AS n
-         FROM ticks WHERE ended_at IS NOT NULL)
+         FROM ticks WHERE ended_at IS NOT NULL AND (precinct IS NOT NULL OR role = 'duty-desk'))
        SELECT role, precinct FROM ranked WHERE n <= ${TICK_FAILING_RUN}
        GROUP BY role, precinct
        HAVING count(*) = ${TICK_FAILING_RUN}
@@ -131,25 +104,61 @@ function tickFailing(db: Database): Candidate[] {
 	}));
 }
 
-function brokenLead(db: Database): Candidate[] {
-	const broken = db
+// the duty desk records the cause at each read of a precinct
+function noConstitution(db: Database): Candidate[] {
+	const rows = db
 		.query(
-			`SELECT precinct, issue FROM issues i
-       WHERE substr(title, 1, ${LEAD_PREFIX.length}) = '${LEAD_PREFIX}' AND state = 'OPEN'
-         AND NOT EXISTS (
-           SELECT 1 FROM markers m WHERE m.precinct = i.precinct AND m.issue = i.issue AND m.stage = 'lead')
-       ORDER BY precinct, issue`,
+			"SELECT name, constitution_cause AS cause FROM precincts WHERE weight > 0 AND constitution_cause IS NOT NULL ORDER BY name",
 		)
-		.all() as { precinct: string; issue: number }[];
-	return broken.map((b) => ({
-		kind: "broken-lead",
-		ref: `${b.precinct}#${b.issue}`,
-		detail: `title starts with ${LEAD_PREFIX} but no lead marker`,
+		.all() as { name: string; cause: string }[];
+	return rows.map((r) => ({
+		kind: "no-constitution",
+		ref: r.name,
+		detail: lackText(r.cause as Lack),
 	}));
+}
+
+// How many texts the cache withholds on a precinct, and the first of them with their links.
+const NAMED = 3;
+const COMMENT_ID = /^[A-Za-z0-9_=-]+$/;
+function withheldTexts(db: Database): Candidate[] {
+	const precincts = db
+		.query("SELECT name FROM precincts WHERE weight > 0 ORDER BY name")
+		.all() as { name: string }[];
+	return precincts.flatMap(({ name }) => {
+		const found = db
+			.query(
+				`SELECT 'issue' AS kind, issue AS number, NULL AS id FROM issues WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT 'pull', number, NULL FROM pulls WHERE precinct = ?1 AND withheld = 1
+         UNION ALL SELECT kind, number, id FROM comments WHERE precinct = ?1 AND withheld = 1
+         ORDER BY 2, 1, 3`,
+			)
+			.all(name) as { kind: Subject; number: number; id: string | null }[];
+		if (found.length === 0) return [];
+		const named = found.slice(0, NAMED).map((t) => {
+			const url = urlOf(db, name, t.kind, t.number);
+			const what =
+				t.id === null
+					? `${t.kind} #${t.number}`
+					: `comment ${COMMENT_ID.test(t.id) ? `${t.id} ` : ""}on ${t.kind} #${t.number}`;
+			return url === null ? what : `${what} ${url}`;
+		});
+		const more =
+			found.length > NAMED ? `, and ${found.length - NAMED} more` : "";
+		return [
+			{
+				kind: "withheld-text",
+				ref: name,
+				detail: `${found.length} text${found.length === 1 ? " is" : "s are"} withheld, because the journal could not clean ${found.length === 1 ? "it" : "them"}: ${named.join("; ")}${more}. Edit or delete each on the host.`,
+			},
+		];
+	});
 }
 
 const WAITS_FOR_REVIEW = "pull request waits for a review of its finished work";
 const WAITS_FOR_VOTE = "pull request waits for a vote on its newest spec";
+const WAITS_FOR_PRECEDENT =
+	"pull request waits for a decision on its precedent";
 
 function decisionWaiting(db: Database): Candidate[] {
 	// a precinct of weight 0 is never synced, so its cached rows go stale
@@ -166,22 +175,60 @@ function decisionWaiting(db: Database): Candidate[] {
 		issues: string;
 		work: string;
 	}[];
-	return waiting
+	const pairs = waiting
 		.filter((p) => isHanded(sourceMarkers(db, p.precinct, p.issues), p.number))
+		.map((p) => ({
+			...p,
+			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
+		}));
+	// a pull request that both lists name has one alarm: the handed one wins
+	const seen = new Set<string>();
+	return [...pairs, ...precedentWaiting(db)]
+		.filter((p) => {
+			const ref = `${p.precinct}#${p.number}`;
+			if (seen.has(ref)) return false;
+			seen.add(ref);
+			return true;
+		})
+		.sort((a, b) => byText(a.precinct, b.precinct) || a.number - b.number)
 		.map((p) => ({
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
-			detail: p.work === "ready" ? WAITS_FOR_REVIEW : WAITS_FOR_VOTE,
+			detail: p.detail,
 		}));
 }
 
+type Waiting = { precinct: string; number: number; detail: string };
+
+// a precedent pull request has no sources: the clerk's entry marker names it
+function precedentWaiting(db: Database): Waiting[] {
+	const open = db
+		.query(
+			`SELECT p.precinct, p.number FROM pulls p
+       WHERE EXISTS (SELECT 1 FROM precincts r WHERE r.name = p.precinct AND r.weight > 0)`,
+		)
+		.all() as { precinct: string; number: number }[];
+	const waiting = new Map(
+		[...new Set(open.map((p) => p.precinct))].map((precinct) => [
+			precinct,
+			new Set(
+				[...clerkMarkersOf(db, precinct).values()].flatMap(awaitingDecision),
+			),
+		]),
+	);
+	return open
+		.filter((p) => waiting.get(p.precinct)?.has(p.number))
+		.map((p) => ({ ...p, detail: WAITS_FOR_PRECEDENT }));
+}
+
 const DETECTORS = [
-	orderUntaken,
+	noProgress,
 	tickHung,
 	roleSilent,
 	tickFailing,
-	brokenLead,
 	decisionWaiting,
+	noConstitution,
+	withheldTexts,
 ] as ((db: Database, nowMs: number) => Candidate[])[];
 
 type OpenAlarm = {
@@ -189,14 +236,23 @@ type OpenAlarm = {
 	kind: string;
 	ref: string;
 	detail: string;
-	notified_at: string;
 };
 
 // a changed detail is a new condition: the old alarm clears and the new one prints
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
-const alarmLine = (a: Candidate) => `ALARM ${a.kind} ${a.ref} ${a.detail}`;
 
-function reconcileAlarms(
+// An alarm about an issue or a pull request ends with its link. The address is looked up
+// from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
+function alarmLine(db: Database, a: Candidate): string {
+	const [precinct = "", number = ""] = a.ref.split("#");
+	const url =
+		a.kind === "decision-waiting"
+			? urlOf(db, precinct, "pull", Number(number))
+			: null;
+	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
+}
+
+export function reconcileAlarms(
 	db: Database,
 	stamp: string,
 	repeat: boolean,
@@ -205,7 +261,7 @@ function reconcileAlarms(
 	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
 	const open = db
 		.query(
-			"SELECT id, kind, ref, detail, notified_at FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
 		)
 		.all() as OpenAlarm[];
 	const wantedKeys = new Set(wanted.map(alarmKey));
@@ -218,32 +274,18 @@ function reconcileAlarms(
 	for (const w of wanted) {
 		if (openKeys.has(alarmKey(w))) continue;
 		db.run(
+			// the notified_at column is never read; it stays so the schema does not change
 			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES (?, ?, ?, ?, ?)",
 			[w.kind, w.ref, w.detail, stamp, stamp],
 		);
-		lines.push(alarmLine(w));
+		lines.push(alarmLine(db, w));
 	}
-	const due = isoSeconds(new Date(nowMs - ALARM_REPEAT_MS));
-	for (const o of open) {
-		if (!repeat || !wantedKeys.has(alarmKey(o)) || o.notified_at >= due)
-			continue;
-		db.run("UPDATE alarms SET notified_at = ? WHERE id = ?", [stamp, o.id]);
-		lines.push(alarmLine(o));
-	}
+	// the duty desk repeats an open alarm at each of its ticks; the alarms this
+	// call raised are printed once above and never repeated here
+	if (repeat)
+		for (const o of open)
+			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(db, o));
 	return lines;
-}
-
-export function alarm(args: string[]): void {
-	const text = "alarm [--repeat]";
-	if (args.length > 1 || (args.length === 1 && args[0] !== "--repeat"))
-		throw usage(text);
-	const stamp = now();
-	withDb((db) => {
-		for (const line of inTransaction(db, () =>
-			reconcileAlarms(db, stamp, args.length === 1),
-		))
-			out(line);
-	});
 }
 
 function statusOrders(db: Database): string[] {
@@ -264,6 +306,15 @@ function statusOrders(db: Database): string[] {
 		(r) =>
 			`order ${r.id} ${r.precinct} ${r.role} ${r.department ?? "-"} ${r.issue ?? "-"} since ${r.at} ${r.taken_at ? `taken ${r.taken_at}` : "untaken"}`,
 	);
+}
+
+function statusQueue(db: Database): string[] {
+	const rows = db
+		.query(
+			"SELECT role, count(*) AS n, min(at) AS oldest FROM dispatches WHERE outcome IS NULL GROUP BY role ORDER BY role",
+		)
+		.all() as { role: string; n: number; oldest: string }[];
+	return rows.map((r) => `queue ${r.role} ${r.n} oldest ${r.oldest}`);
 }
 
 function statusTicks(db: Database): string[] {
@@ -320,7 +371,13 @@ function statusLeads(db: Database): string[] {
 export function status(args: string[]): void {
 	if (args.length > 0) throw usage("status");
 	withDb((db) => {
-		const sections = [statusOrders, statusTicks, statusAlarms, statusLeads];
+		const sections = [
+			statusOrders,
+			statusQueue,
+			statusTicks,
+			statusAlarms,
+			statusLeads,
+		];
 		for (const section of sections) for (const line of section(db)) out(line);
 	});
 }

@@ -86,4 +86,36 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE issues ADD COLUMN answer TEXT;
   ALTER TABLE issues ADD COLUMN answer_id TEXT;
   `,
+	`
+  ALTER TABLE issues ADD COLUMN body TEXT NOT NULL DEFAULT '';
+  ALTER TABLE pulls ADD COLUMN body TEXT NOT NULL DEFAULT '';
+  CREATE TABLE comments (
+    precinct TEXT NOT NULL,
+    kind     TEXT NOT NULL CHECK (kind IN ('issue', 'pull')),
+    number   INTEGER NOT NULL,
+    id       TEXT NOT NULL,
+    author   TEXT,
+    at       TEXT NOT NULL,
+    body     TEXT NOT NULL,
+    PRIMARY KEY (precinct, kind, number, id));
+  `,
+	`
+  ALTER TABLE ticks ADD COLUMN dispatch INTEGER;
+  ALTER TABLE ticks ADD COLUMN parts TEXT;
+  `,
+	`
+  ALTER TABLE precincts ADD COLUMN pulls_synced_at TEXT;
+  ALTER TABLE roles ADD COLUMN checks INTEGER NOT NULL DEFAULT 0;
+  `,
+	`
+  ALTER TABLE precincts ADD COLUMN constitution_cause TEXT;
+  ALTER TABLE issues ADD COLUMN url TEXT;
+  ALTER TABLE issues ADD COLUMN raw_sha TEXT;
+  ALTER TABLE issues ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE pulls ADD COLUMN url TEXT;
+  ALTER TABLE pulls ADD COLUMN raw_sha TEXT;
+  ALTER TABLE pulls ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
+  ALTER TABLE comments ADD COLUMN raw_sha TEXT;
+  ALTER TABLE comments ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
+  `,
 ];

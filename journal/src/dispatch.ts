@@ -1,20 +1,20 @@
 import type { Database } from "bun:sqlite";
 import { check, count, parseArgs, subcommand, usage } from "./args";
 import {
-	CLAIM_TTL_MS,
 	EXIT,
 	Fail,
 	inTransaction,
 	isConstraint,
-	isoSeconds,
 	now,
 	out,
 	readStdin,
 	withDb,
 } from "./db";
+import { creditVisit } from "./precincts";
 
 const DISPATCH_USAGE =
-	"dispatch <add --precinct <p> --role <r> [--department <d>] [--issue <n>]|take --role <r>>";
+	"dispatch add --precinct <p> --role <r> [--department <d>] [--issue <n>]";
+export const PATROL = "patrol";
 
 function dispatchAdd(db: Database, args: string[]): void {
 	const { opt } = parseArgs(args, 0, ["precinct", "role"], DISPATCH_USAGE, [
@@ -39,12 +39,12 @@ function dispatchAdd(db: Database, args: string[]): void {
 		if (!isConstraint(e)) throw e;
 		throw new Fail(
 			EXIT.DUPLICATE_ORDER,
-			`open order already exists: ${precinctName} ${roleName} ${issue ?? ""}`.trimEnd(),
+			`open order already exists for this precinct, role and issue: ${precinctName} ${roleName} ${issue ?? ""}`.trimEnd(),
 		);
 	}
 }
 
-type Taken = {
+export type Taken = {
 	id: number;
 	precinct: string;
 	repo: string;
@@ -52,73 +52,54 @@ type Taken = {
 	issue: number | null;
 };
 
-export function takeableOrders(
-	db: Database,
-	roleName: string,
-	stamp: string,
-): Taken[] {
-	const stale = isoSeconds(new Date(Date.parse(stamp) - CLAIM_TTL_MS));
+// Patrol takes by weight: the precinct that the credit picks comes first, and a
+// precinct of weight 0 has no takeable patrol order. An order nobody took comes
+// before an order a tick took; inside each group patrol keeps credit, weight and
+// name, the other roles come oldest first.
+export function takeableOrders(db: Database, roleName: string): Taken[] {
 	return db
 		.query(
 			`SELECT d.id, d.precinct, p.repo, d.department, d.issue FROM dispatches d
          JOIN precincts p ON p.name = d.precinct
-         WHERE d.role = ? AND d.outcome IS NULL AND (d.taken_at IS NULL OR d.taken_at < ?)
-         ORDER BY d.at, d.id`,
+         WHERE d.role = ?1 AND d.outcome IS NULL
+           AND (?1 <> '${PATROL}' OR p.weight > 0)
+         ORDER BY CASE WHEN d.taken_at IS NULL THEN 0 ELSE 1 END,
+           CASE WHEN ?1 = '${PATROL}' THEN -(p.credit + p.weight) END,
+           CASE WHEN ?1 = '${PATROL}' THEN p.name END, d.at, d.id`,
 		)
-		.all(roleName, stale) as Taken[];
+		.all(roleName) as Taken[];
 }
 
-function dispatchTake(db: Database, args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["role"], DISPATCH_USAGE);
-	const roleName = check("role", opt.role);
-	const stamp = now();
-	const order = inTransaction(db, () => {
-		const row = takeableOrders(db, roleName, stamp)[0];
-		if (row)
-			db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [
-				stamp,
-				row.id,
-			]);
-		return row;
-	});
-	if (order)
-		out(
-			order.id,
+// Inside the caller's transaction. A patrol take moves the credit: every
+// admitted precinct gains its weight, the taken one loses the sum.
+export function takeOrder(
+	db: Database,
+	roleName: string,
+	id: number,
+	stamp: string,
+): boolean {
+	const orders = takeableOrders(db, roleName);
+	const order = orders.find((o) => o.id === id);
+	if (order === undefined) return false;
+	db.run("UPDATE dispatches SET taken_at = ? WHERE id = ?", [stamp, id]);
+	db.run("UPDATE roles SET checks = 0 WHERE name = ?", [roleName]);
+	if (roleName === PATROL)
+		creditVisit(
+			db,
+			[...new Set(orders.map((o) => o.precinct))],
 			order.precinct,
-			order.repo,
-			order.department ?? "",
-			order.issue ?? "",
 		);
+	return true;
 }
-
-const DISPATCH_COMMANDS: Record<
-	string,
-	(db: Database, args: string[]) => void
-> = {
-	add: dispatchAdd,
-	take: dispatchTake,
-};
 
 export function dispatch(args: string[]): void {
-	const { run, rest } = subcommand(DISPATCH_COMMANDS, args, DISPATCH_USAGE);
-	withDb((db) => run(db, rest));
+	const [name, ...rest] = args;
+	if (name !== "add") throw usage(DISPATCH_USAGE);
+	withDb((db) => dispatchAdd(db, rest));
 }
 
 const TICK_USAGE =
-	"tick <start --role <r>|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
-
-function tickStart(db: Database, args: string[]): void {
-	const { opt } = parseArgs(args, 0, ["role"], TICK_USAGE);
-	const roleName = check("role", opt.role);
-	out(
-		Number(
-			db.run("INSERT INTO ticks (role, started_at) VALUES (?, ?)", [
-				roleName,
-				now(),
-			]).lastInsertRowid,
-		),
-	);
-}
+	"tick <start --role <r> [--order <id>]|continue <id>|input (<id> [--part <k>]|--role <r> --part <k>)|end <id> --outcome <token> [--precinct <p>] [--department <d>] [--dispatch <id>]|list (--limit <n>|--id <n>) [--role <r>] [--precinct <p>]>";
 
 function tickEnd(db: Database, args: string[]): void {
 	const { pos, opt } = parseArgs(args, 1, ["outcome"], TICK_USAGE, [
@@ -137,7 +118,7 @@ function tickEnd(db: Database, args: string[]): void {
 	const report = readStdin();
 	inTransaction(db, () => {
 		const changed = db.run(
-			`UPDATE ticks SET ended_at = ?, outcome = ?, report = ?,
+			`UPDATE ticks SET ended_at = ?, outcome = ?, report = ?, parts = NULL,
          precinct = COALESCE(?, precinct), department = COALESCE(?, department)
        WHERE id = ? AND ended_at IS NULL`,
 			[now(), outcome, report, precinctName, department, id],
@@ -202,12 +183,22 @@ function tickList(db: Database, args: string[]): void {
 }
 
 const TICK_COMMANDS: Record<string, (db: Database, args: string[]) => void> = {
-	start: tickStart,
 	end: tickEnd,
 	list: tickList,
 };
 
-export function tick(args: string[]): void {
-	const { run, rest } = subcommand(TICK_COMMANDS, args, TICK_USAGE);
-	withDb((db) => run(db, rest));
+// the starts and the input load the parser and the cleaning inside the command
+export function tick(args: string[]): undefined | Promise<number> {
+	const [name, ...rest] = args;
+	if (name === "start" && !rest.includes("--order"))
+		return import("./duty-desk").then((m) => m.dutyDeskStart(rest));
+	if (name === "start")
+		return import("./tick-start").then((m) => m.tickStart(rest));
+	if (name === "continue")
+		return import("./duty-desk").then((m) => m.dutyDeskContinue(rest));
+	if (name === "input")
+		return import("./tick-start").then((m) => m.tickInput(rest));
+	const { run, rest: tail } = subcommand(TICK_COMMANDS, args, TICK_USAGE);
+	withDb((db) => run(db, tail));
+	return undefined;
 }

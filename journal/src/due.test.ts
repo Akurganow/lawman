@@ -3,8 +3,7 @@ import {
 	answer,
 	cache,
 	convicted,
-	dueIn,
-	dueOut,
+	due,
 	handed,
 	human,
 	order,
@@ -22,7 +21,6 @@ import {
 	charge,
 	conviction,
 	defence,
-	lead,
 	mark,
 	SHA,
 	seed,
@@ -32,10 +30,7 @@ import {
 tempDb();
 beforeEach(() => addPrecincts({ main: 1, side: 1 }));
 
-const due = (role: string, ...exclude: string[]) =>
-	dueOut((args) => call(BASE, args), role, exclude);
-
-describe("due --role clerk", () => {
+describe("due for the clerk", () => {
 	test("an issue without a lead is a candidate", () => {
 		put({ 1: human("OPEN") });
 		cache([7, [1]]);
@@ -71,30 +66,10 @@ describe("due --role clerk", () => {
 		expect(due("clerk")).toBe("main\t2\n");
 	});
 
-	test("an open clerk order silences the role", () => {
+	test("an open clerk order does not silence the entry", () => {
 		put({ 1: convicted("P0") });
 		order("clerk", 1, T(8), true);
-		expect(due("clerk")).toBe("");
-	});
-
-	test("one or several --exclude flags drop precincts", () => {
-		put({ 1: convicted("P2") });
-		expect(due("clerk", "main")).toBe("");
-		expect(due("clerk", "side", "main")).toBe("");
-		expect(due("clerk", "side")).toBe("main\t1\n");
-	});
-
-	test("--exclude applies to any role", () => {
-		put({ 1: { body: [lead()] } });
-		expect(due("investigation")).toBe("main\t1\n");
-		expect(due("investigation", "main")).toBe("");
-	});
-
-	test("--exclude takes a precinct name only and needs a value", () => {
-		expect(
-			call(BASE, ["due", "--role", "clerk", "--exclude", "Bad"]).code,
-		).toBe(1);
-		expect(call(BASE, ["due", "--role", "clerk", "--exclude"]).code).toBe(1);
+		expect(due("clerk")).toBe("main\t1\n");
 	});
 });
 
@@ -126,17 +101,14 @@ const expectP0First = (role: string, spec: string) => {
 	expect(due(role)).toBe("main\t8\n");
 };
 
-describe.each([
-	["cli", due],
-	["in process", dueIn],
-])("due --role court: referrals (%s)", (_name, run) => {
+describe("due for the court: referrals", () => {
 	const referred = () => withLead(caseMark(), charge(), defence(), referral());
 
 	test("an answered referral is a candidate and an unanswered one is not", () => {
 		put({ 1: referred(), 2: referred() });
-		expect(run("court")).toBe("");
+		expect(due("court")).toBe("");
 		answer(2, "comment", "IC_2_4");
-		expect(run("court")).toBe("main\t2\n");
+		expect(due("court")).toBe("main\t2\n");
 	});
 
 	test.each(["up", "down"])(
@@ -144,12 +116,12 @@ describe.each([
 		(value) => {
 			put({ 1: referred() });
 			answer(1, value);
-			expect(run("court")).toBe("main\t1\n");
+			expect(due("court")).toBe("main\t1\n");
 		},
 	);
 });
 
-describe("due --role spec-writer", () => {
+describe("due for the spec-writer", () => {
 	test.each([
 		["none", "main\t7\n"],
 		["down", "main\t7\n"],
@@ -201,23 +173,15 @@ describe("due --role spec-writer", () => {
 		expect(due("spec-writer")).toBe("main\t8\n");
 	});
 
-	test("an open spec-writer order silences the role", () => {
+	test("an open spec-writer order does not silence the entry", () => {
 		put({ 1: handed(7) });
 		pulls([7, [1], "none"]);
 		order("spec-writer", 7, T(8), true);
-		expect(due("spec-writer")).toBe("");
-	});
-
-	test("--exclude drops a precinct, one or several", () => {
-		put({ 1: handed(7) });
-		pulls([7, [1], "none"]);
-		expect(due("spec-writer", "main")).toBe("");
-		expect(due("spec-writer", "side", "main")).toBe("");
-		expect(due("spec-writer", "side")).toBe("main\t7\n");
+		expect(due("spec-writer")).toBe("main\t7\n");
 	});
 });
 
-describe("due --role executor", () => {
+describe("due for the executor", () => {
 	test.each([
 		["up", "todo", "main\t7\n"],
 		["up", "returned", "main\t7\n"],
@@ -271,11 +235,11 @@ describe("due --role executor", () => {
 		expect(due("spec-writer")).toBe("main\t10\n");
 	});
 
-	test("an open executor order silences the executor only", () => {
+	test("an open executor order does not silence the entry or the other role", () => {
 		put({ 1: handed(7), 2: handed(8) });
 		pulls([7, [1], "up"], [8, [2], "none"]);
 		order("executor", 7, T(8), true);
-		expect(due("executor")).toBe("");
+		expect(due("executor")).toBe("main\t7\n");
 		expect(due("spec-writer")).toBe("main\t8\n");
 	});
 
@@ -284,13 +248,5 @@ describe("due --role executor", () => {
 		pulls([7, [1], "up"], [8, [2], "none"]);
 		order("spec-writer", 8, T(8), true);
 		expect(due("executor")).toBe("main\t7\n");
-	});
-
-	test("--exclude drops a precinct, one or several", () => {
-		put({ 1: handed(7) });
-		pulls([7, [1], "up"]);
-		expect(due("executor", "main")).toBe("");
-		expect(due("executor", "side", "main")).toBe("");
-		expect(due("executor", "side")).toBe("main\t7\n");
 	});
 });
