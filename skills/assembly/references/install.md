@@ -12,7 +12,7 @@ The install has two phases.
 
 **Phase 1. Installation.** One round and one approval for the phase. The screens come in this order.
 
-1. Installation: the folder, the harness and the release.
+1. Installation: the folder, the harness and the release. It has no message of its own: the approval names them.
 2. Host: the tool, the account, the host notes, and the verifier or the refusal.
 3. The commands of the installation: `release`, `verify` and `law-version` on one screen.
 4. Delivery.
@@ -26,7 +26,7 @@ Phase 1 runs as follows.
 
 1. Find the facts of every screen.
 2. For each screen, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
+3. Ask for one approval to apply, offering apply and change. The approval names the folder, the harness and the release. It names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
@@ -44,13 +44,7 @@ Finds:
 - Whether the plugin is enabled, by the checks that the harness page names under "Installing the plugin", in the page's order.
 - The law commit, the release tag and the release repository, by "Find the facts of the law" below.
 
-Proposes, as rows with their source:
-
-| Row | Value | Source |
-| :-- | :-- | :-- |
-| Folder | `<installation>` | current, default or yours |
-| Harness | the harness page | found |
-| Release | tag and repository | found, or yours |
+Proposes: nothing of its own. The approval shows the folder (current, default or yours), the harness (found) and the release, its tag and repository (found, or yours).
 
 A release repository that is read from the origin is found, and the developer does not edit it. A release repository that the developer named is yours, and the developer may change it.
 
