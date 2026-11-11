@@ -1,6 +1,6 @@
 # Amend
 
-Use this reference when the constitution contract in the law differs from `contract_version` in `config.yaml`. A plugin update moved the law, and a tick recorded it. Amend brings each precinct's constitution to the new contract. It does not move the law and does not touch the journal.
+Use this reference when the constitution contract in the law differs from `contract_version` in `config.yaml`, or when a precinct is behind it and has no open amendment. A plugin update moved the law, and a tick recorded it. Amend brings each precinct's constitution to the new contract. It does not move the law and does not touch the journal.
 
 Amend follows the shape in `SKILL.md`. Step 1 finds the change. Step 2 proposes, decides and applies for each precinct. Step 3 records and summarizes.
 
