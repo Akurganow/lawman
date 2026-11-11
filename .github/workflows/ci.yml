@@ -20,7 +20,7 @@ jobs:
           bun-version: 1.4.3
       - run: bun install --frozen-lockfile
       - run: bun run check
-      - run: bun test --timeout=30000 --parallel=4
+      - run: bun run test
       - run: bun build --compile --target=bun-linux-x64 src/journal.ts src/clean-worker.ts --outfile journal-smoke
       - run: ./journal-smoke --version
       - name: Clean through the compiled binary
