@@ -6,7 +6,7 @@ In your input, outside the labelled fences, a line that starts with `| ` is a li
 
 The input of a role comes in two groups. The role group holds the law that the role reads at the start, this file included, the silence form of the harness page and the orders that the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
-The tick group holds the results of these steps, as far as the role gets each: the alarms, the check of the law folder and the identity, the fetched commit and the sync, the stage and its stale rule, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
+The tick group holds the results of these steps, as far as the role gets each: the alarms, the check of the law folder and the identity, the fetched commit and the sync, the stage and its stale rule, the link of the case, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and the labels of an issue, the state and the title of a pull request, the files a role reads later in its work, the tree of a precinct and the results of a search.
 
 The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Its skill says how to go on.
 
@@ -194,7 +194,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`. Exit 3 gives `stopped-sync-limit`. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
+The output is `issues= leads= markers= invalid= skipped=`, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure gives `stopped-sync`, and Blockers holds the first line of the journal's message.
 
 ## Sync the pull requests
 
@@ -335,8 +335,8 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 
 ## Alarm
 
-Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap.
+Issue roles and patrol. Print an alarm first in the answer of the session that found it. The line names a path and a line, never a value. Alarms have no cap. An alarm about an issue or a pull request ends with its `<link>`, as `LAW.md#alarms-a-role-prints` says.
 
-- An issue role prints a critical condition as `ALARM case <p>#<n> <one line>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
+- An issue role prints a critical condition as `ALARM case <p>#<n> <one line> <link>`. A critical condition is a live secret, a vulnerability or a serious violation. A label that marks a secret removed from host text counts as a secret. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it.
 - Patrol prints a live secret as `ALARM sweep <p> <path>:<line> <one line>`. A secret found only in history prints `<path>@<hash>` with the short commit hash in place of `<line>`.
-- The court prints a referral as `ALARM referral <p>#<n> <one line>`.
+- The court prints a referral as `ALARM referral <p>#<n> <one line> <link>`.

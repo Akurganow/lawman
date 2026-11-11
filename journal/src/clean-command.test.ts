@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { WITHHELD } from "./clean-run";
 import { EXIT } from "./db";
 import { cli } from "./test-helpers";
 
@@ -14,8 +15,6 @@ const WHOLE = [
 	"src/__init__.py",
 	"a1b2c3d Fix\ne4f5a6b Add __init__.py loader",
 ];
-const FAILED =
-	"journal: clean: a library failed while cleaning the text; run the command again\n";
 const DEEP = `${"<div>".repeat(20_000)}x`;
 
 const run = (input: string, ...args: string[]) =>
@@ -104,12 +103,12 @@ describe("clean command, both forms", () => {
 	);
 
 	// Two runs over DEEP took over 5 s, the default limit, on a macOS release runner.
-	test("a library failure gives exit 1, empty stdout and a fixed message", () => {
-		expect(run(DEEP)).toEqual({ code: EXIT.USAGE, out: "", err: FAILED });
-		expect(run(JSON.stringify(DEEP), "--json")).toEqual({
-			code: EXIT.USAGE,
-			out: "",
-			err: FAILED,
+	test("a text the libraries cannot clean prints as the withheld text", () => {
+		expect(run(DEEP)).toEqual({ code: EXIT.OK, out: `${WITHHELD}\n`, err: "" });
+		expect(run(JSON.stringify([DEEP, "ok"]), "--json")).toEqual({
+			code: EXIT.OK,
+			out: `["${WITHHELD}","ok"]\n`,
+			err: "",
 		});
 	}, 30_000);
 

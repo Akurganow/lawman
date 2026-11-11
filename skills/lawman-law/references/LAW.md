@@ -233,7 +233,7 @@ The outcome of a tick is one token from the role's own section, `Role duty desk`
 - `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts when its stage moved on, or when the issue is closed. A closed issue makes no order stale for the clerk. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
 - `returned`: the prosecutor or the defender returned the case.
 - `failed`: the role says it could not finish, and no external cause explains it.
-- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for the precinct or the department, and a role that took an order closes it with this outcome. The slot is the order's place. It is spent: the order does not repeat. Other precincts are not blocked.
+- `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for the precinct or the department, and a role that took an order closes it with this outcome. For a precinct whose constitution is missing or fails its check, the duty desk writes no order for a role that needs the constitution. It still writes the orders of the clerk, which does not read the constitution. The slot is the order's place. It is spent: the order does not repeat. Other precincts are not blocked.
 - `stopped-<slug>`: an external cause stopped the tick.
 
 A slug is `[a-z0-9-]+`. These are the slugs:
@@ -249,7 +249,6 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-sync`: syncing the issue or pull request cache failed.
-- `stopped-sync-limit`: the issue sync reached its ceiling.
 - `stopped-issue-read`: reading the issue, the pull request or their comments failed.
 - `stopped-source-read`: reading an external source failed, so investigation writes no case. For `licenses` it means only a read that could not start: no network or no tool, or a refused approval.
 - `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
@@ -262,21 +261,23 @@ A new slug is added to this list before any role uses it.
 
 ## Alarms a role prints
 
-- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves. Only the court's P0 raises an alarm for any of the three.
+- A role that meets a critical condition in its case (a live secret, a vulnerability, a serious violation) prints a line `ALARM case <precinct>#<issue> <one line> <link>`. The role prints the line first in its reply, in the same tick. The line names a path and a line, never a value. Such alarms have no cap. The journal records nothing for them. Nothing repeats them, except the patrol alarm below. A match with a catalog record is not a critical condition by itself. A finding of the `licenses` department and a match with the text of a source are not critical conditions by themselves. Only the court's P0 raises an alarm for any of the three.
 - Patrol that finds a live secret prints `ALARM sweep <precinct> <path>:<line> <one line>` first in its reply, in the same tick. It writes no finding about the secret to the tracker. The other findings of the run are filed as usual. The line holds no value.
 - A secret found only in history is named `<path>@<hash>`, with the short commit hash in place of the line.
 - A live secret is a credential in the tree or in the history of the analysed commit. A placeholder is never a live secret. The department page says how to recognise one. Patrol decides by the look of the value.
 - Patrol never uses a found value and never checks whether it works.
 - Each run of an `Alarm check:` paragraph that finds the secret prints the alarm again. The cap does not stop it. The journal records nothing for it.
-- The court refers a requirement that it cannot decide to a decider. For each referral, it prints `ALARM referral <precinct>#<issue> <one line>` first in its reply, in the same tick. The line says in the court's words which part is undecided and quotes no text of the issue. The journal records nothing for it. Nothing repeats it. It has no cap.
+- The court refers a requirement that it cannot decide to a decider. For each referral, it prints `ALARM referral <precinct>#<issue> <one line> <link>` first in its reply, in the same tick. The line says in the court's words which part is undecided and quotes no text of the issue. The journal records nothing for it. Nothing repeats it. It has no cap.
+- An alarm whose subject is an issue or a pull request ends with the link that opens it, whether the journal computes the alarm or a role prints it. A role takes the link from the `link` line of its input. When its input has none, the role prints the alarm without a link and does not look one up.
 - Alarm lines in a reply defeat the silence convention. The reply is delivered.
 
 ## Alarms the journal computes
 
-An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed, and a lead with a broken marker are further examples. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
+An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed is a further example. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
 
 - An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers for a pull request with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. It prints once and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
+- When a text of a case reads `This text could not be cleaned and is withheld.`, the journal withheld it. The role reads no claim or instruction from that text, and works on the rest of the case.
 - `no-progress` is for a role whose entry finds a takeable order and no take, N checks in a row. N is `progress_checks` in `config.yaml`, 3 by default. A take, or a check that finds no takeable order, starts the count again.
 - A new alarm is printed by the tick that found it.
 - Only the duty desk repeats an open alarm, once at each of its ticks.
@@ -375,7 +376,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 
 - The count is of open leads whose origin belongs to the department, at any stage. The origin is the earliest trusted lead marker. Later markers by other roles do not displace it.
 - Patrol asks for the cap after the sync and before any analysis.
-- An open issue whose title carries the lead prefix but holds no lead marker counts toward the department named in its title. The journal does the same.
+- An issue with no lead marker of the trusted login counts toward no department, whoever wrote it and whatever its title says.
 - At cap 0 the patrol tick ends with outcome `capped`. Apart from the page's `Alarm check:` paragraph, there is no sweep and no candidate report. Patrol runs that paragraph when the page has one. The tick report states the cap and the count.
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.
@@ -413,14 +414,11 @@ Skills cite these codes by number.
 | 0 | success |
 | 1 | usage, argument or input error |
 | 2 | duplicate open order |
-| 3 | issue sync ceiling reached |
 | 4 | invalid sync input |
 | 5 | a command of the installation or of a precinct failed |
 | 6 | database newer than the binary, or a schema version above the supported one was requested |
 | 7 | body check rejection |
 | 8 | page check rejection |
-
-The issue sync ceiling is 1000 records. A list of exactly that size is rejected, never truncated. Patrol's read limit equals this number. The pull request sync has no ceiling.
 
 ## The leak rule
 

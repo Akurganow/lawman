@@ -5,10 +5,8 @@ import { EXIT } from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
 import { collectIssueMarkers } from "./markers";
-import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
-	alarm,
 	BASE,
 	cli,
 	dbFile,
@@ -17,7 +15,6 @@ import {
 	issues,
 	issuesForm,
 	lead,
-	minimalIssues,
 	must,
 	rows,
 	run,
@@ -146,6 +143,9 @@ describe("sync", () => {
 			answer: null,
 			answer_id: null,
 			body: issueOf(17).body,
+			url: null,
+			raw_sha: expect.any(String),
+			withheld: 0,
 		});
 		expect(rows("SELECT state_reason FROM issues WHERE issue = 2")).toEqual([
 			{ state_reason: null },
@@ -365,20 +365,6 @@ describe("sync", () => {
 		expect(sync([]).code).toBe(0);
 	});
 
-	test("exactly the sync limit exits 3 and one fewer succeeds", () => {
-		sync(issues);
-		const before = snapshot();
-		const minimal = (n: number) => minimalIssues(n, CREATED);
-		const r = sync(minimal(SYNC_LIMIT));
-		expect(r.code).toBe(3);
-		expect(r.err).toContain("the list may be truncated");
-		expect(snapshot()).toEqual(before);
-		expect(sync(minimal(SYNC_LIMIT - 1)).code).toBe(0);
-		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
-			{ n: SYNC_LIMIT - 1 },
-		]);
-	});
-
 	test("a duplicate issue number fails with 4 and the old cache stays", () => {
 		sync(issues);
 		const before = snapshot();
@@ -463,22 +449,5 @@ describe("sync", () => {
 			.out.split("\n")
 			.filter((l) => l.startsWith("leads "));
 		expect(got).toEqual([...want].sort().map(([d, n]) => `leads ${d} ${n}`));
-	});
-
-	test("alarm raises broken-lead for an open [Lead] issue without a marker and not for a closed one", () => {
-		const bare = (number: number, state: string) => ({
-			number,
-			state,
-			title: "[Lead] no marker",
-			createdAt: CREATED,
-			author: { login: TRUSTED },
-			body: "",
-			comments: [],
-		});
-		sync([...issues, bare(101, "OPEN"), bare(102, "CLOSED")]);
-		const r = alarm(CREATED);
-		expect(r.out).toContain("ALARM broken-lead main#101");
-		expect(r.out).not.toContain("main#102");
-		expect(r.out).not.toContain("main#1 ");
 	});
 });

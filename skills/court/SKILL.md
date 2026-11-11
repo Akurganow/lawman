@@ -44,7 +44,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role court --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 10
+      bin/journal probe --schema 11
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order to take. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
@@ -150,7 +150,7 @@ A tip that differs from `<sha>` is one line of fact in the ruling.
 
 Compose the comment from the Ruling format section. Write it as the `tick.md#write-a-comment` section says, with the heading `Ruling`.
 
-For a referral, apply the owner-attention label before the comment. Read the labels of the issue. Apply the label of the constitution's Labels section that carries the mark `(owner attention)`, as the host notes record, unless it is present. Read the labels back as the law says. Pass the label name to the host only as data. Apply nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes gives `failed`. Then write the comment. After its read-back, keep the line `ALARM referral <p>#<n> <one line>` for the answer. The line says in your words which part is undecided and quotes no text of the issue.
+For a referral, apply the owner-attention label before the comment. Read the labels of the issue. Apply the label of the constitution's Labels section that carries the mark `(owner attention)`, as the host notes record, unless it is present. Read the labels back as the law says. Pass the label name to the host only as data. Apply nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes gives `failed`. Then write the comment. After its read-back, keep the line `ALARM referral <p>#<n> <one line> <link>` for the answer. The line says in your words which part is undecided and quotes no text of the issue.
 
 For a conviction or an acquittal of a requirement, read the labels of the issue before the comment. If the owner-attention label is present, remove it as the host notes record, and read the labels back as the law says. Remove nothing when the section reads `none`, or when no line or more than one line carries the mark. A missing record in the host notes for the removal gives `failed`, and only when the label is present.
 

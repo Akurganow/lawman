@@ -1,9 +1,15 @@
 import type { Database } from "bun:sqlite";
 import { afterEach, beforeEach, expect } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
-import { mkdtempSync, rmSync } from "node:fs";
+import {
+	constants,
+	copyFileSync,
+	mkdirSync,
+	mkdtempSync,
+	rmSync,
+} from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
@@ -62,12 +68,30 @@ export function env(
 	return { PATH: process.env.PATH ?? "", ...extra };
 }
 
+// The journal finds its database and its commands beside the runtime that runs it
+// when `LAWMAN_DB` is unset. A copy of the runtime in a folder of its own keeps a
+// run with no database path off the files of the machine. `test-teardown.ts` removes
+// the copy once the run ends, because `bun test` fires no `exit` hook.
+let runtime: string | undefined;
+function ownRuntime(): string {
+	if (runtime === undefined) {
+		const root = mkdtempSync(join(tmpdir(), "lawman-runtime-"));
+		mkdirSync(join(root, "bin"));
+		runtime = join(root, "bin", "bun");
+		copyFileSync(process.execPath, runtime, constants.COPYFILE_FICLONE);
+	}
+	return runtime;
+}
+export const removeRuntime = () =>
+	runtime &&
+	rmSync(dirname(dirname(runtime)), { recursive: true, force: true });
+
 export function cli(
 	args: string[],
 	extra: Record<string, string> = {},
 	stdin?: string,
 ) {
-	const r = Bun.spawnSync(["bun", "src/journal.ts", ...args], {
+	const r = Bun.spawnSync([ownRuntime(), "src/journal.ts", ...args], {
 		cwd: JOURNAL,
 		env: env(extra),
 		stdin: stdin === undefined ? undefined : Buffer.from(stdin),

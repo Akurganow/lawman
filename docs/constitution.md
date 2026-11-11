@@ -60,7 +60,7 @@ The assembly writes a draft once, when you add a precinct without a `LAWMAN.md`.
 
 The commands of the precinct are no part of the constitution. The assembly proves them and writes them into the installation, as [configuration](configuration.md#the-commands) says.
 
-Merge that pull request. Until then every tick on the precinct ends `skipped-no-constitution`. A precinct with a weight and no merged constitution wastes its slot. So a precinct with a new draft starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
+Merge that pull request. Until then the duty desk writes no order on the precinct for a role that needs the constitution, and the alarm `no-constitution` names the precinct. A precinct with a weight and no merged constitution wastes its slot. So a precinct with a new draft starts at weight 0. After the merge, choose the job "raise a weight" in the assembly.
 
 The assembly reads the repository's `LAWMAN.md` before it drafts one. The file is in one of three states:
 
@@ -86,7 +86,7 @@ The assembly reads the repository's `LAWMAN.md` before it drafts one. The file i
 
 A precedent is no recorded reason and drops no finding. It is a question the court has already decided for your repository, so the same dispute is not argued again in every case. A protecting precedent says that a shape is not a violation, and a condemning one says that it is. The roles rely on it, and a role that needs a different outcome shows how the new case differs or asks to cancel the precedent. The facts of each new case are still proved by evidence.
 
-If a constitution fails the check for any other reason, the precinct's ticks end `skipped-bad-constitution`. A listed heading that is missing or stands twice is one such reason. Run the job "re-check a precinct" to see the reasons.
+If a constitution fails the check for any other reason, the precinct gets the same alarm and no orders for those roles. A listed heading that is missing or stands twice is one such reason. Run the job "re-check a precinct" to see the reasons.
 
 ## Example
 

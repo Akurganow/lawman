@@ -220,14 +220,15 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `tick-hung` | journal | A tick has no end record while a later tick of its role exists. |
 | `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
 | `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `broken-lead` | journal | An open issue has the `[Lead]` title prefix and no lead marker. |
 | `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
+| `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
+| `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
 | `contract-changed` | [law update](journal.md#updates) | After an update, the constitution contract differs from the version in `config.yaml`. Run the assembly to amend. |
 | `case` | a role | A role meets a live secret, a vulnerability or a serious violation in a case. A match with a catalog record is not a critical condition by itself. Only the court's P0 raises an alarm for it. |
 | `sweep` | a role | Patrol finds a live secret in the tree or the history. |
 | `referral` | a role | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line>`, `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line>`. An alarm line defeats the silence form, so the reply is delivered.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. When the cache holds no link, the alarm has none, and a role never looks one up. An alarm line defeats the silence form, so the reply is delivered.
 
 The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 
@@ -235,7 +236,7 @@ The duty desk repeats an open alarm at each of its ticks while the condition hol
 
 A tick that ends `failed` means the role could not finish and no external cause explains it. A tick that ends `stopped-*` means an external cause stopped it. Examples are a failed login, a failed fetch, a rate limit and a drifted installation. A failed tick delivers its report. A stopped tick delivers nothing, unless the stop comes from the law sync or the duty desk. Those stop every role, and the duty desk prints the alarms, so nothing else would tell you.
 
-A tick that ends `skipped-*` means the precinct or the department cannot be worked now, for example `skipped-no-constitution`. It delivers nothing. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
+A tick that ends `skipped-*` means the precinct or the department cannot be worked now. It delivers nothing. A precinct with no usable constitution gets no new orders for the roles that need it, so a role ends `skipped-no-constitution` there only for an order it took before the duty desk found the lack. The alarm `no-constitution` tells you instead. Three stopped, skipped or failed ticks in a row, of one role on one precinct, raise `tick-failing`.
 
 ### Reports
 

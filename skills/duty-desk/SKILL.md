@@ -56,7 +56,7 @@ bin/journal tick input --role duty-desk --part <k>
 0.3. Check the journal schema. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 ```
-bin/journal probe --schema 10
+bin/journal probe --schema 11
 ```
 
 ### Step 1: Start the tick
@@ -84,7 +84,7 @@ Do the self steps right after you read the part, before any other work. The line
 | :-- | :-- | :-- |
 | `law-version` | the row `law-version` of the table of self steps in the intro of `tick.md` | `stopped-law-drift`, or `stopped-dirty-law` for a local change |
 | `identity` | the row `identity` of the table of self steps in the intro of `tick.md` | `stopped-host-auth`, or `stopped-identity-changed` for another account |
-| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync`, or `stopped-sync-limit` for exit 3 |
+| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync` |
 | `pulls` | the section `tick.md#sync-the-pull-requests` | none: the tick goes on and the precinct gets no orders |
 
 A failed `law-version`, `identity` or `issues` step ends the tick. Go to step 3. Write no order and do no later self step.
@@ -127,7 +127,7 @@ Build the answer from these rules, in this order:
 4. Write every line of the update list that the sync printed, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 
-Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone. A stop of the duty desk is always delivered.
+Never write the silence form together with a stop line, an `ALARM` line or a line of the update list. A tick that wrote orders, a tick that wrote none and a skipped precinct all answer the silence form alone, unless an `ALARM` line stands. A stop of the duty desk is always delivered.
 
 ## Report
 

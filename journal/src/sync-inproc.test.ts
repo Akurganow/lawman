@@ -3,7 +3,6 @@ import * as fs from "node:fs";
 import { EXIT } from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
-import { SYNC_LIMIT } from "./sync";
 import { readIssues } from "./sync-issues";
 import {
 	addPrecincts,
@@ -11,7 +10,6 @@ import {
 	issues,
 	issuesForm,
 	mark,
-	minimalIssues,
 	rows,
 	SHA,
 	TRUSTED,
@@ -35,8 +33,6 @@ const fed = async (stdin: unknown, args = ARGS) => {
 	}
 };
 
-const minimal = (n: number) => minimalIssues(n, CREATED);
-
 beforeEach(() => addPrecincts({ main: 1 }));
 
 describe("sync in process: the issues form", () => {
@@ -59,13 +55,6 @@ describe("sync in process: the issues form", () => {
 		);
 		expect(r.err).toContain(formText("issues"));
 		expect(rows("SELECT * FROM issues ORDER BY issue")).toEqual(before);
-	});
-
-	test("the ceiling exits 3 in the object form and one fewer succeeds", async () => {
-		const r = await fed(issuesForm(minimal(SYNC_LIMIT)));
-		expect(r.code).toBe(EXIT.SYNC_LIMIT);
-		expect(r.err).toContain("the list may be truncated");
-		expect((await fed(issuesForm(minimal(SYNC_LIMIT - 1)))).code).toBe(EXIT.OK);
 	});
 
 	test("an object without writers exits 4", async () => {

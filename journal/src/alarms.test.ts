@@ -8,6 +8,7 @@ import {
 	cachePull,
 	call,
 	later,
+	mark,
 	order,
 	precinct,
 	rows,
@@ -137,41 +138,13 @@ describe("alarms and status", () => {
 			expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
 		});
 
-		test("three stopped ticks without a precinct raise tick-failing under role/-", () => {
+		test("three stopped ticks without a precinct raise tick-failing under duty-desk/-", () => {
 			seed((db) => {
-				tick(db, "patrol", later(0), later(0, 60), "stopped-law-drift");
-				tick(db, "patrol", later(1), later(1, 60), "stopped-dirty-law");
-				tick(db, "patrol", later(2), later(2, 60), "stopped-host-auth");
+				tick(db, "duty-desk", later(0), later(0, 60), "stopped-law-drift");
+				tick(db, "duty-desk", later(1), later(1, 60), "stopped-dirty-law");
+				tick(db, "duty-desk", later(2), later(2, 60), "stopped-host-auth");
 			});
-			alarmsOnce(later(3), /^ALARM tick-failing patrol\/- .+\n$/);
-		});
-
-		test("broken-lead fires for a [Lead] issue without a lead marker", () => {
-			seed((db) => {
-				const issue = (n: number, title: string) =>
-					db.run(
-						"INSERT INTO issues (precinct, issue, state, title, created_at) VALUES ('a', ?, 'OPEN', ?, ?)",
-						[n, title, BASE],
-					);
-				const marker = (n: number, stage: string) =>
-					db.run(
-						"INSERT INTO markers (precinct, issue, ord, role, stage, fields, raw) VALUES ('a', ?, '1', 'patrol', ?, '{}', 'raw')",
-						[n, stage],
-					);
-				issue(7, "[Lead] broken");
-				issue(8, "[Lead] fine");
-				marker(8, "lead");
-				issue(9, "ordinary issue about [Lead]");
-				issue(10, "[Lead] only a later stage");
-				marker(10, "verify");
-			});
-			const r = alarm(BASE);
-			expect(
-				r.out
-					.trim()
-					.split("\n")
-					.map((l) => l.split(" ").slice(0, 3).join(" ")),
-			).toEqual(["ALARM broken-lead a#7", "ALARM broken-lead a#10"]);
+			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
 		});
 	});
 
@@ -334,6 +307,32 @@ describe("decision-waiting", () => {
 		put({ 3: handed(7) });
 		cachePull("main", 7, [3], "waiting", "ready");
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_WORK));
+	});
+
+	test("a handed pull request that a precedent entry marker also names raises one alarm, and the tick start does not fail", () => {
+		put({
+			3: handed(7),
+			4: human("CLOSED", mark("clerk", "entry", " pull=7")),
+		});
+		cachePull("main", 7, [3], "waiting");
+		const r = alarm(BASE);
+		expect(r.code).toBe(0);
+		expect(r.out).toBe(line("main#7", WAITS_SPEC));
+		expect(alarm(later(1))).toMatchObject({ code: 0, out: "" });
+		expect(rows("SELECT ref FROM alarms WHERE cleared_at IS NULL")).toEqual([
+			{ ref: "main#7" },
+		]);
+	});
+
+	test("an alarm about a pull request ends with the link the host reported; a link that arrives later opens no new alarm", () => {
+		waitingSpec();
+		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
+		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
+		expect(alarm(later(1)).out).toBe("");
+		const repeat = call(later(2), ["tick", "start", "--role", "duty-desk"]);
+		expect(repeat.out).toContain(
+			line("main#7", `${WAITS_SPEC} https://git.example/o/main/pull/7`).trim(),
+		);
 	});
 
 	test.each([

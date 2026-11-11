@@ -1,20 +1,20 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { CleanFailed, printCached } from "./cache-text";
+import { printCached } from "./cache-text";
 import * as cleanHost from "./clean-host";
+import { cleanEach, WITHHELD } from "./clean-run";
 import * as db from "./db";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
 import { renderAll } from "./input-parts";
 import { command, configs } from "./operations-test-fixture";
-import { SYNC_LIMIT } from "./sync";
 import {
 	addPrecincts,
+	alarm,
 	BASE,
 	dbFile,
 	issuesForm,
-	minimalIssues,
 	rows,
 	seed,
 	TRUSTED,
@@ -23,6 +23,21 @@ import {
 
 tempDb();
 beforeEach(() => addPrecincts({ a: 1, b: 1 }));
+
+// the cleaning fails for a text that holds the word FAULT and cleans every other text
+async function onlyFaultFails<T>(run: () => Promise<T>): Promise<T> {
+	const real = cleanHost.cleanHostText;
+	const spy = spyOn(cleanHost, "cleanHostText").mockImplementation((t) =>
+		t.includes("FAULT")
+			? Promise.reject(new Error("the library quotes"))
+			: real(t),
+	);
+	try {
+		return await run();
+	} finally {
+		spy.mockRestore();
+	}
+}
 
 const HIDDEN = "seen <!-- unseen --> text\u200B";
 const AT = "2026-10-14T09:00:00Z";
@@ -164,16 +179,7 @@ describe("the texts in the cache", () => {
 		expect(r.err).not.toContain("repeated number");
 	});
 
-	test("the issue ceiling gives form with code 3, an empty list over a cache code 4", async () => {
-		feeding(
-			"a",
-			"issues",
-			JSON.stringify(issuesForm(minimalIssues(SYNC_LIMIT, AT))),
-		);
-		const limit = await run("a", "issues", "--author", TRUSTED);
-		expect(limit.code).toBe(EXIT.SYNC_LIMIT);
-		expect(limit.out).toStartWith("issues failed reason=form\n~~~error\n");
-		expect(limit.out).toContain("the list may be truncated");
+	test("an empty list over a cache is code 4", async () => {
 		feeding("a", "issues", issuesInput());
 		await run("a", "issues", "--author", TRUSTED);
 		feeding("a", "issues", JSON.stringify(issuesForm([])));
@@ -193,37 +199,46 @@ describe("the texts in the cache", () => {
 		expect(r.out).toContain("pulls is not a list");
 	});
 
-	test("a failed cleaning leaves the cache, as code 1 in sync and clean in run", async () => {
-		await sync("a", issuesInput("kept"));
-		const before = texts("a");
-		const failing = spyOn(cleanHost, "cleanHostText").mockRejectedValue(
-			new Error("the library quotes the input"),
+	test("a text the cleaning cannot process is stored as a placeholder, and the rest is stored", async () => {
+		const form = issuesForm([
+			{
+				number: 1,
+				state: "OPEN",
+				createdAt: AT,
+				author: { login: "reporter" },
+				body: "FAULT in this text",
+				comments: [
+					{ id: "IC_1", author: null, createdAt: AT, body: "fine" },
+					{ id: "IC_2", author: null, createdAt: LATER, body: "FAULT" },
+				],
+			},
+		]);
+		const r = await onlyFaultFails(() => sync("a", JSON.stringify(form)));
+		expect(r.out).toBe(
+			"issues=1 leads=0 markers=0 invalid=0 skipped=0 withheld=2\n",
 		);
-		try {
-			const piped = await sync("a", issuesInput());
-			expect(piped.code).toBe(EXIT.USAGE);
-			expect(piped.err).toBe(
-				"journal: sync: a library failed while cleaning the text; run the command again\n",
-			);
-			feeding("a", "issues", issuesInput());
-			expect(await run("a", "issues", "--author", TRUSTED)).toEqual({
-				code: EXIT.COMMAND,
-				out: "issues failed reason=clean\n~~~error\n~~~\n",
-				err: "",
-			});
-		} finally {
-			failing.mockRestore();
-		}
-		expect(texts("a")).toEqual(before);
+		expect(texts("a").issues).toEqual([{ issue: 1, body: WITHHELD }]);
+		expect(texts("a").comments.map((c) => c.body)).toEqual(["fine", WITHHELD]);
+	});
+
+	test("a pull request text that fails is withheld the same way, through the command", async () => {
+		const pulls = JSON.parse(pullsInput());
+		pulls.pulls[0].comments[0].body = "FAULT in this text";
+		feeding("a", "pulls", JSON.stringify(pulls));
+		const r = await onlyFaultFails(() =>
+			run("a", "pulls", "--author", TRUSTED),
+		);
+		expect(r.out).toBe("pulls=1 withheld=1\n");
+		expect(texts("a").comments.map((c) => c.body)).toEqual([WITHHELD]);
 	});
 });
 
 describe("printing from the cache", () => {
-	test("prints the body, then each comment by time and id, every text cleaned again", async () => {
+	test("prints the body, then each comment by time and id", async () => {
 		seed((d) => {
 			d.run(
 				"INSERT INTO issues (precinct, issue, state, title, created_at, body) VALUES ('a', 1, 'OPEN', 't', ?, ?)",
-				[AT, HIDDEN],
+				[AT, "seen text"],
 			);
 			for (const [id, at, author] of [
 				["IC_b", LATER, "x"],
@@ -232,7 +247,7 @@ describe("printing from the cache", () => {
 			] as [string, string, string | null][])
 				d.run(
 					"INSERT INTO comments (precinct, kind, number, id, author, at, body) VALUES ('a', 'issue', 1, ?, ?, ?, ?)",
-					[id, author, at, HIDDEN],
+					[id, author, at, "seen text"],
 				);
 		});
 		expect(await printed("a", "issue", 1)).toBe(
@@ -272,18 +287,56 @@ describe("printing from the cache", () => {
 	test("an issue the cache does not hold prints nothing", async () => {
 		expect(await printed("a", "issue", 5)).toBeNull();
 	});
+});
 
-	test("a failed cleaning throws CleanFailed", async () => {
-		await sync("a", issuesInput());
-		const failing = spyOn(cleanHost, "cleanHostText").mockRejectedValue(
-			new Error("x"),
-		);
+describe("cleaning once", () => {
+	const calls = async (run: () => Promise<unknown>) => {
+		const spy = spyOn(cleanHost, "cleanHostText");
 		try {
-			await expect(printed("a", "issue", 1)).rejects.toBeInstanceOf(
-				CleanFailed,
-			);
+			await run();
+			return spy.mock.calls.length;
 		} finally {
-			failing.mockRestore();
+			spy.mockRestore();
 		}
+	};
+
+	test("a sync of texts that did not change cleans nothing, and a changed text is cleaned again", async () => {
+		expect(await calls(() => sync("a", issuesInput()))).toBeGreaterThan(0);
+		expect(await calls(() => sync("a", issuesInput()))).toBe(0);
+		expect(await calls(() => sync("a", issuesInput("seen text\n!")))).toBe(1);
+		expect(texts("a").issues).toEqual([{ issue: 1, body: "seen text\n!" }]);
+	});
+
+	test("a text that passes its time budget is withheld", async () => {
+		const long = `${"word ".repeat(100)}end`;
+		const done = await cleanEach([long], 1);
+		expect(done.get(long)).toEqual({ text: WITHHELD, withheld: true });
+		expect((await cleanEach([long])).get(long)?.withheld).toBe(false);
+	});
+});
+
+describe("the alarm of withheld texts", () => {
+	test("one alarm names the count and the first texts with their links, and clears with the text", async () => {
+		const form = (body: string) => {
+			const f = JSON.parse(issuesInput(body));
+			f.issues[0].url = "https://git.example/o/a/issues/1";
+			return JSON.stringify(f);
+		};
+		await onlyFaultFails(() => sync("a", form("FAULT")));
+		await onlyFaultFails(() => sync("a", form("FAULT")));
+		expect(rows("SELECT withheld FROM issues")).toEqual([{ withheld: 1 }]);
+		expect(alarm(AT).out).toBe(
+			"ALARM withheld-text a 2 texts are withheld, because the journal could not clean them: issue #1 https://git.example/o/a/issues/1; comment IC_2 on issue #1 https://git.example/o/a/issues/1. Edit or delete each on the host.\n",
+		);
+		await sync("a", form("fixed"));
+		expect(alarm(LATER).out).toBe("");
+		expect(rows("SELECT cleared_at FROM alarms")).toEqual([
+			{ cleared_at: LATER },
+		]);
+	});
+
+	test("a body that holds the fixed sentence raises no alarm", async () => {
+		await sync("a", issuesInput(WITHHELD));
+		expect(alarm(AT).out).toBe("");
 	});
 });

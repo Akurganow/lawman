@@ -110,19 +110,13 @@ function headingReasons(
 	total: number,
 ): string[] {
 	const names = found.map((h) => h.name);
-	const extra =
-		kind === "department"
-			? found
-					.filter((h) => !isListed(kind, h))
-					.map((h) => `${h.line}: extra heading "${h.name}"`)
-			: [];
 	const repeated = found
 		.filter((h, i) => isListed(kind, h) && names.indexOf(h.name) < i)
 		.map((h) => `${h.line}: repeated heading "${h.name}"`);
 	const missing = PAGE_HEADINGS[kind]
 		.filter((name) => !names.includes(name))
 		.map((name) => `${total}: missing heading "${name}"`);
-	return [...extra, ...repeated, ...missing];
+	return [...repeated, ...missing];
 }
 
 const sectionEnd = (found: Heading[], k: number, total: number) =>
@@ -155,7 +149,8 @@ function emptySections(
 	found: Heading[],
 ): string[] {
 	return found.flatMap((h, k) => {
-		if (kind === "constitution" && !isListed(kind, h)) return [];
+		// a heading the page does not list is a note, empty or not
+		if (!isListed(kind, h)) return [];
 		const end = sectionEnd(found, k, lines.length);
 		return lines.slice(h.line, end).every((l) => l.trim() === "")
 			? [`${h.line}: section "${h.name}" is empty, write none`]

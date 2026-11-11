@@ -1,8 +1,9 @@
 import type { Database } from "bun:sqlite";
+import pkg from "../package.json";
 import { fits } from "./args";
 import { cleanCharacters, countSecretMarks } from "./clean";
-import { cleanHostText } from "./clean-host";
-import { type Fail, isConstraint } from "./db";
+import { cleanEach } from "./clean-run";
+import { type Fail, isConstraint, withDb } from "./db";
 import {
 	type Block,
 	cutToFit,
@@ -19,18 +20,76 @@ export type CommentText = {
 };
 export type HostText = { body: string; comments: CommentText[] };
 
+// A cleaned text with the hash of the raw text it came from, so the same raw text is cleaned once.
+type Done = { text: string; sha: string; withheld: boolean };
+type CommentDone = Omit<CommentText, "body"> & { done: Done };
+export type TextDone = { body: Done; comments: CommentDone[] };
+
 // a library error can quote the input, so each caller prints its own message
 export class CleanFailed extends Error {}
 
-async function cleanText(text: HostText): Promise<HostText> {
-	const [body = "", ...bodies] = await Promise.all(
-		[text.body, ...text.comments.map((c) => c.body)].map(cleanHostText),
-	);
-	return {
-		body,
-		comments: text.comments.map((c, i) => ({ ...c, body: bodies[i] ?? "" })),
-	};
+// the hash covers the journal version, so a new cleaning cleans again what the old one cleaned
+const shaOf = (raw: string) =>
+	new Bun.CryptoHasher("sha256").update(`${pkg.version}\n${raw}`).digest("hex");
+
+// what the cache of the precinct holds, by the hash of the raw text each cleaned text came from
+function priorTexts(db: Database, precinct: string): Map<string, Done> {
+	const prior = new Map<string, Done>();
+	for (const table of ["issues", "pulls", "comments"])
+		for (const r of db
+			.query(
+				`SELECT raw_sha AS sha, body AS text, withheld FROM ${table} WHERE precinct = ? AND raw_sha IS NOT NULL`,
+			)
+			.all(precinct) as { sha: string; text: string; withheld: number }[])
+			prior.set(r.sha, {
+				text: r.text,
+				sha: r.sha,
+				withheld: r.withheld === 1,
+			});
+	return prior;
 }
+
+// The texts of one sync, each cleaned alone and only when the cache holds no cleaning of the same raw text.
+// A text that cannot be cleaned, or does not finish in time, comes back withheld.
+export async function cleanTexts<I>(
+	precinct: string,
+	items: { item: I; text: HostText }[],
+): Promise<{ item: I; done: TextDone }[]> {
+	const prior = withDb((db) => priorTexts(db, precinct));
+	const raws = items.flatMap(({ text }) => [
+		text.body,
+		...text.comments.map((c) => c.body),
+	]);
+	const cleaned = await cleanEach(raws.filter((r) => !prior.has(shaOf(r))));
+	const doneOf = (raw: string): Done => {
+		const sha = shaOf(raw);
+		const c = cleaned.get(raw);
+		return c === undefined
+			? (prior.get(sha) as Done)
+			: { text: c.text, sha, withheld: c.withheld };
+	};
+	return items.map(({ item, text }) => ({
+		item,
+		done: {
+			body: doneOf(text.body),
+			comments: text.comments.map(({ id, author, at, body }) => ({
+				id,
+				author,
+				at,
+				done: doneOf(body),
+			})),
+		},
+	}));
+}
+
+export const withheldCount = (cleaned: { done: TextDone }[]) =>
+	cleaned.reduce(
+		(n, { done }) =>
+			n +
+			Number(done.body.withheld) +
+			done.comments.filter((c) => c.done.withheld).length,
+		0,
+	);
 
 export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 	try {
@@ -39,9 +98,6 @@ export async function cleaning<T>(work: () => Promise<T>): Promise<T> {
 		throw new CleanFailed();
 	}
 }
-
-export const cleanTexts = (texts: HostText[]) =>
-	cleaning(() => Promise.all(texts.map(cleanText)));
 
 export function dropComments(db: Database, precinct: string, kind: TextKind) {
 	db.run("DELETE FROM comments WHERE precinct = ? AND kind = ?", [
@@ -55,14 +111,24 @@ export function storeComments(
 	precinct: string,
 	kind: TextKind,
 	number: number,
-	comments: CommentText[],
+	comments: CommentDone[],
 	reject: (why: string) => Fail,
 ): void {
 	for (const c of comments) {
 		try {
 			db.run(
-				"INSERT INTO comments (precinct, kind, number, id, author, at, body) VALUES (?, ?, ?, ?, ?, ?, ?)",
-				[precinct, kind, number, c.id, c.author, c.at, c.body],
+				"INSERT INTO comments (precinct, kind, number, id, author, at, body, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				[
+					precinct,
+					kind,
+					number,
+					c.id,
+					c.author,
+					c.at,
+					c.done.text,
+					c.done.sha,
+					Number(c.done.withheld),
+				],
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;
@@ -146,7 +212,7 @@ const bodyOf = (db: Database, k: Omit<TextKey, "part">) =>
 async function commentBlock(c: CommentRow): Promise<FencedBlock> {
 	return fencedBlock(
 		"comment",
-		`${await header(c)}\n${await cleanHostText(c.body)}`,
+		`${await header(c)}\n${c.body}`,
 		`comment at=${c.at}`,
 	);
 }
@@ -155,7 +221,7 @@ async function commentBlock(c: CommentRow): Promise<FencedBlock> {
 const fit = (block: FencedBlock, k: TextKey, size: number) =>
 	cutToFit(block, size, fullLine(k), countSecretMarks);
 
-// Every cached text is cleaned again, so a text an older cleaning stored prints clean.
+// A cached text was cleaned when the sync stored it, so it prints as stored.
 // Null when the cache holds no such issue or pull request.
 export async function printCached(
 	db: Database,
@@ -172,11 +238,7 @@ export async function printCached(
 		.all(precinct, kind, number) as CommentRow[];
 	return cleaning(async () => {
 		const blocks = [
-			fit(
-				fencedBlock(kind, await cleanHostText(body)),
-				{ ...key, part: "body" },
-				size,
-			),
+			fit(fencedBlock(kind, body), { ...key, part: "body" }, size),
 		];
 		let j = 0;
 		let at: string | null = null;
@@ -198,10 +260,7 @@ export async function printText(
 ): Promise<FencedBlock | null> {
 	const body = bodyOf(db, key);
 	if (body === null) return null;
-	if (key.part === "body")
-		return cleaning(async () =>
-			fencedBlock(key.kind, await cleanHostText(body)),
-		);
+	if (key.part === "body") return fencedBlock(key.kind, body);
 	const row = db
 		.query(`${COMMENTS} AND at = ? ORDER BY id LIMIT 1 OFFSET ?`)
 		.get(

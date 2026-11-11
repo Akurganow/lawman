@@ -19,7 +19,6 @@ describe("exit codes", () => {
 			OK: 0,
 			USAGE: 1,
 			DUPLICATE_ORDER: 2,
-			SYNC_LIMIT: 3,
 			SYNC_INPUT: 4,
 			COMMAND: 5,
 			SCHEMA: 6,
@@ -141,6 +140,9 @@ describe("open", () => {
 				work: "todo",
 				spec_id: "-",
 				body: "",
+				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		expect(() =>
@@ -170,6 +172,9 @@ describe("open", () => {
 				work: "todo",
 				spec_id: "-",
 				body: "",
+				url: null,
+				raw_sha: null,
+				withheld: 0,
 			},
 		]);
 		db.run(
@@ -249,10 +254,10 @@ describe("open", () => {
 		const db = open(dbFile);
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
-			issues: { body: "" },
-			pulls: { body: "" },
+			issues: { body: "", url: null, raw_sha: null, withheld: 0 },
+			pulls: { body: "", url: null, raw_sha: null, withheld: 0 },
 			ticks: { dispatch: null, parts: null },
-			precincts: { pulls_synced_at: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {
@@ -294,8 +299,11 @@ describe("migration 9", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
 			ticks: { dispatch: null, parts: null },
-			precincts: { pulls_synced_at: null },
+			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
+			issues: { url: null, raw_sha: null, withheld: 0 },
+			pulls: { url: null, raw_sha: null, withheld: 0 },
+			comments: { raw_sha: null, withheld: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {
 			expect(list.length).toBeGreaterThan(0);
@@ -320,7 +328,7 @@ describe("migration 10", () => {
 		);
 		old.close();
 		const db = open(dbFile);
-		expect(userVersion(db)).toBe(10);
+		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		expect(db.query("SELECT * FROM precincts").all()).toEqual([
 			{
 				name: "p",
@@ -329,6 +337,7 @@ describe("migration 10", () => {
 				credit: 1,
 				synced_at: "t",
 				pulls_synced_at: null,
+				constitution_cause: null,
 			},
 		]);
 		expect(db.query("SELECT * FROM roles").all()).toEqual([
@@ -354,6 +363,7 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "11"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "9"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
@@ -362,7 +372,7 @@ describe("probe", () => {
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "11"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "12"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {
