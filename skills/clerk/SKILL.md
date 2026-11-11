@@ -32,8 +32,8 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
   - Read the comments of an issue, and the state of an issue.
   - Read one comment by its id, for the read-back.
   - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
-  - Open a draft pull request with the title and the body of the open recipe.
-  - Open a pull request that is not a draft, with the title and the body of the precedent recipe, for the precedent job only.
+  - Open a draft pull request with the title of the open recipe and the body that the journal prints.
+  - Open a pull request that is not a draft, with the title of the precedent recipe and the body that the journal prints, for the precedent job only.
   - Replace the body of a pull request with the fixed body only.
   - Return a pull request to draft, comment on a pull request, close a pull request and reopen one.
   - Comment on an issue, close an issue with the reason of its class and reopen an issue.

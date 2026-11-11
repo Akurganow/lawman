@@ -1361,7 +1361,7 @@ describe("the court's names", () => {
 
 describe("the forms of precedent", () => {
 	const USAGE =
-		"journal: usage: journal precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>\n";
+		"journal: usage: journal precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>|precedent <precinct> --issue <n> --body <ruling comment URL> [--tree <folder>]\n";
 
 	test.each([
 		["no mode", select()],

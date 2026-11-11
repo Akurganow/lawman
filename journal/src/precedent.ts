@@ -57,9 +57,10 @@ import {
 	splitPrecedent,
 	withDepartments,
 } from "./precedent-file";
+import { convictionBody, plainWords, precedentBody } from "./pull-body";
 
 const USAGE =
-	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
+	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>|precedent <precinct> --issue <n> --body <ruling comment URL> [--tree <folder>]";
 const CONSTITUTION = "LAWMAN.md";
 const SECTION = "Precedent";
 const OLD_SECTION = "Precedents";
@@ -146,16 +147,22 @@ class Folder {
 		}
 	}
 
-	// the names whose final text differs from the disk, written only when all are safe
+	// the names whose final text differs from the disk, each with both texts
+	changes(): { name: string; was: string | null; now: string | null }[] {
+		return [...this.state].flatMap(([name, now]) => {
+			const was = this.disk(name);
+			return now === was ? [] : [{ name, was, now }];
+		});
+	}
+
+	// written only when all are safe
 	commit(): string[] {
-		const changed = [...this.state].filter(
-			([name, text]) => text !== this.disk(name),
-		);
+		const changed = this.changes();
 		if (changed.length > 0) mkdirSync(this.dir, { recursive: true });
-		for (const [name, text] of changed)
-			if (text === null) unlinkSync(this.path(name));
-			else writeFileSync(this.path(name), text);
-		return changed.map(([name]) => name);
+		for (const { name, now } of changed)
+			if (now === null) unlinkSync(this.path(name));
+			else writeFileSync(this.path(name), now);
+		return changed.map(({ name }) => name);
 	}
 }
 
@@ -242,6 +249,7 @@ function apply(
 	ruling: Ruling,
 	folder: Folder,
 	originalOf: (named: Named) => string[],
+	dry = false,
 ): Applied {
 	const reasons = new Map<string, string>();
 	const lines: string[] = [];
@@ -295,7 +303,9 @@ function apply(
 			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
 		} else if (line.type === "bad") create(keep, item.text, null, "bad-line");
 	}
-	const written = folder.commit();
+	const written = dry
+		? folder.changes().map(({ name }) => name)
+		: folder.commit();
 	for (const name of written) {
 		const reason = reasons.get(name);
 		lines.push(
@@ -629,25 +639,102 @@ async function writePrecedents(
 			if (asksJev(f.original, candidateNames)) out("ask", f.name);
 }
 
+// the words of each section of a conviction that the body may carry
+async function rulingLines(ruling: string): Promise<string[]> {
+	const lines: string[] = [];
+	for (const name of ["Verdict", "Disposition"]) {
+		const words = sectionWords(ruling, name);
+		const plain = words === null ? null : await plainWords(words);
+		if (plain !== null) lines.push(`${name}: ${plain}`);
+	}
+	return lines;
+}
+
+// one changed file as the body tells it: the rule it writes, or the rule it cancels
+async function fileLine({
+	name,
+	was,
+	now,
+}: ReturnType<Folder["changes"]>[number]): Promise<string[]> {
+	const rule = splitPrecedent(now ?? was ?? "")?.body;
+	const plain = rule === undefined ? null : await plainWords(rule);
+	const verb = now === null ? "cancel" : was === null ? "new" : "refine";
+	return plain === null ? [] : [`${verb} ${name}: ${plain}`];
+}
+
+// Where the newest ruling cannot be read, the body keeps its fixed words.
+function readableRuling(precinct: string, issue: number) {
+	try {
+		return rulingOf(precinct, issue);
+	} catch (e) {
+		if (e instanceof Fail) return undefined;
+		throw e;
+	}
+}
+
+// The body of the pull request that carries the ruling: a conviction's, or with a
+// tree the one that records the files the write call would change. Nothing is written.
+async function pullBody(
+	precinct: string,
+	issue: number,
+	source: string,
+	tree: string | undefined,
+): Promise<string> {
+	const ruling = readableRuling(precinct, issue);
+	if (tree === undefined) {
+		const convicted =
+			ruling !== undefined &&
+			ruling.precedentKind === KIND_OF.get("conviction");
+		return convictionBody(
+			issue,
+			source,
+			convicted ? await rulingLines(ruling.text) : [],
+		);
+	}
+	if (ruling === undefined) return precedentBody(source, []);
+	const folder = new Folder(tree);
+	apply(
+		itemsOfRuling(ruling.text).flat(),
+		{ ...ruling, issue, source },
+		folder,
+		() => [],
+		true,
+	);
+	const changes = folder.changes();
+	if (changes.length === 0) return "";
+	return precedentBody(
+		source,
+		(await Promise.all(changes.map(fileLine))).flat(),
+	);
+}
+
 export async function precedentCommand(args: string[]): Promise<number> {
-	const { pos, opt } = parseArgs(args, 1, ["issue", "tree"], USAGE, [
+	const { pos, opt } = parseArgs(args, 1, ["issue"], USAGE, [
+		"tree",
 		"source",
 		"request",
 		"answer",
+		"body",
 	]);
 	const precinct = check("precinct", pos[0]);
 	const issue = Number(check("number", opt.issue));
-	const modes = (["source", "request", "answer"] as const).filter(
+	const modes = (["source", "request", "answer", "body"] as const).filter(
 		(m) => opt[m] !== undefined,
 	);
 	const [mode] = modes;
 	const value = mode === undefined ? undefined : opt[mode];
+	const { tree } = opt;
 	if (modes.length !== 1 || value === undefined) throw usage(USAGE);
-	if (mode === "request")
-		process.stdout.write(await requestBody(precinct, issue, opt.tree, value));
+	if (mode === "body")
+		process.stdout.write(
+			await pullBody(precinct, issue, checkLink(value), tree),
+		);
+	else if (tree === undefined) throw usage(USAGE);
+	else if (mode === "request")
+		process.stdout.write(await requestBody(precinct, issue, tree, value));
 	else if (mode === "answer")
-		out(await augmented(precinct, issue, opt.tree, value, readStdin()));
-	else await writePrecedents(precinct, issue, opt.tree, checkLink(value));
+		out(await augmented(precinct, issue, tree, value, readStdin()));
+	else await writePrecedents(precinct, issue, tree, checkLink(value));
 	return EXIT.OK;
 }
 
