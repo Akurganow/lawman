@@ -70,23 +70,23 @@ Run `bin/journal law-update assembly`. For each `self` line, do the step as the 
 | any other `stop` | The reason, and the action of its row under "The stops" in `lawman/docs/journal.md`. | End the assembly run. |
 | a non-zero exit | `journal unavailable: <stderr>` | End the assembly run. |
 
-Take the first mode that holds. After amend, catalog, licenses or roles ends with its answers written, take the next mode that holds, and end at the menu job. A skip or a cancel ends the run, unless the mode says that it goes on.
+Take the first mode that holds. After amend, catalog, licenses or roles ends with its answers written, take a later mode that holds, and end at the menu job. A skip or a cancel ends the run.
 
 1. If `config.yaml` is missing, install by reading `references/install.md`.
-2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`. Amend also when `bin/journal status` shows an open alarm `no-constitution` that names the contract version for a precinct. That holds only when the precinct has no open pull request from the branch `lawman/constitution-v<n>`, with `<n>` the contract version of the law.
+2. If `contract_version` is absent from `config.yaml`, or differs from `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, amend by reading `references/amend.md`.
 3. Answer the catalog by reading `references/catalog.md` when one of these holds: `catalog` is absent from `config.yaml`. `catalog` is `yes` and a precinct has no pair in `catalog_precincts`. A precinct that said yes has no reading entry in `host.md`.
 4. If a precinct has no pair in `license_precincts`, answer the license department by reading `references/licenses/questions.md`. Do the same for a precinct that said yes and has no `use` line in the section `## Licenses` at the tip of its default branch. Do the same when it has a fitting row without a recorded answer, as `references/licenses/update.md` says. A precinct whose page `licenses` sits in `.lawman/departments/` or in the installation's `departments/` is not asked, and its pair is written as `no`. A cancel or a constitution that fails its check writes nothing. The run goes on.
 5. If a folder `lawman/skills/<role>/` other than `assembly` and `lawman-law` has no job `[lawman] <role>` in the scheduler's job list, add the roles. This holds when `config.yaml` matches the law. Get the list with the list command the harness page gives. Run `references/roles.md` for those roles only.
 6. Otherwise, run the menu job.
-    - Find `config.yaml`, the job list, the precincts, the paused jobs and the output of `bin/journal commands`. Propose only what the choice needs. Say each lack in one line.
-    - A lack is a form that an earlier release made and this release replaces. Each lack has a choice that mends it. Lacks, such as these:
-        - A job that "Translation" in `references/roles.md` takes: "Roles".
-        - A `verify` command of the installation that is empty while the host notes name a verifier: "Host".
-        - An `issues` or `pulls` command of a precinct that is empty: "Precincts".
-        - A precinct of weight 0 whose `LAWMAN.md` at the origin's head passes `bin/journal lint-page constitution`: "Precincts".
-    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". When a lack holds, put the choice that mends the first lack first and recommend it. After a part ends with its answers written, ask again about the lacks of the other parts, and offer each part once for its lack.
-    - For "Keep as is", end the mode with the words "Nothing changed".
-    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. Put the job that mends a lack first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
+    - Find `config.yaml`, the job list, the precincts, the paused jobs and the output of `bin/journal commands`. Propose only what the choice needs.
+    - Say in one line each of these cases that an earlier release left behind, with the choice that mends it:
+        - A scheduled job that "Translation" in `references/roles.md` would change, found as "Entry mode" there says: "Roles".
+        - An installation with every command empty in `bin/journal commands`: "Host".
+        - A precinct with every command empty in `bin/journal commands <precinct>`: "Precincts".
+    - One empty command among others is the person's choice. Offer nothing for it.
+    - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". While a case remains, put the choice for the first case first and recommend it in place of "Keep as is". After that part ends, ask again. A case that the part left unmended is said again, and "Keep as is" ends the run.
+    - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
+    - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
     - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `trusted_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
@@ -115,7 +115,7 @@ Read the section "Asking the developer" of the harness page, when the page has o
 4. Respect the tool's limits that the harness page gives, and never drop a choice silently.
 5. Move the extra choices into the proposal, and take them as free text.
 6. Put the recommended choice first.
-7. On a rerun and in the menu, put "Keep as is" first, unless the menu job recommends a choice for a lack.
+7. On a rerun and in the menu, put "Keep as is" first.
 8. Batch independent questions in one call, up to the tool's limit.
 9. Ask nothing that the developer cannot judge.
 10. Give each question one line of why.
