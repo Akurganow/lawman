@@ -189,7 +189,7 @@ Taken up by the clerk as a draft that counts as not started.
 
 ## precedent
 
-The title is `Precedents of #<n>: ` and the names of the files the `precedent` output wrote or cancelled, separated by commas. Take them from each `entry` line and from each `cancel` line that holds a name and no `missing`. The journal holds each of these names to a fixed class, so the title needs no body check. The body is the file `runs/<tick id>/pull-body.md`, left by the write call. It holds no closing word and no fingerprint line.
+The title is `Precedents of #<n>: ` and the names of the files the `precedent` output wrote or cancelled, separated by commas. Take them from each `entry` line and from each `cancel` line that holds a name and no `missing`. The journal holds each of these names to a fixed class, so the title needs no body check. The body is the file `runs/<tick id>/pull-body.md`, left by the write call.
 
 1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
 2. Create the tree.
