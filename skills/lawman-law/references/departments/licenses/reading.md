@@ -25,7 +25,7 @@ The `licenses` page sends you here when the precinct's entry in the host notes n
    - A substituted value is one encoded path segment. `.` and `..` fail.
    - A computed result, such as a hash, a slice or a change of case, passes the segment class too.
 7. Take the scheme, host, port and login from the entry, never from the tree and never from a reply.
-8. Use https only. Follow no redirect. The settings of the user's tools do not apply. Send the User-Agent line of the entry. Find the way to send the request and take the value yourself. Use only the forms that the harness page accepts in a scheduled run.
+8. Use https only. Follow no redirect. The settings of the user's tools do not apply. Send the User-Agent line of the entry. Find the way to send the request and take the value yourself. Use only the forms that the harness page accepts in a scheduled run, as it says under "Sending to license sources".
 9. Keep the pace of the entry. Where it names none, send one request at a time. A reply that says the limit is spent, 429 included, ends the requests to that source for this tick. The other pins go to Coverage by number. Do not retry or go round by another address or key.
 10. Match a reply to its pin by the key the reply names, never by position. Send a batch only when the block of the entry describes one.
 11. A failed or refused request goes to Coverage with its code, and the tick goes on. A request counts only when it has ended with a result. With no result, it goes to Coverage as `unread`.

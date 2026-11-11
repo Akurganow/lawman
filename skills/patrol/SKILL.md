@@ -58,7 +58,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
    ```
    bin/journal wake --role patrol
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -169,10 +169,10 @@ Run it when the page's Proof holds a paragraph that starts with `Alarm check:`. 
 Run it when the page's Proof says that a list sent through the journal replaces the pattern search. This check reads the catalog only through the `exhibits.md#send` section.
 
 1. Read `catalog` and `catalog_precincts` from `config.yaml`, and the precinct's line under `## Dependency reading` in `host.md`. Do it before the tree is created and before any send. A missing key reads as no and is no failure. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`.
-2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same on a harness page with no form for sending to the catalog. Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
+2. End the tick with `silent` when the precinct has no consent, has no line, or has a line that says it lists no dependencies. Do the same when the harness page gives no form under "Sending to the catalog". Send nothing. The report holds Coverage and Filed only. Coverage names the reason. Filed is the exact line `Filed nothing. Catalog check did not run.`
 3. With consent and a line, take the list by the recorded way. The way reads the tree's content at `<sha>` as data. It runs nothing from the precinct and no tool that the precinct configures. `bin/journal form catalog` prints the form of the list.
 4. Hand the list to the journal as data, as the `tick.md#working-rules` section says. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
-5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
+5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the harness page shows under "Sending to the catalog". The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
 6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
 7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.

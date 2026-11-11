@@ -74,7 +74,7 @@ A `none` or `no-entry` line means no folder change to record. Blockers names eve
 Then ask Jev once for each `ask` line, in order. `<name>` is the name that the line printed. Pass it unchanged.
 
 1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, record `jev none reason=no-key` in Blockers and go on with the next `ask` line.
-2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names. When the shell cannot read the key, record `jev none reason=no-key` in Blockers and go on with the next `ask` line.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names under "The TypeSafe key". When the shell cannot read the key, record `jev none reason=no-key` in Blockers and go on with the next `ask` line.
 3. Run one pipeline. The journal builds the request body:
    ```
    bin/journal precedent <p> --issue <n> --tree runs/<tick id>/tree --request <name>

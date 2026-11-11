@@ -128,7 +128,7 @@ Never do these:
 - Run any file other than the asset that step 4 verified.
 - Continue the tick after a stop.
 
-A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it. Answer the token, a colon and the reason, and stop. The next tick tries again.
+A stop is answered and not recorded, because no tick exists yet. Remove the folder of step 3 when step 3 created it, with the form that the harness page holds under "Commands in scheduled runs". Answer the token, a colon and the reason, and stop. The next tick tries again.
 
 ## Working rules
 
@@ -317,7 +317,7 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 
 ## End the tick
 
-1. Patrol, investigation, the clerk and the executor only. If the skill created the tree, remove it even when it holds changes, and its folder `runs/<tick id>`. Leave the precinct's clone with no record of the tree. Then read whether the precinct's clone holds any change, and keep what it reports for Blockers. A failed remove goes to Blockers. A tick that stops before the skill creates the tree does none of this.
+1. Patrol, investigation, the clerk and the executor only. If the skill created the tree, remove it even when it holds changes, and its folder `runs/<tick id>`. The harness page holds the form of the removal, under "Commands in scheduled runs". Leave the precinct's clone with no record of the tree. Then read whether the precinct's clone holds any change, and keep what it reports for Blockers. A failed remove goes to Blockers. A tick that stops before the skill creates the tree does none of this.
 2. End the tick. Send the report on stdin. Pass the precinct and the order id at every outcome, so the order closes with the same outcome. That includes `silent` for a stale order, every `skipped-*`, every `stopped-*` and `failed`.
 
    The order id is the `<id>` of the `order` line of the tick group. If it is lost, `bin/journal status` prints each open order as `order <id> <precinct> <role> …`. Take the id from the line of your role, precinct and issue.
@@ -331,7 +331,7 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 3. Answer once per session, after its last tick. A session runs up to the role's number of ticks, one per order of its group. Print every `ALARM` line of every tick verbatim first. Then print every line of the update list that the session kept. Then:
    - For `failed`, add the report of every failed tick of the session.
    - With an `ALARM` line or a line of the update list, never answer the silence form.
-   - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form alone. The journal holds the report. The `Silence` section of the role group gives the form. Without that section, the harness page names it.
+   - For any other outcome with no `ALARM` line, a `stopped-*` token included, answer the silence form alone. The journal holds the report. The `Silence` section of the role group gives the form. Without that section, the `Silence` section of the harness page `harnesses/<harness>.md` gives it. `<harness>` is the value of `harness` in `config.yaml`.
 
 ## Alarm
 

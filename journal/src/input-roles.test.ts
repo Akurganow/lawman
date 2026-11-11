@@ -83,6 +83,26 @@ describe("the role table", () => {
 		expect(sectionsOf(page, HARNESS_SECTIONS)).not.toContain(null);
 	});
 
+	test("each harness page holds the sections that the law and the skills point to", () => {
+		// the pointers of tick.md, exhibits.md, the role skills and the clerk recipes
+		const pointed = [
+			...HARNESS_SECTIONS,
+			"Commands in scheduled runs",
+			"Sending to the catalog",
+			"Sending to license sources",
+			"Calling an expert",
+			"The TypeSafe key",
+		];
+		for (const page of ["hermes.md", "openclaw.md"])
+			expect([
+				page,
+				pointed.filter(
+					(name) =>
+						sectionsOf(read(join("harnesses", page)), [name])[0] === null,
+				),
+			]).toEqual([page, []]);
+	});
+
 	test("the section for an older journal follows Sync the law and no role reads it", () => {
 		const at = TICK_ORDER.indexOf("Sync the law");
 		expect(TICK_ORDER[at + 1]).toBe("Sync the law with an older journal");

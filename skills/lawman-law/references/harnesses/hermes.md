@@ -128,7 +128,7 @@ Refused, checked with the harness's check function and not seen in a scheduled r
 - a heredoc fed to a shell or an interpreter: `bash <<`;
 - other recursive deletes: `rm -r`, `rm --recursive`.
 
-Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the body of the Send command. The pipe passed when a role repeated a refused command without the wrapper.
+Accepted, seen in scheduled runs: a plain pipe and a subshell `( ... )` around the command of the court's Send section. The pipe passed when a role repeated a refused command without the wrapper.
 
 Accepted, checked with the harness's check function: `&&`, `;`, a redirect outside the system paths, `$(...)`, `<(...)`, `VAR=x cmd`, and a loop. A quoted heredoc fed to an ordinary command also passed the check. None of these was seen in a scheduled run.
 

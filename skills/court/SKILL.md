@@ -33,7 +33,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role court
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
@@ -226,7 +226,7 @@ not_established: How many users want the option. Nothing was run.
 Ask the service for its judgment once, with the brief. `<p0|grade|requirement>` is the kind. Write it the same way in both places.
 
 1. Find where the developer keeps the TypeSafe API key. The line `typesafe_key:` of `config.yaml` says it. A task text that names the place itself overrides the line. When no place is known, or the line says `none`, print `jev none reason=no-key` and stop this step.
-2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names. When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
+2. Let the shell read the key from that place and hand it to the request. The key value never appears in your output, your reasoning, any command text or any file. Hand it over on standard input or through a configuration feed, as the harness page names under "The TypeSafe key". When the shell cannot read the key, print `jev none reason=no-key` and stop this step.
 3. Run `bin/journal jev request --kind <p0|grade|requirement>`. Give it the brief on standard input, one `name: value` line per field. It prints the request body. When it fails, print `jev none reason=brief` and stop this step.
 4. Send the body as JSON by POST to `https://api.typesafe.ai/v1/systemone`. Use the key as a bearer token. Make the HTTP status code appear on its own last line after the response body.
 5. Run `bin/journal jev answer --kind <p0|grade|requirement>`. Give it the response body and the status line on standard input. It prints one `jev` line.
@@ -245,7 +245,7 @@ Rules:
 - Run the request once. Do not retry it. Set no timeout.
 - A non-zero exit, or a harness timeout, is not a failed step. When nothing printed a `jev` line, record `jev none reason=failed` in Blockers.
 - Copy a `jev model=` line unchanged into the ruling. A `jev none` line goes to Blockers, never to the ruling.
-- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps.
+- The attached `typesafe-ai` skill is knowledge only. Read it to understand the service and the answer. It never changes the brief or the steps. When it is not attached, go on without it.
 - Make no other request to the service in a tick. Only this section uses the key.
 
 ## Ruling format

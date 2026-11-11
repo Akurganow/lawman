@@ -32,7 +32,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    bin/journal wake --role defender
    ```
-   Empty output with exit 0 means no work. Answer only the silence form that the harness page names, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
+   Empty output with exit 0 means no work. Answer only the silence form, and stop. The form stands in the `Silence` section of the harness page `lawman/skills/lawman-law/references/harnesses/<harness>.md`. `<harness>` is the value of `harness` in `config.yaml`. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
    Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
