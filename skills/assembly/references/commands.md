@@ -58,16 +58,16 @@ A command runs once for its proof. The run is in the tick environment when the d
 - A failure blocks the write in both environments.
 - Without consent, or without a way on the harness page, the command is not proven in the tick environment. The approval of the proposal confirms that gap.
 
-**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary. It is the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run. Name the number of runs that the proposal shows, and say that each is a paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
+**Consent to paid runs.** This is the one rule for it; other files point here. A run in the tick environment is paid when the harness needs a model for it. A pass is one run of the assembly from a menu choice to its summary. It is the install with both phases, part Host, part Roles, or the work on precincts. Ask once for each pass, before the first such run. Use these words: each proof is a paid run of the harness's default model. Ask nothing when the harness page names no way to reach the tick environment. The answer holds for the whole pass. The delivery check and the run of the duty desk ask their own questions, in `references/install.md`.
 
 - A pass of the install asks it among the questions that come before Apply.
 - When the pass has no phase 1, ask it right after the first proposal of commands of a precinct.
-- A pass of part Host asks it before the approval question of that part, with the other questions, when a command is new or changed. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
+- A pass of part Host asks it before the approval question of that part, with the other questions, when a proof will run. A pass of "Re-check a precinct" asks it before its first run in the tick environment.
 - A pass without a run in the tick environment asks nothing. Examples are "Roles" with entry files and a single proof of a refused signature.
 
 ### A failed proof
 
-The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
+The command is not written. Show the developer the reason: the line `<operation> failed reason=…` of the journal. Show the `error` fence only on request. After the reason `exit`, the fence holds the command's standard error after cleaning. Outside Apply, the operation stays a step of the role, and its row says so. Inside Apply, ask nothing: stop, name the cause and the fix, and write nothing more.
 
 ### The rule of the constitution
 
@@ -81,7 +81,7 @@ Show one row for each operation: how it runs, its source (found, current, propos
 
 ### Choose the method of verification
 
-The notes record the method. Ask on the Host screen only when none is recorded, none is found or several fit. With one verifier found and none recorded, the proposal row names it, and "Change" in the approval takes another choice or the refusal. The list is open. For example:
+The notes record the method. Ask on the Host screen when the notes record none and either no verifier is found or several fit. A run of part Host from the menu asks as if none were recorded. With one verifier found, the proposal row names it, and "Change" in the approval takes another choice or the refusal. The list is open. For example:
 
 - Verify the signature with a verifier that was found on this machine (recommended). Name the found verifiers.
 - Install a verifier, when none fits. Offer choices that fit this machine, and Apply installs the chosen one.
@@ -94,7 +94,7 @@ Before a question that offers the refusal, and when the developer declines, say 
 
 The label of the choice names the consequence in one phrase. The right to decline is the developer's. After a refusal, say plainly that Lawman cannot verify its releases and that this is unsafe. Block nothing.
 
-With a signature chosen, `verify` is needed, because nothing else can prove the method. "Leave empty" is then not offered. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
+With a signature chosen, `verify` is needed, because nothing else can prove the method. "Change" in the approval does not leave it empty. A refusal of the signature removes an existing `verify` file and writes no new one. The host notes record the refusal.
 
 The summary of a refusal says the two facts above in plain words. It also names both ways to turn the check on later. The assembly offers it at each start while the notes record the refusal. The menu item "Host" runs part Host again.
 
@@ -115,7 +115,7 @@ Four cases prove that the method tells a bad binary from a good one. They run th
 - When `release` is empty or its folder is missing, fetch the real files from `release_repo` by the tag, as the first install does.
 - The copy with a changed byte lies in a neighbouring folder of the same `runs/`, under the same file name. The platform gives the name of the asset.
 - Judge each case by the line the journal printed, never by the exit code alone. Any other line is a proof failure. The verifier did not judge the case: for example `verify empty`, or `verify failed` with the reason `argument`, `start` or `clean`. Build every argument in its class, so that each bad case reaches the verifier.
-- On a proof failure `verify` is not written. Stop as "A failed proof" says.
+- On a proof failure `verify` is not written. Stop as "A failed proof" says, and name "Change" in the next approval as the way to another method or to the refusal.
 - Never run the copy with a changed byte.
 
 ### Prove a refused signature
@@ -148,7 +148,7 @@ A command is never written from a value that the developer typed. See "Find the 
 
 A precinct has seven commands in `configs/<precinct>/`, in two screens. The operations are `fetch`, `identity`, `issues`, `pulls`, `decider`, `file` and `files`.
 
-For each screen, run this cycle: find, propose, prove. The approval of the precinct decides.
+For each screen, run this cycle: find, propose, prove.
 
 1. Find how this machine does each operation with the tool of the host notes. Take the forms of the output from `journal form` and from `docs/journal.md`.
 2. Propose one row for each operation: how it runs, its source (found, current, proposed or yours) and its proof state, which reads "will be proven". An operation with no command stays a step of the role, and the row says so.
@@ -157,7 +157,7 @@ For each screen, run this cycle: find, propose, prove. The approval of the preci
 
 **The screen of version control.** Operations `fetch`, `file` and `files`.
 
-**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The place of the issues and the pull requests is the repository's host. Ask first where they live only when the host notes name no place, the developer named another place, or the host reports its issues off. The list of answers is open. For example:
+**The screen of the tracker.** Operations `identity`, `issues`, `pulls` and `decider`. The place of the issues and the pull requests is the repository's host. Ask first where they live only when the host notes name no place or the developer named another place. The list of answers is open. For example:
 
 - The repository's host (found, recommended).
 - Another tracker, which the developer names with its tool.
@@ -186,4 +186,4 @@ A command of a precinct carries the facts that it reads itself. Examples are the
 
 An operation with no command stays a step that the role does itself.
 
-- "Leave empty" over an existing command removes the file at Apply. The approval names the file.
+- A command that the approval leaves empty over an existing one is removed at Apply. The approval names the file.
