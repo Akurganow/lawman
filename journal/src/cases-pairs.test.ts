@@ -136,6 +136,12 @@ describe("case: the line of a clerk job", () => {
 		expect(jobOf(1)).toBe("settle - 7 1 -");
 	});
 
+	test("a source the host closed at the merge settles in the first tick", () => {
+		put({ 1: human("CLOSED", pairMark("handed", 7, "open")) });
+		expect(needOnly(1)).toBe("need=clerk");
+		expect(jobOf(1)).toBe("settle - 7 1 -");
+	});
+
 	test("a settle lists every issue handed with the pull request", () => {
 		const handed = pairMark("handed", 7, "open");
 		put({

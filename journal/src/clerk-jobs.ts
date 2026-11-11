@@ -158,7 +158,9 @@ function rowOf(
 	const k = pairs.at(-1);
 	const base = baseOf(pairs);
 	const closed = i.state === "CLOSED";
-	if (k !== undefined && k.fields.issue !== i.state.toLowerCase()) {
+	// a pull request that left the cache is settled before a close of the issue is recorded
+	const gone = pull === undefined && base === "handed";
+	if (k !== undefined && k.fields.issue !== i.state.toLowerCase() && !gone) {
 		const closePull =
 			pull?.issues.includes(i.issue) === true && pull.issues.every(i.isClosed);
 		return job("state", stateAction(base, closed, closePull));

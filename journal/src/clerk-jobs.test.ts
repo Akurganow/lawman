@@ -59,13 +59,13 @@ describe("state rule: base and issue state", () => {
 		expect(r).toMatchObject({ job: "state", action, pull: "7" });
 	});
 
-	test("a closed issue whose pull request left the cache is kept, not closed", () => {
+	test("a closed issue whose pull request left the cache settles at once", () => {
 		const r = run({
 			state: "CLOSED",
 			markers: pairs(["handed", "7", "open"]),
 			closed: [1],
 		});
-		expect(r).toMatchObject({ job: "state", action: "kept" });
+		expect(r).toMatchObject({ job: "settle", action: "-", pull: "7" });
 	});
 
 	test("a source missing from the issue cache counts as open", () => {
