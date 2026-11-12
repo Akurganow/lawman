@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.1.0 - 2026-11-12
+#### Features
+- (**law**) add the surplus department (df6d8b8)
+#### Bug Fixes
+- (**law**) make the surplus page exact where two readers differed (bbfe077)
+
+- - -
+
+
 ## v1.0.0 - 2026-11-11
 #### Features
 - (**assembly**) take place, name and form of the entry from the page (fcfab39)
