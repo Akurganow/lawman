@@ -34,7 +34,7 @@ The journal is one program on Bun with SQLite. It compiles to a binary per platf
 
 ### Departments
 
-A department is a page, not an agent. One generic patrol reads the page and sweeps its subject. Twelve shared departments ship with the law: abstractions, agent-config, claims, dependencies, licenses, logic, privacy, proportion, security, tests, text-residue and vulnerabilities. The `licenses` department is off by default. A precinct rotates it only after you answer yes to the assembly question for that precinct. It checks dependencies, datasets and foreign code against the license of the project itself. The `vulnerabilities` department checks the pinned dependencies of a precinct against the OSV catalog of known vulnerabilities. A precinct adds its own pages in `.lawman/departments/`.
+A department is a page, not an agent. One generic patrol reads the page and sweeps its subject. Thirteen shared departments ship with the law: abstractions, agent-config, claims, dependencies, licenses, logic, privacy, proportion, security, surplus, tests, text-residue and vulnerabilities. The `licenses` department is off by default. A precinct rotates it only after you answer yes to the assembly question for that precinct. It checks dependencies, datasets and foreign code against the license of the project itself. The `vulnerabilities` department checks the pinned dependencies of a precinct against the OSV catalog of known vulnerabilities. A precinct adds its own pages in `.lawman/departments/`.
 
 [Departments](docs/departments.md)
 

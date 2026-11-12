@@ -118,7 +118,7 @@ A page whose Proof sends a list through the journal sweeps by "The catalog check
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
 5. Cut a candidate that a recorded answer in the judging document settles. Name the answer in the report. A precedent cuts no candidate. Name in its lead each precedent that fits it.
-6. Attack each candidate once. Look for a caller the search could not see, a guarantee from the caller, an assertion or upstream check, or a pinning test. A recorded reason counts too. If one holds, drop the candidate.
+6. Attack each candidate once. Look for a caller the search could not see, a guarantee from the caller, an assertion or upstream check, or a pinning test. A recorded reason counts too. If one holds, drop the candidate. What the Not findings section of the page names as no guarantee does not hold.
 7. Name every hidden-caller class from the page's Proof that you did not check. Those names go to Not checked.
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.

@@ -151,7 +151,7 @@ Effort S|M|L, Risk low|medium|high, Confidence confirmed|demonstrated|plausible
 - Every factual claim carries an exhibit. A claim without one is struck.
 - A path:line comes from output that prints the line number at the analysed commit. Never count lines by eye.
 - A candidate states its confidence. `confirmed`: a command ran here and its output is quoted. `demonstrated`: every step of the path is quoted from the tree. `plausible`: neither.
-- Attack your own claim once before it becomes a candidate. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, drop the candidate.
+- Attack your own claim once before it becomes a candidate. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, drop the candidate. What the Not findings section of the department page names as no guarantee does not hold.
 - A count that reports zero proves nothing until the same search has reported non-zero on a known positive. A claim of absence quotes the search with its output and the control search with its non-empty output.
 - Re-measure every number at the analysed commit.
 - Less than confident means drop. The one exception is a doubt about how a license reads, which the `licenses` page sends to the expert in Not checked. A candidate is never filed for visibility.
