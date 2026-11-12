@@ -14,6 +14,8 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > A number carried from an older commit goes stale when the tree moves.
 
+> A page knows which guarantee says nothing about the claim of its department.
+
 ### Texts of the precinct
 
 > The law may do so because a reviewed merge put them on the main branch.

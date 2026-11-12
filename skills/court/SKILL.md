@@ -131,7 +131,7 @@ The grounds of the charge are the `## Grounds` of the charge in a defended or a 
 
 The court judges on the whole decision of each party. The law's `LAW.md#precedents` section says how a precedent weighs in the ruling. The Grounds name each precedent that the court follows or departs from.
 
-Before writing a conviction, attack it once, as the law's `LAW.md#exhibits` section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows.
+Before writing a conviction, attack it once, as the law's `LAW.md#exhibits` section asks of every claim. Look for a caller-side guarantee, an invariant, an assertion, upstream validation, a pinning test or a recorded reason. If one holds, the verdict is an acquittal with the class the attack shows. What the Not findings section of the page names as no guarantee does not hold.
 
 For a conviction, run these items in order:
 

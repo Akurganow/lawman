@@ -26,7 +26,7 @@ A page whose department can find a live secret names an `Alarm check:` paragraph
 
 ## Shared pages
 
-Lawman ships twelve shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has the others in its rotation with no line in its constitution. The page `licenses` is the exception.
+Lawman ships thirteen shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has the others in its rotation with no line in its constitution. The page `licenses` is the exception.
 
 | Department | Subject |
 | :-- | :-- |
@@ -39,6 +39,7 @@ Lawman ships twelve shared pages in [departments/](../skills/lawman-law/referenc
 | `privacy` | Code that takes user data further than the privacy promise allows, and promises the code no longer keeps |
 | `proportion` | Code and decisions out of proportion to their job |
 | `security` | What an outsider can exploit |
+| `surplus` | Material that no user, requirement or recorded reason calls for |
 | `tests` | Tests that fail for a reason other than the product, or cost more than they protect |
 | `text-residue` | Text that costs a reader time and tells them nothing true |
 | `vulnerabilities` | A dependency whose pinned version a catalog record names as affected |
@@ -46,6 +47,8 @@ Lawman ships twelve shared pages in [departments/](../skills/lawman-law/referenc
 The page `vulnerabilities` has one kind, `advisory`. Its patrol sends the precinct's list of pinned packages to the OSV catalog through the journal, and a match with a catalog record is the finding. It runs only for a precinct that gave consent. It has its own count of open leads and its own cap, by the same table as the other pages. The `dependencies` page keeps its other kinds and no longer holds `advisory`. The `security` page hands known vulnerabilities of dependencies to `vulnerabilities`. See [the journal](journal.md#the-catalog-check) and [configuration](configuration.md#what-leaves-the-machine).
 
 The page `licenses` has three kinds: `conflict`, `unlicensed` and `unmet`. It is off by default. It is in a precinct's rotation only when `license_precincts` in `config.yaml` holds the whole token `<precinct>=yes`. A missing key or pair reads as no. Its finding is not critical and sends no signal to chat. In the paths of the Not judged section, the page looks only for signs of foreign material and statements of license. It judges nothing else there. The folder `licenses/` beside the page `licenses.md` holds its reading files, `reading.md`, `field.md` and `text.md`. The folder is not a page. The other pages stay where they are.
+
+The page `surplus` files each thing as its own lead, however small. A call or a test of a thing is no sign of need. The lead covers the whole capability with its own tests. The page files text only when the tree shows the surplus.
 
 A shared page uses no paths and no tool names of a specific repository, because many repositories read it.
 
