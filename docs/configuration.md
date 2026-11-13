@@ -92,7 +92,7 @@ Four more keys are optional: `input_chars`, `jobs`, `progress_checks` and `dismi
 | `license_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the `licenses` department is in the rotation and may read a license source. A precinct with no pair reads as no. | The assembly when it adds a precinct, or when it asks the missing answer |
 | `jobs` | The number of orders a session of each role takes, as `<role>=<n>` pairs. See [Jobs and progress checks](#jobs-and-progress-checks). | `law-sync` as a default |
 | `progress_checks` | How many checks in a row may find a takeable order and take none before `no-progress` rises. | `law-sync` as a default |
-| `dismissals_since` | The UTC time from which a close of a lead can leave a dismissal. A lead closed earlier leaves none. | The assembly at install, or `law-sync` as a default |
+| `dismissals_since` | The UTC time from which a close of a lead can leave a dismissal, as `YYYY-MM-DDThh:mm:ssZ`. A lead closed earlier leaves none. A value in another form reads as no key, and then no close leaves a dismissal. | The assembly at install, or `law-sync` as a default |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
 
