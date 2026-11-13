@@ -195,7 +195,7 @@ The title is `Precedents of #<n>: ` and the names of the files the `precedent` o
 
 1. Read the ruling when the issue has one. Without one, go on.
 2. Create the tree.
-3. When `<state>` is `CLOSED`, build the object of the `tick.md#check-the-decider` section for the issue `<n>`. Do not run `bin/journal decider`. When `<pull>` is not `-` and the last close of the issue is `<login>`'s, build the object for the pull request `<pull>` instead, and add the conversation comments of that pull request as `comments`. A command builds the object from the host replies. Your own text carries no comment body into it. `bin/journal form decider` prints the form.
+3. When `<state>` is `closed`, build the object of the `tick.md#check-the-decider` section for the issue `<n>`. Do not run `bin/journal decider`. When `<pull>` is not `-` and the last close of the issue is `<login>`'s, build the object for the pull request `<pull>` instead. Add the conversation comments of that pull request to it as `comments`. A command builds the object from the host replies. Your own text carries no comment body into it. `bin/journal form decider` prints the form.
 4. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 8.
 5. Record the precedent files.
 6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
