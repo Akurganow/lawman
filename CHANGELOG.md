@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.1.1 - 2026-11-13
+#### Documentation
+- state the rule on new tests apart from the repair rule (a606e6b)
+- make the agent rules exact and name the root exception (6ecc2ac)
+- add AGENTS.md with the project rules for agents (16479f7)
+
+- - -
+
+
 ## v1.1.0 - 2026-11-12
 #### Features
 - (**law**) add the surplus department (df6d8b8)
