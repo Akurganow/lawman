@@ -57,7 +57,7 @@ describe("registration", () => {
 	test("precedent names its write, request and answer forms in its usage", () => {
 		const err = call(BASE, ["precedent"]).err;
 		for (const form of [
-			"--source <ruling comment URL> --tree <folder>",
+			"[--source <ruling comment URL>] --tree <folder>",
 			"--tree <folder> --request <name>",
 			"--tree <folder> --answer <name>",
 		])

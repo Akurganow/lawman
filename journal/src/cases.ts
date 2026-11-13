@@ -87,14 +87,14 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 
 export type CaseView = { need: Need; clerk: ClerkCase };
 
-// The cached comment whose last line is the counted marker with this ord. The
-// rank of the ord is the comment's place among the comments by time.
-export function rulingComment(
+// The cached comment whose last line is the counted marker with this ord, with its
+// time. The rank of the ord is the comment's place among the comments by time.
+export function rulingCommentOf(
 	db: Database,
 	precinct: string,
 	issue: number,
 	ord: string,
-): string | undefined {
+): { body: string; at: string } | undefined {
 	const rank = Number(ord.split("|")[ORD_RANK_PART]);
 	if (rank < 1) return undefined;
 	const raw = (
@@ -104,15 +104,22 @@ export function rulingComment(
 			)
 			.get(precinct, issue, ord) as { raw: string } | null
 	)?.raw;
-	const body = (
-		db
-			.query(
-				"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
-			)
-			.get(precinct, issue, rank - 1) as { body: string } | null
-	)?.body;
-	return body?.trimEnd().split("\n").at(-1)?.trim() === raw ? body : undefined;
+	const comment = db
+		.query(
+			"SELECT body, at FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
+		)
+		.get(precinct, issue, rank - 1) as { body: string; at: string } | null;
+	return comment?.body.trimEnd().split("\n").at(-1)?.trim() === raw
+		? (comment ?? undefined)
+		: undefined;
 }
+
+export const rulingComment = (
+	db: Database,
+	precinct: string,
+	issue: number,
+	ord: string,
+) => rulingCommentOf(db, precinct, issue, ord)?.body;
 
 type CloseRow = {
 	state_reason: string | null;

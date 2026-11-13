@@ -1,15 +1,16 @@
 import { describe, expect, test } from "bun:test";
-import { writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { handed, human, issuesJson, type Spec, T } from "./cases-fixture";
 import { inprocAsync, inprocFed } from "./inproc";
-import { lines } from "./input-test-fixture";
+import { CONFIG, lines } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
 import {
 	BASE,
 	caseMark,
 	charge,
 	defence,
+	dir,
 	LEAD_ID,
 	TRUSTED,
 	tempDb,
@@ -183,6 +184,47 @@ describe("the precedents of the tick group", () => {
 			(l) => l.split(" ")[1],
 		);
 		expect(handedOut).toEqual(["3-declined", "4-absent", "5-bare"]);
+	});
+
+	test("a file that the command wrote is handed out as a dismissal with its finding", async () => {
+		setUp(`${CONFIG}dismissals_since: 2026-10-01T00:00:00Z\n`);
+		orderOf("patrol", { department: "fixtures" });
+		const form = JSON.parse(
+			issuesJson({ 3: { body: [leadIn("fixtures")], state: "CLOSED" } }),
+		);
+		Object.assign(form.issues[0], {
+			stateReason: "NOT_PLANNED",
+			closedAt: "2026-10-15T08:00:00Z",
+			url: "https://git.example.com/o/main/issues/3",
+		});
+		const synced = await inprocFed(
+			BASE,
+			["sync", "main", "--author", TRUSTED],
+			JSON.stringify(form),
+		);
+		expect(synced.code).toBe(0);
+		const written = join(dir, "written");
+		mkdirSync(written);
+		const object = JSON.stringify({ lastActor: "owner", writers: ["owner"] });
+		const wrote = await inprocFed(
+			BASE,
+			["precedent", "main", "--issue", "3", "--tree", written],
+			object,
+		);
+		expect(wrote.code).toBe(0);
+		const [name] = readdirSync(join(written, ".lawman", "precedents"));
+		const text = readFileSync(
+			join(written, ".lawman", "precedents", name ?? ""),
+			"utf8",
+		);
+		expect(text).toContain("issue: 3\n");
+		host({
+			tree: tree({ [name ?? ""]: text }),
+			issues: { 3: { body: [leadIn("fixtures")], state: "CLOSED" } },
+		});
+		expect(precedentLines(await start("patrol"))).toEqual([
+			`precedent ${(name ?? "").replace(/\.md$/, "")} kind=dismissal departments=fixtures finding=${LEAD_ID}`,
+		]);
 	});
 
 	test("each printed file follows its line in a precedent fence, after the department page", async () => {
