@@ -78,7 +78,7 @@ When the installation and the precinct allow it, the court may ask an outside mo
 
 ## Role clerk
 
-The clerk takes one order, a job on an issue. It is the only role that opens a pull request and the only role that holds the link from an issue to its pull request. The journal names the job. The skill and the journal hold the job table, and this file does not. The jobs open a draft pull request for a conviction and take up a pull request of the trusted login. They carry a decider's close or reopen to the other side of the pair and settle a merged or closed pull request. They record a precedent. For a precedent the clerk has the journal write the precedent files of a ruling comment, from its Precedent section, into a precedent folder. If the files change, the clerk records the change as one commit, opens a pull request and leaves a comment with a marker. Otherwise it leaves only the comment. The clerk also records the owner's decision on that pull request. The clerk never merges, never pushes to the main branch, never reviews and never reacts. A precedent binds the roles only after the owner merges its pull request.
+The clerk takes one order, a job on an issue. It is the only role that opens a pull request and the only role that holds the link from an issue to its pull request. The journal names the job. The skill and the journal hold the job table, and this file does not. The jobs open a draft pull request for a conviction and take up a pull request of the trusted login. They carry a decider's close or reopen to the other side of the pair and settle a merged or closed pull request. They record a precedent. For a precedent the clerk has the journal write the precedent files into a precedent folder. The files are those of a ruling comment, from its Precedent section, and the dismissal of a lead that closed with no fix. The clerk words none of it. If the files change, the clerk records the change as one commit, opens a pull request and leaves a comment with a marker. Otherwise it leaves only the comment. The clerk also records the owner's decision on that pull request. The clerk never merges, never pushes to the main branch, never reviews and never reacts. A precedent binds the roles only after the owner merges its pull request.
 
 - `recorded`: the clerk opened a pull request with precedent files.
 - `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
@@ -215,7 +215,7 @@ The list of uses stays open. A use that the skill of a role names is a rule of t
 
 ## Precedents
 
-A precedent is a question the court has already decided for this precinct. Whoever needs a different outcome must show how the new case differs, or ask to cancel the precedent. In both kinds, the facts of a new case are proved anew by evidence. A precedent decides only whether such a shape counts as a violation.
+A precedent is a decision already made for this precinct. Whoever needs a different outcome must show how the new case differs, or ask to cancel the precedent. In every kind, the facts of a new case are proved anew by evidence. A protecting or condemning precedent decides only whether such a shape counts as a violation.
 
 A role applies a precedent because this section requires it. The line `precedents none` means that no precedent serves the role.
 
@@ -235,16 +235,23 @@ A condemning precedent says: "this shape in this precinct is a violation".
 - It helps the defender to understand that a defence must show a difference or ask for cancellation.
 - It helps the court to judge as it did last time.
 
+A dismissal says: "this finding is dismissed".
+
+- Its `finding` field names one finding by its identity. A dismissal fits a candidate or a lead with that identity. It fits no other finding on the same place, and no shape.
+- It decides nothing while the issue it names is open, or closed as completed.
+
 Each role applies them so:
 
-- Patrol knows the precedents of its department of both kinds before the search. After the search, a precedent drops no candidate. The lead of a candidate that one or both kinds fit names them.
+- Patrol knows the precedents of its department before the search.
+- After the search, patrol files a candidate that a protecting precedent or a dismissal fits only when it sees a difference. A candidate that a condemning precedent fits too is filed in spite of a protecting precedent, and never in spite of a dismissal. The report names each candidate that patrol does not file for this reason, with the precedent.
+- The lead of a candidate that patrol files names each precedent that fits it, and the difference.
 - The response unit names the precedents that fit in the lead, as a fact.
 - Investigation puts the precedents that fit in the `## Related` section of the case, as a fact. It closes no case on them.
 - The prosecutor and the defender write one of two in their decision. They write a difference of the case or a request to cancel the precedent, following the objection they choose. A prosecutor that sees a protecting precedent of the same shape and no difference declines with the class `not confirmed` and names the precedent. A defender relies on a protecting precedent in a defence, not in a refute, and the court decides.
 - The court judges on the whole decision of each party. Its Grounds name each precedent that it follows or departs from. A protecting precedent that the court follows means that the violation is not established.
 - For a requirement, a precedent is only evidence of the need, and it calls for no difference and no request to cancel. The court weighs it as any other. The name of the precedent identifies it.
 - The spec writer and the executor bring in no shape that a condemning precedent names a violation, in a spec or in code. A shape that a protecting precedent names no violation is no reason by itself to change code. A different outcome names the difference: the spec writer in the spec, the executor in its comment.
-- When both kinds fit a finding, the finding goes on with both. Each role names both, and the court chooses.
+- When a protecting and a condemning precedent both fit a finding, the finding goes on with both. Each role names both, and the court chooses.
 
 ## One tick, one case, exit
 
@@ -261,7 +268,7 @@ Each role applies them so:
 
 The outcome of a tick is one token from the role's own section, `Role duty desk` through `Role executor`, or from the shared forms of this grammar (`LAW.md#one-tick-one-case-exit`):
 
-- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a ruling without a precedent entry. A stale order also counts when its stage moved on, or when the issue is closed. A closed issue makes no order stale for the clerk. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
+- `silent`: the tick ran and has nothing to deliver. No order, a duplicate order, no candidate survived, or a precedent job that changed no file. A stale order also counts when its stage moved on, or when the issue is closed. A closed issue makes no order stale for the clerk. A spec writer order is stale when the pull request is closed or needs no spec. An executor order is stale when the pull request is closed or needs no executor, or when the comment of its order is gone. A response unit order is stale when the issue needs no intake.
 - `returned`: the prosecutor or the defender returned the case.
 - `failed`: the role says it could not finish, and no external cause explains it.
 - `skipped-<slug>`: the precinct or the department cannot be worked now. The duty desk writes no order for the precinct or the department, and a role that took an order closes it with this outcome. For a precinct whose constitution is missing or fails its check, the duty desk writes no order for a role that needs the constitution. It still writes the orders of the clerk, which does not read the constitution. The slot is the order's place. It is spent: the order does not repeat. Other precincts are not blocked.
@@ -339,16 +346,16 @@ The court never returns. For a defect, its doubt is an acquittal. For a requirem
 - The clerk writes its branch and its push, and creates a draft pull request. It edits a pull request body with fixed text, returns a pull request to draft and comments on a pull request. It closes and reopens a pull request. It comments on an issue and closes and reopens it.
 - The spec writer's one write is a comment on a pull request.
 - The executor writes in its copy under the run directory. It pushes to the head branch of its pull request and to no other ref, never forced. It also marks its pull request ready, returns it to draft and writes one comment on it per turn.
-- A role writes an issue title, an issue body, a comment or a commit message. The text that goes out is the journal's output, from the body check or from the hand-off, never a copy the role retypes. The host action runs only when the check exits 0. A commit message of fixed text goes out without the check. A quote of third-party text sits in a fenced block whose fence is longer than any run of the fence character in the quote. The clerk's pull request body holds fixed text, integers, the ruling comment URL and the journal's plain words of a ruling or a precedent. Its title holds fixed text, integers and either the first words of the court's Disposition or the names the journal printed. Its commit holds the precedent files that the journal wrote from the court's ruling, or is empty.
+- A role writes an issue title, an issue body, a comment or a commit message. The text that goes out is the journal's output, from the body check or from the hand-off, never a copy the role retypes. The host action runs only when the check exits 0. A commit message of fixed text goes out without the check. A quote of third-party text sits in a fenced block whose fence is longer than any run of the fence character in the quote. The clerk's pull request body holds fixed text, integers, the ruling comment URL and the journal's plain words of a ruling or a precedent. Its title holds fixed text, integers and either the first words of the court's Disposition or the names the journal printed. Its commit holds the precedent files that the journal wrote, or is empty.
 
 ## Dedupe
 
-Before a candidate is filed, the journal is asked whether the finding was seen. A finding's identity is its path, its symbol and its kind. The journal answers `none`, `open #n`, `declined #n` or `fixed #n`.
+Before a candidate is filed, the journal is asked whether the finding was seen. A finding's identity is its path, its symbol and its kind. The journal answers `none`, `open #n` or `fixed #n`.
 
-- An open or declined finding on the same path and symbol is never filed again. This holds for every kind and every department.
-- A closure as completed means fixed. Any other closure, including a closure with no reason, means declined.
+- An open lead with the same identity keeps the finding from being filed again.
+- A closure as completed means fixed. Any other closure, including a closure with no reason, means closed with no fix.
 - A fixed finding is filed again only when it returns at a later commit, with the same identity. The new lead references the closed issue, in its marker and in its body.
-- When several answers match, the order is open, then declined, then fixed.
+- When both answers match, the order is open, then fixed.
 - Materially new evidence on an open finding is no second lead. Patrol never comments, so the evidence goes into the report.
 
 ## Closure classes
@@ -421,7 +428,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 Every patrol tick that analyses ends with a report in this shape, so reports compare across ticks. The tick end record stores it. Roles never read it back, except through a source command of a department page.
 
 1. Coverage: the analysed commit, what was swept, and what was not reached, so the next tick can start there.
-2. Candidates: how many were found, how many the analyst cut, how many dedupe dropped, how many were handed to filing.
+2. Candidates: how many were found, how many the analyst cut, how many dedupe dropped, how many a precedent kept out, each of those named with its precedent, and how many were handed to filing.
 3. Filed: the issues with links. When nothing was filed, exactly one line:
    - `Filed nothing. CLEAN at <sha>.` when every check the department names ran or does not apply.
    - `Filed nothing. INCOMPLETE at <sha>, <n> checks not run.` when any check that applies did not run.

@@ -106,8 +106,8 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
 | `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
-| `clerk` | `entry` | the comment after it opens a precedent pull request | `pull` |
-| `clerk` | `no-entry` | the comment when the ruling changes no precedent file | none |
+| `clerk` | `entry` | the comment after it opens a precedent pull request | `pull`, `issue` |
+| `clerk` | `no-entry` | the comment when no precedent file changes | `issue` |
 | `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
 | `clerk` | `handoff` | the hand-over comment on a pull request | none |
 | `clerk` | `handed`, `shut`, `settled` or `kept` | the comment on a source issue after the clerk acts on the pair. A `kept` without `issue` follows the close of a precedent pull request by someone who decides nothing | `pull`, `issue` |
@@ -116,7 +116,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` follow a ruling, conviction or acquittal, whose Precedent section holds a line other than `none`.
+- `entry` and `no-entry` follow a ruling whose Precedent section holds a line other than `none`, and a close for which the journal gave the clerk the precedent job. The journal gives no such job for a close while one of them carries `issue=closed`.
 - `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
@@ -218,8 +218,8 @@ Valid. `E12` is a conviction, `E13` an acquittal.
 Valid. `E14` is an entry, `E15` a no-entry, `E20` a final, `E21` a kept without `issue`.
 
 ```
-<!-- lawman: role=clerk stage=entry pull=7 at=2026-10-16T10:45:00Z -->
-<!-- lawman: role=clerk stage=no-entry at=2026-10-16T11:00:00Z -->
+<!-- lawman: role=clerk stage=entry pull=7 issue=open at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=no-entry issue=open at=2026-10-16T11:00:00Z -->
 <!-- lawman: role=clerk stage=final pull=7 at=2026-10-16T11:30:00Z -->
 <!-- lawman: role=clerk stage=kept pull=7 at=2026-10-16T11:45:00Z -->
 ```

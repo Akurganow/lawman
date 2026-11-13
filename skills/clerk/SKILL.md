@@ -170,12 +170,12 @@ Clerk
 
 The marker is the last line of the comment. Nothing follows it. `at` is the UTC time of writing, as `YYYY-MM-DDTHH:MM:SSZ`.
 
-The precedent comment is written on the issue. Its sentence and marker:
+The precedent comment is written on the issue. Its sentence and marker follow. `issue` is the `state` of the case line, in lower case:
 
 | Form | Sentence | Marker |
 | :-- | :-- | :-- |
-| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> at=<UTC> -->` |
-| No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry at=<UTC> -->` |
+| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> issue=<open|closed> at=<UTC> -->` |
+| No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry issue=<open|closed> at=<UTC> -->` |
 | Final, merged | `The owner merged <pull request URL>. The precedents are binding.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
@@ -197,7 +197,7 @@ Clerk
 
 The precedents are proposed in https://git.example.com/example/widgets/pull/31. They take effect when the owner merges it.
 
-<!-- lawman: role=clerk stage=entry pull=31 at=2026-10-16T10:45:00Z -->
+<!-- lawman: role=clerk stage=entry pull=31 issue=open at=2026-10-16T10:45:00Z -->
 ````
 
 A realistic pair comment:

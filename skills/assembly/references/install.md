@@ -309,7 +309,7 @@ Write in this order.
 5. Take `trusted_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe, and `catalog` from Catalog.
 6. Write `typesafe_precincts`, `catalog_precincts` and `license_precincts` as none.
 7. Write `amended_law_commit` equal to `law_commit`.
-8. Write the optional keys that Limits decided. Write `input_chars` when the harness page names a size. Write `jobs` or `progress_checks` only when the developer changed the value.
+8. Write the optional keys that Limits decided. Write `input_chars` when the harness page names a size. Write `jobs` or `progress_checks` only when the developer changed the value. Write `dismissals_since` as the current UTC time.
 9. Read the file back, and stop if a required key is missing or a value is empty.
 
 ### Write the entry files and create the jobs

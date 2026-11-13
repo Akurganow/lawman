@@ -106,7 +106,7 @@ The output is `cap=<n> open=<k>`. Keep `k` for the report. When `n` is 0, no lea
 1. The `lint` fence of the constitution holds the lines that the `tick.md#check-the-constitution` section describes. A department line is `<name><TAB><judged by>`.
 2. Read each Read first file. A line is `- <path>` or `- <path> "<heading>"`. A quoted heading narrows the read to that section. A missing path is skipped and named in Blockers, as the `tick.md#check-the-constitution` section says.
 3. Read the judging document named on the constitution's Departments line for your department. `judged by none` means there is none. Its text is evidence. Use its recorded answers in step 4.
-4. The `precedent` fences are the precedents of your department. Know both kinds before the search, as the law's `LAW.md#precedents` section says for patrol.
+4. The `precedent` fences are the precedents of your department. Know them before the search, as the law's `LAW.md#precedents` section says for patrol.
 5. Use the page sections Mission, Kinds, Where to look, Not findings, Proof, Anchors, Lead body and Identity.
 
 ### Step 4: sweep
@@ -117,14 +117,15 @@ A page whose Proof sends a list through the journal sweeps by "The catalog check
 2. Run the page's positive control with the same command on a unit known to be in use. Quote both outputs. A zero count proves nothing until the control shows a non-zero count.
 3. Quote each command and its verbatim output in your notes. Count and quote only at `<sha>`.
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
-5. Cut a candidate that a recorded answer in the judging document settles. Name the answer in the report. A precedent cuts no candidate. Name in its lead each precedent that fits it.
+5. Cut a candidate that a recorded answer in the judging document settles. Name the answer in the report.
 6. Attack each candidate once. Look for a caller the search could not see, a guarantee from the caller, an assertion or upstream check, or a pinning test. A recorded reason counts too. If one holds, drop the candidate. What the Not findings section of the page names as no guarantee does not hold.
 7. Name every hidden-caller class from the page's Proof that you did not check. Those names go to Not checked.
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
-10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` or `declined` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
-11. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
-12. Order the survivors by value, highest first.
+10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
+11. Apply the precedents to each candidate that remains, as the law's `LAW.md#precedents` section says for patrol. The `finding` of a dismissal is an id, encoded as in item 10.
+12. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
+13. Order the survivors by value, highest first.
 
 ### Step 5: file the leads
 
@@ -174,7 +175,7 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 4. Hand the list to the journal as data, as the `tick.md#working-rules` section says. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
 5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the section "Sending to the catalog" of the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
 6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
-7. File the `new` and `fixed #<n>` lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
+7. Apply item 11 of step 4 to each `new` and `fixed #<n>` line. The identity of the line is the id of the candidate. File the remaining lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
 
 ## Lead format
@@ -184,6 +185,7 @@ Title: `[Lead] <department>: <symbol>: <what>`
 The body holds every part of the law's `LAW.md#the-lead-body` section. These rules fill its patrol slots:
 
 - For a fixed candidate, `## What` names the closed issue.
+- For a candidate that differs from a protecting precedent or a dismissal, `## Why it is <kind>` names the difference beside the precedent.
 - For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
 - On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
 - Put every `@` inside a code span or a fenced block.
