@@ -29,6 +29,8 @@ export type ClerkInput = {
 	ruling: CaseMarker | undefined;
 	// whether the ruling holds a Precedent line other than none, read only when needed
 	holdsPrecedent: () => boolean;
+	// whether the close of the issue leaves a dismissal, read only when needed
+	dismissible: () => boolean;
 	// the clerk markers of the other issues of the precinct, read only when needed
 	others: () => Map<number, CaseMarker[]>;
 };
@@ -63,7 +65,8 @@ export function awaitingDecision(markers: CaseMarker[]): number[] {
 		if (
 			m.role === "clerk" &&
 			DECISION_STAGES.includes(m.stage) &&
-			m.fields.issue === undefined &&
+			// a kept marker that carries an issue is a pair marker
+			(m.stage !== "kept" || m.fields.issue === undefined) &&
 			POSITIVE.test(m.fields.pull ?? "")
 		)
 			newest.set(m.fields.pull ?? "", m);
@@ -130,18 +133,31 @@ function tableRow(
 	);
 	if (decided !== undefined)
 		return { ...job("decision"), pull: String(decided) };
-	if (i.ruling === undefined) return NO_JOB;
-	if (i.ruling.stage === "conviction" && k === undefined && open)
+	if (i.ruling === undefined && open) return NO_JOB;
+	if (i.ruling?.stage === "conviction" && k === undefined && open)
 		return job("open");
-	const answered = i.markers.some(
-		(m) =>
-			m.role === "clerk" &&
-			ANSWERS.includes(m.stage) &&
-			m.ord > (i.ruling?.ord ?? ""),
-	);
-	return answered || !i.holdsPrecedent()
-		? NO_JOB
-		: { ...job("precedent"), pull: NONE };
+	const due = precedentDue(i);
+	if (!due.ruling && !due.dismissal) return NO_JOB;
+	const left =
+		base === "shut" &&
+		!i.pulls.some((p) => p.number === Number(k?.fields.pull));
+	return { ...job("precedent"), pull: left ? (k?.fields.pull ?? NONE) : NONE };
+}
+
+const answeredClerk = (m: CaseMarker) =>
+	m.role === "clerk" && ANSWERS.includes(m.stage);
+
+// whether the ruling's files are due, and whether a dismissal is due
+export function precedentDue(i: ClerkInput) {
+	const ruling =
+		i.ruling !== undefined &&
+		!i.markers.some((m) => answeredClerk(m) && m.ord > (i.ruling?.ord ?? "")) &&
+		i.holdsPrecedent();
+	const dismissal =
+		i.state === "CLOSED" &&
+		!i.markers.some((m) => answeredClerk(m) && m.fields.issue === "closed") &&
+		i.dismissible();
+	return { ruling, dismissal };
 }
 
 function rowOf(
