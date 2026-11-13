@@ -80,6 +80,24 @@ describe("the role table", () => {
 		});
 	});
 
+	test("only patrol and the response unit receive a dismissal", () => {
+		const dismissals = Object.fromEntries(
+			ROLE_NAMES.map((role) => [role, inputOf(role)?.dismissals]),
+		);
+		expect(dismissals).toEqual({
+			patrol: true,
+			"response-unit": true,
+			investigation: false,
+			prosecutor: false,
+			defender: false,
+			court: false,
+			clerk: false,
+			"spec-writer": false,
+			executor: false,
+			[DUTY_DESK]: undefined,
+		});
+	});
+
 	test("every section of the harness page stands on the Hermes page", () => {
 		const page = read(join("harnesses", "hermes.md"));
 		expect(sectionsOf(page, HARNESS_SECTIONS)).not.toContain(null);

@@ -1,4 +1,6 @@
 import { describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { handed, human, issuesJson, type Spec, T } from "./cases-fixture";
 import { inprocAsync, inprocFed } from "./inproc";
 import { lines } from "./input-test-fixture";
@@ -8,6 +10,7 @@ import {
 	caseMark,
 	charge,
 	defence,
+	LEAD_ID,
 	TRUSTED,
 	tempDb,
 } from "./test-helpers";
@@ -40,6 +43,8 @@ const PRECEDENTS: Record<string, string> = {
 	"h.md":
 		"---\r\nkind: condemns\r\ndepartments: [fixtures]\r\n---\r\n\r\nA rule.\r\n",
 	"i.md": "---\nkind: protects\nA rule under an unclosed header.\n",
+	"j.md": file(`kind: dismissal\ndepartments: [fixtures]\nfinding: ${LEAD_ID}`),
+	"k.md": file("kind: dismissal\ndepartments: [logic]\nfinding: not-an-id"),
 };
 const LINES = {
 	a: "precedent a kind=protects departments=all",
@@ -49,8 +54,12 @@ const LINES = {
 	e: "precedent e kind=- departments=-",
 	h: "precedent h kind=condemns departments=fixtures",
 	i: "precedent i kind=- departments=-",
+	j: `precedent j kind=dismissal departments=fixtures finding=${LEAD_ID}`,
+	k: "precedent k kind=dismissal departments=logic finding=-",
 };
 const ALL = Object.values(LINES);
+// the roles that do not receive a dismissal
+const PLAIN = ALL.filter((l) => l !== LINES.j && l !== LINES.k);
 const FIXTURES = [LINES.a, LINES.b, LINES.d, LINES.e, LINES.h, LINES.i];
 const SELF = "self precedents .lawman/precedents/";
 
@@ -81,7 +90,7 @@ const ROLES: Record<string, Role> = {
 	patrol: {
 		order: { department: "fixtures" },
 		setup: (t) => host({ tree: t }),
-		expected: FIXTURES,
+		expected: [...FIXTURES, LINES.j],
 	},
 	"response-unit": {
 		order: { issue: 3 },
@@ -97,7 +106,7 @@ const ROLES: Record<string, Role> = {
 		order: { issue: 3 },
 		setup: (t) =>
 			host({ tree: t, issues: { 3: withLead("fixtures", caseMark()) } }),
-		expected: ALL,
+		expected: PLAIN,
 	},
 	court: {
 		order: { issue: 3 },
@@ -106,7 +115,7 @@ const ROLES: Record<string, Role> = {
 				tree: t,
 				issues: { 3: withLead("logic", caseMark(), charge(), defence()) },
 			}),
-		expected: ALL,
+		expected: PLAIN,
 	},
 	"spec-writer": {
 		order: { issue: 7 },
@@ -119,7 +128,7 @@ const ROLES: Record<string, Role> = {
 			);
 			expect(synced.code).toBe(0);
 		},
-		expected: ALL,
+		expected: PLAIN,
 	},
 	clerk: {
 		order: { issue: 3 },
@@ -142,6 +151,39 @@ describe("the precedents of the tick group", () => {
 			expect(out.includes("precedents none")).toBe(false);
 		},
 	);
+
+	test("a dismissal is handed out unless the issue it names is open or closed as completed", async () => {
+		const dismissal = (issue?: number) =>
+			file(
+				`kind: dismissal\ndepartments: []\n${issue === undefined ? "" : `issue: ${issue}\n`}finding: ${LEAD_ID}`,
+			);
+		setUp();
+		orderOf("patrol", { department: "fixtures" });
+		host({
+			tree: tree({
+				"1-open.md": dismissal(3),
+				"2-done.md": dismissal(4),
+				"3-declined.md": dismissal(5),
+				"4-absent.md": dismissal(9),
+				"5-bare.md": dismissal(),
+			}),
+		});
+		// a sync replaces the cache rows, so the closed reasons go in through the host
+		const form = JSON.parse(
+			issuesJson({
+				3: { state: "OPEN" },
+				4: { state: "CLOSED" },
+				5: { state: "CLOSED" },
+			}),
+		);
+		form.issues[1].stateReason = "COMPLETED";
+		form.issues[2].stateReason = "NOT_PLANNED";
+		writeFileSync(join(configs("main"), "issues.json"), JSON.stringify(form));
+		const handedOut = precedentLines(await start("patrol")).map(
+			(l) => l.split(" ")[1],
+		);
+		expect(handedOut).toEqual(["3-declined", "4-absent", "5-bare"]);
+	});
 
 	test("each printed file follows its line in a precedent fence, after the department page", async () => {
 		setUp();

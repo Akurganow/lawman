@@ -24,6 +24,8 @@ export type RoleInput = {
 	department: "order" | "stage" | null;
 	// whose department picks the precedents: all of them, the order's, the stage's, or none
 	precedents: "all" | "order" | "stage" | null;
+	// whether the role receives a dismissal among its precedents
+	dismissals: boolean;
 	texts: TextKind[];
 };
 
@@ -245,6 +247,7 @@ const ISSUE_ROLE: Shared = {
 	constitution: true,
 	department: null,
 	precedents: "all",
+	dismissals: false,
 	texts: ["issue"],
 };
 const PULL_ROLE: Shared = {
@@ -254,6 +257,7 @@ const PULL_ROLE: Shared = {
 	constitution: true,
 	department: null,
 	precedents: "all",
+	dismissals: false,
 	texts: ["pull"],
 };
 
@@ -282,6 +286,7 @@ export const ROLES: Record<string, RoleInput> = {
 		constitution: true,
 		department: "order",
 		precedents: "order",
+		dismissals: true,
 		texts: [],
 	},
 	"response-unit": {
@@ -301,6 +306,7 @@ export const ROLES: Record<string, RoleInput> = {
 		stage: "intake",
 		stale: either((s) => s.need === "none", closed),
 		precedents: "stage",
+		dismissals: true,
 	},
 	investigation: {
 		...ISSUE_ROLE,
