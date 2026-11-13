@@ -7,13 +7,14 @@ These rules bind an agent that changes this repository. Read [CONTRIBUTING.md](C
 - Prefer a Biome rule or a Biome plugin to a test that scans the source in `journal/`, where Biome costs less. Biome costs less when it catches the same error with less own code and less upkeep.
 - A Biome plugin reads only some languages, and the Biome documentation lists them. A check over a file in another language stays a test.
 - Write no new test whose only check is the wording of a text or the content of the CI config. Write no test that repeats another.
+- Add a test only where the behaviour would otherwise stand unprotected. Prefer a new case in an existing test.
 - Add a check on a text only when it stops a leak or protects the journal's own parsing. Never block a text on style.
 - Never lint a body that Lawman did not write, such as the body of a foreign issue or pull request.
 - Parse and clean text with an established library, as the journal does for Markdown and HTML. Do not write own rules for it and patch them hole by hole.
 
 ## Design
 
-- Repair a defect in the place that has it, and prefer the repair that also covers the neighbouring cases. Add a new part or a new test only when no such repair works.
+- Repair a defect in the place that has it, and prefer the repair that also covers the neighbouring cases. Add a new part only when no such repair works.
 - A small saving does not justify a new part.
 - Before a decision that touches a harness, read [the principle](docs/harnesses.md#the-principle). Check the decision against every harness of that page.
 - Do not prove a behaviour on one repository host alone, such as how one host renders Markdown. Users run many hosts.
