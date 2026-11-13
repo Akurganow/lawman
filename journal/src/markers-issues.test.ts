@@ -316,7 +316,7 @@ describe("legacy fingerprints", () => {
 			expect(sync().code).toBe(0);
 		});
 
-		test("leads lists the open ones with their departments and ids, seen finds the closed one", () => {
+		test("leads lists the open ones with their departments and ids, seen answers none for the declined one", () => {
 			expect(legacyRows(rows(["leads", PRECINCT]))).toEqual([
 				"19|OPEN||text-residue|tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
 				"20|OPEN||agent-config|",
@@ -329,7 +329,7 @@ describe("legacy fingerprints", () => {
 					"--id",
 					"plugins/triz::principles-subitems-attributed-to-altshuller::lying",
 				]).out.trim(),
-			).toBe("declined #21");
+			).toBe("none");
 		});
 
 		test("cap counts the open legacy leads of a department", () => {
@@ -341,7 +341,7 @@ describe("legacy fingerprints", () => {
 			).toBe("cap=3 open=1");
 		});
 
-		test("seen finds a legacy id by its symbol", () => {
+		test("seen finds a legacy open lead by its own id only", () => {
 			const seen = (id: string) =>
 				run(["seen", PRECINCT, "--id", id]).out.trim();
 			expect(
@@ -353,12 +353,12 @@ describe("legacy fingerprints", () => {
 				seen(
 					"tools/check-conformance.py::skills-ref-not-pinnable-in-ci::unused",
 				),
-			).toBe("open #19");
+			).toBe("none");
 			expect(
 				seen(
 					"plugins/triz::principles-subitems-attributed-to-altshuller::lying",
 				),
-			).toBe("declined #21");
+			).toBe("none");
 			expect(seen("src/f.rs::g::lying")).toBe("none");
 			expect(seen("src/h.rs::i::lying")).toBe("none");
 		});

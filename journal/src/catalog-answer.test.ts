@@ -90,7 +90,7 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 			expect(r.code).toBe(0);
 			expect(newLines(r.out).sort()).toEqual(expected.sort());
 			expect(totals(r.out)).toBe(
-				`catalog entries=${recorded.queries.length} parts=1 failed=0 open=0 declined=0 new=${expected.length} fixed=0`,
+				`catalog entries=${recorded.queries.length} parts=1 failed=0 open=0 new=${expected.length} fixed=0`,
 			);
 			for (const [i, h] of hits.entries())
 				if (h.vulns === undefined) expect(r.out).not.toContain(`made-up-${i}/`);
@@ -252,7 +252,7 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 		start(run, "1", input);
 		const r = run(answer("1"), resultsReply([[], []]));
 		expect(totals(r.out)).toBe(
-			"catalog entries=2 parts=1 failed=0 open=0 declined=0 new=0 fixed=0",
+			"catalog entries=2 parts=1 failed=0 open=0 new=0 fixed=0",
 		);
 		expect(lines(r.out)).toContain("catalog refused=2 not-sent=3");
 		prepare();
@@ -326,7 +326,7 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 				.map((g) => filedLine(place(g), `ADV-${g}`, `pkg-${g}`)),
 		);
 		expect(totals(outs[2] ?? "")).toBe(
-			"catalog entries=2500 parts=3 failed=1 open=0 declined=0 new=15 fixed=0",
+			"catalog entries=2500 parts=3 failed=1 open=0 new=15 fixed=0",
 		);
 		expect(lines(outs[2] ?? "")).toContain(
 			"catalog part 2 failed reason=bad-answer",
@@ -358,7 +358,7 @@ describe.each(RUNNERS)(
 			});
 		}
 
-		test("open and declined symbols are counts, a fixed one prints its issue, the rest is new", () => {
+		test("an open id is a count, a fixed one prints its issue, the rest is new", () => {
 			prepare();
 			seed((db) => precinct(db, "alpha"));
 			put(1, "OPEN", null, id("A-1"));
@@ -372,12 +372,13 @@ describe.each(RUNNERS)(
 				resultsReply([["A-1", "B-2", "C-3", "D-4", "E-5"]]),
 			);
 			expect(newLines(r.out)).toEqual([
+				filedLine(PLACE, "B-2", "pkg-1"),
 				filedLine(PLACE, "C-3", "pkg-1", "fixed #3"),
 				filedLine(PLACE, "D-4", "pkg-1"),
 				filedLine(PLACE, "E-5", "pkg-1"),
 			]);
 			expect(totals(r.out)).toBe(
-				"catalog entries=1 parts=1 failed=0 open=1 declined=1 new=2 fixed=1",
+				"catalog entries=1 parts=1 failed=0 open=1 new=3 fixed=1",
 			);
 		});
 	},

@@ -60,27 +60,13 @@ export function leads(args: string[]): void {
 export const symbolOf = (id: string) => id.slice(0, id.lastIndexOf("::"));
 
 export function seenLine(origins: Origin[], id: string): string {
-	const same = origins.filter(
-		(o) => symbolOf(o.lead_id ?? "") === symbolOf(id),
+	const same = origins.filter((o) => o.lead_id === id);
+	const open = same.find((o) => o.state === "OPEN");
+	if (open) return `open #${open.issue}`;
+	const fixed = same.find(
+		(o) => o.state === "CLOSED" && o.state_reason === COMPLETED,
 	);
-	const classes: [string, Origin | undefined][] = [
-		["open", same.find((o) => o.state === "OPEN")],
-		[
-			"declined",
-			same.find((o) => o.state === "CLOSED" && o.state_reason !== COMPLETED),
-		],
-		[
-			"fixed",
-			origins.find(
-				(o) =>
-					o.state === "CLOSED" &&
-					o.state_reason === COMPLETED &&
-					o.lead_id === id,
-			),
-		],
-	];
-	for (const [label, o] of classes) if (o) return `${label} #${o.issue}`;
-	return "none";
+	return fixed ? `fixed #${fixed.issue}` : "none";
 }
 
 export function seen(args: string[]): void {

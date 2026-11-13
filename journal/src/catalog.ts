@@ -191,7 +191,7 @@ const failedLine = (n: number, reason: string) =>
 
 function printedResult(state: State): string {
 	const origins = withDb((db) => leadOrigins(db, state.precinct));
-	const tally = { open: 0, declined: 0, new: 0, fixed: 0 };
+	const tally = { open: 0, new: 0, fixed: 0 };
 	const rows: string[] = [];
 	for (const m of matchesOf(state)) {
 		const identity = leadIdentity(m.place, m.id, m.ecosystem, m.name);
@@ -213,7 +213,7 @@ function printedResult(state: State): string {
 	);
 	return [
 		...rows,
-		`catalog entries=${state.entries.length} parts=${state.parts.length} failed=${failed.length} open=${tally.open} declined=${tally.declined} new=${tally.new} fixed=${tally.fixed}`,
+		`catalog entries=${state.entries.length} parts=${state.parts.length} failed=${failed.length} open=${tally.open} new=${tally.new} fixed=${tally.fixed}`,
 		`catalog refused=${numbers(state.refused)} not-sent=${numbers(state.unresolved)}`,
 		...failed,
 	].join("\n");
