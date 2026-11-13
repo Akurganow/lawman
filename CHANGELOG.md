@@ -4,6 +4,33 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.2.0 - 2026-11-13
+#### Features
+- (**journal**) write a dismissal with the precedent command (cb972d4)
+- (**journal**) build the text of a dismissal file (caaadee)
+- (**journal**) open a precedent pull request body without a ruling (67bd16c)
+- (**journal**) give the clerk the precedent job for a dismissal (a0231b5)
+- (**journal**) let law-sync fill dismissals_since (cfd04e3)
+- (**journal**) read the comments of the check object (d42658a)
+- (**journal**) hand a dismissal to patrol and the response unit (7da8036)
+- (**journal**) match the whole finding id in seen (5b589e7)
+- (**law**) remember a declined finding by a dismissal (948b381)
+#### Bug Fixes
+- (**assembly**) name the form of dismissals_since (1c10386)
+- (**clerk**) write the issue field of the marker table without a pipe (1bb9a18)
+- (**clerk**) test the lower-case state in the precedent recipe (1fbbae8)
+- (**journal**) name a ruling in the body only when it changed a file (43806ee)
+- (**journal**) keep a ruling's cancellation beside a dismissal that writes none (106a02c)
+- (**law**) ask a lead for a difference only when patrol files for one (6cee4b9)
+#### Documentation
+- (**configuration**) say which forms of dismissals_since the journal reads (67736d2)
+- (**law**) split three sentences over the length limit (80b296b)
+- describe a precedent on the design page as the law does (cc61332)
+- describe the dismissal and the whole-id answer of seen (3fd2077)
+
+- - -
+
+
 ## v1.1.1 - 2026-11-13
 #### Documentation
 - state the rule on new tests apart from the repair rule (a606e6b)
