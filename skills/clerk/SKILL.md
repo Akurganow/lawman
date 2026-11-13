@@ -174,8 +174,8 @@ The precedent comment is written on the issue. Its sentence and marker follow. `
 
 | Form | Sentence | Marker |
 | :-- | :-- | :-- |
-| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> issue=<open|closed> at=<UTC> -->` |
-| No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry issue=<open|closed> at=<UTC> -->` |
+| Entry | `The precedents are proposed in <pull request URL>. They take effect when the owner merges it.` | `<!-- lawman: role=clerk stage=entry pull=<m> issue=<state> at=<UTC> -->` |
+| No entry | `No precedent entry.` | `<!-- lawman: role=clerk stage=no-entry issue=<state> at=<UTC> -->` |
 | Final, merged | `The owner merged <pull request URL>. The precedents are binding.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Final, closed | `The owner closed <pull request URL>. The precedents did not take effect.` | `<!-- lawman: role=clerk stage=final pull=<m> at=<UTC> -->` |
 | Kept | `<pull request URL> was closed by someone who decides nothing here. Nothing changes.` | `<!-- lawman: role=clerk stage=kept pull=<m> at=<UTC> -->` |
