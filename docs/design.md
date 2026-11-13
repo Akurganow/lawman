@@ -43,7 +43,7 @@ A developer who maintains many repositories wants the same review process on eac
 
 **The method lives once.** A department is one page and not an agent. So a narrow department costs one page, and a user can add one without asking the project.
 
-**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings add precedents as files in `.lawman/precedents/`. A precedent is a question the court already decided, so the same dispute is not argued again in every case. It decides only whether a shape is a violation, and the facts of a new case are proved anew. Settings of the installation, such as the weight, stay outside it.
+**A repository's facts live in its constitution.** The assembly writes it once, which is expensive, and a person reviews it. Later rulings and closes of a lead with no fix add precedents as files in `.lawman/precedents/`. A precedent is a decision already made for the repository, so the same dispute is not argued again in every case. A protecting or condemning precedent decides only whether a shape is a violation, and the facts of a new case are proved anew. A dismissal turns down one finding. Settings of the installation, such as the weight, stay outside it.
 
 **No set of labels per repository.** Creating the same labels in every repository is wasteful, so markers in comments record the process. The journal caches them and keeps the only record of orders and ticks. A constitution names the one label that tells a person an issue waits for them.
 
