@@ -244,7 +244,7 @@ Each role applies them so:
 
 - Patrol knows the precedents of its department before the search.
 - After the search, patrol files a candidate that a protecting precedent or a dismissal fits only when it sees a difference. A candidate that a condemning precedent fits too is filed in spite of a protecting precedent, and never in spite of a dismissal. The report names each candidate that patrol does not file for this reason, with the precedent.
-- The lead of a candidate that patrol files names each precedent that fits it, and the difference.
+- The lead of a candidate that patrol files names each precedent that fits it. When patrol files it for a difference, the lead names the difference too.
 - The response unit names the precedents that fit in the lead, as a fact.
 - Investigation puts the precedents that fit in the `## Related` section of the case, as a fact. It closes no case on them.
 - The prosecutor and the defender write one of two in their decision. They write a difference of the case or a request to cancel the precedent, following the objection they choose. A prosecutor that sees a protecting precedent of the same shape and no difference declines with the class `not confirmed` and names the precedent. A defender relies on a protecting precedent in a defence, not in a refute, and the court decides.
