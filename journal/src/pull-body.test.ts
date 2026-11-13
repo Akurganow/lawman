@@ -4,7 +4,7 @@ import { join } from "node:path";
 import { inprocAsync } from "./inproc";
 import { config } from "./input-test-fixture";
 import { cache } from "./precedent-test-fixture";
-import { plainWords } from "./pull-body";
+import { plainWords, precedentBody } from "./pull-body";
 import { readPulls } from "./pulls";
 import {
 	acquittal,
@@ -206,12 +206,22 @@ describe("the body of the precedent pull request", () => {
 		put("GH-12", "Plain.");
 		await write("- cancel owned", "- cancel GH-12", `- new y: ${ENTITY}`);
 		const text = readFileSync(body(), "utf8");
-		expect(text).toContain("cancel owned: the text of the rule was left out\n");
+		expect(text).toContain("cancel owned: the text was left out\n");
 		expect(text).toContain("cancel GH-12: Plain.\n");
-		expect(text).toContain(
-			"new 2026-10-14-y: the text of the rule was left out\n",
-		);
+		expect(text).toContain("new 2026-10-14-y: the text was left out\n");
 		expect(sourcesOf(text)).toBe("1");
+	});
+
+	test("opens without a source when none is given", async () => {
+		expect(await precedentBody(undefined, [])).toBe(
+			"Records the changes of the precedents. Merge them to make them binding.\n\n~~~\n\n~~~\n",
+		);
+	});
+
+	test("tells no word of a file with several paragraphs and a fenced quote", async () => {
+		const now = `---\nkind: dismissal\ndepartments: []\n---\n\nFirst paragraph.\n\n~~~\nAsk @x about #12 at https://example.com/a\n~~~\n`;
+		const text = await precedentBody(SOURCE, [{ name: "d", was: null, now }]);
+		expect(text).toBe(`${HEAD}\n\n~~~\nnew d: the text was left out\n~~~\n`);
 	});
 
 	test("writes nothing when the place of the body is no plain file", async () => {
