@@ -116,7 +116,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 
 - `priority` is `P0`, `P1`, `P2` or `P3`. A missing or other value reads as `P2`. The parser keeps it as it is.
 - `pull` is a positive decimal integer without leading zeros. Otherwise the marker names no pull request. `issue` is `open` or `closed`, the state in which the clerk left the issue.
-- `entry` and `no-entry` follow a ruling whose Precedent section holds a line other than `none`, and a close for which the journal gave the clerk the precedent job. The journal gives no such job for a close while one of them carries `issue=closed`.
+- `entry` and `no-entry` follow a ruling whose Precedent section holds a line other than `none`. They also follow a close for which the journal gave the clerk the precedent job. The journal gives no such job for a close while an `entry` or `no-entry` marker of the issue carries `issue=closed`.
 - `kept` without `issue` is no pair marker. It records that a precedent pull request closed with no decision. The pair stages carry `pull` and `issue` together.
 - `department` is a value token. `id` follows "The `id` value".
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.

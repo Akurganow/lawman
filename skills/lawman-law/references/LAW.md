@@ -428,7 +428,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 Every patrol tick that analyses ends with a report in this shape, so reports compare across ticks. The tick end record stores it. Roles never read it back, except through a source command of a department page.
 
 1. Coverage: the analysed commit, what was swept, and what was not reached, so the next tick can start there.
-2. Candidates: how many were found, how many the analyst cut, how many dedupe dropped, how many a precedent kept out, each of those named with its precedent, and how many were handed to filing.
+2. Candidates: how many were found, how many the analyst cut and how many dedupe dropped. Then how many a precedent kept out, each named with its precedent, and how many were handed to filing.
 3. Filed: the issues with links. When nothing was filed, exactly one line:
    - `Filed nothing. CLEAN at <sha>.` when every check the department names ran or does not apply.
    - `Filed nothing. INCOMPLETE at <sha>, <n> checks not run.` when any check that applies did not run.

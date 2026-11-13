@@ -103,7 +103,7 @@ The file opens with frontmatter between two `---` lines. The rule text follows i
 | `finding` | the identity of the dismissed finding, as in the lead marker's `id` | for `dismissal` |
 
 The owner writes an owner's precedent by hand. Its name is free of the court's `<date>-<gist>` form. It may carry no `issue` and no `ruling`.
-A court ruling adds, refines or cancels a precedent, and a close of a lead with no fix adds a dismissal, through the clerk's pull request. The owner merges that pull request.
+A court ruling adds, refines or cancels a precedent. A close of a lead with no fix adds a dismissal. Both come through the clerk's pull request. The owner merges that pull request.
 A field beyond the table stays in the file. A role ignores it.
 An old `## Precedents` section of `LAWMAN.md` is a note in the margin.
 
