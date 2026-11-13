@@ -338,15 +338,19 @@ describe("precedent: a call with nothing due or too little to build a file", () 
 });
 
 describe("precedent: the pull request body of a dismissal", () => {
-	test("after a decider's close the body does not name the ruling, though the call does", async () => {
+	test("a ruling that changed no file is not named in the body, though the call names it", async () => {
+		const ABSENT = "2026-09-01-absent-rule";
 		await cache([
 			...funnel,
-			ruled(conviction(), "## Precedent", "", "none"),
+			ruled(conviction(), "## Precedent", "", `- cancel ${ABSENT}`),
 			{ body: COMMENT, author: OWNER },
 		]);
 		close();
 		const r = await run(objectOf(), "--source", SOURCE);
-		expect(r.out).toBe(`entry\t${DISMISSAL_BASE}\n`);
+		expect(lines(r.out)).toEqual([
+			`cancel\t${ABSENT}\tmissing`,
+			`entry\t${DISMISSAL_BASE}`,
+		]);
 		const now = read(DISMISSAL_BASE);
 		expect(now).toContain(COMMENT);
 		expect(readFileSync(bodyFile(), "utf8")).toBe(

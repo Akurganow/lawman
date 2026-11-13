@@ -785,8 +785,9 @@ async function writePrecedents(
 	const dismissed =
 		dismissal === null ? undefined : await dismiss(folder, dismissal);
 	const pending = folder.pending();
-	// the body names the ruling only when the files are its own, or the dismissal quotes its Verdict
-	const cited = rules || dismissed?.cites ? source : undefined;
+	// the body names the ruling only when it changed a file, or the dismissal quotes its Verdict
+	const cited =
+		applied?.changes.length || dismissed?.cites ? source : undefined;
 	const text =
 		pending.length > 0 ? await precedentBody(cited, pending) : undefined;
 	folder.commit();
