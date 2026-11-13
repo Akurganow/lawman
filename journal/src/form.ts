@@ -72,7 +72,8 @@ ${COMMON}
 
 Fields:
   lastActor: the login of whoever made the last close or reopen of the number in question, null when none
-  writers: as in pulls`,
+  writers: as in pulls
+  comments: optional. The conversation comments of the pull request in question, oldest first, each with author (login), createdAt and body. The precedent command reads them.`,
 	catalog: LIST_FORM,
 };
 
@@ -126,7 +127,17 @@ const EXAMPLES: Record<FormKind, unknown> = {
 			},
 		],
 	},
-	decider: { lastActor: "maintainer", writers: ["maintainer", "co-writer"] },
+	decider: {
+		lastActor: "maintainer",
+		writers: ["maintainer", "co-writer"],
+		comments: [
+			{
+				author: "lawman-bot",
+				createdAt: "2026-10-14T09:00:00Z",
+				body: "Example comment",
+			},
+		],
+	},
 	catalog: LIST_EXAMPLE,
 };
 

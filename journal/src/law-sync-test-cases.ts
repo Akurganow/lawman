@@ -25,7 +25,7 @@ import {
 	TAG,
 	TYPESAFE_ENV,
 } from "./law-sync-test-fixture";
-import { dir, tempDb } from "./test-helpers";
+import { BASE, dir, tempDb } from "./test-helpers";
 
 const SYNCED = `synced ${TAG}\n`;
 const EXECUTABLE = 0o111;
@@ -104,16 +104,16 @@ export function defineCases(runner: Runner): void {
 			lay(root);
 			const sum = syncedSum();
 			expect(configOf(root)).toBe(
-				`${CONFIG.replace(OLD_COMMIT, LAW_COMMIT)}release_tag: ${TAG}\njournal_sha256: ${sum}\ntypesafe_key: ${TYPESAFE_ENV}\namended_law_commit: ${OLD_COMMIT}\n${JOBS}`,
+				`${CONFIG.replace(OLD_COMMIT, LAW_COMMIT)}release_tag: ${TAG}\njournal_sha256: ${sum}\ntypesafe_key: ${TYPESAFE_ENV}\namended_law_commit: ${OLD_COMMIT}\ndismissals_since: ${BASE}\n${JOBS}`,
 			);
 		});
 
 		test("replaces present keys in place and never overwrites a present default", () => {
-			const text = `release_tag: v0.1.0\nlaw_commit: ${OLD_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: 0\namended_law_commit: ${"a".repeat(40)}\njobs: clerk=2\nprogress_checks: 5\n`;
+			const text = `release_tag: v0.1.0\nlaw_commit: ${OLD_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: 0\namended_law_commit: ${"a".repeat(40)}\ndismissals_since: 2026-01-01T00:00:00Z\njobs: clerk=2\nprogress_checks: 5\n`;
 			lay(root, { config: text });
 			const sum = syncedSum();
 			expect(configOf(root)).toBe(
-				`release_tag: ${TAG}\nlaw_commit: ${LAW_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: ${sum}\namended_law_commit: ${"a".repeat(40)}\njobs: clerk=2\nprogress_checks: 5\n`,
+				`release_tag: ${TAG}\nlaw_commit: ${LAW_COMMIT}\ntypesafe_key: the keychain\njournal_sha256: ${sum}\namended_law_commit: ${"a".repeat(40)}\ndismissals_since: 2026-01-01T00:00:00Z\njobs: clerk=2\nprogress_checks: 5\n`,
 			);
 		});
 
@@ -150,6 +150,7 @@ export function defineCases(runner: Runner): void {
 			expect(configOf(root)).not.toContain("catalog");
 			expect(configOf(root)).toContain(`typesafe_key: ${TYPESAFE_ENV}\n`);
 			expect(configOf(root)).toContain(`amended_law_commit: ${OLD_COMMIT}\n`);
+			expect(configOf(root)).toContain(`dismissals_since: ${BASE}\n`);
 		});
 
 		test("a config with the catalog keys keeps their values", () => {

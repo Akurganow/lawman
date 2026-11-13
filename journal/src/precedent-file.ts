@@ -1,17 +1,26 @@
 import { fits } from "./args";
 import { readFrontmatter } from "./lint";
-import { stripCr } from "./markers";
+import { canonicalId, stripCr } from "./markers";
 
+export const DISMISSAL = "dismissal";
+// the kinds of a numbered line; a dismissal has no such line
 export const PRECEDENT_KINDS = ["protects", "condemns"];
+export const HEADER_KINDS = [...PRECEDENT_KINDS, DISMISSAL];
 export const NO_VALUE = "-";
 
-// departments is null when the value is outside its class
-export type Header = { kind: string; departments: string[] | null };
+// departments is null when the value is outside its class; finding and issue are absent then too
+export type Header = {
+	kind: string;
+	departments: string[] | null;
+	finding?: string;
+	issue?: number;
+};
 export type Fields = {
 	kind: string;
 	departments: string[];
 	issue?: number;
 	date: string;
+	finding?: string;
 	ruling?: string;
 };
 
@@ -47,16 +56,20 @@ export function headerOf(text: string): Header {
 	const h = parsed(text);
 	const kind = h?.kind;
 	const departments = h?.departments;
+	const finding = h?.finding;
+	const issue = h?.issue;
 	return {
 		kind:
-			typeof kind === "string" && PRECEDENT_KINDS.includes(kind)
-				? kind
-				: NO_VALUE,
+			typeof kind === "string" && HEADER_KINDS.includes(kind) ? kind : NO_VALUE,
 		departments:
 			Array.isArray(departments) &&
 			departments.every((d) => typeof d === "string" && fits("department", d))
 				? (departments as string[])
 				: null,
+		...(typeof finding === "string" && canonicalId(finding) ? { finding } : {}),
+		...(typeof issue === "number" && Number.isSafeInteger(issue) && issue > 0
+			? { issue }
+			: {}),
 	};
 }
 

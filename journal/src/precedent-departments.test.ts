@@ -1361,21 +1361,16 @@ describe("the court's names", () => {
 
 describe("the forms of precedent", () => {
 	const USAGE =
-		"journal: usage: journal precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>\n";
+		"journal: usage: journal precedent <precinct> --issue <n> [--source <ruling comment URL>] --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>\n";
 
-	test.each([
-		["no mode", select()],
-		["two modes", select("--request", NAME, "--answer", NAME)],
-	])(
-		"%s is a usage error, in process and through the cli",
-		async (_n, args) => {
-			const inside = await inprocAsync(BASE, args);
-			expect(inside.code).toBe(EXIT.USAGE);
-			expect(cli(args, CLI_ENV())).toEqual({
-				code: EXIT.USAGE,
-				out: "",
-				err: USAGE,
-			});
-		},
-	);
+	test("two modes are a usage error, in process and through the cli", async () => {
+		const args = select("--request", NAME, "--answer", NAME);
+		const inside = await inprocAsync(BASE, args);
+		expect(inside.code).toBe(EXIT.USAGE);
+		expect(cli(args, CLI_ENV())).toEqual({
+			code: EXIT.USAGE,
+			out: "",
+			err: USAGE,
+		});
+	});
 });

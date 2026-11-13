@@ -103,6 +103,7 @@ The clerk takes an order for one job on an issue. The journal names the job. The
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
 - It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. The clerk opens a pull request with them for you to merge.
+- It records a dismissal: the journal writes one file for a lead that closed with no fix. The clerk opens a pull request for you to merge.
 - It records your decision on that pull request.
 
 After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
@@ -246,13 +247,13 @@ The full report of every tick lives in the journal. `bin/journal tick list` prin
 
 The funnel runs without you until a decision needs a person. On a pull request, only a decider's reaction, close or reopen counts as a decision. A decider is a login that may write to the precinct's repository, access inherited from a group included.
 
-- **Close a lead to decline it.** Any closure other than completed counts as declined. Patrol does not file the same finding again.
+- **Close a lead as not planned to decline it.** A close with no reason declines it too. A close as completed counts as a fix. After a decline, the clerk opens a pull request with a dismissal that names the finding. It quotes your comment when nothing but the clerk's notes follows it in the discussion. Merge it, and patrol stops filing the finding unless the finding differs from the one you closed. Until you merge it, the finding can come back, and each return runs the funnel again. A lead that you closed before this update leaves no dismissal.
 - **Answer a referral.** React with 👍 or 👎 to a comment of the court, or write a comment. Close the issue to end the case. See [Referrals](#referrals).
 - **Vote on a spec.** React with 👍 or 👎 to the newest `Spec` comment. A 👎 wins, even beside a 👍. A reaction from a login that is no decider counts for nothing. A 👍 approves exactly the text that was read, because a spec is never edited.
 - **Send finished work back.** React with 👎 to the newest `Executor` comment, or submit a Request changes review after it. Approvals, dismissed reviews and bot remarks return nothing.
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
-- **Close a pull request to decline it.** The clerk then closes its open source issues as not planned.
-- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing.
+- **Close a pull request to decline it.** The clerk then closes its open source issues as not planned. Each of them leaves a dismissal for you to merge.
+- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing. A dismissal stops applying while its lead is open again or fixed. A lead that you reopen and close again gets no second dismissal. The first one applies again, when you merged it. To remove a dismissal for good, delete its file from `.lawman/precedents/`.
 - **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live

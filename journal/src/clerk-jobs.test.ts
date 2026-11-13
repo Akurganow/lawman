@@ -1,8 +1,9 @@
 import { describe, expect, test } from "bun:test";
-import { hasPair } from "./clerk-jobs";
+import { hasPair, precedentDue } from "./clerk-jobs";
 import {
 	acquittal,
 	conviction,
+	inputOf,
 	marker,
 	pairs,
 	pull,
@@ -309,8 +310,11 @@ describe("table rows", () => {
 });
 
 describe("the precedent pull request", () => {
-	const entry = (i: number, pull?: string) =>
-		marker("clerk", "entry", i, pull === undefined ? {} : { pull });
+	const entry = (i: number, pull?: string, issue?: string) =>
+		marker("clerk", "entry", i, {
+			...(pull === undefined ? {} : { pull }),
+			...(issue === undefined ? {} : { issue }),
+		});
 	const decision = { job: "decision", pull: "5", sources: "-", branch: "-" };
 
 	test("an entry whose pull request left the cache gives the decision job", () => {
@@ -318,6 +322,25 @@ describe("the precedent pull request", () => {
 			expect(
 				run({ state, markers: [entry(3, "5")], ruling: acquittal(2) }),
 			).toMatchObject(decision);
+	});
+
+	test("an entry that carries the issue state still waits for its decision", () => {
+		for (const state of ["OPEN", "CLOSED"])
+			expect(
+				run({
+					state,
+					markers: [entry(3, "5", state.toLowerCase())],
+					ruling: acquittal(2),
+				}),
+			).toMatchObject(decision);
+	});
+
+	test("a kept marker that carries both fields is a pair marker, not a decision", () => {
+		const kept = marker("clerk", "kept", 4, { pull: "5", issue: "closed" });
+		const markers = [entry(3, "5", "closed"), kept];
+		expect(
+			run({ state: "CLOSED", markers, ruling: acquittal(2) }),
+		).toMatchObject(decision);
 	});
 
 	test("an entry whose pull request is still open gives no job", () => {
@@ -367,6 +390,81 @@ describe("the precedent pull request", () => {
 		expect(run({ markers, ruling: acquittal(3) })).toMatchObject({
 			job: "precedent",
 			branch: "lawman/precedent-1-2",
+		});
+	});
+});
+
+describe("dismissal rows", () => {
+	const closed = { state: "CLOSED", dismissible: true };
+	const entry = (stage: string, issue?: string, i = 3) =>
+		marker("clerk", stage, i, issue === undefined ? {} : { issue });
+
+	test("a closed, dismissible issue with no marker gives precedent", () => {
+		expect(run(closed)).toMatchObject({
+			job: "precedent",
+			pull: "-",
+			sources: "-",
+			branch: "lawman/precedent-1-1",
+		});
+	});
+
+	test("a closed issue that is not dismissible gives no job", () => {
+		expect(run({ state: "CLOSED" }).job).toBe("-");
+	});
+
+	test.each(["entry", "no-entry"])(
+		"a %s marker with issue=closed ends the job, so a later close gives none",
+		(stage) => {
+			expect(run({ ...closed, markers: [entry(stage, "closed")] }).job).toBe(
+				"-",
+			);
+		},
+	);
+
+	test("the same marker with the issue open gives no job, so a reopen gives none", () => {
+		const markers = [entry("entry", "closed")];
+		expect(run({ ...closed, state: "OPEN", markers }).job).toBe("-");
+		expect(
+			precedentDue(inputOf({ ...closed, state: "OPEN", markers })),
+		).toEqual({
+			ruling: false,
+			dismissal: false,
+		});
+	});
+
+	test("a ruling's entry with no issue leaves a closed, dismissible case due", () => {
+		const markers = [entry("entry")];
+		expect(run({ ...closed, markers, ruling: acquittal(2) }).job).toBe(
+			"precedent",
+		);
+		expect(
+			precedentDue(inputOf({ ...closed, markers, ruling: acquittal(2) })),
+		).toEqual({ ruling: false, dismissal: true });
+	});
+
+	test("pull is the pair's pull request only for base shut", () => {
+		const row = (marks: ReturnType<typeof pairs>, cached: number[] = []) =>
+			run({
+				...closed,
+				markers: marks,
+				pulls: cached.map((n) => pull(n, 2)),
+			}).pull;
+		expect(row(pairs(["shut", "7", "closed"]))).toBe("7");
+		expect(row(pairs(["shut", "7", "closed"], ["kept", "7", "closed"]))).toBe(
+			"7",
+		);
+		expect(row(pairs(["shut", "7", "closed"]), [8])).toBe("7");
+		expect(row(pairs(["handed", "7", "closed"]), [7])).toBe("-");
+		expect(row(pairs(["kept", "7", "closed"]))).toBe("-");
+		expect(row([])).toBe("-");
+	});
+
+	test("an unanswered rule and a close at once give one row, and both answers are due", () => {
+		const scene = { ...closed, ruling: conviction() };
+		expect(run(scene)).toMatchObject({ job: "precedent" });
+		expect(precedentDue(inputOf(scene))).toEqual({
+			ruling: true,
+			dismissal: true,
 		});
 	});
 });

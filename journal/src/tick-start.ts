@@ -25,7 +25,13 @@ import { urlOf } from "./link";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
 import { operate } from "./operations";
-import { departmentsField, headerOf, serves } from "./precedent-file";
+import {
+	DISMISSAL,
+	departmentsField,
+	type Header,
+	headerOf,
+	serves,
+} from "./precedent-file";
 import { pullLine, stageOf } from "./pull-stage";
 
 const TICK_INPUT_USAGE = "tick input (<id> [--part <k>]|--role <r> --part <k>)";
@@ -283,14 +289,28 @@ const precedentsOf = (input: RoleInput, order: Taken, stage: Stage | null) =>
 		? null
 		: departmentFrom(input.precedents, order, stage);
 
-// Each direct file of the folder, by name, when it serves the department. A file
-// the journal cannot read leaves one self line, so the role reads the folder itself.
+// the issues of the precinct whose lead is open or fixed, so a dismissal naming one does not apply
+const liveIssues = (db: Database, precinct: string): Set<number> =>
+	new Set(
+		(
+			db
+				.query(
+					"SELECT issue FROM issues WHERE precinct = ? AND (state = 'OPEN' OR (state = 'CLOSED' AND state_reason = 'COMPLETED'))",
+				)
+				.all(precinct) as { issue: number }[]
+		).map((r) => r.issue),
+	);
+
+// Each direct file of the folder, by name, when it serves the department and the
+// header passes. A file the journal cannot read leaves one self line, so the role
+// reads the folder itself.
 async function precedentBlocks(
 	o: Output,
 	p: string,
 	revision: string,
 	files: string | null,
 	department: string,
+	handed: (header: Header) => boolean,
 ): Promise<void> {
 	if (files === null) {
 		o.selfs.push(SELF_PRECEDENTS);
@@ -318,14 +338,14 @@ async function precedentBlocks(
 			continue;
 		}
 		const header = headerOf(file.text);
-		if (!serves(header.departments, department)) continue;
+		if (!serves(header.departments, department) || !handed(header)) continue;
 		const text = await characters(file.text);
 		if (text === null) {
 			missed = true;
 			continue;
 		}
 		o.line(
-			`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}`,
+			`precedent ${name} kind=${header.kind} departments=${departmentsField(header.departments)}${header.kind === DISMISSAL ? ` finding=${header.finding ?? NONE}` : ""}`,
 		);
 		o.add(fencedBlock("precedent", text));
 		shown++;
@@ -497,7 +517,15 @@ export async function tickStart(args: string[]): Promise<number> {
 			);
 	}
 	const pd = precedentsOf(input, order, stage);
-	if (pd !== null) await precedentBlocks(o, p, revision, files, pd);
+	if (pd !== null) {
+		const live = input.dismissals
+			? withDb((db) => liveIssues(db, p))
+			: new Set<number>();
+		const handed = (h: Header) =>
+			h.kind !== DISMISSAL ||
+			(input.dismissals && (h.issue === undefined || !live.has(h.issue)));
+		await precedentBlocks(o, p, revision, files, pd, handed);
+	}
 	const texts = await withDbAsync((db) =>
 		caseTexts(db, p, textsOf(input, order, stage), size),
 	);

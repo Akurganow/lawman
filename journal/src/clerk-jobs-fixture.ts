@@ -1,5 +1,10 @@
 import type { CaseMarker } from "./cases";
-import { type CachedPull, type ClerkCase, clerkCase } from "./clerk-jobs";
+import {
+	type CachedPull,
+	type ClerkCase,
+	type ClerkInput,
+	clerkCase,
+} from "./clerk-jobs";
 
 export type Spec = [stage: string, pull: string, issue: string];
 
@@ -32,20 +37,24 @@ export type Scene = {
 	// whether the ruling holds a Precedent line other than none; true when absent
 	holds?: boolean;
 	others?: Record<number, CaseMarker[]>;
+	// whether the close leaves a dismissal; false when absent
+	dismissible?: boolean;
 };
 
-export const run = (s: Scene): ClerkCase =>
-	clerkCase({
-		issue: 1,
-		state: s.state ?? "OPEN",
-		markers: s.markers ?? [],
-		pulls: s.pulls ?? [],
-		isClosed: (n) => (s.closed ?? []).includes(n),
-		ruling: s.ruling,
-		holdsPrecedent: () => s.holds ?? true,
-		others: () =>
-			new Map(Object.entries(s.others ?? {}).map(([n, m]) => [Number(n), m])),
-	});
+export const inputOf = (s: Scene): ClerkInput => ({
+	issue: 1,
+	state: s.state ?? "OPEN",
+	markers: s.markers ?? [],
+	pulls: s.pulls ?? [],
+	isClosed: (n) => (s.closed ?? []).includes(n),
+	ruling: s.ruling,
+	holdsPrecedent: () => s.holds ?? true,
+	dismissible: () => s.dismissible ?? false,
+	others: () =>
+		new Map(Object.entries(s.others ?? {}).map(([n, m]) => [Number(n), m])),
+});
+
+export const run = (s: Scene): ClerkCase => clerkCase(inputOf(s));
 
 export const conviction = (i = 0) => marker("court", "conviction", i);
 export const acquittal = (i = 0) => marker("court", "acquittal", i);

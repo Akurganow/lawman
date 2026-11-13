@@ -21,7 +21,7 @@ const PLAIN = new Set(
 	"root paragraph text inlineCode emphasis strong".split(" "),
 );
 const LEFT_OUT = "The text of the ruling was left out. It stands at the link.";
-const RULE_LEFT_OUT = "the text of the rule was left out";
+const PARAGRAPH_LEFT_OUT = "the text was left out";
 
 // the words of a text that is one paragraph of text, code spans and emphasis
 function wordsOf(markdown: string): string | null {
@@ -79,13 +79,20 @@ export function convictionBody(
 export type Change = { name: string; was: string | null; now: string | null };
 
 // One line for each changed file: its name and the rule it writes or cancels.
-export async function precedentBody(source: string, changes: Change[]) {
+export async function precedentBody(
+	source: string | undefined,
+	changes: Change[],
+) {
 	const lines = await Promise.all(
 		changes.map(async ({ name, was, now }) => {
 			const verb = now === null ? "cancel" : was === null ? "new" : "refine";
 			const rule = splitPrecedent(now ?? was ?? "")?.body ?? "";
-			return `${verb} ${name}: ${(await plainWords(rule)) ?? RULE_LEFT_OUT}`;
+			return `${verb} ${name}: ${(await plainWords(rule)) ?? PARAGRAPH_LEFT_OUT}`;
 		}),
 	);
-	return `Records the precedents of the court ruling ${source}. Merge it to make them binding.\n\n${fenced(lines)}\n`;
+	const opening =
+		source === undefined
+			? "Records the changes of the precedents. Merge them to make them binding."
+			: `Records the precedents of the court ruling ${source}. Merge it to make them binding.`;
+	return `${opening}\n\n${fenced(lines)}\n`;
 }

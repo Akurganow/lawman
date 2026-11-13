@@ -137,16 +137,21 @@ describe("leads, seen, cap and last", () => {
 			expect(seen(ID)).toBe("none");
 		});
 
-		test("open when an open origin shares path::symbol, whatever kind or department", () => {
-			put(5, "OPEN", null, lead("web", OTHER_KIND));
+		test("open for an open origin with the same id, from any department", () => {
+			put(5, "OPEN", null, lead("web"));
 			expect(seen(ID)).toBe("open #5");
 		});
 
+		test("an open origin of another kind of the same symbol is not a match", () => {
+			put(5, "OPEN", null, lead("web", OTHER_KIND));
+			expect(seen(ID)).toBe("none");
+		});
+
 		test.each([["NOT_PLANNED"], ["DUPLICATE"], [null]])(
-			"declined for a closed origin with reason %p",
+			"none for a closed origin with reason %p",
 			(reason) => {
-				put(6, "CLOSED", reason, lead("core", OTHER_KIND));
-				expect(seen(ID)).toBe("declined #6");
+				put(6, "CLOSED", reason, lead("core"));
+				expect(seen(ID)).toBe("none");
 			},
 		);
 
@@ -166,11 +171,9 @@ describe("leads, seen, cap and last", () => {
 			expect(seen(ID)).toBe("none");
 		});
 
-		test("open beats declined beats fixed", () => {
+		test("open beats fixed", () => {
 			put(10, "CLOSED", "COMPLETED", lead("core"));
 			expect(seen(ID)).toBe("fixed #10");
-			put(11, "CLOSED", "NOT_PLANNED", lead("core"));
-			expect(seen(ID)).toBe("declined #11");
 			put(12, "OPEN", null, lead("core"));
 			expect(seen(ID)).toBe("open #12");
 		});
@@ -178,13 +181,13 @@ describe("leads, seen, cap and last", () => {
 		test("the lowest issue number wins inside a class", () => {
 			put(22, "OPEN", null, lead("core"));
 			put(21, "OPEN", null, lead("web"));
-			put(32, "CLOSED", "NOT_PLANNED", lead("core"));
-			put(31, "CLOSED", "DUPLICATE", lead("core"));
+			put(32, "CLOSED", "COMPLETED", lead("core"));
+			put(31, "CLOSED", "COMPLETED", lead("core"));
 			expect(seen(ID)).toBe("open #21");
 			db.run(
 				"UPDATE issues SET state = 'CLOSED', state_reason = 'COMPLETED' WHERE issue IN (21, 22)",
 			);
-			expect(seen(ID)).toBe("declined #31");
+			expect(seen(ID)).toBe("fixed #21");
 		});
 
 		test("the origin marker decides, not a later lead marker", () => {

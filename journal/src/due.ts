@@ -2,6 +2,8 @@ import type { Database } from "bun:sqlite";
 import { caseOf, markersOf } from "./cases";
 import { DEFAULT_PRIORITY } from "./clerk-jobs";
 import { LEAD_ORIGIN_FROM } from "./db";
+import { dismissalsSince } from "./dismissal";
+import { readConfig } from "./input-files";
 import { stageOf } from "./pull-stage";
 
 const CLERK = "clerk";
@@ -26,6 +28,7 @@ const lastOrder = (precinct: string, issue: string) =>
       WHERE d.role = ? AND d.precinct = ${precinct} AND d.issue = ${issue})`;
 
 function issueEntries(db: Database, role: string) {
+	const since = dismissalsSince(readConfig());
 	const rows = db
 		.query(
 			`SELECT i.precinct, i.issue, i.state, i.answer,
@@ -44,6 +47,7 @@ function issueEntries(db: Database, role: string) {
 			r.state,
 			markersOf(db, r.precinct, r.issue),
 			r.answer,
+			since,
 			r.led === 1,
 		);
 		if (view.need !== role) return [];

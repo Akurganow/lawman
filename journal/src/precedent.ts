@@ -12,20 +12,29 @@ import {
 import { dirname, join, resolve } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
-import { caseStage, rulingComment } from "./cases";
+import { caseStage, clerkInputOf, markersOf, rulingCommentOf } from "./cases";
 import { cleanCharacters } from "./clean";
+import { precedentDue } from "./clerk-jobs";
 import { consents, jevAllowed, licensesAllowed } from "./consent";
-import { EXIT, Fail, out, readStdin, withDb } from "./db";
+import { EXIT, Fail, LEAD_ORIGIN_FROM, out, readStdin, withDb } from "./db";
+import { readCheckObject } from "./decider";
 import {
 	departmentNames,
 	departmentPage,
 	listSharedPages,
 	type PageRead,
 } from "./department-page";
+import { dismissalsSince } from "./dismissal";
+import {
+	dismissalFile,
+	needsObject,
+	type ThreadComment,
+} from "./dismissal-file";
 import { readConfig } from "./input-files";
 import { jevNone, replyOf } from "./jev";
 import { utf8 } from "./launch";
 import {
+	CANCEL_LINE,
 	type Item,
 	itemsOf,
 	sectionNodes,
@@ -65,7 +74,7 @@ import {
 } from "./pull-body";
 
 const USAGE =
-	"precedent <precinct> --issue <n> --source <ruling comment URL> --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
+	"precedent <precinct> --issue <n> [--source <ruling comment URL>] --tree <folder>|precedent <precinct> --issue <n> --tree <folder> --request <name>|precedent <precinct> --issue <n> --tree <folder> --answer <name>";
 const BODY_USAGE =
 	"pull-body <precinct> --issue <n> [--source <ruling comment URL>]";
 const BODY_FILE = "pull-body.md";
@@ -77,7 +86,6 @@ const GIST = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 // the names stand before the first colon, so no character of the rule reads as a name
 const NEW_LINE = /^new ([^\s:]+)(?: for ([^:]*))?: (.+)$/;
 const REFINE_LINE = /^refine ([^\s:]+): (.+)$/;
-const CANCEL_LINE = /^cancel (\S+)$/;
 const OLD_LINE = /^(\d{4}-\d{2}-\d{2}) #([1-9][0-9]*): (.+)$/;
 // the marker of a list item, with any spaces after it
 const LIST_PREFIX = /^(?:[-*+]|\d+[.)])\s+/;
@@ -155,12 +163,26 @@ class Folder {
 		}
 	}
 
-	// the names whose final text differs from the disk, with both texts, written only when all are safe
-	commit(): Change[] {
-		const changed = [...this.state].flatMap(([name, now]) => {
+	// A new file under `base`. The same file standing there is no change and gives null;
+	// another file there sends the new one to the next free name. `always` skips the first test.
+	place(base: string, text: string, always = false): string | null {
+		if (!always && this.stands(base, text)) return null;
+		const name = this.free(base);
+		this.set(name, text);
+		return name;
+	}
+
+	// the names whose final text differs from the disk, with both texts
+	pending(): Change[] {
+		return [...this.state].flatMap(([name, now]) => {
 			const was = this.disk(name);
 			return now === was ? [] : [{ name, was, now }];
 		});
+	}
+
+	// written only when all are safe
+	commit(): Change[] {
+		const changed = this.pending();
 		if (changed.length > 0) mkdirSync(this.dir, { recursive: true });
 		for (const { name, now } of changed)
 			if (now === null) unlinkSync(this.path(name));
@@ -246,8 +268,8 @@ type Applied = {
 	kept: { name: string; named: Named }[];
 };
 
-// originalOf gives the list of a new file; it reads nothing that can fail after
-// the first write, because the folder writes only at its commit.
+// The folder takes the changes in memory; the caller commits it. originalOf gives
+// the list of a new file.
 function apply(
 	items: Item[],
 	ruling: Ruling,
@@ -276,11 +298,9 @@ function apply(
 			text,
 		);
 		// a precedent that already stands is no change
-		if (reason === undefined && folder.stands(base, content))
-			return { name: base, original };
-		const name = folder.free(base);
+		const name = folder.place(base, content, reason !== undefined);
+		if (name === null) return { name: base, original };
 		const why = reason ?? (name === base ? undefined : "name-taken");
-		folder.set(name, content);
 		if (why !== undefined) reasons.set(name, why);
 		created.set(name, named);
 		return { name, original };
@@ -306,7 +326,7 @@ function apply(
 			else lines.push(`cancel\t${line.name ?? NO_VALUE}\tmissing`);
 		} else if (line.type === "bad") create(keep, item.text, null, "bad-line");
 	}
-	const changes = folder.commit();
+	const changes = folder.pending();
 	const written = changes.map(({ name }) => name);
 	for (const name of written) {
 		const reason = reasons.get(name);
@@ -351,7 +371,7 @@ function rulingText(
 	ord: string,
 	lenient = false,
 ): string {
-	const body = rulingComment(db, precinct, issue, ord);
+	const body = rulingCommentOf(db, precinct, issue, ord)?.body;
 	if (body === undefined && !lenient)
 		throw new Fail(
 			EXIT.USAGE,
@@ -367,9 +387,12 @@ export function trustedLogin(): string {
 	return login;
 }
 
+// whether a line of the ruling's step reports a changed file
+const changed = (lines: string[]) =>
+	lines.some((l) => !l.endsWith("\tmissing"));
+
 function summary(sections: Item[][], lines: string[]): string[] {
-	const changed = lines.some((l) => !l.endsWith("\tmissing"));
-	if (changed) return lines;
+	if (changed(lines)) return lines;
 	const items = sections.flat();
 	const end =
 		sections.length === 0
@@ -608,48 +631,185 @@ function bodyPath(tree: string): string {
 	return path;
 }
 
-// The write call. Every read comes before the first write, so a read fault
+// What the write call reads of the case from the cache: which parts are due and,
+// for a dismissal, the facts of its file.
+function readCase(
+	db: Database,
+	precinct: string,
+	issue: number,
+	config: string | null,
+	source: string | undefined,
+) {
+	const row = db
+		.query(
+			"SELECT state, answer, title, url, closed_at FROM issues WHERE precinct = ? AND issue = ?",
+		)
+		.get(precinct, issue) as {
+		state: string;
+		answer: string | null;
+		title: string;
+		url: string | null;
+		closed_at: string | null;
+	} | null;
+	// an issue the cache lacks is due nothing; the ruling's step reads its own markers
+	if (row === null)
+		return { due: { ruling: false, dismissal: false }, dismissal: null };
+	const origin = db
+		.query(
+			`SELECT m.department, m.lead_id ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
+		)
+		.get(precinct, issue) as {
+		department: string | null;
+		lead_id: string | null;
+	} | null;
+	const { input, ruling } = clerkInputOf(
+		db,
+		precinct,
+		issue,
+		row.state,
+		markersOf(db, precinct, issue),
+		row.answer,
+		dismissalsSince(config),
+		origin !== null,
+	);
+	const due = precedentDue(input);
+	if (!due.dismissal) return { due, dismissal: null };
+	const thread = db
+		.query(
+			"SELECT author, at, body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid",
+		)
+		.all(precinct, issue) as ThreadComment[];
+	const comment = ruling && rulingCommentOf(db, precinct, issue, ruling.ord);
+	return {
+		due,
+		dismissal: {
+			issue,
+			url: row.url,
+			title: row.title,
+			leadId: origin?.lead_id ?? "",
+			department: origin?.department ?? NO_VALUE,
+			closedAt: row.closed_at ?? "",
+			thread,
+			ruling: ruling
+				? {
+						stage: ruling.stage,
+						text: comment?.body ?? "",
+						at: comment?.at ?? "",
+						url: source ?? null,
+					}
+				: null,
+		},
+	};
+}
+
+// The check object that a dismissal after a decider's close needs, read from standard input.
+function checkObject() {
+	const raw = readStdin();
+	if (raw.trim() === "")
+		throw new Fail(
+			EXIT.USAGE,
+			"a dismissal after a decider's close needs the check object on standard input",
+		);
+	return readCheckObject(raw);
+}
+
+type Closed = NonNullable<ReturnType<typeof readCase>["dismissal"]>;
+
+// The dismissal step: its line, and its file placed in the folder. A file is built
+// from the cache and the object alone, so the step reads before the folder commits.
+async function dismiss(folder: Folder, closed: Closed) {
+	const built = await dismissalFile({
+		...closed,
+		object: needsObject(closed.ruling) ? checkObject() : null,
+	});
+	if ("reason" in built)
+		return { line: `no-entry\t${built.reason}`, cites: false };
+	const name = folder.place(built.base, built.text);
+	return {
+		line: name === null ? "no-entry\tno-change" : `entry\t${name}`,
+		cites: built.cites,
+	};
+}
+
+// The write call: the ruling's files and a dismissal, whichever the case is due, into
+// one folder and by one commit. Every read comes before the commit, so a read fault
 // writes nothing; the ask lines come from what the write did.
 async function writePrecedents(
 	precinct: string,
 	issue: number,
 	tree: string,
-	source: string,
+	source: string | undefined,
 ): Promise<void> {
-	const { precedentKind, date, text } = rulingOf(precinct, issue);
-	const sections = itemsOfRuling(text);
-	const items = sections.flat();
 	const config = readConfig();
-	const allowed = jevAllowed(config, precinct);
-	// without a need nobody reads them: no name can be known and Jev asks nothing
-	const candidateNames = needsCandidates(items.map(classify), allowed)
-		? (await readCandidates(treeSources(tree, config, precinct))).map(
-				(c) => c.name,
-			)
-		: [];
-	let theCase: string[] | undefined;
-	const caseOf = () => {
-		theCase ??= withDb((db) => caseListOf(db, precinct, issue));
-		return theCase;
-	};
-	const body = bodyPath(tree);
-	const { lines, changes, fresh, kept } = apply(
-		items,
-		{ precedentKind, date, issue, source },
-		new Folder(tree),
-		(named) => originalList(named, candidateNames, caseOf),
+	const { due, dismissal } = withDb((db) =>
+		readCase(db, precinct, issue, config, source),
 	);
-	if (changes.length > 0)
-		writeFileSync(body, await precedentBody(source, changes));
-	for (const line of summary(sections, lines)) out(line);
-	for (const { name, named } of kept)
+	// A call that names a ruling still takes its files when no dismissal is due: the
+	// ruling's step reads the newest court marker itself.
+	const rules = due.ruling || (dismissal === null && source !== undefined);
+	if (due.ruling && source === undefined)
+		throw new Fail(
+			EXIT.USAGE,
+			"the files of the ruling are due, so --source is needed",
+		);
+	if (!rules && dismissal === null) return out("no-entry\tno-change");
+	const body = bodyPath(tree);
+	const folder = new Folder(tree);
+	let sections: Item[][] = [];
+	let applied: Applied | undefined;
+	let allowed = false;
+	let candidateNames: string[] = [];
+	if (rules && source !== undefined) {
+		const { precedentKind, date, text } = rulingOf(precinct, issue);
+		sections = itemsOfRuling(text);
+		const items = sections.flat();
+		allowed = jevAllowed(config, precinct);
+		// without a need nobody reads them: no name can be known and Jev asks nothing
+		candidateNames = needsCandidates(items.map(classify), allowed)
+			? (await readCandidates(treeSources(tree, config, precinct))).map(
+					(c) => c.name,
+				)
+			: [];
+		let theCase: string[] | undefined;
+		const caseOf = () => {
+			theCase ??= withDb((db) => caseListOf(db, precinct, issue));
+			return theCase;
+		};
+		applied = apply(
+			items,
+			{ precedentKind, date, issue, source },
+			folder,
+			(named) => originalList(named, candidateNames, caseOf),
+		);
+	}
+	const dismissed =
+		dismissal === null ? undefined : await dismiss(folder, dismissal);
+	const pending = folder.pending();
+	// the body names the ruling only when it changed a file, or the dismissal quotes its Verdict
+	const cited =
+		applied?.changes.length || dismissed?.cites ? source : undefined;
+	const text =
+		pending.length > 0 ? await precedentBody(cited, pending) : undefined;
+	folder.commit();
+	if (text !== undefined) writeFileSync(body, text);
+	const printed = applied?.lines ?? [];
+	const line = dismissed?.line;
+	// a no-entry line of the dismissal stands only when the ruling's step changed no file
+	const shown =
+		line === undefined
+			? summary(sections, printed)
+			: line.startsWith("entry\t") || !changed(printed)
+				? [...printed, line]
+				: printed;
+	for (const l of shown) out(l);
+	for (const { name, named } of applied?.kept ?? [])
 		for (const d of droppedNames(named, candidateNames, (n) =>
 			fits("department", n),
 		))
 			out("drop", name, d === null ? NO_VALUE : await cleanCharacters(d));
 	// a precinct without Jev is a normal state: it asks nothing and says nothing
 	if (allowed)
-		for (const f of fresh)
+		for (const f of applied?.fresh ?? [])
 			if (asksJev(f.original, candidateNames)) out("ask", f.name);
 }
 
@@ -682,17 +842,24 @@ export async function precedentCommand(args: string[]): Promise<number> {
 	]);
 	const precinct = check("precinct", pos[0]);
 	const issue = Number(check("number", opt.issue));
-	const modes = (["source", "request", "answer"] as const).filter(
-		(m) => opt[m] !== undefined,
-	);
-	const [mode] = modes;
-	const value = mode === undefined ? undefined : opt[mode];
-	if (modes.length !== 1 || value === undefined) throw usage(USAGE);
-	if (mode === "request")
-		process.stdout.write(await requestBody(precinct, issue, opt.tree, value));
-	else if (mode === "answer")
-		out(await augmented(precinct, issue, opt.tree, value, readStdin()));
-	else await writePrecedents(precinct, issue, opt.tree, checkLink(value));
+	const { source, request, answer } = opt;
+	// a source names the ruling of the write call, so a mode that is no write call refuses it
+	if (
+		(request !== undefined && answer !== undefined) ||
+		(source !== undefined && (request !== undefined || answer !== undefined))
+	)
+		throw usage(USAGE);
+	if (request !== undefined)
+		process.stdout.write(await requestBody(precinct, issue, opt.tree, request));
+	else if (answer !== undefined)
+		out(await augmented(precinct, issue, opt.tree, answer, readStdin()));
+	else
+		await writePrecedents(
+			precinct,
+			issue,
+			opt.tree,
+			source === undefined ? undefined : checkLink(source),
+		);
 	return EXIT.OK;
 }
 

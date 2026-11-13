@@ -16,7 +16,7 @@ import {
 	leftovers,
 	type Runner,
 } from "./law-sync-test-fixture";
-import { dir, JOURNAL, tempDb } from "./test-helpers";
+import { BASE, dir, JOURNAL, tempDb } from "./test-helpers";
 
 const COMPILE_TIMEOUT_MS = 120_000;
 const scratch = mkdtempSync(join(tmpdir(), "lawman-compiled-"));
@@ -31,7 +31,11 @@ beforeAll(() => {
 }, COMPILE_TIMEOUT_MS);
 afterAll(() => rmSync(scratch, { recursive: true, force: true }));
 
-const env = (path = process.env.PATH ?? "") => ({ PATH: path });
+const env = (path = process.env.PATH ?? "") => ({
+	PATH: path,
+	LAWMAN_DB: join(scratch, "journal.sqlite"),
+	LAWMAN_NOW: BASE,
+});
 
 // A copy of the compiled binary, so the swap renames the copy and never the runtime.
 const runner: Runner = {

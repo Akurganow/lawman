@@ -303,7 +303,11 @@ describe("precedent: no precedent is lost", () => {
 			`entry\t${DATE}-issue-1\tbad-line`,
 		]);
 		const text = readFileSync(file(`${DATE}-issue-1`), "utf8");
-		expect(headerOf(text)).toEqual({ kind: "protects", departments: ["core"] });
+		expect(headerOf(text)).toEqual({
+			kind: "protects",
+			departments: ["core"],
+			issue: 1,
+		});
 		expect(header(`${DATE}-issue-1`)).toEqual({
 			kind: "protects",
 			departments: ["core"],

@@ -31,8 +31,8 @@ entries sent.
 
 A match with a record is a confirmed fact. No step of doubt, attack or
 confidence cuts it. Only a recorded reason closes a candidate: a precinct's
-recorded answer or Not judged. A precedent closes no candidate. The lead names
-the precedents that fit it, as the law's Precedents section says.
+recorded answer or Not judged. A precedent keeps a candidate out only as the
+law's Precedents section says, and the lead names the precedents that fit it.
 
 An empty list for a tree that names dependencies proves nothing. Report it in
 Blockers. It is never clean.

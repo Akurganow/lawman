@@ -30,7 +30,7 @@ const FIELDS = {
 		"rejectedBy",
 	],
 	pulls: ["writers", "closes", "changesRequested", "approvedBy", "rejectedBy"],
-	decider: ["lastActor", "writers"],
+	decider: ["lastActor", "writers", "comments"],
 };
 
 const ISSUES_FORM = `Fields:

@@ -2,14 +2,18 @@ import type { Database } from "bun:sqlite";
 import { usage } from "./args";
 import {
 	type ClerkCase,
+	type ClerkInput,
 	clerkCase,
 	clerkMarkersOf,
 	closedIn,
 	hasPair,
+	pairOf,
 	pullsOf,
 } from "./clerk-jobs";
 import { EXIT, Fail, LEAD_ORIGIN_FROM, out, withDb } from "./db";
-import { holdsPrecedent } from "./law-sections";
+import { dismissalsSince, dismissible } from "./dismissal";
+import { readConfig } from "./input-files";
+import { holdsPrecedent, holdsRule } from "./law-sections";
 import { leadOrigins, symbolOf } from "./leads";
 
 const CASE_USAGE = "case <precinct> <issue>";
@@ -83,14 +87,14 @@ function funnelOf(markers: CaseMarker[], answered: boolean): Funnel {
 
 export type CaseView = { need: Need; clerk: ClerkCase };
 
-// The cached comment whose last line is the counted marker with this ord. The
-// rank of the ord is the comment's place among the comments by time.
-export function rulingComment(
+// The cached comment whose last line is the counted marker with this ord, with its
+// time. The rank of the ord is the comment's place among the comments by time.
+export function rulingCommentOf(
 	db: Database,
 	precinct: string,
 	issue: number,
 	ord: string,
-): string | undefined {
+): { body: string; at: string } | undefined {
 	const rank = Number(ord.split("|")[ORD_RANK_PART]);
 	if (rank < 1) return undefined;
 	const raw = (
@@ -100,14 +104,72 @@ export function rulingComment(
 			)
 			.get(precinct, issue, ord) as { raw: string } | null
 	)?.raw;
-	const body = (
-		db
-			.query(
-				"SELECT body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
-			)
-			.get(precinct, issue, rank - 1) as { body: string } | null
-	)?.body;
-	return body?.trimEnd().split("\n").at(-1)?.trim() === raw ? body : undefined;
+	const comment = db
+		.query(
+			"SELECT body, at FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid LIMIT 1 OFFSET ?",
+		)
+		.get(precinct, issue, rank - 1) as { body: string; at: string } | null;
+	return comment?.body.trimEnd().split("\n").at(-1)?.trim() === raw
+		? (comment ?? undefined)
+		: undefined;
+}
+
+type CloseRow = {
+	state_reason: string | null;
+	closed_at: string | null;
+	lead_id: string | null;
+};
+
+// The input of the clerk's table and the facts that go with it: the need of the
+// funnel and the counted ruling, the newest ruling the funnel accepts.
+// since is the time of the key dismissals_since, null when there is none.
+export function clerkInputOf(
+	db: Database,
+	precinct: string,
+	issue: number,
+	state: string,
+	markers: CaseMarker[],
+	answer: string | null,
+	since: string | null,
+	led = true,
+) {
+	const funnel = led
+		? funnelOf(markers, answer !== null)
+		: { need: "none" as const };
+	const ruling = funnel.ruling;
+	const rulingHolds = (test: (text: string) => boolean) => () => {
+		const body = rulingCommentOf(db, precinct, issue, ruling?.ord ?? "")?.body;
+		return body !== undefined && test(body);
+	};
+	const input: ClerkInput = {
+		issue,
+		state,
+		markers,
+		pulls: pullsOf(db, precinct),
+		isClosed: closedIn(db, precinct),
+		ruling,
+		holdsPrecedent: rulingHolds(holdsPrecedent),
+		dismissible: () => {
+			const row = db
+				.query(
+					`SELECT i.state_reason, i.closed_at, m.lead_id ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
+				)
+				.get(precinct, issue) as CloseRow | null;
+			return dismissible(
+				{
+					reason: row?.state_reason ?? null,
+					closedAt: row?.closed_at ?? null,
+					leadId: row?.lead_id ?? null,
+					since,
+					base: pairOf(markers).base,
+				},
+				ruling,
+				rulingHolds(holdsRule),
+			);
+		},
+		others: () => clerkMarkersOf(db, precinct),
+	};
+	return { input, ruling, need: funnel.need };
 }
 
 // A pair marker means the case left the funnel. Only the clerk is left to act.
@@ -118,27 +180,23 @@ export function caseOf(
 	state: string,
 	markers: CaseMarker[],
 	answer: string | null,
+	since: string | null,
 	led = true,
 ): CaseView {
-	const funnel = led
-		? funnelOf(markers, answer !== null)
-		: { need: "none" as const };
-	const clerk = clerkCase({
+	const { input, need } = clerkInputOf(
+		db,
+		precinct,
 		issue,
 		state,
 		markers,
-		pulls: pullsOf(db, precinct),
-		isClosed: closedIn(db, precinct),
-		ruling: funnel.ruling,
-		holdsPrecedent: () => {
-			const body = rulingComment(db, precinct, issue, funnel.ruling?.ord ?? "");
-			return body !== undefined && holdsPrecedent(body);
-		},
-		others: () => clerkMarkersOf(db, precinct),
-	});
+		answer,
+		since,
+		led,
+	);
+	const clerk = clerkCase(input);
 	if (clerk.job !== "-") return { need: "clerk", clerk };
 	const left = state === "CLOSED" || hasPair(markers);
-	return { need: left ? "none" : funnel.need, clerk };
+	return { need: left ? "none" : need, clerk };
 }
 
 export function markersOf(db: Database, precinct: string, issue: number) {
@@ -264,6 +322,7 @@ export function caseStage(
 		row.state,
 		markers,
 		row.answer,
+		dismissalsSince(readConfig()),
 		lead !== null,
 	);
 	const l = lead ?? NO_LEAD;

@@ -36,8 +36,12 @@ beforeEach(() => seed((db) => precinct(db, "main")));
 const WAITS = "pull request waits for a decision on its precedent";
 const line = (ref: string, detail = WAITS) =>
 	`ALARM decision-waiting ${ref} ${detail}\n`;
-const clerk = (stage: string, pull: number) =>
-	mark("clerk", stage, ` pull=${pull}`);
+const clerk = (stage: string, pull: number, issue?: string) =>
+	mark(
+		"clerk",
+		stage,
+		` pull=${pull}${issue === undefined ? "" : ` issue=${issue}`}`,
+	);
 const alarm = (clock: string) => reconciled(clock).out;
 async function put(specs: Record<number, Spec>) {
 	const r = await inprocFed(
@@ -63,8 +67,8 @@ const open = () =>
 const caseLine = (n: number) => inproc(BASE, ["case", "main", String(n)]).out;
 
 describe("decision-waiting for a precedent pull request", () => {
-	test("an open precedent pull request without sources alarms by its entry marker", async () => {
-		await put({ 3: human("CLOSED", clerk("entry", 7)) });
+	test("an open precedent pull request without sources alarms by its entry marker, which carries the issue", async () => {
+		await put({ 3: human("CLOSED", clerk("entry", 7, "closed")) });
 		await syncPulls({ number: 7 });
 		expect(rows("SELECT issues FROM pulls")).toEqual([{ issues: "" }]);
 		expect(alarm(BASE)).toBe(line("main#7"));
@@ -82,10 +86,16 @@ describe("decision-waiting for a precedent pull request", () => {
 	test.each(["final", "kept"])(
 		"a %s marker after the entry clears the alarm",
 		async (stage) => {
-			await put({ 3: human("CLOSED", clerk("entry", 7)) });
+			await put({ 3: human("CLOSED", clerk("entry", 7, "closed")) });
 			await syncPulls({ number: 7 });
 			alarm(BASE);
-			await put({ 3: human("CLOSED", clerk("entry", 7), clerk(stage, 7)) });
+			await put({
+				3: human(
+					"CLOSED",
+					clerk("entry", 7, "closed"),
+					clerk(stage, 7, stage === "final" ? "closed" : undefined),
+				),
+			});
 			expect(alarm(later(1))).toBe("");
 			expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
 		},

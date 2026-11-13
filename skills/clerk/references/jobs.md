@@ -54,18 +54,20 @@ Add the tree `runs/<tick id>/tree` to the clone `precincts/<p>`, at `<tip>` and 
 
 ### Write the precedent files
 
-The journal reads the ruling from its own cache and writes the precedent files into the tree. `<ruling URL>` is the URL that the "Read the ruling" section gave.
+The journal reads the case from its own cache and writes the precedent files into the tree. They are the files of the ruling and the dismissal of a closed lead. The journal picks them. `<ruling URL>` is the URL that the "Read the ruling" section gave.
 
 ```
-bin/journal precedent <p> --issue <n> --source <ruling URL> --tree runs/<tick id>/tree
+bin/journal precedent <p> --issue <n> [--source <ruling URL>] --tree runs/<tick id>/tree
 ```
+
+Leave out `--source` when the issue has no ruling. Send the object on standard input when the recipe built one.
 
 A non-zero exit ends the tick with `failed`. The output has one line per change:
 
 - `entry<TAB><name>[<TAB><reason>]`: the file `<name>` is written. A reason is `name-taken`, `refine-missing` or `bad-line`.
 - `cancel<TAB><name or ->[<TAB>missing]`: the file is deleted. `missing` means there was none.
 - `none`: the ruling adds no precedent, and the folder does not change.
-- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section` or `no-change`.
+- `no-entry<TAB><reason>`: the folder does not change. The reason is `no-section`, `empty-section`, `no-change` or `no-decider`.
 - `drop<TAB><name><TAB><department or ->`: the court named a department that the precedent cannot serve, so the name counts for nothing. The file `<name>` holds it only as the department of the case. `-` stands for a name outside the department class. It is no change of its own.
 - `ask<TAB><name>`: send one Jev request for the file `<name>`, as the steps below say. It is no change of its own.
 
@@ -191,13 +193,14 @@ Taken up by the clerk as a draft that counts as not started.
 
 The title is `Precedents of #<n>: ` and the names of the files the `precedent` output wrote or cancelled, separated by commas. Take them from each `entry` line and from each `cancel` line that holds a name and no `missing`. The journal holds each of these names to a fixed class, so the title needs no body check. The body is the file `runs/<tick id>/pull-body.md`, left by the write call.
 
-1. Read the ruling. It must be a conviction or an acquittal. Otherwise the tick ends with `failed`.
+1. Read the ruling when the issue has one. Without one, go on.
 2. Create the tree.
-3. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 7.
-4. Record the precedent files.
-5. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
-6. Open a pull request that is not a draft from `<branch>` on the host, with that title and that body. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
-7. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 6 and the no-entry form after a `none` or `no-entry` line.
+3. When `<state>` is `closed`, build the object of the `tick.md#check-the-decider` section for the issue `<n>`. Do not run `bin/journal decider`. When `<pull>` is not `-` and the last close of the issue is `<login>`'s, build the object for the pull request `<pull>` instead. Add the conversation comments of that pull request to it as `comments`. A command builds the object from the host replies. Your own text carries no comment body into it. `bin/journal form decider` prints the form.
+4. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 8.
+5. Record the precedent files.
+6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.
+7. Open a pull request that is not a draft from `<branch>` on the host, with that title and that body. The host's reply gives the link and the number of the pull request. Check both against the class check. Keep the number `<m>`. There is no read-back of the pull request.
+8. Write the comment on the issue `<n>`, whether it is open or closed. Use the entry form with `pull=<m>` after step 7 and the no-entry form after a `none` or `no-entry` line. Both forms carry `issue=<state>`.
 
 When the publish or the pull request landed and the comment did not, the tick ends with the token of the failed step. `need` stays `clerk`. The next tick fails at the publish. Blockers names two remedies. One deletes the remote branch, which closes its pull request. The other writes a comment whose last line is the `entry` marker, by hand.
 

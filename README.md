@@ -96,6 +96,8 @@ The next tick of any role completes the update, and so does the assembly when yo
 
 After this update, run the assembly. It offers the amendment pull request for each precinct that is behind, and asks about old precedents there. Merge each pull request after the run. The run then asks what is still unanswered and ends at the menu, unless you skip or cancel a part. The menu names what the earlier release left behind and recommends the choice that mends it, again after each part. Then choose Host once: it rewrites `host.md`, which the menu does not check.
 
+After this update, a lead that you close as not planned leaves a dismissal: a small precedent file that the clerk offers in a pull request. A lead closed before the update leaves none, so patrol may file its finding again.
+
 After an update, the tick that synced the law tells you to run the assembly. You answer the license question for each precinct without an answer. A yes or a no removes that line.
 
 An installation that predates the catalog check has no answer to its consent question. Run the assembly. It sees which answers are missing and asks only those. Until you answer, the check does not run and no role stops.

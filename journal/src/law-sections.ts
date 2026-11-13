@@ -152,8 +152,17 @@ export function itemsOf(text: string, nodes: RootContent[]): Item[] {
 	});
 }
 
+export const CANCEL_LINE = /^cancel (\S+)$/;
+
+const holds = (text: string, counts: (line: string) => boolean) =>
+	sectionNodes(text, "Precedent").some((nodes) =>
+		itemsOf(text, nodes).some((i) => i.bad || counts(i.text)),
+	);
+
 // whether the `## Precedent` section of a ruling holds a line other than `none`
 export const holdsPrecedent = (text: string) =>
-	sectionNodes(text, "Precedent").some((nodes) =>
-		itemsOf(text, nodes).some((i) => i.bad || i.text !== "none"),
-	);
+	holds(text, (line) => line !== "none");
+
+// whether it holds a line that leaves a rule: a cancellation leaves none
+export const holdsRule = (text: string) =>
+	holds(text, (line) => line !== "none" && !CANCEL_LINE.test(line));
