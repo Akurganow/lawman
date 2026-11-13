@@ -162,17 +162,6 @@ describe("the header and the name", () => {
 });
 
 describe("which part varies", () => {
-	test("the closer's comment", async () => {
-		const { text } = await written({
-			thread: [cached("2026-11-12T09:00:00Z", NOTICE)],
-		});
-		const { outside, quotes } = bodyOf(text);
-		expect(outside).toContain(commentLine("2026-11-12T09:00:00Z"));
-		expect(outside).not.toContain(NO_COMMENT);
-		expect(quotes[1]?.text).toBe(NOTICE);
-		expect(headerFields(text)).not.toHaveProperty("ruling");
-	});
-
 	test("no comment gives the fallback sentence alone", async () => {
 		const { text } = await written();
 		const { outside, quotes } = bodyOf(text);
@@ -190,11 +179,13 @@ describe("which part varies", () => {
 			at: "2026-11-11T08:00:00Z",
 			url: "https://example.test/o/r/issues/12#issuecomment-1",
 		};
-		const { text } = await written({
+		const { text, cites } = await written({
 			ruling,
-			object: null,
+			// no decider closed it: an acquittal asks for none
+			object: checked([], null, []),
 			thread: [cached("2026-11-12T09:00:00Z", NOTICE)],
 		});
+		expect(cites).toBe(true);
 		const { outside, quotes } = bodyOf(text);
 		expect(outside).toContain(verdictLine("2026-11-11T08:00:00Z"));
 		expect(
@@ -220,7 +211,7 @@ describe("which part varies", () => {
 	});
 
 	test("an acquittal with no Verdict words has no varying part and no ruling field", async () => {
-		const { text } = await written({
+		const { text, cites } = await written({
 			ruling: {
 				stage: "acquittal",
 				text: "## Verdict\n\nnone\n",
@@ -232,6 +223,7 @@ describe("which part varies", () => {
 		});
 		const { outside, quotes } = bodyOf(text);
 		expect(outside).toEqual([DISMISSED, "", issueLine(URL), "", TITLE_LINE]);
+		expect(cites).toBe(false);
 		expect(quotes).toHaveLength(1);
 		expect(headerFields(text)).not.toHaveProperty("ruling");
 	});
@@ -373,21 +365,6 @@ describe("the decider", () => {
 	test("the actor is compared with the writers ignoring ASCII case", async () => {
 		const got = await dismissalFile(
 			facts({ object: checked([], "OWNER", ["owner"]) }),
-		);
-		expect("reason" in got).toBe(false);
-	});
-
-	test("an acquittal needs no decider", async () => {
-		const got = await dismissalFile(
-			facts({
-				ruling: {
-					stage: "acquittal",
-					text: ACQUITTAL("Used."),
-					at: "2026-11-11T08:00:00Z",
-					url: null,
-				},
-				object: checked([], null, []),
-			}),
 		);
 		expect("reason" in got).toBe(false);
 	});

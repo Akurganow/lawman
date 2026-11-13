@@ -12,14 +12,7 @@ import {
 import { dirname, join, resolve } from "node:path";
 import type { RootContent } from "mdast";
 import { check, checkLink, fits, parseArgs, usage } from "./args";
-import {
-	type CaseMarker,
-	caseStage,
-	clerkInputOf,
-	markersOf,
-	rulingComment,
-	rulingCommentOf,
-} from "./cases";
+import { caseStage, clerkInputOf, markersOf, rulingCommentOf } from "./cases";
 import { cleanCharacters } from "./clean";
 import { precedentDue } from "./clerk-jobs";
 import { consents, jevAllowed, licensesAllowed } from "./consent";
@@ -378,7 +371,7 @@ function rulingText(
 	ord: string,
 	lenient = false,
 ): string {
-	const body = rulingComment(db, precinct, issue, ord);
+	const body = rulingCommentOf(db, precinct, issue, ord)?.body;
 	if (body === undefined && !lenient)
 		throw new Fail(
 			EXIT.USAGE,
@@ -394,9 +387,12 @@ export function trustedLogin(): string {
 	return login;
 }
 
+// whether a line of the ruling's step reports a changed file
+const changed = (lines: string[]) =>
+	lines.some((l) => !l.endsWith("\tmissing"));
+
 function summary(sections: Item[][], lines: string[]): string[] {
-	const changed = lines.some((l) => !l.endsWith("\tmissing"));
-	if (changed) return lines;
+	if (changed(lines)) return lines;
 	const items = sections.flat();
 	const end =
 		sections.length === 0
@@ -642,6 +638,7 @@ function readCase(
 	precinct: string,
 	issue: number,
 	config: string | null,
+	source: string | undefined,
 ) {
 	const row = db
 		.query(
@@ -656,11 +653,7 @@ function readCase(
 	} | null;
 	// an issue the cache lacks is due nothing; the ruling's step reads its own markers
 	if (row === null)
-		return {
-			due: { ruling: false, dismissal: false },
-			ruling: undefined,
-			dismissal: null,
-		};
+		return { due: { ruling: false, dismissal: false }, dismissal: null };
 	const origin = db
 		.query(
 			`SELECT m.department, m.lead_id ${LEAD_ORIGIN_FROM} AND i.precinct = ? AND i.issue = ?`,
@@ -680,28 +673,31 @@ function readCase(
 		origin !== null,
 	);
 	const due = precedentDue(input);
-	if (!due.dismissal) return { due, ruling, dismissal: null };
+	if (!due.dismissal) return { due, dismissal: null };
 	const thread = db
 		.query(
 			"SELECT author, at, body FROM comments WHERE precinct = ? AND kind = 'issue' AND number = ? ORDER BY at, rowid",
 		)
 		.all(precinct, issue) as ThreadComment[];
-	const comment =
-		ruling === undefined
-			? undefined
-			: rulingCommentOf(db, precinct, issue, ruling.ord);
+	const comment = ruling && rulingCommentOf(db, precinct, issue, ruling.ord);
 	return {
 		due,
-		ruling,
 		dismissal: {
+			issue,
 			url: row.url,
 			title: row.title,
 			leadId: origin?.lead_id ?? "",
 			department: origin?.department ?? NO_VALUE,
 			closedAt: row.closed_at ?? "",
 			thread,
-			rulingText: comment?.body ?? "",
-			rulingAt: comment?.at ?? "",
+			ruling: ruling
+				? {
+						stage: ruling.stage,
+						text: comment?.body ?? "",
+						at: comment?.at ?? "",
+						url: source ?? null,
+					}
+				: null,
 		},
 	};
 }
@@ -721,35 +717,18 @@ type Closed = NonNullable<ReturnType<typeof readCase>["dismissal"]>;
 
 // The dismissal step: its line, and its file placed in the folder. A file is built
 // from the cache and the object alone, so the step reads before the folder commits.
-async function dismiss(
-	issue: number,
-	folder: Folder,
-	closed: Closed,
-	ruling: CaseMarker | undefined,
-	source: string | undefined,
-): Promise<string> {
+async function dismiss(folder: Folder, closed: Closed) {
 	const built = await dismissalFile({
-		issue,
-		url: closed.url,
-		title: closed.title,
-		leadId: closed.leadId,
-		department: closed.department,
-		closedAt: closed.closedAt,
-		ruling:
-			ruling === undefined
-				? null
-				: {
-						stage: ruling.stage,
-						text: closed.rulingText,
-						at: closed.rulingAt,
-						url: source ?? null,
-					},
-		thread: closed.thread,
-		object: needsObject(ruling ?? null) ? checkObject() : null,
+		...closed,
+		object: needsObject(closed.ruling) ? checkObject() : null,
 	});
-	if ("reason" in built) return `no-entry\t${built.reason}`;
+	if ("reason" in built)
+		return { line: `no-entry\t${built.reason}`, cites: false };
 	const name = folder.place(built.base, built.text);
-	return name === null ? "no-entry\tno-change" : `entry\t${name}`;
+	return {
+		line: name === null ? "no-entry\tno-change" : `entry\t${name}`,
+		cites: built.cites,
+	};
 }
 
 // The write call: the ruling's files and a dismissal, whichever the case is due, into
@@ -762,11 +741,9 @@ async function writePrecedents(
 	source: string | undefined,
 ): Promise<void> {
 	const config = readConfig();
-	const {
-		due,
-		ruling: counted,
-		dismissal,
-	} = withDb((db) => readCase(db, precinct, issue, config));
+	const { due, dismissal } = withDb((db) =>
+		readCase(db, precinct, issue, config, source),
+	);
 	// A call that names a ruling still takes its files when no dismissal is due: the
 	// ruling's step reads the newest court marker itself.
 	const rules = due.ruling || (dismissal === null && source !== undefined);
@@ -805,24 +782,22 @@ async function writePrecedents(
 			(named) => originalList(named, candidateNames, caseOf),
 		);
 	}
-	const line =
-		dismissal === null
-			? undefined
-			: await dismiss(issue, folder, dismissal, counted, source);
+	const dismissed =
+		dismissal === null ? undefined : await dismiss(folder, dismissal);
 	const pending = folder.pending();
 	// the body names the ruling only when the files are its own, or the dismissal quotes its Verdict
-	const cited = rules || !needsObject(counted ?? null) ? source : undefined;
+	const cited = rules || dismissed?.cites ? source : undefined;
 	const text =
 		pending.length > 0 ? await precedentBody(cited, pending) : undefined;
 	folder.commit();
 	if (text !== undefined) writeFileSync(body, text);
 	const printed = applied?.lines ?? [];
-	const entered = (l: string) => l.startsWith("entry\t");
-	// a no-entry line of the dismissal stands only when no entry line was printed
+	const line = dismissed?.line;
+	// a no-entry line of the dismissal stands only when the ruling's step changed no file
 	const shown =
 		line === undefined
 			? summary(sections, printed)
-			: entered(line) || !printed.some(entered)
+			: line.startsWith("entry\t") || !changed(printed)
 				? [...printed, line]
 				: printed;
 	for (const l of shown) out(l);

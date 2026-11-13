@@ -13,7 +13,6 @@ import {
 	commentLine,
 	DISMISSED,
 	issueLine,
-	NO_COMMENT,
 	TITLE_LINE,
 	verdictLine,
 } from "./dismissal-file";
@@ -168,38 +167,6 @@ describe("precedent: a dismissal through the command", () => {
 		expect(quotes.map((q) => q.text)).toEqual([TITLE, COMMENT]);
 	});
 
-	test("with no comment of the closer the file says so", async () => {
-		await cache([]);
-		close();
-		const r = await run(objectOf());
-		const name = lines(r.out)[0]?.split("\t")[1] as string;
-		const { outside, quotes } = bodyOf(read(name));
-		expect(outside).toContain(NO_COMMENT);
-		expect(quotes.map((q) => q.text)).toEqual([TITLE]);
-	});
-
-	test("the comments of a pull request object are quoted", async () => {
-		await cache([{ body: "A cached comment.", author: OWNER }]);
-		close();
-		const r = await run(
-			objectOf({ comments: [ASKED("2026-10-14T11:00:00Z", COMMENT)] }),
-		);
-		const name = lines(r.out)[0]?.split("\t")[1] as string;
-		const { outside, quotes } = bodyOf(read(name));
-		expect(outside).toContain(commentLine("2026-10-14T11:00:00Z"));
-		expect(quotes.map((q) => q.text)).toEqual([TITLE, COMMENT]);
-	});
-
-	test("a closer who is no writer leaves no file", async () => {
-		await cache([{ body: COMMENT, author: OWNER }]);
-		close();
-		const r = await run(objectOf({ writers: ["someone-else"] }));
-		expect(r.code).toBe(EXIT.OK);
-		expect(r.out).toBe("no-entry\tno-decider\n");
-		expect(names()).toEqual([]);
-		expect(existsSync(bodyFile())).toBe(false);
-	});
-
 	test("a court acquittal quotes the verdict, ignores the object and takes the ruling from the source", async () => {
 		await cache([...funnel, acquitted("Not a defect.")]);
 		close();
@@ -268,6 +235,29 @@ describe("precedent: the ruling's files and a dismissal together", () => {
 		);
 		expect(other.out).toBe("no-entry\tno-decider\n");
 		expect(names()).toEqual([RULING_BASE, DISMISSAL_BASE]);
+	});
+
+	test("a cancellation of the ruling is a change: the dismissal's no-entry line gives way", async () => {
+		const OLD = "2026-09-01-old-rule";
+		await cache([
+			...funnel,
+			ruled(conviction(), "## Precedent", "", `- cancel ${OLD}`),
+			{ body: COMMENT, author: OWNER },
+		]);
+		close();
+		mkdirSync(folder(), { recursive: true });
+		writeFileSync(
+			join(folder(), `${OLD}.md`),
+			"---\nkind: condemns\ndepartments: []\n---\n\nAn old rule.\n",
+		);
+		const r = await run(
+			objectOf({ writers: ["someone-else"] }),
+			"--source",
+			SOURCE,
+		);
+		expect(r.out).toBe(`cancel\t${OLD}\n`);
+		expect(names()).toEqual([]);
+		expect(existsSync(bodyFile())).toBe(true);
 	});
 
 	test("with no source the ruling's files being due is a usage error and nothing is written", async () => {

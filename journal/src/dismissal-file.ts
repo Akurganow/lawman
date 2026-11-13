@@ -45,8 +45,9 @@ export type DismissalFacts = {
 	object: CheckObject | null;
 };
 
+// cites: the file quotes the Verdict of the ruling
 export type Dismissal =
-	| { base: string; text: string }
+	| { base: string; text: string; cites: boolean }
 	| { reason: "no-decider" };
 
 // only the comment route reads the check object
@@ -131,7 +132,7 @@ export async function dismissalFile(facts: DismissalFacts): Promise<Dismissal> {
 			);
 		if (
 			object.actor === null ||
-			!object.writers.map(asciiLower).includes(asciiLower(object.actor))
+			!object.writers.includes(asciiLower(object.actor))
 		)
 			return { reason: "no-decider" };
 		const comment = await closersComment(
@@ -162,5 +163,6 @@ export async function dismissalFile(facts: DismissalFacts): Promise<Dismissal> {
 	return {
 		base: `${date}-dismissal-issue-${facts.issue}`,
 		text: buildPrecedent(fields, body),
+		cites: verdict !== null,
 	};
 }

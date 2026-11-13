@@ -114,13 +114,6 @@ export function rulingCommentOf(
 		: undefined;
 }
 
-export const rulingComment = (
-	db: Database,
-	precinct: string,
-	issue: number,
-	ord: string,
-) => rulingCommentOf(db, precinct, issue, ord)?.body;
-
 type CloseRow = {
 	state_reason: string | null;
 	closed_at: string | null;
@@ -145,7 +138,7 @@ export function clerkInputOf(
 		: { need: "none" as const };
 	const ruling = funnel.ruling;
 	const rulingHolds = (test: (text: string) => boolean) => () => {
-		const body = rulingComment(db, precinct, issue, ruling?.ord ?? "");
+		const body = rulingCommentOf(db, precinct, issue, ruling?.ord ?? "")?.body;
 		return body !== undefined && test(body);
 	};
 	const input: ClerkInput = {
