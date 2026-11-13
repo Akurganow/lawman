@@ -23,6 +23,7 @@ Harnesses change fast. Read the live documentation when the work on a harness st
 One package serves every harness. The root of the repository holds no file that only one harness reads.
 
 - A file that one harness needs and the others do not read stays out of the root.
+- One exception stands: `CLAUDE.md`, a link to `AGENTS.md`. Both serve an agent that changes this repository, and neither is a part of the package.
 - The law and the skills name no harness and no tool. They say what must happen.
 - A command or a fact that differs between harnesses lives on the page of the harness that has it. A form that the assembly finds on the user's machine is recorded in `host.md` and not on a page. A page describes only what its own harness needs.
 - The setup is the skill `assembly` on every harness. The user starts it from a chat. The package adds no command, hook or install script that runs it.

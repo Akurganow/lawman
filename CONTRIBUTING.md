@@ -2,7 +2,7 @@
 
 Lawman has two kinds of files. The journal is a program with tests. The law, the skills and the harness pages are text that agents read. Each kind has its own checks.
 
-[AGENTS.md](AGENTS.md) holds further rules for an agent that changes this repository. `CLAUDE.md` is a link to it.
+[AGENTS.md](AGENTS.md) holds further rules for an agent that changes this repository.
 
 ## Design for every user
 
