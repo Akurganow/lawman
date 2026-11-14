@@ -27,6 +27,7 @@ import {
 import { SPEC } from "./pulls-fixture";
 import {
 	BASE,
+	cachePull,
 	call,
 	caseMark,
 	charge,
@@ -35,6 +36,7 @@ import {
 	JOURNAL,
 	later,
 	order,
+	precinct,
 	rows,
 	SHA,
 	seed,
@@ -69,6 +71,8 @@ const REVISION = `revision=${SHA}`;
 const CONSTITUTION_FENCES = ["~lint", "~constitution"];
 const ISSUE_TEXT = ["~title", "~issue"];
 const END = "end part 1 of 1";
+// every role syncs the tracker and the pull requests
+const SYNCED = ["issues", "pulls"];
 const SPEC_PULL = {
 	number: 7,
 	author: TRUSTED,
@@ -96,7 +100,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER("-", "fixtures"),
 			REVISION,
-			"issues",
+			...SYNCED,
 			...CONSTITUTION_FENCES,
 			"department fixtures place=1",
 			"~lint",
@@ -111,7 +115,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
+			...SYNCED,
 			"need=intake",
 			...CONSTITUTION_FENCES,
 			"precedents none",
@@ -125,7 +129,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
+			...SYNCED,
 			"need=investigation",
 			...CONSTITUTION_FENCES,
 			"precedents none",
@@ -139,7 +143,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
+			...SYNCED,
 			"need=prosecutor",
 			...CONSTITUTION_FENCES,
 			"precedents none",
@@ -162,7 +166,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
+			...SYNCED,
 			"need=defender",
 			...CONSTITUTION_FENCES,
 			"department fixtures place=2",
@@ -186,7 +190,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
+			...SYNCED,
 			"need=court",
 			...CONSTITUTION_FENCES,
 			"department logic place=3",
@@ -215,8 +219,7 @@ const CASES: Record<string, Case> = {
 			...RAN,
 			...ORDER(),
 			REVISION,
-			"issues",
-			"pulls",
+			...SYNCED,
 			"need=clerk",
 			...ISSUE_TEXT,
 			"~pull",
@@ -225,14 +228,16 @@ const CASES: Record<string, Case> = {
 	"spec-writer": {
 		order: { issue: 7 },
 		setup: () => {
-			host({ pulls: [{ number: 7, author: TRUSTED, closes: [3] }] });
-			put({ 3: handed(7) });
+			host({
+				issues: { 3: handed(7) },
+				pulls: [{ number: 7, author: TRUSTED, closes: [3] }],
+			});
 		},
 		skeleton: [
 			...RAN,
 			...ORDER("7"),
 			REVISION,
-			"pulls",
+			...SYNCED,
 			"need=spec-writer",
 			...CONSTITUTION_FENCES,
 			"precedents none",
@@ -242,14 +247,13 @@ const CASES: Record<string, Case> = {
 	executor: {
 		order: { issue: 7 },
 		setup: () => {
-			host({ pulls: [SPEC_PULL] });
-			put({ 3: handed(7) });
+			host({ issues: { 3: handed(7) }, pulls: [SPEC_PULL] });
 		},
 		skeleton: [
 			...RAN,
 			...ORDER("7"),
 			REVISION,
-			"pulls",
+			...SYNCED,
 			"need=executor",
 			...CONSTITUTION_FENCES,
 			"precedents none",
@@ -951,12 +955,52 @@ describe("an operation that is empty or fails", () => {
 					expect(own).toContain(`${operation} failed reason=exit`);
 					expect(r.out).toContain("\n~~~error\nbroken\n~~~\n");
 				} else expect(own).toContain(`${operation} empty`);
-				expect(own).toContain(`self ${step}`);
+				// a failed sync is no self step: the unsynced line prints only past the stop on self steps
+				if (failing && SYNCED.includes(operation)) {
+					expect(own).not.toContain(`self ${step}`);
+					expect(own).toContain(`unsynced main ${operation} synced=never`);
+				} else expect(own).toContain(`self ${step}`);
 				rmSync(dir, { recursive: true, force: true });
 				mkdirSync(dir);
 			}
 		},
 	);
+
+	test("the alarms of a start read only the cache it refreshed: a pull request merged since the last sync raises none, a new decision of another precinct is not printed", () => {
+		setUp();
+		seed((d) => precinct(d, "other"));
+		// the cache holds a handed pull request with finished work, which the host no longer lists
+		put({ 4: handed(7) });
+		cachePull("main", 7, [4], "up", "ready");
+		// the cache of another precinct holds a new decision
+		put({ 3: handed(1) }, "other");
+		cachePull("other", 1, [3], "waiting");
+		orderOf("investigation", { issue: 3 });
+		host({ issues: { 3: withLead("fixtures"), 4: handed(7) } });
+		const r = start("investigation");
+		expect(r.out).not.toContain("ALARM");
+		expect(rows("SELECT kind FROM alarms")).toEqual([]);
+		expect(rows("SELECT number FROM pulls WHERE precinct = 'main'")).toEqual(
+			[],
+		);
+	});
+
+	test("tick input after a self sync that the model left undone prints an unsynced line for it", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		for (const op of SYNCED) rmSync(join(configs("main"), op));
+		expect(lines(start("investigation").out)).toEqual(
+			expect.arrayContaining(["self issues", "self pulls"]),
+		);
+		put({ 3: withLead("fixtures") });
+		const own = lines(input("1").out);
+		expect(own).toContain("unsynced main pulls synced=never");
+		expect(own.some((l) => l.startsWith("unsynced main issues"))).toBe(false);
+		expect(own.indexOf("unsynced main pulls synced=never")).toBeLessThan(
+			own.findIndex((l) => l.startsWith("need=")),
+		);
+	});
 
 	test("an empty fetch stops before the stage, and tick input then prints the stage, the texts and the page steps", () => {
 		setUp();
@@ -969,7 +1013,7 @@ describe("an operation that is empty or fails", () => {
 			...RAN,
 			...ORDER(),
 			"fetch empty",
-			"issues",
+			...SYNCED,
 			"self fetch",
 			END,
 		]);

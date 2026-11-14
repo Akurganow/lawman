@@ -25,6 +25,7 @@ export type PullRow = {
 type Obj = Record<string, unknown>;
 type Comment = {
 	id: string;
+	url: string | null;
 	author: string;
 	createdAt: string;
 	body: string;
@@ -65,6 +66,7 @@ function readComment(raw: unknown): Comment {
 	if (text(raw.id) === "") throw reject("a comment has no id");
 	return {
 		id: text(raw.id),
+		url: linkOrNull(raw.url),
 		author: text(raw.author),
 		createdAt: timeField(raw.createdAt, "a comment createdAt"),
 		body: text(raw.body),
@@ -188,6 +190,7 @@ const pullText = (pull: Pull): HostText => ({
 	comments: pull.comments.map((c) => ({
 		id: c.id,
 		author: c.author === "" ? null : c.author,
+		url: c.url,
 		at: c.createdAt,
 		body: c.body,
 	})),

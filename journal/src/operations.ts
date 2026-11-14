@@ -176,6 +176,9 @@ export type Operated = {
 	text: string | null;
 };
 
+// an operation whose command file does not exist: a self step, no failure
+export const empty = (r: Operated) => r.text === null && r.code === EXIT.OK;
+
 // One operation as `run` does it: what it prints and its exit code.
 export async function operate(
 	name: string,

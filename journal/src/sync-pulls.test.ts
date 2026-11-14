@@ -93,6 +93,25 @@ describe("sync --pulls", () => {
 		expectRejected([noId, badTime]);
 	});
 
+	test("a comment url is stored when it is a plain address, and as null when it is not", () => {
+		const input = hostPulls([
+			{ number: 3, comments: [{ body: "a" }, { body: "b" }, { body: "c" }] },
+		]);
+		const comments = input.pulls[0]?.comments ?? [];
+		const give = (i: number, url: string) =>
+			Object.assign(comments[i] ?? {}, { url });
+		give(0, "https://git.example/o/main/pull/3#c0");
+		give(1, "javascript:alert(1)");
+		expect(feed(input).code).toBe(0);
+		expect(
+			rows("SELECT id, url FROM comments WHERE precinct = 'main' ORDER BY id"),
+		).toEqual([
+			{ id: "IC_0", url: "https://git.example/o/main/pull/3#c0" },
+			{ id: "IC_1", url: null },
+			{ id: "IC_2", url: null },
+		]);
+	});
+
 	test("a pull request of another author without a comment id is no failure", () => {
 		const input = hostPulls([{ number: 4 }]);
 		input.pulls.unshift({

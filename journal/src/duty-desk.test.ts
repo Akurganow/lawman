@@ -2,7 +2,7 @@ import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
 import { readFileSync, rmSync, writeFileSync } from "node:fs";
 import { basename, join } from "node:path";
-import { convicted, human, T } from "./cases-fixture";
+import { convicted, handed, human, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
@@ -33,6 +33,7 @@ import {
 	recording,
 	shared,
 } from "./operations-test-fixture";
+import { READY, SPEC } from "./pulls-fixture";
 import {
 	BASE,
 	call,
@@ -44,6 +45,7 @@ import {
 	seed,
 	TRUSTED,
 	tempDb,
+	WAITS_WORK,
 } from "./test-helpers";
 
 tempDb();
@@ -289,20 +291,77 @@ describe("the walk", () => {
 	});
 });
 
+// a pull request whose finished work waits for a review
+const WAITING = {
+	issues: { 3: handed(7) },
+	pulls: [
+		{
+			number: 7,
+			author: TRUSTED,
+			closes: [3],
+			comments: [
+				{ body: SPEC, author: TRUSTED, up: ["maint-a"] },
+				{ body: READY, author: TRUSTED, at: "2026-10-14T11:00:00Z" },
+			],
+		},
+	],
+};
+
 describe("the sync", () => {
-	test("a failed tracker stops the tick and writes no order anywhere", () => {
+	test("a failed tracker stops no tick: the other precinct gets its orders, Blockers names the failed one, its host alarms stay as they were", () => {
 		setUp({ alpha: 1, main: 1 });
 		hostOf("alpha", WORK);
 		hostOf("main", WORK);
-		failing("main", "issues");
-		const r = startDesk();
+		failing("alpha", "issues");
+		// an open alarm of alpha and a new condition at alpha: neither is cleared nor raised on a cache this tick did not refresh
+		seed((d) => {
+			d.run(
+				"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES ('no-constitution', 'alpha', 'old detail', ?, ?)",
+				[BASE, BASE],
+			);
+			d.run(
+				"UPDATE precincts SET constitution_cause = 'missing' WHERE name = 'alpha'",
+			);
+		});
+		const r = startDesk(later(1));
 		expect(r.code).toBe(0);
-		expect(lines(r.out)).toContain("ended stopped-sync");
-		expect(r.out).toContain(
-			"Tracker sync failed at main: issues failed reason=exit",
+		expect(lines(r.out)).not.toContain("ended stopped-sync");
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["main"]),
 		);
-		expect(dispatches()).toEqual([]);
-		expect(ticks()[0]?.outcome).toBe("stopped-sync");
+		expect(reportOf(r.out, "Blockers")).toBe(
+			`Blockers: alpha: not synced in this tick, issues never, pulls ${later(1)}: issues failed reason=exit`,
+		);
+		expect(r.out).not.toContain("ALARM");
+		expect(rows("SELECT ref, detail, cleared_at FROM alarms")).toEqual([
+			{ ref: "alpha", detail: "old detail", cleared_at: null },
+		]);
+		expect(ticks()[0]?.outcome).toBe("ordered");
+		// the run that tick-failing duty-desk/<precinct> counts: alpha failed once, main starts again
+		expect(
+			rows("SELECT name, sync_failures FROM precincts ORDER BY name"),
+		).toEqual([
+			{ name: "alpha", sync_failures: 1 },
+			{ name: "main", sync_failures: 0 },
+		]);
+	});
+
+	test("a pull request merged since the last sync raises no decision-waiting alarm", () => {
+		setUp({ main: 1 });
+		// the new decision is in the host data and not in the cache: the same tick alarms
+		hostOf("main", WAITING);
+		const first = startDesk();
+		expect(lines(first.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+			`ALARM decision-waiting main#7 ${WAITS_WORK}`,
+		]);
+		// the pull request is merged: the host no longer lists it, and the cache holds it until the sync
+		seed((d) => d.run("DELETE FROM alarms"));
+		hostOf("main", { issues: WAITING.issues });
+		expect(rows("SELECT work FROM pulls")).toEqual([{ work: "ready" }]);
+		const second = startDesk(later(1));
+		expect(second.out).not.toContain("decision-waiting");
+		expect(rows("SELECT kind FROM alarms")).toEqual([]);
 	});
 
 	test("a text the cleaning cannot process stops no tick and raises one alarm", () => {
@@ -341,7 +400,7 @@ describe("the sync", () => {
 			new Set(["main"]),
 		);
 		expect(reportOf(r.out, "Blockers")).toBe(
-			"Blockers: alpha: pull request sync failed",
+			`Blockers: alpha: not synced in this tick, issues ${BASE}, pulls never: pulls failed reason=exit`,
 		);
 		expect(reportOf(r.out, "Coverage")).toContain("precincts: main");
 		expect(lines(r.out)).toContain("ended ordered");
@@ -443,7 +502,7 @@ describe("the self steps", () => {
 		const r = proceed(1);
 		expect(lines(r.out)).toContain("ended ordered");
 		expect(reportOf(r.out, "Blockers")).toBe(
-			"Blockers: main: pull request sync failed",
+			`Blockers: main: not synced in this tick, issues ${BASE}, pulls never`,
 		);
 		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
 			new Set(["alpha", "main"]),
@@ -454,7 +513,7 @@ describe("the self steps", () => {
 		]);
 	});
 
-	test("a continuation whose tracker stamp is older than the tick start ends stopped-sync", () => {
+	test("a continuation whose syncs are older than the tick start goes on: the other precinct is worked, Blockers names the stale one with its times", () => {
 		setUp({ alpha: 1, main: 1 });
 		hostOf("alpha", WORK);
 		hostOf("main", WORK);
@@ -463,10 +522,14 @@ describe("the self steps", () => {
 		expect(syncBy("main", WORK, BASE).code).toBe(0);
 		expect(syncBy("main", WORK, BASE, true).code).toBe(0);
 		const r = proceed(1, later(1));
-		expect(lines(r.out)).toContain("ended stopped-sync");
-		expect(r.out).toContain("report Tracker not synced in this tick: main");
-		expect(dispatches()).toEqual([]);
-		expect(ticks()[0]?.outcome).toBe("stopped-sync");
+		expect(lines(r.out)).toContain("ended ordered");
+		expect(reportOf(r.out, "Blockers")).toBe(
+			`Blockers: main: not synced in this tick, issues ${BASE}, pulls ${BASE}`,
+		);
+		expect(new Set(openOrders().map((o) => o.precinct))).toEqual(
+			new Set(["alpha"]),
+		);
+		expect(ticks()[0]?.outcome).toBe("ordered");
 	});
 
 	test("a continuation of an ended tick fails, reads no host and writes no order", () => {
@@ -496,9 +559,9 @@ describe("the self steps", () => {
 		expect(dispatches()).toEqual([]);
 	});
 
-	test("the continuation prints no ALARM line, the start prints them", () => {
+	test("a start that stops on self lines prints the journal alarms, the continuation the host alarms and not those again", () => {
 		setUp({ main: 1 });
-		hostOf("main", WORK);
+		hostOf("main", WAITING);
 		without("main", "issues", "pulls");
 		// a tick with no end record while a later tick of its role exists
 		seed((d) => {
@@ -506,16 +569,15 @@ describe("the self steps", () => {
 			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
 		});
 		const first = startDesk(later(3));
-		expect(lines(first.out)).toContain(
+		expect(lines(first.out).filter((l) => l.startsWith("ALARM"))).toEqual([
 			`ALARM tick-hung 1 court started ${BASE}`,
-		);
-		seed((d) =>
-			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [BASE]),
-		);
-		syncBy("main", WORK, later(3));
-		syncBy("main", WORK, later(3), true);
+		]);
+		syncBy("main", WAITING, later(3));
+		syncBy("main", WAITING, later(3), true);
 		const r = proceed(3, later(3));
-		expect(r.out).not.toContain("ALARM");
+		expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+			`ALARM decision-waiting main#7 ${WAITS_WORK}`,
+		]);
 		expect(lines(r.out)).toContain("ended ordered");
 	});
 });

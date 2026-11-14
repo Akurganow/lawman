@@ -54,11 +54,11 @@ These actions are forbidden. Each has its boundary:
 | Merge, review, react to or label a pull request | Merging, reviewing and voting belong to the owner. |
 | Edit, create, close or reopen a pull request. Comment on, close or reopen an issue | The title, the body and the state of the pair belong to the clerk. |
 | Rerun or cancel a CI run | A run is evidence. The executor does not change it. |
-| Any other host write | They write state that the executor does not own. Only the actions of the next section and the pull request sync are allowed. |
+| Any other host write | They write state that the executor does not own. Only the actions of the next section and the two syncs are allowed. |
 
 ## Host actions
 
-These are the only host actions the executor takes. The fixed pull request sync, from the `tick.md#sync-the-pull-requests` section of the tick file, is the one other action. `<owner/repo>` is the repository of the order.
+These are the only host actions the executor takes. The fixed syncs of the tracker and of the pull requests are the other actions. The `tick.md#sync-the-tracker` and `tick.md#sync-the-pull-requests` sections of the tick file say how they run. `<owner/repo>` is the repository of the order.
 
 - Ask which account the tool in the host notes acts as.
 - Read pull request `<m>`. Its facts are its state, its draft state, its merge state, its base branch, its head branch and its head commit. They also cover whether its head lives in another repository, its title, its body, its conversation comments and its reviews. A read of fewer of these is allowed.
@@ -122,7 +122,7 @@ A pull request that is not open at any read of its state ends the tick with `sil
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role executor --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 11
+      bin/journal probe --schema 12
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <pull request|->`, in the order to take. `<p>`, `<owner/repo>` and `<m>` are the precinct, the repository and the pull request of the order.
    ```
@@ -142,7 +142,7 @@ A pull request that is not open at any read of its state ends the tick with `sil
 
 The pull line is the stage, as the `tick.md#read-the-pull-stage` section says.
 
-The journal ends a stale order itself. After a self step `fetch`, `pulls` or `stage`, the order is stale unless `need` is `executor`. End a stale order with `silent` and the report `Order stale: <the line>`. Keep `spec_id`, `work` and `sources`.
+The journal ends a stale order itself. After a self step `fetch`, `issues`, `pulls` or `stage`, the order is stale unless `need` is `executor`. End a stale order with `silent` and the report `Order stale: <the line>`. Keep `spec_id`, `work` and `sources`.
 
 ### Step 2: the tip
 

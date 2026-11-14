@@ -45,7 +45,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role prosecutor --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 11
+      bin/journal probe --schema 12
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order to take. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
@@ -65,7 +65,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
 
 The `revision=` line gives the fetched commit, the tip. The `case` line is the stage, as the `tick.md#read-the-stage` section says.
 
-The journal ends a stale order itself. After a self step `fetch`, `issues` or `stage`, the order is stale when `need` is not `prosecutor`, or `state` is `CLOSED`. End the tick with `silent` and the report `Order stale: <the line>`.
+The journal ends a stale order itself. After a self step `fetch`, `issues`, `pulls` or `stage`, the order is stale when `need` is not `prosecutor`, or `state` is `CLOSED`. End the tick with `silent` and the report `Order stale: <the line>`.
 
 Keep `round`, `returned`, `department`, `sha`, `lead`, `related` and `kind`. The `sha` is the analysed commit, and `<ref>` is that `sha`, for every step below.
 

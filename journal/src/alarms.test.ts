@@ -138,13 +138,39 @@ describe("alarms and status", () => {
 			expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
 		});
 
-		test("three stopped ticks without a precinct raise tick-failing under duty-desk/-", () => {
+		test("three stopped ticks without a precinct raise tick-failing under duty-desk/- and none for an unsynced precinct", () => {
 			seed((db) => {
+				precinct(db, "a");
 				tick(db, "duty-desk", later(0), later(0, 60), "stopped-law-drift");
 				tick(db, "duty-desk", later(1), later(1, 60), "stopped-dirty-law");
 				tick(db, "duty-desk", later(2), later(2, 60), "stopped-host-auth");
 			});
 			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
+		});
+
+		test("a precinct that three duty desk ticks in a row could not sync raises tick-failing duty-desk/<precinct>, not after two", () => {
+			const failures = (n: number) =>
+				seed((db) => {
+					db.run("UPDATE precincts SET sync_failures = ? WHERE name = 'a'", [
+						n,
+					]);
+				});
+			seed((db) => {
+				precinct(db, "a");
+				precinct(db, "b");
+			});
+			failures(2);
+			expect(alarm(later(1)).out).toBe("");
+			failures(3);
+			alarmsOnce(
+				later(2),
+				/^ALARM tick-failing duty-desk\/a last 3 duty desk ticks did not sync it\n$/,
+			);
+			failures(0);
+			expect(alarm(later(4)).out).toBe("");
+			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
+				{ cleared_at: later(4) },
+			]);
 		});
 	});
 
@@ -329,10 +355,33 @@ describe("decision-waiting", () => {
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
 		expect(alarm(later(1)).out).toBe("");
-		const repeat = call(later(2), ["tick", "start", "--role", "duty-desk"]);
+		const repeat = alarm(later(2), "--repeat");
 		expect(repeat.out).toContain(
 			line("main#7", `${WAITS_SPEC} https://git.example/o/main/pull/7`).trim(),
 		);
+	});
+
+	test("a vote alarm ends with the link of the newest spec comment, or of the pull request when the cache has none", () => {
+		const PULL = "https://git.example/o/main/pull/7";
+		const COMMENT = `${PULL}#issuecomment-1`;
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting", "todo", "IC_spec");
+		setPull(`UPDATE pulls SET url = '${PULL}'`);
+		const addComment = (url: string | null) =>
+			seed((db) =>
+				db.run(
+					"INSERT INTO comments (precinct, kind, number, id, at, body, url) VALUES ('main', 'pull', 7, 'IC_spec', 't', 'b', ?)",
+					[url],
+				),
+			);
+		addComment(null);
+		expect(alarm(BASE).out).toBe(line("main#7", `${WAITS_SPEC} ${PULL}`));
+		setPull(`UPDATE comments SET url = '${COMMENT}'`);
+		expect(alarm(later(1), "--repeat").out).toBe(
+			line("main#7", `${WAITS_SPEC} ${COMMENT}`),
+		);
+		setPull("UPDATE pulls SET spec = 'up', work = 'ready'");
+		expect(alarm(later(2)).out).toBe(line("main#7", `${WAITS_WORK} ${PULL}`));
 	});
 
 	test.each([
