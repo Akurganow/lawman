@@ -1,4 +1,4 @@
-![Lawman](docs/assets/banner.png)
+![Ten robots in Old West dress pose on a frontier street at dusk, under the title LAWMAN and the line "The only lawman that actually works".](docs/assets/banner.png)
 
 # Lawman
 
