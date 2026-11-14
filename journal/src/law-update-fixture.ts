@@ -131,18 +131,6 @@ export function allCommands(): void {
 	verifyCommand();
 }
 
-export type Claim = { digest: string; signer: string; commit: string };
-export const statement = (c: Claim) =>
-	`digest=${c.digest}\nsigner=${c.signer}\ncommit=${c.commit}\n`;
-
-// A fixture check: it compares the claim lying at the provenance place with
-// the digest of the file and with the repository and commit it was given.
-// No real signing method stands behind it.
-export const fixtureVerifier = () => `${fixtureCheck()} || exit 1
-if command -v sha256sum >/dev/null 2>&1; then d=$(sha256sum "$1"); else d=$(shasum -a 256 "$1"); fi
-d=\${d%% *}
-grep -qx "digest=$d" "$2" && grep -qx "signer=$3" "$2" && grep -qx "commit=$4" "$2"`;
-
 export const sha256 = (text: string) =>
 	createHash("sha256").update(text).digest("hex");
 
@@ -152,7 +140,6 @@ export type Publish = {
 	body?: string;
 	// the whole file, for an asset that cannot start
 	raw?: string;
-	claim?: Partial<Claim>;
 	// the lines of SHA256SUMS, from the real hash and the asset name
 	sums?: (hash: string, asset: string) => string;
 };
@@ -171,13 +158,10 @@ export function publish(over: Publish = {}): { hash: string; asset: string } {
 	const path = join(upstream(), asset);
 	writeFileSync(path, text);
 	chmodSync(path, 0o644);
-	const claim = {
-		digest: hash,
-		signer: REPO,
-		commit: REVISION,
-		...over.claim,
-	};
-	writeFileSync(`${path}.sigstore.json`, statement(claim));
+	writeFileSync(
+		`${path}.sigstore.json`,
+		`digest=${hash}\nsigner=${REPO}\ncommit=${REVISION}\n`,
+	);
 	writeFileSync(
 		join(upstream(), "SHA256SUMS"),
 		over.sums === undefined ? `${hash}  ${asset}\n` : over.sums(hash, asset),

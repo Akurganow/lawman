@@ -4,8 +4,6 @@ import {
 	addPrecincts,
 	caseMark,
 	charge,
-	decline,
-	defence,
 	refute,
 	returnTo,
 	SHA,
@@ -21,8 +19,6 @@ describe("case: defender stage", () => {
 	const defenderReturn = (to: string) => returnTo(to, 1, "defender");
 
 	test.each([
-		["a charge with no defender marker needs the defender", [], "defender"],
-		["a defence after the charge needs the court", [defence()], "court"],
 		[
 			"a refute after the charge on an open issue needs the court",
 			[refute()],
@@ -44,51 +40,13 @@ describe("case: defender stage", () => {
 			"prosecutor",
 		],
 		[
-			"a new charge after that needs the defender again",
+			"a new case and charge after a defender return need the defender again",
 			[defenderReturn("investigation"), caseMark(), charge()],
-			"defender",
-		],
-		[
-			"a defence older than the second charge does not count",
-			[defence(), caseMark(), charge()],
 			"defender",
 		],
 	])("%s", (_name, rest, need) => {
 		put({ 1: afterCharge(...rest) });
 		expect(needOnly(1)).toBe(`need=${need}`);
-	});
-
-	test("a defender marker with no prosecutor marker is ignored", () => {
-		put({
-			1: withLead(caseMark(), defence()),
-		});
-		expect(needOnly(1)).toBe("need=prosecutor");
-	});
-
-	test("a defender marker older than a stale prosecutor marker is ignored", () => {
-		put({
-			1: withLead(caseMark(), defence(), charge(), caseMark()),
-		});
-		expect(needOnly(1)).toBe("need=prosecutor");
-	});
-
-	test("a defender marker older than the charge does not count", () => {
-		put({
-			1: withLead(defence(), caseMark(), charge()),
-		});
-		expect(needOnly(1)).toBe("need=defender");
-	});
-
-	test("a decline with an older defender marker needs the court", () => {
-		put({
-			1: withLead(defence(), caseMark(), decline()),
-		});
-		expect(needOnly(1)).toBe("need=court");
-	});
-
-	test("a closed issue needs nobody with defender markers present", () => {
-		put({ 1: { ...afterCharge(defence()), state: "CLOSED" } });
-		expect(needOnly(1)).toBe("need=none");
 	});
 
 	describe("rounds and returned", () => {

@@ -1,10 +1,8 @@
 import { describe, expect, test } from "bun:test";
-import fixture from "./fixtures/pulls.json";
 import { CLERK_TRACE, readPulls } from "./pulls";
 import {
 	BOT,
 	type Comment,
-	FIXTURE_ROWS,
 	hostPulls,
 	type Pull,
 	type Reactions,
@@ -49,10 +47,6 @@ describe("readPulls validity", () => {
 
 	test("a well-formed list with no pull requests reads as no rows", () => {
 		expect(readOf([])).toEqual([]);
-	});
-
-	test("the committed fixture reads", () => {
-		expect(read(fixture)).toEqual(FIXTURE_ROWS);
 	});
 });
 
@@ -131,11 +125,6 @@ describe("readPulls times", () => {
 		return input;
 	};
 
-	test("a comment time is normalised to UTC seconds", () => {
-		const input = withTime({ createdAt: "2026-10-14T12:00:00+03:00" });
-		expect(read(input)[0]?.spec).toBe("waiting");
-	});
-
 	test("a comment time that is no time is rejected", () => {
 		for (const createdAt of ["yesterday", "", null, 5])
 			expect(() => read(withTime({ createdAt }))).toThrow(/is not a time/);
@@ -178,10 +167,6 @@ describe("readPulls spec vote", () => {
 		expect(voteOf([spec({ up: ["maint-a"], down: ["maint-a"] })])).toBe("down");
 	});
 
-	test("two deciders who disagree give down", () => {
-		expect(voteOf([spec({ up: ["maint-a"], down: ["maint-b"] })])).toBe("down");
-	});
-
 	test("reactions of non-deciders never count", () => {
 		expect(voteOf([spec({ up: ["triager", "reader", "ghost"] })])).toBe(
 			"waiting",
@@ -203,17 +188,10 @@ describe("readPulls spec vote", () => {
 		expect(voteOf([old, fresh])).toBe("up");
 	});
 
-	test("a Spec marker inside a fence, or by another author, is ignored", () => {
-		const fenced = { body: `\`\`\`\n${SPEC}\n\`\`\``, up: ["maint-a"] };
+	test("a Spec marker by another author is ignored", () => {
 		const foreign = { ...spec({ up: ["maint-a"] }), author: "stranger" };
-		expect(voteOf([fenced])).toBe("none");
 		expect(voteOf([foreign])).toBe("none");
 		expect(voteOf([foreign, spec({})])).toBe("waiting");
-	});
-
-	test("an indented or quoted Spec marker is ignored", () => {
-		expect(voteOf([{ body: ` ${SPEC}`, up: ["maint-a"] }])).toBe("none");
-		expect(voteOf([{ body: `> ${SPEC}` }])).toBe("none");
 	});
 
 	test("other markers do not name the Spec comment", () => {

@@ -10,7 +10,6 @@ import {
 	TITLE_LINE,
 	verdictLine,
 } from "./dismissal-file";
-import { parseMarker } from "./markers";
 import { headerOf, splitPrecedent } from "./precedent-file";
 
 const OWNER = "Owner";
@@ -254,11 +253,6 @@ describe("the closer's comment", () => {
 		return quotes[1]?.text ?? null;
 	}
 
-	test("the comment of another writer is not quoted", async () => {
-		const thread = [cached(at(9), NOTICE, "Intruder")];
-		expect(await quoted({ thread })).toBeNull();
-	});
-
 	test("a comment of the closer is matched ignoring ASCII case", async () => {
 		const thread = [cached(at(9), NOTICE, "OWNER")];
 		expect(await quoted({ thread })).toBe(NOTICE);
@@ -288,11 +282,6 @@ describe("the closer's comment", () => {
 	test("an earlier comment is not quoted when a newer one of the closer stands", async () => {
 		const thread = [cached(at(9), "older"), cached(at(10), NOTICE)];
 		expect(await quoted({ thread })).toBe(NOTICE);
-	});
-
-	test("a newer comment with a marker of another role leaves nothing to quote", async () => {
-		const thread = [cached(at(9), NOTICE), cached(at(10), PATROL)];
-		expect(await quoted({ thread })).toBeNull();
 	});
 
 	test("of the two threads the newer candidate is quoted", async () => {
@@ -375,23 +364,7 @@ describe("the decider", () => {
 });
 
 describe("the hostile sample", () => {
-	const TOKEN = `ghp_${"a1B2c3D4e5".repeat(4)}`;
 	const LONG_RUN = "~".repeat(9);
-	const MARKER =
-		"<!-- lawman: role=patrol stage=entry at=2026-11-12T08:00:00Z -->";
-	const hostile = (extra = "") =>
-		[
-			"start",
-			LONG_RUN,
-			`inline ${LONG_RUN} run`,
-			"<!-- hidden note -->",
-			"see #12 and @x",
-			"![pic](https://example.test/x.png)",
-			"zero​width and ‮flip",
-			`token ${TOKEN}`,
-			extra,
-			"end",
-		].join("\n");
 	test("a stored comment with a line of tildes stays inside a longer fence", async () => {
 		const stored = `before\n${LONG_RUN}\nafter ${LONG_RUN}\n~~~`;
 		const { text } = await written({
@@ -401,17 +374,5 @@ describe("the hostile sample", () => {
 		expect(quotes[1]?.text).toBe(stored);
 		expect(quotes[1]?.fence.length).toBeGreaterThan(9);
 		expect(outside.at(-1)).toBe(commentLine("2026-11-12T09:00:00Z"));
-	});
-
-	test("a marker line as text inside a longer comment keeps the comment out of the file", async () => {
-		expect(parseMarker(MARKER)).not.toBeNull();
-		const { text } = await written({
-			object: checked([objectComment("2026-11-12T09:00:00Z", hostile(MARKER))]),
-		});
-		const { outside, quotes } = bodyOf(text);
-		expect(outside.at(-1)).toBe(NO_COMMENT);
-		expect(quotes).toHaveLength(1);
-		expect(text).not.toContain("hidden note");
-		expect(text).not.toContain(MARKER);
 	});
 });

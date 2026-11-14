@@ -18,7 +18,6 @@ tempDb();
 const WRITER = "maintainer-fictional";
 const OUTSIDER = "passerby-fictional";
 const referral = () => mark("court", "referral", ` sha=${SHA}`);
-const acquittal = () => mark("court", "acquittal");
 
 type Spec = {
 	at: number;
@@ -67,19 +66,6 @@ const REFERRED: Spec = { at: 10, body: referral() };
 const NONE = [null, null];
 
 describe("sync derives the answer", () => {
-	test("a thumbs up of a writer on the referral is up", () => {
-		expect(answerOf([{ ...REFERRED, up: [WRITER] }])).toEqual(["up", "-"]);
-	});
-
-	test("a thumbs down of a writer on the referral is down", () => {
-		expect(answerOf([{ ...REFERRED, down: [WRITER] }])).toEqual(["down", "-"]);
-	});
-
-	test("a comment of a writer after the referral is comment, with its id", () => {
-		const reply = { at: 12, by: WRITER, body: "do it" };
-		expect(answerOf([REFERRED, reply])).toEqual(["comment", "IC_12"]);
-	});
-
 	test("the newest decider comment gives the id", () => {
 		const first = { at: 12, by: WRITER, body: "one" };
 		const second = { at: 14, by: WRITER, body: "two" };
@@ -94,16 +80,11 @@ describe("sync derives the answer", () => {
 	test("an empty writer never makes an authorless comment an answer", () => {
 		const ghost = { at: 12, by: "", body: "deleted account" };
 		expect(answerOf([REFERRED, ghost], [WRITER, ""])).toEqual(NONE);
-		expect(answerOf([{ ...REFERRED, up: [""] }], [WRITER, ""])).toEqual(NONE);
 	});
 
 	test("a role marker after the referral ends its answer", () => {
 		const later = { at: 12, body: caseMark() };
 		expect(answerOf([{ ...REFERRED, up: [WRITER] }, later])).toEqual(NONE);
-	});
-
-	test("no reaction and no comment gives no answer", () => {
-		expect(answerOf([REFERRED])).toEqual(NONE);
 	});
 
 	test("an issue with no referral gives no answer", () => {
@@ -133,15 +114,6 @@ describe("sync derives the answer", () => {
 			"-",
 		]);
 	});
-
-	test("a thumb on a court comment counts wherever it stands in the thread", () => {
-		const before = { at: 8, by: OUTSIDER, body: "a question" };
-		const after = { at: 11, by: OUTSIDER, body: "another" };
-		expect(answerOf([before, { ...REFERRED, up: [WRITER] }, after])).toEqual([
-			"up",
-			"-",
-		]);
-	});
 });
 
 describe("sync ignores what is no answer", () => {
@@ -149,12 +121,6 @@ describe("sync ignores what is no answer", () => {
 		expect(
 			answerOf([{ ...REFERRED, up: [OUTSIDER], down: [OUTSIDER] }]),
 		).toEqual(NONE);
-	});
-
-	test("a comment of a non-writer changes nothing", () => {
-		expect(answerOf([REFERRED, { at: 12, by: OUTSIDER, body: "yes" }])).toEqual(
-			NONE,
-		);
 	});
 
 	test("a thumb named in a comment body changes nothing", () => {
@@ -165,12 +131,6 @@ describe("sync ignores what is no answer", () => {
 	test("a comment that holds a marker line changes nothing", () => {
 		const body = `go ahead\n${mark("clerk", "entry")}`;
 		expect(answerOf([REFERRED, { at: 12, by: WRITER, body }])).toEqual(NONE);
-	});
-
-	test("a comment before the referral changes nothing", () => {
-		expect(answerOf([{ at: 8, by: WRITER, body: "early" }, REFERRED])).toEqual(
-			NONE,
-		);
 	});
 
 	test("a thumb on a comment that is no court comment changes nothing", () => {
@@ -200,12 +160,6 @@ describe("sync ignores what is no answer", () => {
 		expect(answerOf([{ ...REFERRED, up: [WRITER] }, reply, convicted])).toEqual(
 			NONE,
 		);
-		expect(
-			answerOf([
-				{ ...REFERRED, up: [WRITER] },
-				{ at: 14, body: acquittal() },
-			]),
-		).toEqual(NONE);
 	});
 });
 

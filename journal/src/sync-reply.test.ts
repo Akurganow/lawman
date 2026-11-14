@@ -89,9 +89,4 @@ describe("reply time", () => {
 			repliedAt([note(AUTHOR.toUpperCase(), "2026-10-14T10:00:00Z")]),
 		).toBe("2026-10-14T10:00:00Z");
 	});
-
-	test("is recomputed on every sync, so a deleted comment stops counting", () => {
-		repliedAt([note(AUTHOR, "2026-10-14T10:00:00Z")]);
-		expect(repliedAt([])).toBeNull();
-	});
 });

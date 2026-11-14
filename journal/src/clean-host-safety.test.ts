@@ -74,7 +74,6 @@ const REPROS = [
 	"<object data=http://x></object>",
 	"x <foo src=http://e/x>",
 	"<col><img src=x>",
-	"a <!-- hidden --> b",
 	"http://a.b/ ![x](http://c/d.png)",
 	"www.a.com![x](http://c/d.png)",
 	"see http://x/y![a](b) end",

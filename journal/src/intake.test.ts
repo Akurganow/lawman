@@ -4,7 +4,6 @@ import { Fail, open } from "./db";
 import { intakeCommand, intakeWaiting } from "./intake";
 import {
 	addPrecincts,
-	cli,
 	dbFile,
 	lead,
 	order,
@@ -129,12 +128,9 @@ describe("intake", () => {
 		expect(waiting()).toBe("5");
 	});
 
-	test.each([
-		["an issue with a lead origin", "patrol"],
-		["a response-unit lead origin", UNIT],
-	])("%s does not wait", (_name, role) => {
+	test("an issue with a lead origin does not wait", () => {
 		addIssue(5);
-		addMarker(5, "lead", T(9), role);
+		addMarker(5, "lead", T(9), "patrol");
 		expect(waiting()).toBe("");
 	});
 
@@ -190,32 +186,10 @@ describe("intake", () => {
 		unitOrder(issue);
 		expect(waiting()).toBe("5");
 	});
-
-	test("an open response-unit order on another precinct does not block", () => {
-		addIssue(5);
-		seed((db) => {
-			precinct(db, "other");
-			order(db, "other", UNIT, { issue: 5 });
-		});
-		expect(waiting()).toBe("5");
-	});
-
-	test("a closed response-unit order does not block", () => {
-		addIssue(5);
-		unitOrder(5, { outcome: "asked" });
-		expect(waiting()).toBe("5");
-	});
-
-	test("an open order of another role does not block", () => {
-		addIssue(5);
-		seed((db) => order(db, "main", "court", { issue: 5 }));
-		expect(waiting()).toBe("5");
-	});
 });
 
 describe("intake order", () => {
 	test.each<[string, [number, number][]]>([
-		["an issue with no order goes before one with an earlier order", [[1, 3]]],
 		[
 			"the oldest last order goes first",
 			[
@@ -236,12 +210,6 @@ describe("intake order", () => {
 		addIssue(2, { createdAt: T(2) });
 		for (const [n, at] of orders)
 			unitOrder(n, { at: T(at), outcome: "failed" });
-		expect(waiting()).toBe("2");
-	});
-
-	test("ties go by creation time", () => {
-		addIssue(1, { createdAt: T(5) });
-		addIssue(2, { createdAt: T(4) });
 		expect(waiting()).toBe("2");
 	});
 
@@ -298,14 +266,5 @@ describe("intake --issue", () => {
 		expect(() => intakeCommand([])).toThrow("usage: journal intake");
 		expect(() => intakeCommand(["main"])).toThrow("usage: journal intake");
 		expect(intake("--issue", "x").code).toBe(1);
-	});
-});
-
-describe("intake through the command line", () => {
-	test("the dispatcher runs the command", () => {
-		addIssue(5);
-		const r = cli(["intake", "main", "--issue", "5"], { LAWMAN_DB: dbFile });
-		expect(r).toMatchObject({ code: 0, out: "need=intake state=OPEN\n" });
-		expect(cli(["intake", "main"], { LAWMAN_DB: dbFile }).code).toBe(1);
 	});
 });

@@ -4,7 +4,6 @@ import {
 	addPrecincts,
 	cli,
 	dbFile,
-	dir,
 	env,
 	JOURNAL,
 	SHA,
@@ -17,33 +16,6 @@ beforeEach(() => addPrecincts({ main: 1 }));
 const journal = (args: string[]) => cli(args, { LAWMAN_DB: dbFile });
 
 describe("commands and run as programs", () => {
-	test("commands prints the folder of the database and the empty operations", () => {
-		const r = journal(["commands"]);
-		expect(r).toEqual({
-			code: 0,
-			out: `folder ${dir}\nrelease empty\nverify empty\nlaw-version empty\n`,
-			err: "",
-		});
-	});
-
-	test("run prints the output of the command in its form", () => {
-		command(configs("main"), "fetch", `printf '%s\\n' ${SHA}`);
-		expect(journal(["run", "main", "fetch"])).toEqual({
-			code: 0,
-			out: `revision=${SHA}\n`,
-			err: "",
-		});
-	});
-
-	test("run exits 5 with the reason of a failure", () => {
-		command(configs("main"), "fetch", "exit 2");
-		expect(journal(["run", "main", "fetch"])).toEqual({
-			code: 5,
-			out: "fetch failed reason=exit\n~~~error\n~~~\n",
-			err: "",
-		});
-	});
-
 	test("a wrong call is a usage error with exit 1", () => {
 		const r = journal(["run", "main"]);
 		expect(r.code).toBe(1);

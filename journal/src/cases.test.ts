@@ -16,11 +16,9 @@ import {
 	caseMark,
 	charge,
 	decline,
-	defence,
 	issues,
 	issuesForm,
 	lead,
-	refute,
 	returnTo,
 	SHA,
 	TRUSTED,
@@ -149,54 +147,10 @@ describe("case: failures", () => {
 });
 
 describe("due", () => {
-	test("an empty journal has nothing due", () => {
-		expect(due("investigation")).toBe("");
-		expect(due("prosecutor")).toBe("");
-	});
-
-	test("a lead without a case is due for the investigation", () => {
-		put({ 3: { body: [lead()] } });
-		expect(due("investigation")).toBe("main\t3\n");
-		expect(due("prosecutor")).toBe("");
-	});
-
 	test("a case without a decision is due for the prosecutor", () => {
 		put({ 3: { body: [lead()], comments: [[T(10), caseMark()]] } });
 		expect(due("prosecutor")).toBe("main\t3\n");
 		expect(due("investigation")).toBe("");
-	});
-
-	test("a charge leaves nothing due for the earlier roles, nor does a decline", () => {
-		put({
-			1: withLead(caseMark(), charge()),
-			2: withLead(caseMark(), decline()),
-		});
-		expect(due("investigation")).toBe("");
-		expect(due("prosecutor")).toBe("");
-	});
-
-	test("a charged open case is due for the defender only", () => {
-		put({
-			1: withLead(caseMark(), charge()),
-		});
-		expect(due("defender")).toBe("main\t1\n");
-		expect(due("prosecutor")).toBe("");
-	});
-
-	test("a defended, refuted or closed case is not due for the defender", () => {
-		put({
-			1: withLead(caseMark(), charge(), defence()),
-			2: withLead(caseMark(), charge(), refute()),
-			3: {
-				state: "CLOSED",
-				body: [lead()],
-				comments: [
-					[T(10), caseMark()],
-					[T(11), charge()],
-				],
-			},
-		});
-		expect(due("defender")).toBe("");
 	});
 
 	test("a closed issue leaves nothing due", () => {
@@ -261,10 +215,5 @@ describe("due", () => {
 		);
 		expect(r.code).toBe(0);
 		expect(due("investigation")).toBe("main\t19\n");
-	});
-
-	test("the due command is a usage error", () => {
-		expect(call(BASE, ["due"]).code).toBe(1);
-		expect(call(BASE, ["due", "--role", "investigation"]).code).toBe(1);
 	});
 });

@@ -32,11 +32,11 @@ describe("clean command in process", () => {
 		});
 	});
 
-	test("--json cleans strings at any depth in a sequence", async () => {
-		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]`;
+	test("--json cleans strings at any depth, keeps null and true, and reads values with no space between", async () => {
+		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"ok": true, "none": null, "list": [{"body": "${TOKEN}"}]}\n{"x": []}[2]`;
 		expect(await cleanIn(input, "--json")).toEqual({
 			code: EXIT.OK,
-			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n`,
+			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"ok":true,"none":null,"list":[{"body":"${LABEL}"}]}\n{"x":[]}\n[2]\n`,
 			err: "",
 		});
 	});
@@ -52,22 +52,37 @@ describe("clean command in process", () => {
 		expect(({} as Record<string, unknown>).polluted).toBeUndefined();
 	});
 
-	test("broken JSON gives exit 1 and quotes no input", async () => {
-		const r = await cleanIn(`{"body": "${TOKEN}"`, "--json");
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(r.out).toBe("");
-		expect(r.err).toContain("clean:");
-		expect(r.err).not.toContain(TOKEN);
-	});
+	test.each([
+		["an unfinished object", `{"body": "${TOKEN}"`],
+		["a bad token", `{"body": "secret words ${TOKEN}", bad}`],
+	])(
+		"broken JSON, %s, gives exit 1 and quotes no input",
+		async (_label, input) => {
+			const r = await cleanIn(input, "--json");
+			expect(r.code).toBe(EXIT.USAGE);
+			expect(r.out).toBe("");
+			expect(r.err).toContain("clean:");
+			for (const leak of [
+				"secret words",
+				TOKEN,
+				"bad",
+				"SyntaxError",
+				"Parse error",
+				"Failed to parse",
+			])
+				expect(r.err).not.toContain(leak);
+		},
+	);
 
 	test.each([[[]], [["--json"]]])(
 		"empty input gives exit 0 %j",
 		async (args) => {
-			expect(await cleanIn("", ...args)).toEqual({
-				code: EXIT.OK,
-				out: "",
-				err: "",
-			});
+			for (const input of ["", " \n"])
+				expect(await cleanIn(input, ...args)).toEqual({
+					code: EXIT.OK,
+					out: "",
+					err: "",
+				});
 		},
 	);
 

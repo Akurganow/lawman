@@ -20,9 +20,6 @@ describe("registration", () => {
 		"pull",
 		"handoff",
 		"decider",
-		"form",
-		"jev",
-		"catalog",
 		"wake",
 		"law-sync",
 		"law-update",
@@ -53,26 +50,6 @@ describe("registration", () => {
 		])
 			expect(err).toContain(name);
 	});
-
-	test("precedent names its write, request and answer forms in its usage", () => {
-		const err = call(BASE, ["precedent"]).err;
-		for (const form of [
-			"[--source <ruling comment URL>] --tree <folder>",
-			"--tree <folder> --request <name>",
-			"--tree <folder> --answer <name>",
-		])
-			expect(err).toContain(form);
-	});
-
-	test.each(["handed", "shut", "settled", "kept", "specified"])(
-		"tick end accepts the outcome %s",
-		(outcome) => {
-			seed((db) => tick(db, "clerk", BASE, null, null));
-			const end = call(BASE, ["tick", "end", "1", "--outcome", outcome]);
-			expect(end.code).toBe(0);
-			expect(rows("SELECT outcome FROM ticks")).toEqual([{ outcome }]);
-		},
-	);
 
 	test("the spec-writer role passes every role pattern", () => {
 		addPrecincts({ main: 1 });

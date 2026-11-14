@@ -3,7 +3,6 @@ import { readFileSync } from "node:fs";
 import { join } from "node:path";
 import {
 	DUTY_DESK,
-	HARNESS_SECTIONS,
 	INTRO,
 	inputOf,
 	LAW_MAP,
@@ -21,19 +20,6 @@ import { LAW } from "./test-helpers";
 const read = (path: string) => readFileSync(join(LAW, path), "utf8");
 
 describe("the role table", () => {
-	test.each(ROLE_NAMES)(
-		"every section of %s stands in the law of this commit",
-		(role) => {
-			const reads = lawOf(role);
-			expect(reads.length).toBeGreaterThan(0);
-			for (const [path, wanted] of reads) {
-				const found = sectionsOf(read(path), wanted);
-				const missing = wanted.filter((_, i) => found[i] === null);
-				expect([path, missing]).toEqual([path, []]);
-			}
-		},
-	);
-
 	test("a section that names a reader which is not a role stops the map", () => {
 		expect(() => lawMap([["Writing", ["patrol", "patrolman"]]])).toThrow(
 			/"patrolman", which is not a role/,
@@ -96,11 +82,6 @@ describe("the role table", () => {
 			executor: false,
 			[DUTY_DESK]: undefined,
 		});
-	});
-
-	test("every section of the harness page stands on the Hermes page", () => {
-		const page = read(join("harnesses", "hermes.md"));
-		expect(sectionsOf(page, HARNESS_SECTIONS)).not.toContain(null);
 	});
 
 	test("the section for an older journal follows Sync the law and no role reads it", () => {

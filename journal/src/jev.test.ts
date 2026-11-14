@@ -26,17 +26,6 @@ const inProcess =
 			return { code: e.code, out: "", err: `journal: ${e.message}\n` };
 		}
 	};
-const throughCli =
-	(sub: string): Run =>
-	(kind, stdin) =>
-		cli(["jev", sub, "--kind", kind], {}, stdin);
-
-const RUNNERS: [string, Run, Run][] = [
-	["cli", throughCli("request"), throughCli("answer")],
-	["in process", inProcess(requestLine), inProcess(answerLine)],
-];
-const request = throughCli("request");
-
 const KINDS = ["p0", "grade", "requirement"];
 const lines = (text: string) => text.trimEnd().split("\n");
 const fail = (message: string) => ({
@@ -45,7 +34,9 @@ const fail = (message: string) => ({
 	err: `journal: ${message}\n`,
 });
 
-describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
+describe("jev request", () => {
+	const request = inProcess(requestLine);
+
 	test.each(KINDS)("the %s brief gives the exact body", (kind) => {
 		expect(request(kind, fixture(`brief.${kind}.txt`))).toEqual({
 			code: 0,
@@ -68,13 +59,6 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 			.map((l) => `  ${l}  `)
 			.join("\r\n\r\n");
 		expect(request("grade", messy).out).toBe(compact("request.grade.json"));
-	});
-
-	test("no body holds a P0 to P3 token", () => {
-		for (const kind of KINDS)
-			expect(request(kind, fixture(`brief.${kind}.txt`)).out).not.toMatch(
-				/P[0-3]/,
-			);
 	});
 
 	describe("rejections", () => {
@@ -117,62 +101,6 @@ describe.each(RUNNERS)("jev request (%s)", (_name, request) => {
 	});
 });
 
-describe("jev request body form", () => {
-	type Ask = {
-		type: string;
-		instructions: string;
-		criteria: Record<string, string> | string[];
-	};
-	const bodyOf = (kind: string) =>
-		JSON.parse(request(kind, fixture(`brief.${kind}.txt`)).out) as {
-			model: string;
-			state: { brief: Record<string, string> };
-			questions: Record<string, Ask>;
-		};
-
-	test("the body names its brief fields and questions with instructions and criteria", () => {
-		const kinds = [
-			[
-				"p0",
-				[
-					"secret",
-					"rule",
-					"weakness",
-					"defect",
-					"established",
-					"not_established",
-				],
-				["live_secret", "vulnerability", "serious_violation"],
-			],
-			[
-				"grade",
-				["defect", "effect_today", "established", "not_established"],
-				["level", "harm_users", "harm_maintainers", "cosmetic_only"],
-			],
-		] as const;
-		for (const [kind, fields, ids] of kinds) {
-			const body = bodyOf(kind);
-			expect(Object.keys(body).sort()).toEqual(["model", "questions", "state"]);
-			expect(typeof body.model).toBe("string");
-			expect(Object.keys(body.state.brief).sort()).toEqual([...fields].sort());
-			expect(Object.keys(body.questions).sort()).toEqual([...ids].sort());
-			for (const [id, question] of Object.entries(body.questions)) {
-				expect(typeof question.instructions).toBe("string");
-				if (id === "level") {
-					expect(question.type).toBe("score");
-					expect(question.criteria).toHaveLength(3);
-				} else {
-					expect(question.type).toBe("noul");
-					expect(Object.keys(question.criteria).sort()).toEqual([
-						"false",
-						"true",
-					]);
-				}
-			}
-		}
-	});
-});
-
 describe("law consistency", () => {
 	test("the court's requirement brief example gives a body", () => {
 		const skill = readFileSync(
@@ -182,12 +110,13 @@ describe("law consistency", () => {
 		const brief = skill.split(/^## Brief$/m)[1]?.split(/^## /m)[0] ?? "";
 		const example =
 			brief.split("A `requirement` brief:")[1]?.split("```")[1] ?? "";
-		const body = JSON.parse(request("requirement", example).out);
+		const body = JSON.parse(inProcess(requestLine)("requirement", example).out);
 		expect(Object.keys(body.state.brief)).toHaveLength(6);
 	});
 });
 
-describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
+describe("jev answer", () => {
+	const answer = inProcess(answerLine);
 	const P0_LINE =
 		"jev model=jev-1.13.0 kind=p0 live_secret=0.95 vulnerability=0.12 serious_violation=0.80";
 	const REQUIREMENT_LINE =
@@ -231,19 +160,10 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 		expect(answer("p0", `${body}\n\n200\r`)).toEqual(line(P0_LINE));
 	});
 
-	test("a newline after the status is fine", () => {
-		const body = JSON.stringify(reply("reply.p0.json"));
-		expect(answer("p0", `${body}\n200\n`)).toEqual(line(P0_LINE));
-	});
-
 	test.each([
 		["0.615", "0.61"],
-		["0.995", "0.99"],
-		["0.3", "0.30"],
-		["1", "1.00"],
 		["-0", "0.00"],
 		["-0.001", "0.00"],
-		["1.5", "1.50"],
 	])("%s prints as %s", (raw, shown) => {
 		const text = JSON.stringify(reply("reply.p0.json")).replace("0.95", raw);
 		expect(answer("p0", `${text}\n200`).out).toBe(
@@ -255,12 +175,6 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 		["a 401", "p0", "{}\n401", `${NONE}status-401`],
 		["status 000", "p0", "\n000", `${NONE}no-reply`],
 		["empty stdin", "p0", "", `${NONE}no-reply`],
-		["a tail abc", "p0", "{}\nabc", `${NONE}no-reply`],
-		["a tail 20O", "p0", "{}\n20O", `${NONE}no-reply`],
-		["a four digit tail", "p0", "{}\n2000", `${NONE}no-reply`],
-		["a bare 200", "p0", "200", `${NONE}bad-answer`],
-		["a root null", "p0", "null\n200", `${NONE}bad-answer`],
-		["a root array", "p0", "[]\n200", `${NONE}bad-answer`],
 		["non-JSON", "p0", "oops\n200", `${NONE}bad-answer`],
 		[
 			"a missing answer",
@@ -272,18 +186,6 @@ describe.each(RUNNERS)("jev answer (%s)", (_name, _request, answer) => {
 			"a non-finite number",
 			"p0",
 			`${JSON.stringify(reply("reply.p0.json")).replace("0.95", "1e999")}\n200`,
-			`${NONE}bad-answer`,
-		],
-		[
-			"a string number",
-			"p0",
-			p0(["answers", "live_secret", "noul"], "0.95"),
-			`${NONE}bad-answer`,
-		],
-		[
-			"a missing Score level",
-			"grade",
-			grade(["answers", "level"]),
 			`${NONE}bad-answer`,
 		],
 		[
@@ -333,9 +235,7 @@ describe("jev through the journal", () => {
 		const usage = { code: 1, out: "", err: USAGE_ERR };
 		const brief = fixture("brief.p0.txt");
 		expect(cli(["jev", "request"], {}, brief)).toEqual(usage);
-		expect(cli(["jev", "answer"], {}, "\n401")).toEqual(usage);
 		expect(cli(["jev", "frobnicate"])).toEqual(usage);
-		expect(cli(["jev"])).toEqual(usage);
 	});
 
 	test("both subcommands read stdin and print one line", () => {

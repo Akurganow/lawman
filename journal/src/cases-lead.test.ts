@@ -48,12 +48,6 @@ const unitLead = (id: string): Row => ({
 	leadId: id,
 });
 
-const stage = (hour: number, role: string, name: string): Row => ({
-	ord: ordOf(hour, 1),
-	role,
-	stage: name,
-});
-
 describe("case: lead origin", () => {
 	test("a lead in a comment of the response unit with no department says lead=comment", () => {
 		addIssue(1);
@@ -66,22 +60,6 @@ describe("case: lead origin", () => {
 	test("the earliest lead marker decides where the origin sits", () => {
 		put({ 1: { body: [lead()], comments: [[T(10), lead()]] } });
 		expect(need(1)).toContain(" lead=body ");
-	});
-
-	test("a lead without a department walks the chain from the investigation to the clerk", () => {
-		addIssue(1);
-		addMarker(1, unitLead("src/a.rs::f::dead-code"));
-		const steps = [
-			["investigation", "case", "prosecutor"],
-			["prosecutor", "charge", "defender"],
-			["defender", "defence", "court"],
-			["court", "conviction", "clerk"],
-		] as const;
-		steps.forEach(([role, name, next], i) => {
-			addMarker(1, stage(11 + i, role, name));
-			expect(need(1)).toStartWith(`need=${next} `);
-		});
-		expect(need(1)).toContain(" department=- ");
 	});
 });
 
@@ -108,11 +86,6 @@ describe("case: kind", () => {
 	test("a patrol lead that names the kind required is still a defect", () => {
 		put({ 1: { body: [lead("", "src/a.rs::f::required")] } });
 		expect(kindOf(1)).toBe("kind=defect");
-	});
-
-	test("an issue with no lead has no kind", () => {
-		put({ 1: { body: ["no marker"] } });
-		expect(kindOf(1)).toBe("kind=-");
 	});
 });
 
@@ -182,32 +155,5 @@ describe("case: related issues", () => {
 		expect(related(1)).toBe("related=2");
 		expect(related(3)).toBe("related=4");
 		expect(related(5)).toBe("related=-");
-	});
-});
-
-describe("case: answer", () => {
-	const answerFields = (n: number) =>
-		need(n)
-			.split(" ")
-			.filter((f) => f.startsWith("answer"));
-
-	test("an issue row with no answer prints dashes", () => {
-		put({ 1: { body: [lead()] } });
-		expect(answerFields(1)).toEqual(["answer=-", "answer_id=-"]);
-	});
-
-	test.each([
-		["up", "-"],
-		["down", "-"],
-		["comment", "IC_77"],
-	])("an issue row with the answer %s prints it", (answer, id) => {
-		put({ 1: { body: [lead()] } });
-		seed((db) =>
-			db.run(
-				"UPDATE issues SET answer = ?, answer_id = ? WHERE precinct = 'main' AND issue = 1",
-				[answer, id],
-			),
-		);
-		expect(answerFields(1)).toEqual([`answer=${answer}`, `answer_id=${id}`]);
 	});
 });

@@ -29,10 +29,10 @@ const record =
 	async (args, stdin) =>
 		throughCli([sub, ...args], stdin);
 
-export const RUNNERS: [string, Run, Run][] = [
-	["cli", record("request"), record("answer")],
-	["in process", inProcessAsync(recordRequest), inProcessAsync(recordAnswer)],
-];
+export const cliRequest = record("request");
+export const cliAnswer = record("answer");
+export const inProcessRequest = inProcessAsync(recordRequest);
+export const inProcessAnswer = inProcessAsync(recordAnswer);
 
 export const withSummary = (summary: unknown) =>
 	reply({ ...FOUND.reply, summary }, FOUND.status);

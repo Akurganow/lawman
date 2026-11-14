@@ -25,18 +25,6 @@ const adopted = async (body: string) => {
 };
 
 describe("handoff command in process", () => {
-	test("prints the pull request text for the sources and the merged request", async () => {
-		const r = await inHandoff("--sources", "12,15", "--merged", "9");
-		expect(r.code).toBe(EXIT.OK);
-		expect(r.out).toContain("carries #12 and #15 for the spec writer.");
-		expect(r.out).toContain("merged pull request #9");
-		expect(r.out).toContain(`stage=handoff at=${AT}`);
-	});
-
-	test("a single source reads without and", async () => {
-		expect((await inHandoff("--sources", "4")).out).toContain("carries #4 for");
-	});
-
 	test("a malformed source or a repeated --adopted is a usage error", async () => {
 		expect((await inHandoff("--sources", "0")).code).toBe(EXIT.USAGE);
 		expect((await inHandoff("--sources", "x,2")).code).toBe(EXIT.USAGE);

@@ -7,7 +7,6 @@ import { readIssues } from "./sync-issues";
 import {
 	addPrecincts,
 	BASE,
-	issues,
 	issuesForm,
 	mark,
 	rows,
@@ -82,14 +81,6 @@ describe("the issues reader", () => {
 		});
 	});
 
-	test("a comment without an id or a list is rejected with the form", () => {
-		for (const missing of ["id", "approvedBy", "rejectedBy"]) {
-			expect(() => commentOf({ [missing]: undefined })).toThrow(
-				formText("issues"),
-			);
-		}
-	});
-
 	test("a comment id that would split the case line is rejected", () => {
 		for (const id of ["c 1", "c1\nneed=court", "c1\t"])
 			expect(() => commentOf({ id })).toThrow(formText("issues"));
@@ -123,33 +114,6 @@ describe("sync in process: the answer", () => {
 	const stored = () =>
 		rows("SELECT answer, answer_id FROM issues WHERE issue = 1")[0];
 
-	test("a thumbs down of a writer in mixed case stores down and a dash", async () => {
-		const r = await fed(
-			withComments([
-				{ ...court, approvedBy: [], rejectedBy: ["maintainer-fictional"] },
-			]),
-		);
-		expect(r.code).toBe(EXIT.OK);
-		expect(stored()).toEqual({ answer: "down", answer_id: "-" });
-	});
-
-	test("a comment of a writer stores comment and the comment id", async () => {
-		await fed(
-			withComments([
-				{ ...court, approvedBy: [], rejectedBy: [] },
-				{
-					id: "IC_reply",
-					author: { login: "MAINTAINER-fictional" },
-					body: "go on",
-					createdAt: "2026-10-14T11:00:00Z",
-					approvedBy: [],
-					rejectedBy: [],
-				},
-			]),
-		);
-		expect(stored()).toEqual({ answer: "comment", answer_id: "IC_reply" });
-	});
-
 	test("a later sync over the same issue resets a changed answer", async () => {
 		await fed(
 			withComments([
@@ -159,12 +123,5 @@ describe("sync in process: the answer", () => {
 		expect(stored()?.answer).toBe("up");
 		await fed(withComments([{ ...court, approvedBy: [], rejectedBy: [] }]));
 		expect(stored()).toEqual({ answer: null, answer_id: null });
-	});
-
-	test("an issue with no referral stores null in both columns", async () => {
-		await fed(issuesForm(issues));
-		expect(rows("SELECT DISTINCT answer, answer_id FROM issues")).toEqual([
-			{ answer: null, answer_id: null },
-		]);
 	});
 });

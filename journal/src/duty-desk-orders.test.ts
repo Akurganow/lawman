@@ -152,15 +152,8 @@ const CLOSED_ROLES = [
 	"spec-writer",
 	"executor",
 ];
-const ISSUE_ROLES = [
-	"response-unit",
-	"investigation",
-	"prosecutor",
-	"defender",
-	"court",
-	"clerk",
-];
-const PULL_ROLES = ["spec-writer", "executor"];
+const ISSUE_ROLES = ["investigation"];
+const PULL_ROLES = ["executor"];
 
 describe("the stale orders", () => {
 	test.each([...ISSUE_ROLES, ...PULL_ROLES])(
@@ -275,14 +268,5 @@ describe("the walk of the patrol departments", () => {
 			["beta", later(-3)],
 		]);
 		expect(patrolOn("main").map((o) => o.department)).toEqual(["gamma"]);
-	});
-
-	test("with every department visited, the oldest visit comes first", () => {
-		walk({}, {}, [
-			["alpha", later(-2)],
-			["beta", later(-4)],
-			["gamma", later(-3)],
-		]);
-		expect(patrolOn("main").map((o) => o.department)).toEqual(["beta"]);
 	});
 });

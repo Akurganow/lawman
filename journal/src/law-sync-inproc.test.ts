@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { MIGRATIONS } from "./db";
 import { captured, inproc } from "./inproc";
 import { lawSync } from "./law-sync";
-import { defineCases } from "./law-sync-test-cases";
+import { defineCases, defineRename } from "./law-sync-test-cases";
 import { flags, lay, put, type Runner } from "./law-sync-test-fixture";
 import { BASE, dir, tempDb } from "./test-helpers";
 
@@ -25,6 +25,10 @@ const runner: Runner = {
 
 describe("law-sync in process", () => {
 	defineCases(runner);
+});
+
+describe("law-sync in process, the swap", () => {
+	defineRename(runner);
 });
 
 describe("law-sync through the journal entry point", () => {
