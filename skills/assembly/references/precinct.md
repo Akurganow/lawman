@@ -310,7 +310,7 @@ On "Move", find the kind of each line, the lines that `old-precedent added` prin
 
 ### Propose
 
-The row "Old precedents" of "The repository proposal" holds the result. It also holds this note. Three kinds of pull request edit `LAWMAN.md`. They are the pull request of the move, a pull request of an amendment and a pull request of the old form. No lock or order stands between the three kinds, and no conflict was measured. The owner merges them in any order, and a conflict shows in the pull request itself.
+The row "Old precedents" of "The repository proposal" holds the result. It also holds this note. Three kinds of pull request edit `LAWMAN.md`. They are the pull request of the move, a pull request of an amendment and a pull request of the old form. No lock or order stands between the three kinds, and no conflict was measured. A conflict shows in the pull request itself. The owner merges the move and an amendment in any order. A pull request of the old form keeps the path it had before the update, with its precedent file. A draft of the clerk that a pair marker of an issue names executes a ruling: the owner merges it after the work of the executor. The owner merges any other one on the owner's own decision. Its precedent binds at its merge.
 
 A moved file carries `departments: []`, which means all departments. The old lines name no department in the `departments` field, and a file with an empty list is not sent to TypeSafe Jev.
 
