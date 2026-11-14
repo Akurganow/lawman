@@ -4,6 +4,17 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.3.1 - 2026-11-14
+#### Documentation
+- (**readme**) restore the alt text that describes the banner (eaead3b)
+- (**readme**) describe the roles, not the banner (52f26a8)
+- (**readme**) say whose spec, and that not every lead ends in a pull request (cbb0e7f)
+- (**readme**) redraw the banner from separate figures (6455ad2)
+- (**readme**) open with a pixel-art banner and the ten roles (5c0dce0)
+
+- - -
+
+
 ## v1.3.0 - 2026-11-14
 #### Features
 - (**spec-writer**) open the Spec with a card for the owner (e8cb485)
