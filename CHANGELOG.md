@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.3 - 2026-11-14
+#### Bug Fixes
+- (**assembly**) state the path of old-form pull requests without classing each (b2d04b4)
+- (**assembly**) name the assembly's pull requests by their branches (1a77b34)
+- (**assembly**) merge only the pull requests the assembly opened (8eaddc9)
+
+- - -
+
+
 ## v1.5.2 - 2026-11-14
 #### Bug Fixes
 - (**clerk**) let a reopen wait for the owner's pull request (5156c4e)
