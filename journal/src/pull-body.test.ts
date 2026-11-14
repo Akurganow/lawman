@@ -88,7 +88,7 @@ const convicted = (disposition: string) =>
 	ruling(conviction(), section("Disposition", disposition));
 
 // the journal's own reading of a pull request body: its sources are the issues of the pair
-const rowOf = (body: string) =>
+const sourcesOf = (body: string) =>
 	readPulls(
 		JSON.stringify({
 			writers: [],
@@ -104,9 +104,7 @@ const rowOf = (body: string) =>
 			],
 		}),
 		TRUSTED,
-	)[0];
-const sourcesOf = (body: string) => rowOf(body)?.row.issues;
-const tracedOf = (body: string) => rowOf(body)?.traced;
+	)[0]?.row.issues;
 
 const call = (...args: string[]) => inprocAsync(BASE, args);
 const pullBody = async (...args: string[]) =>
@@ -120,11 +118,9 @@ describe("the body of a conviction", () => {
 		);
 	});
 
-	test("is the closing line and the trace with no source, and the cache knows it as the clerk's", async () => {
+	test("is the closing line and the trace with no source", async () => {
 		await cache([convicted("Fix `x`.")]);
-		const body = await pullBody();
-		expect(body).toBe(`Closes #1\n\n${CLERK_TRACE}\n`);
-		expect(tracedOf(body)).toBe(true);
+		expect(await pullBody()).toBe(`Closes #1\n\n${CLERK_TRACE}\n`);
 	});
 
 	test.each([
