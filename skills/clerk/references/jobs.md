@@ -127,12 +127,12 @@ Run it when the decider check said `no`, or when `action` is `kept`.
 2. `OPEN`: the cache is stale. End the tick with `silent` and the report `Order stale: pull request #<pull> is open`.
 3. `MERGED`:
    1. Take the merge commit of the pull request. It must match `^[0-9a-f]{40}$`.
-   2. For every `<s>`, read its state. When it is `OPEN`, close it with the class `gone at <merge commit>`, as completed.
-   3. Write the marker `settled` with `pull=<pull>` and `issue=closed` on every `<s>`.
+   2. For every `<s>`, read its state. When it is `OPEN`, read from the host when it was last reopened. A source reopened after the merge stays open. Close every other `OPEN` source with the class `gone at <merge commit>`, as completed.
+   3. Write the marker `settled` with `pull=<pull>` and `issue=<the state in which you leave it>` on every `<s>`.
    4. The outcome is `settled`.
 4. `CLOSED`:
-   1. For every `<s>`, read its state. When it is `OPEN`, close it with the class `declined by the owner`, as not planned.
-   2. Write the marker `shut` with `pull=<pull>` and `issue=closed` on every `<s>`. Use the sentence for settle.
+   1. For every `<s>`, read its state. When it is `OPEN`, read from the host when it was last reopened. A source reopened after the pull request was closed stays open. Close every other `OPEN` source with the class `declined by the owner`, as not planned.
+   2. Write the marker `shut` with `pull=<pull>` and `issue=<the state in which you leave it>` on every `<s>`. Use the sentence for settle.
    3. The outcome is `shut`.
 
 ## reopen

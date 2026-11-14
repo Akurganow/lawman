@@ -187,8 +187,10 @@ The pair comment is written on a source issue. The `kept` of the pair carries `i
 | :-- | :-- |
 | `handed` | `Pull request #<m> carries this issue.` |
 | `shut`, after close-pull | `Pull request #<m> is closed because its issues are closed.` |
-| `shut`, after settle | `Pull request #<m> was closed, so this issue is closed as declined by the owner.` |
-| `settled` | `Pull request #<m> was merged at <merge commit>, so this issue is closed as gone at <merge commit>.` |
+| `shut`, after settle, issue closed | `Pull request #<m> was closed, so this issue is closed as declined by the owner.` |
+| `shut`, after settle, issue left open | `Pull request #<m> was closed. This issue was reopened after that, so it stays open.` |
+| `settled`, issue closed | `Pull request #<m> was merged at <merge commit>, so this issue is closed as gone at <merge commit>.` |
+| `settled`, issue left open | `Pull request #<m> was merged at <merge commit>. This issue was reopened after the merge, so it stays open.` |
 | `kept` | `The clerk recorded this issue as <open|closed> and changed nothing.` |
 
 A realistic entry comment:
