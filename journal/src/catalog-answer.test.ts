@@ -174,6 +174,7 @@ describe("catalog answer", () => {
 		["there was no reply", "000", "no-reply"],
 		["the status line is missing", '{"results":[{}]}', "no-reply"],
 		["the body does not parse", "not json\n200", "bad-answer"],
+		["the body is empty", "\n200", "bad-answer"],
 		["the results are not a list", '{"results":{}}\n200', "bad-answer"],
 		["a result is missing", resultsReply([[], []]), "bad-answer"],
 		["a result is extra", resultsReply([]), "bad-answer"],

@@ -32,11 +32,11 @@ describe("clean command in process", () => {
 		});
 	});
 
-	test("--json cleans strings at any depth, keeps null and true, and reads values with no space between", async () => {
-		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"ok": true, "none": null, "list": [{"body": "${TOKEN}"}]}\n{"x": []}[2]`;
+	test("--json cleans strings at any depth, keeps null and true, reads a value over several lines and values with no space between", async () => {
+		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"ok": true, "none": null, "list": [{"body": "${TOKEN}"}]}\n{\n  "n": 1,\n  "s": "a\u200Bb"\n}\n{"x": []}[2]`;
 		expect(await cleanIn(input, "--json")).toEqual({
 			code: EXIT.OK,
-			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"ok":true,"none":null,"list":[{"body":"${LABEL}"}]}\n{"x":[]}\n[2]\n`,
+			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"ok":true,"none":null,"list":[{"body":"${LABEL}"}]}\n{"n":1,"s":"ab"}\n{"x":[]}\n[2]\n`,
 			err: "",
 		});
 	});
@@ -55,6 +55,7 @@ describe("clean command in process", () => {
 	test.each([
 		["an unfinished object", `{"body": "${TOKEN}"`],
 		["a bad token", `{"body": "secret words ${TOKEN}", bad}`],
+		["an unfinished value after a good one", '[1]\n{"a": '],
 	])(
 		"broken JSON, %s, gives exit 1 and quotes no input",
 		async (_label, input) => {
@@ -206,6 +207,7 @@ describe("clean command in parts", () => {
 			["--part", "1", "--json"],
 			["--part"],
 			["--json", "--part"],
+			["--jsonx"],
 			["--part", "0"],
 			["--part", "x"],
 			["--part", "01"],

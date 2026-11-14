@@ -180,6 +180,19 @@ describe("dispatch", () => {
 		}
 	});
 
+	test("close is a usage error and leaves the order open", () => {
+		addPrecincts({ a: 1 });
+		const id = add("a").out.trim();
+		const r = call(BASE, ["dispatch", "close", id, "--outcome", "filed"]);
+		expect(r.code).toBe(1);
+		expect(r.out).toBe("");
+		const db = open(dbFile);
+		expect(
+			db.query("SELECT outcome FROM dispatches WHERE id = ?").get(Number(id)),
+		).toEqual({ outcome: null });
+		db.close();
+	});
+
 	test("an open order blocks a duplicate and a taken order stays in the take list until tick end closes it", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
@@ -227,5 +240,10 @@ describe("dispatch", () => {
 		expect(r.code).toBe(1);
 		expect(r.err).toContain(`no open order with id ${id}`);
 		expect(rows("SELECT ended_at FROM ticks")).toEqual([{ ended_at: null }]);
+	});
+
+	test("take, next and the other removed commands are usage errors", () => {
+		expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(1);
+		expect(call(BASE, ["next", "--role", "patrol"]).code).toBe(1);
 	});
 });

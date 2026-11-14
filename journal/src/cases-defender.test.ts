@@ -4,6 +4,8 @@ import {
 	addPrecincts,
 	caseMark,
 	charge,
+	decline,
+	defence,
 	refute,
 	returnTo,
 	SHA,
@@ -47,6 +49,20 @@ describe("case: defender stage", () => {
 	])("%s", (_name, rest, need) => {
 		put({ 1: afterCharge(...rest) });
 		expect(needOnly(1)).toBe(`need=${need}`);
+	});
+
+	test("a defender marker with no prosecutor marker is ignored", () => {
+		put({
+			1: withLead(caseMark(), defence()),
+		});
+		expect(needOnly(1)).toBe("need=prosecutor");
+	});
+
+	test("a decline with an older defender marker needs the court", () => {
+		put({
+			1: withLead(defence(), caseMark(), decline()),
+		});
+		expect(needOnly(1)).toBe("need=court");
 	});
 
 	describe("rounds and returned", () => {

@@ -152,3 +152,24 @@ describe("the conviction path on a fixture", () => {
 		expect(alarm(later(1))).toBe(line("main#9", WAITS_WORK));
 	});
 });
+
+describe("case in process: the decision job", () => {
+	test("an entry gives the decision job only once its pull request left the cache", async () => {
+		await put({
+			3: withLead(
+				caseMark(),
+				charge(),
+				defence(),
+				mark("court", "acquittal"),
+				clerk("entry", 7),
+			),
+		});
+		await syncPulls({ number: 7 });
+		expect(caseLine(3)).toContain("job=- ");
+		await syncPulls();
+		expect(caseLine(3)).toStartWith("need=clerk ");
+		expect(caseLine(3)).toContain(
+			"job=decision action=- pull=7 sources=- branch=-",
+		);
+	});
+});

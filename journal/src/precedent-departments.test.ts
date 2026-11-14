@@ -485,6 +485,11 @@ describe("the answer", () => {
 
 	test.each([
 		["a missing number", reply({ alpha: 0.9, beta: 0.1 }), "bad-answer"],
+		[
+			"a value that is no number",
+			reply({ alpha: "0.9", beta: 0.1, gamma: 0.1 }),
+			"bad-answer",
+		],
 		["a status that is not 200", `{"error":"no"}\n401`, "status-401"],
 		["no reply", "\n000", "no-reply"],
 		["an empty body", "\n200", "bad-answer"],

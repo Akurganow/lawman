@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { open } from "./db";
 import { rotationOrder } from "./rotation";
-import { dbFile, order, precinct, seed, tempDb } from "./test-helpers";
+import { cli, dbFile, order, precinct, seed, tempDb } from "./test-helpers";
 
 const PRECINCT = "main";
 
@@ -58,6 +58,15 @@ describe("rotation", () => {
 		]);
 	});
 
+	test("equal visit times fall back to the name", () => {
+		visit("web", "2026-10-01T00:00:00Z");
+		visit("api", "2026-10-01T00:00:00Z");
+		expect(lines(rotation(["web", "api"]))).toEqual([
+			"api\t2026-10-01T00:00:00Z\t3",
+			"web\t2026-10-01T00:00:00Z\t3",
+		]);
+	});
+
 	test("repeated names print once", () => {
 		expect(lines(rotation(["web", "api", "web", "api"]))).toEqual([
 			"api\t-\t3",
@@ -72,5 +81,12 @@ describe("rotation", () => {
 	test("3 open leads give the third field 1", () => {
 		for (let i = 0; i < 3; i++) openLead("core");
 		expect(lines(rotation(["core"]))).toEqual(["core\t-\t1"]);
+	});
+
+	test("the rotation command is a usage error", () => {
+		const r = cli(["rotation", PRECINCT, "--role", "patrol"], {
+			LAWMAN_DB: dbFile,
+		});
+		expect(r.code).toBe(1);
 	});
 });

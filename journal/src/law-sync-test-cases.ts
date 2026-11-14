@@ -170,6 +170,13 @@ export function defineCases(runner: Runner): void {
 			synced("tick1");
 			expect(configOf(root)).toContain(`typesafe_key: ${value}\n`);
 		});
+
+		test("a config with the catalog keys keeps their values", () => {
+			const keys = "catalog: yes\ncatalog_precincts: alpha=yes beta=no\n";
+			lay(root, { config: `law_commit: ${OLD_COMMIT}\n${keys}` });
+			synced("tick1");
+			expect(configOf(root)).toContain(keys);
+		});
 	});
 
 	describe("schema", () => {
@@ -234,12 +241,16 @@ export function defineCases(runner: Runner): void {
 				);
 				expect(result.err).toContain("usage:");
 			});
-		for (const flag of ["--tag", "--commit", "--installation"])
+		for (const flag of ["--tag", "--commit", "--installation"]) {
 			bad(`a missing ${flag} exits 1`, (full) => {
 				const at = full.indexOf(flag);
 				return full.filter((_, i) => i !== at && i !== at + 1);
 			});
-		bad("a repeated --tag exits 1", (full) => [...full, ...full.slice(0, 2)]);
+			bad(`a repeated ${flag} exits 1`, (full) => {
+				const at = full.indexOf(flag);
+				return [...full, ...full.slice(at, at + 2)];
+			});
+		}
 		bad("an unknown flag exits 1", (full) => [...full, "--force", "x"]);
 		bad("a flag without a value exits 1", (full) => full.slice(0, -1));
 

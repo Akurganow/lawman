@@ -1,12 +1,14 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	closed,
+	due,
 	expectNeed,
 	expectRoundKept,
 	lined,
 	need,
 	put,
 	ruled,
+	withLead,
 } from "./cases-fixture";
 import {
 	acquittal,
@@ -40,6 +42,16 @@ describe("case: clerk stage", () => {
 			"none",
 		],
 		[
+			"a clerk marker older than the court marker needs the clerk",
+			withLead(caseMark(), charge(), defence(), entry(), conviction()),
+			"clerk",
+		],
+		[
+			"a closed charge with a clerk marker needs nobody",
+			closed(withLead(caseMark(), charge(), entry())),
+			"none",
+		],
+		[
 			"a new cycle after an entry needs the clerk",
 			ruled(
 				conviction,
@@ -60,5 +72,13 @@ describe("case: clerk stage", () => {
 	test("a clerk return marker leaves round and returned unchanged", () => {
 		put({ 1: ruled(conviction, returnTo("investigation", 1, "clerk")) });
 		expect(need(1).split(" ").slice(1, 3)).toEqual(["round=1", "returned=-"]);
+	});
+
+	test("due for the clerk lists a closed unanswered acquittal", () => {
+		put({
+			1: ruled(lined(acquittal), noEntry()),
+			2: closed(ruled(lined(acquittal))),
+		});
+		expect(due("clerk")).toBe("main\t2\n");
 	});
 });

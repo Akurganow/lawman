@@ -128,9 +128,12 @@ describe("intake", () => {
 		expect(waiting()).toBe("5");
 	});
 
-	test("an issue with a lead origin does not wait", () => {
+	test.each([
+		["an issue with a lead origin", "patrol"],
+		["a response-unit lead origin", UNIT],
+	])("%s does not wait", (_name, role) => {
 		addIssue(5);
-		addMarker(5, "lead", T(9), "patrol");
+		addMarker(5, "lead", T(9), role);
 		expect(waiting()).toBe("");
 	});
 

@@ -216,6 +216,7 @@ describe("leads, seen, cap and last", () => {
 			[3, 1],
 			[4, 1],
 			[5, 0],
+			[6, 0],
 		])("%i open leads give cap %i", (open, want) => {
 			fill(open);
 			expect(cap("core")).toBe(`cap=${want} open=${open}`);

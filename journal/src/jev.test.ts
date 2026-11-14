@@ -164,6 +164,7 @@ describe("jev answer", () => {
 		["0.615", "0.61"],
 		["-0", "0.00"],
 		["-0.001", "0.00"],
+		["1.5", "1.50"],
 	])("%s prints as %s", (raw, shown) => {
 		const text = JSON.stringify(reply("reply.p0.json")).replace("0.95", raw);
 		expect(answer("p0", `${text}\n200`).out).toBe(
@@ -175,6 +176,7 @@ describe("jev answer", () => {
 		["a 401", "p0", "{}\n401", `${NONE}status-401`],
 		["status 000", "p0", "\n000", `${NONE}no-reply`],
 		["empty stdin", "p0", "", `${NONE}no-reply`],
+		["a tail 20O", "p0", "{}\n20O", `${NONE}no-reply`],
 		["non-JSON", "p0", "oops\n200", `${NONE}bad-answer`],
 		[
 			"a missing answer",
@@ -186,6 +188,12 @@ describe("jev answer", () => {
 			"a non-finite number",
 			"p0",
 			`${JSON.stringify(reply("reply.p0.json")).replace("0.95", "1e999")}\n200`,
+			`${NONE}bad-answer`,
+		],
+		[
+			"a string number",
+			"p0",
+			p0(["answers", "live_secret", "noul"], "0.95"),
 			`${NONE}bad-answer`,
 		],
 		[
@@ -235,6 +243,7 @@ describe("jev through the journal", () => {
 		const usage = { code: 1, out: "", err: USAGE_ERR };
 		const brief = fixture("brief.p0.txt");
 		expect(cli(["jev", "request"], {}, brief)).toEqual(usage);
+		expect(cli(["jev", "answer"], {}, "\n401")).toEqual(usage);
 		expect(cli(["jev", "frobnicate"])).toEqual(usage);
 	});
 

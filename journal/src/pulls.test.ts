@@ -167,6 +167,10 @@ describe("readPulls spec vote", () => {
 		expect(voteOf([spec({ up: ["maint-a"], down: ["maint-a"] })])).toBe("down");
 	});
 
+	test("two deciders who disagree give down", () => {
+		expect(voteOf([spec({ up: ["maint-a"], down: ["maint-b"] })])).toBe("down");
+	});
+
 	test("reactions of non-deciders never count", () => {
 		expect(voteOf([spec({ up: ["triager", "reader", "ghost"] })])).toBe(
 			"waiting",

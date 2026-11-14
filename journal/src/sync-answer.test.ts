@@ -80,6 +80,7 @@ describe("sync derives the answer", () => {
 	test("an empty writer never makes an authorless comment an answer", () => {
 		const ghost = { at: 12, by: "", body: "deleted account" };
 		expect(answerOf([REFERRED, ghost], [WRITER, ""])).toEqual(NONE);
+		expect(answerOf([{ ...REFERRED, up: [""] }], [WRITER, ""])).toEqual(NONE);
 	});
 
 	test("a role marker after the referral ends its answer", () => {
@@ -160,6 +161,12 @@ describe("sync ignores what is no answer", () => {
 		expect(answerOf([{ ...REFERRED, up: [WRITER] }, reply, convicted])).toEqual(
 			NONE,
 		);
+		expect(
+			answerOf([
+				{ ...REFERRED, up: [WRITER] },
+				{ at: 14, body: mark("court", "acquittal") },
+			]),
+		).toEqual(NONE);
 	});
 });
 
@@ -174,6 +181,11 @@ describe("sync reads deciders by login", () => {
 		expect(answerOf([{ ...REFERRED, down: ["MAINTAINER-fictional"] }])).toEqual(
 			["down", "-"],
 		);
+	});
+
+	test("a comment author in mixed case counts for a writer in lower case", () => {
+		const reply = { at: 12, by: "MAINTAINER-fictional", body: "go on" };
+		expect(answerOf([REFERRED, reply])).toEqual(["comment", "IC_12"]);
 	});
 
 	test("a comment of the trusted login with no marker line counts when it is a writer", () => {
