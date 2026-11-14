@@ -237,13 +237,14 @@ describe("sync", () => {
 		).toEqual([{ n: 2 }]);
 	});
 
-	test("%s exits 4 and leaves the cache", async () => {
-		// Every case leaves the cache as it was, so the cache is filled once per
-		// loop and each case checks it against the state before that case.
+	test("a rejected sync input exits 4 and leaves the cache", async () => {
+		// One fill serves a loop: each case compares against its own snapshot, so
+		// a case that wrote fails its own check.
 		// sync through the program
 		fresh();
 		addPrecincts({ [PRECINCT]: 1 });
-		sync(issues);
+		expect(sync(issues).code).toBe(0);
+		expect(snapshot().issues).not.toEqual([]);
 		for (const [name, input] of [
 			["empty stdin", ""],
 			["not json", "not json"],
@@ -284,7 +285,8 @@ describe("sync", () => {
 		// sync in process
 		fresh();
 		addPrecincts({ [PRECINCT]: 1 });
-		await fed(issuesForm(issues));
+		expect((await fed(issuesForm(issues))).code).toBe(0);
+		expect(rows("SELECT * FROM issues")).not.toEqual([]);
 		for (const [name, input] of [
 			["no writers", { issues: [] }],
 			["no issues", { writers: [] }],

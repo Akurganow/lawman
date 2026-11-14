@@ -79,6 +79,19 @@ async function parts(role: string): Promise<string[]> {
 	return [first, ...rest];
 }
 
+// Each call of tick input builds the whole group again, so a test that needs
+// every part builds them here in process, once per state of the orders.
+function buildParts(role: string): string[][] {
+	let built: string[][] = [];
+	const run = captured(BASE, () => {
+		const orders = withDb((d) => takeableOrders(d, role));
+		built = roleParts(role, orders, readConfig());
+	});
+	expect([run.code, run.err]).toEqual([0, ""]);
+	expect(built.length).toBeGreaterThan(0);
+	return built;
+}
+
 const TICK = readFileSync(join(LAW, "tick.md"), "utf8");
 
 // a heading at the start of a line outside a fenced block starts a section
@@ -258,43 +271,54 @@ describe("parts of the role group", () => {
 		const whole = content(wake("court").out);
 		const size = 3000;
 		sized(size);
-		const all = await parts("court");
+		const all = buildParts("court");
 		expect(all.length).toBeGreaterThan(5);
-		for (const [i, printed] of all.entries()) {
-			const lines_ = content(printed);
+		for (const body of all) {
 			expect(
-				lines_.reduce((n, l) => n + [...l].length + 1, 0),
+				body.reduce((n, l) => n + [...l].length + 1, 0),
 			).toBeLessThanOrEqual(size);
-			expect(lines(printed).at(-1)).toBe(`end part ${i + 1} of ${all.length}`);
 			// a file's line goes with its first section, so no part ends on it
-			expect(content(printed).at(-1)).not.toMatch(/^(law|harness) /);
+			expect(body.at(-1)).not.toMatch(/^(law|harness) /);
 		}
-		expect(all.flatMap(content)).toEqual(whole);
+		expect(all.flat()).toEqual(whole);
+		// the commands print the first and the last part framed as built
+		for (const k of [1, all.length]) {
+			const printed = (
+				await inprocAsync(
+					BASE,
+					k === 1
+						? ["wake", "--role", "court"]
+						: ["tick", "input", "--role", "court", "--part", String(k)],
+				)
+			).out;
+			expect(content(printed)).toEqual(all[k - 1] ?? []);
+			expect(lines(printed).at(-1)).toBe(`end part ${k} of ${all.length}`);
+		}
 	});
 
-	// Each call of tick input builds the whole group again, so this test builds
-	// the parts in process, once per state of the orders.
-	test("a part's content is the same at every call, and a new order changes no part of the law", () => {
+	test("a part's content is the same at every call, and a new order changes no part of the law", async () => {
 		orderFor("court");
 		config(`${CONFIG}input_chars: 3000\njobs: court=2\n`);
-		const build = () => {
-			let built: string[][] = [];
-			captured(BASE, () => {
-				const orders = withDb((d) => takeableOrders(d, "court"));
-				built = roleParts("court", orders, readConfig());
-			});
-			return built;
-		};
-		const before = build();
-		expect(build()).toEqual(before);
+		const before = buildParts("court");
+		expect(buildParts("court")).toEqual(before);
 		seed((d) => order(d, "main", "court", { at: later(1), issue: 4 }));
-		const after = build();
+		const after = buildParts("court");
 		expect(after.length).toBe(before.length);
 		expect(after.slice(0, -1)).toEqual(before.slice(0, -1));
 		expect(after.at(-1)).toEqual([
 			"order 1 main o/main - 3",
 			"order 2 main o/main - 4",
 		]);
+		// the command prints the last part as built
+		const last = await inprocAsync(BASE, [
+			"tick",
+			"input",
+			"--role",
+			"court",
+			"--part",
+			String(after.length),
+		]);
+		expect(content(last.out)).toEqual(after.at(-1) ?? []);
 	});
 
 	test("a whole group in one part keeps its orders in that part", () => {
@@ -303,18 +327,11 @@ describe("parts of the role group", () => {
 		expect(total(wake("investigation").out)).toBe(1);
 	});
 
-	// Each call of tick input builds the whole group again, so this test builds
-	// the parts once and checks the command against the first and the last.
+	// the command is checked against the first and the last part built
 	test("at a small size no line starts with a backtick and long law lines are cut behind the prefix", async () => {
 		orderFor("executor");
 		sized(300);
-		let built: string[] = [];
-		captured(BASE, () => {
-			const orders = withDb((d) => takeableOrders(d, "executor"));
-			built = roleParts("executor", orders, readConfig()).map((p) =>
-				p.join("\n"),
-			);
-		});
+		const built = buildParts("executor").map((p) => p.join("\n"));
 		expect(built.length).toBeGreaterThan(100);
 		for (const part of built) {
 			expect(part).not.toMatch(BACKTICK_LINE);
