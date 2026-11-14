@@ -84,9 +84,8 @@ describe("the self steps of the table in the intro of tick.md", () => {
 			};
 			const needed = [
 				"Fetch the precinct",
-				...role.sync.map((s) =>
-					s === "issues" ? "Sync the tracker" : "Sync the pull requests",
-				),
+				"Sync the tracker",
+				"Sync the pull requests",
 				...(role.stage === null ? [] : [STAGE[role.stage]]),
 				...(role.constitution ? ["Check the constitution"] : []),
 				...(role.department === null ? [] : ["Resolve the department page"]),

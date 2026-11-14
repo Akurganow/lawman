@@ -118,4 +118,5 @@ export const MIGRATIONS: string[] = [
   ALTER TABLE comments ADD COLUMN raw_sha TEXT;
   ALTER TABLE comments ADD COLUMN withheld INTEGER NOT NULL DEFAULT 0;
   `,
+	"ALTER TABLE comments ADD COLUMN url TEXT",
 ];

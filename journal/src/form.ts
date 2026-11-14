@@ -63,6 +63,7 @@ Each entry of pulls:
 Each comment:
   id: the host's id of the comment, as text, the one that reads it back later
   author: the login of its author
+  url: the address that opens the comment in a browser, as the host reports it. Leave it out when the host gives none
   createdAt: a time
   body: the body text
   approvedBy: the logins that reacted with approval, the thumbs up reaction
@@ -116,6 +117,7 @@ const EXAMPLES: Record<FormKind, unknown> = {
 				comments: [
 					{
 						id: "IC_example_1",
+						url: "https://host.example/owner/repo/pull/7#comment-1",
 						author: "lawman-bot",
 						createdAt: "2026-10-14T09:00:00Z",
 						body: "Example comment",

@@ -22,17 +22,21 @@ export function linkOrNull(v: unknown): string | null {
 export type Subject = "issue" | "pull";
 
 // The one place that finds the address of a subject, for an alarm and for a role's input.
+// With `spec`, a pull request gives the address of its newest spec comment, or null when the cache has none.
 export function urlOf(
 	db: Database,
 	precinct: string,
 	kind: Subject,
 	number: number,
+	spec = false,
 ): string | null {
 	const row = db
 		.query(
-			kind === "pull"
-				? "SELECT url FROM pulls WHERE precinct = ? AND number = ?"
-				: "SELECT url FROM issues WHERE precinct = ? AND issue = ?",
+			kind === "issue"
+				? "SELECT url FROM issues WHERE precinct = ? AND issue = ?"
+				: spec
+					? "SELECT c.url FROM pulls p JOIN comments c ON c.precinct = p.precinct AND c.kind = 'pull' AND c.number = p.number AND c.id = p.spec_id WHERE p.precinct = ? AND p.number = ?"
+					: "SELECT url FROM pulls WHERE precinct = ? AND number = ?",
 		)
 		.get(precinct, number) as { url: string | null } | null;
 	return row?.url ?? null;

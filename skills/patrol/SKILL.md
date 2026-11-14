@@ -69,7 +69,7 @@ Run items 1 to 3 of step 0 once per session. Then run one tick for each order of
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role patrol --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 11
+      bin/journal probe --schema 12
       ```
 4. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order of the visits. The orders that no tick took come first. Within each group, take the orders by weight. `<p>`, `<owner/repo>` and `<d>` are the precinct, the repository and the department of the order.
    ```

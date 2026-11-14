@@ -50,7 +50,7 @@ const SAMPLE = [
 
 // the lines a fence leaves outside: the journal's own words only
 const OWN =
-	/^(lawman input 1 role=defender tick=1 part \d+ of \d+|end part \d+ of \d+|login=.+|order 1 main o\/main - 3|revision=[0-9a-f]+|issues=.+|need=defender .+|department fixtures place=1|precedent hostile kind=- departments=-|comment at=\S+|[a-z]+ failed reason=[a-z]+|self [a-z].*)$/;
+	/^(lawman input 1 role=defender tick=1 part \d+ of \d+|end part \d+ of \d+|login=.+|order 1 main o\/main - 3|revision=[0-9a-f]+|(issues|pulls)=.+|need=defender .+|department fixtures place=1|precedent hostile kind=- departments=-|comment at=\S+|[a-z]+ failed reason=[a-z]+|self [a-z].*)$/;
 
 async function expectSafe(printed: string) {
 	expect(await lintBody(printed, false)).toEqual([]);

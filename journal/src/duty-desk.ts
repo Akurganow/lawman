@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { reconcileAlarms } from "./alarms";
+import { isFresh, reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
 import { consents, licensesAllowed } from "./consent";
 import { type Lack, lackingPrecincts, lackOf, SLUG } from "./constitution";
@@ -285,24 +285,27 @@ const roleCounts = (counts: Map<string, number>) =>
 		.join(", ");
 
 // Steps 5 to 8: read the eligible precincts, close the stale orders, write the orders, end the tick.
+// `failed` holds the first line of the sync that failed at a precinct, which the continuation has none of.
 async function finish(
 	t: Tick,
-	alarms: string[],
 	config: string | null,
 	known: string[] = [],
+	failed = new Map<string, string>(),
 ): Promise<number> {
 	const precincts = weighted();
 	const blockers: string[] = [...known];
 	const visits = new Map<string, Visit>();
+	const fresh = new Set<string>();
 	const shared = sharedPages(blockers);
 	for (const p of precincts) {
-		const synced =
-			(p.synced_at ?? "") >= t.started &&
-			(p.pulls_synced_at ?? "") >= t.started;
-		if (!synced) {
-			blockers.push(`${p.name}: pull request sync failed`);
+		if (!isFresh(p, t.started)) {
+			const why = failed.get(p.name);
+			blockers.push(
+				`${p.name}: not synced in this tick, issues ${p.synced_at ?? "never"}, pulls ${p.pulls_synced_at ?? "never"}${why === undefined ? "" : `: ${why}`}`,
+			);
 			continue;
 		}
+		fresh.add(p.name);
 		const read = await readPrecinct(p.name, blockers);
 		const department =
 			read.reading === null || openPatrolOrder(p.name)
@@ -326,6 +329,7 @@ async function finish(
 						v.cause,
 						name,
 					]);
+			const alarms = reconcileAlarms(db, stamp, true, fresh);
 			const lacking = lackingPrecincts(db);
 			const closed = closeUnneeded(db, new Set(visits.keys()), lacking, stamp);
 			const written = writeOrders(db, precincts, visits, lacking, stamp);
@@ -346,11 +350,11 @@ async function finish(
 			).changes;
 			if (changed === 0)
 				throw new Fail(EXIT.USAGE, `no open tick with id ${t.id}`);
-			return { written, outcome, report };
+			return { alarms, written, outcome, report };
 		}),
 	);
 	return print(t, [
-		...alarms,
+		...done.alarms,
 		...done.written.map(orderLine),
 		`ended ${done.outcome}`,
 		...done.report.map((line) => `report ${line}`),
@@ -372,19 +376,26 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 			),
 		),
 	};
-	const alarms = withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, true)),
-	);
+	// an end before the sync has no fresh host data, so it prints the journal alarms only
+	const early = (outcome: string, report: string) =>
+		ended(
+			t,
+			withDb((db) =>
+				inTransaction(db, () => reconcileAlarms(db, stamp, true, new Set())),
+			),
+			outcome,
+			report,
+		);
 	const config = readConfig();
-	if (config === null)
-		return ended(t, alarms, "failed", "config.yaml is missing");
+	if (config === null) return early("failed", "config.yaml is missing");
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
-		return ended(t, alarms, "failed", "config.yaml has no trusted_login");
+		return early("failed", "config.yaml has no trusted_login");
 	const law = await lawCheck(config);
 	if (law !== "current" && law !== "self")
-		return ended(t, alarms, law.outcome, law.report);
+		return early(law.outcome, law.report);
 	const selfs: string[] = law === "self" ? ["self law-version"] : [];
+	const failed = new Map<string, string>();
 	for (const p of weighted()) {
 		const step = (name: string) =>
 			selfs.push(`self ${name} ${p.name} ${p.repo}`);
@@ -393,28 +404,21 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 		else {
 			const seen = who.text.replace(/\r?\n$/, "");
 			if (asciiLower(seen) !== asciiLower(login))
-				return ended(
-					t,
-					alarms,
+				return early(
 					"stopped-identity-changed",
 					`Host identity changed at ${p.name}: ${seen}`,
 				);
 		}
-		const issues = await operate(p.name, "issues", call([], login));
-		if (empty(issues)) step("issues");
-		else if (issues.text === null)
-			return ended(
-				t,
-				alarms,
-				"stopped-sync",
-				`Tracker sync failed at ${p.name}: ${firstLine(issues)}`,
-			);
-		// a failed pull request sync keeps the old time, so the precinct gets no orders
-		const pulls = await operate(p.name, "pulls", call([], login));
-		if (empty(pulls)) step("pulls");
+		// a failed sync keeps the old time, so the precinct gets no orders and the others go on
+		for (const kind of ["issues", "pulls"] as const) {
+			const synced = await operate(p.name, kind, call([], login));
+			if (empty(synced)) step(kind);
+			else if (synced.text === null && !failed.has(p.name))
+				failed.set(p.name, firstLine(synced));
+		}
 	}
-	if (selfs.length > 0) return print(t, [...alarms, ...selfs]);
-	return finish(t, alarms, config);
+	if (selfs.length > 0) return print(t, selfs);
+	return finish(t, config, [], failed);
 }
 
 type TickRow = { role: string; started_at: string; ended_at: string | null };
@@ -431,17 +435,8 @@ export async function dutyDeskContinue(args: string[]): Promise<number> {
 	if (row === null || row.ended_at !== null || row.role !== DUTY_DESK)
 		throw new Fail(EXIT.USAGE, `no open tick with id ${id} for this role`);
 	const t: Tick = { id, started: row.started_at };
-	// a tracker that no sync of this tick refreshed stops the tick, as a failed sync does
-	const stale = weighted().filter((p) => (p.synced_at ?? "") < t.started);
-	if (stale.length > 0)
-		return ended(
-			t,
-			[],
-			"stopped-sync",
-			`Tracker not synced in this tick: ${stale.map((p) => p.name).join(", ")}`,
-		);
 	// the self step of a failing `law-version` command is no stop, so the report names it
 	const failing =
 		(await lawVersion()) === "failed" ? ["law-version command failed"] : [];
-	return finish(t, [], readConfig(), failing);
+	return finish(t, readConfig(), failing);
 }

@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { reconcileAlarms } from "./alarms";
+import { isFresh, reconcileAlarms, type Synced } from "./alarms";
 import {
 	check,
 	count,
@@ -51,6 +51,7 @@ const CASE_TEXTS = [
 	"comment",
 ];
 const SYNC_STEPS = ["fetch", "issues", "pulls"];
+const SYNCS = ["issues", "pulls"] as const;
 
 type Stage = StageFields & { department: string; pull: string; line: string };
 type Tick = { id: number; role: string };
@@ -184,6 +185,10 @@ class Output {
 	line(line: string) {
 		this.blocks.push({ line });
 	}
+	// the alarms lead the group
+	lead(lines: string[]) {
+		this.blocks.unshift(...lines.map((line) => ({ line })));
+	}
 	all(): Block[] {
 		return [...this.blocks, ...this.selfs.map((s) => ({ line: `self ${s}` }))];
 	}
@@ -235,6 +240,30 @@ function ended(
 }
 
 const call = (args: string[], author = "") => ({ args, author, reset: false });
+
+// The alarms of a group that is built from the cache, and a line for each sync of the
+// precinct that this tick did not refresh. The host alarms of any other precinct stay silent.
+function cacheHead(
+	db: Database,
+	p: string,
+	started: string,
+): { alarms: string[]; stale: string[] } {
+	const row = (db
+		.query("SELECT synced_at, pulls_synced_at FROM precincts WHERE name = ?")
+		.get(p) as Synced | null) ?? { synced_at: null, pulls_synced_at: null };
+	const at = { issues: row.synced_at, pulls: row.pulls_synced_at };
+	return {
+		alarms: reconcileAlarms(
+			db,
+			now(),
+			false,
+			isFresh(row, started) ? new Set([p]) : new Set(),
+		),
+		stale: SYNCS.filter((k) => (at[k] ?? "") < started).map(
+			(k) => `stale ${p} ${k} synced=${at[k] ?? "never"}`,
+		),
+	};
+}
 
 function fieldsFailure(input: RoleInput, order: Taken): string | null {
 	if (input.number === "issue" && order.issue === null)
@@ -384,18 +413,26 @@ export async function tickStart(args: string[]): Promise<number> {
 		),
 	};
 	const o = new Output();
-	for (const line of withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, false)),
-	))
-		o.line(line);
-	if (config === null)
-		return ended(t, o, "failed", "config.yaml is missing", null);
+	// an end before the sync has no fresh host data, so it prints the journal alarms only
+	const stop = (
+		outcome: string,
+		report: string,
+		order: number | null = null,
+	) => {
+		o.lead(
+			withDb((db) =>
+				inTransaction(db, () => reconcileAlarms(db, stamp, false, new Set())),
+			),
+		);
+		return ended(t, o, outcome, report, order);
+	};
+	if (config === null) return stop("failed", "config.yaml is missing");
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
-		return ended(t, o, "failed", "config.yaml has no trusted_login", null);
+		return stop("failed", "config.yaml has no trusted_login");
 	const law = await lawCheck(config);
 	if (law === "self") o.selfs.push("law-version");
-	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);
+	else if (law !== "current") return stop(law.outcome, law.report);
 	const p = order.precinct;
 	const who = await operate(p, "identity", call([]));
 	o.add(...who.blocks);
@@ -403,13 +440,7 @@ export async function tickStart(args: string[]): Promise<number> {
 	else {
 		const seen = who.text.replace(/\r?\n$/, "");
 		if (asciiLower(seen) !== asciiLower(login))
-			return ended(
-				t,
-				o,
-				"stopped-identity-changed",
-				`Host identity changed: ${seen}`,
-				null,
-			);
+			return stop("stopped-identity-changed", `Host identity changed: ${seen}`);
 	}
 	const taken = withDb((db) =>
 		inTransaction(db, () => {
@@ -418,18 +449,21 @@ export async function tickStart(args: string[]): Promise<number> {
 			return true;
 		}),
 	);
-	if (!taken) return ended(t, o, "silent", "No order.", null);
+	if (!taken) return stop("silent", "No order.");
 	o.line(orderLine(order));
 	const fieldsFailed = fieldsFailure(input, order);
-	if (fieldsFailed !== null) return ended(t, o, "failed", fieldsFailed, id);
+	if (fieldsFailed !== null) return stop("failed", fieldsFailed, id);
 	const fetched = await operate(p, "fetch", call([]));
 	o.add(...fetched.blocks);
 	if (fetched.text === null) o.selfs.push("fetch");
-	for (const kind of input.sync) {
+	// a failed sync leaves the cache as it was; only a command the host lacks is a self step
+	for (const kind of SYNCS) {
 		const synced = await operate(p, kind, call([], login));
 		o.add(...synced.blocks);
-		if (synced.text === null) o.selfs.push(kind);
+		if (synced.text === null && synced.code === EXIT.OK) o.selfs.push(kind);
 	}
+	const head = withDb((db) => inTransaction(db, () => cacheHead(db, p, stamp)));
+	o.lead(head.alarms);
 	// the role does these steps itself, then `tick input` builds the group from the cache
 	if (o.selfs.some((s) => SYNC_STEPS.includes(s))) {
 		out(
@@ -438,6 +472,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		);
 		return EXIT.OK;
 	}
+	for (const line of head.stale) o.line(line);
 	const revision = (fetched.text ?? "").replace(/\r?\n$/, "");
 	const stage =
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
@@ -537,6 +572,7 @@ export async function tickStart(args: string[]): Promise<number> {
 
 type TickRow = {
 	role: string;
+	started_at: string;
 	ended_at: string | null;
 	dispatch: number | null;
 	parts: string | null;
@@ -550,7 +586,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	const row = withDb(
 		(db) =>
 			db
-				.query("SELECT role, ended_at, dispatch, parts FROM ticks WHERE id = ?")
+				.query(
+					"SELECT role, started_at, ended_at, dispatch, parts FROM ticks WHERE id = ?",
+				)
 				.get(id) as TickRow | null,
 	);
 	if (row === null || row.ended_at !== null)
@@ -583,6 +621,11 @@ export async function tickInput(args: string[]): Promise<number> {
 	const size = inputChars(readConfig());
 	const t: Tick = { id, role: row.role };
 	const o = new Output();
+	const head = withDb((db) =>
+		inTransaction(db, () => cacheHead(db, order.precinct, row.started_at)),
+	);
+	o.lead(head.alarms);
+	for (const line of head.stale) o.line(line);
 	const stage =
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
 	if (input.stage !== null) {

@@ -7,7 +7,7 @@ description: Runs one tick of a Lawman duty desk, which has the journal write an
 
 You are the duty desk of a Lawman installation. The installation is the directory that holds `config.yaml`, `bin/journal`, `journal.sqlite`, `configs/`, `shared/`, `precincts/` and `lawman/`. Run every command from that directory, with relative paths.
 
-One invocation runs one tick. The journal does the work of the tick. It computes the alarms, checks the identity, syncs the trackers, reads each precinct, closes stale orders and writes the orders. You start the tick, do the steps the journal hands back, and answer. Then you exit. You do nothing else.
+One invocation runs one tick. The journal does the work of the tick. It checks the identity, syncs the trackers and the pull requests, computes the alarms, reads each precinct, closes stale orders and writes the orders. You start the tick, do the steps the journal hands back, and answer. Then you exit. You do nothing else.
 
 The law is `lawman/skills/lawman-law/references/LAW.md`. It binds every step. This skill gives the commands and the outcome tokens.
 
@@ -58,7 +58,7 @@ bin/journal tick input --role duty-desk --part <k>
 0.3. Check the journal schema. On a non-zero exit, answer `journal unavailable: <stderr>` and stop. No record is possible.
 
 ```
-bin/journal probe --schema 11
+bin/journal probe --schema 12
 ```
 
 0.4. Only after a `synced <tag>` line, build the update list as the section `tick.md#sync-the-law` says. Keep its lines for the answer. The sync prints none.
@@ -73,7 +73,7 @@ bin/journal tick start --role duty-desk
 
 The output is one part. Its first line is `lawman input <form> role=duty-desk tick=<id> part 1 of 1`. Keep the number after `tick=` as `<id>`. The lines of the part are:
 
-- `ALARM` lines. Keep each one, verbatim, for the answer.
+- `ALARM` lines, when no `self` line stands. A start that stops on `self` lines prints none. Keep each one, verbatim, for the answer.
 - `self <step> <precinct> <repo>` lines, when the journal could not do a step. The line `self law-version` names no precinct and stands first.
 - `order <id> <precinct> <repo> <department|-> <issue|->` lines, one for each order the journal wrote.
 - `ended <outcome>` and the lines `report <line>`, when the journal ended the tick.
@@ -88,12 +88,12 @@ Do the self steps right after you read the part, before any other work. The line
 | :-- | :-- | :-- |
 | `law-version` | the row `law-version` of the table of self steps in the intro of `tick.md` | `stopped-law-drift`, or `stopped-dirty-law` for a local change |
 | `identity` | the row `identity` of the table of self steps in the intro of `tick.md` | `stopped-host-auth`, or `stopped-identity-changed` for another account |
-| `issues` | the section `tick.md#sync-the-tracker` | `stopped-sync` |
+| `issues` | the section `tick.md#sync-the-tracker` | none: the tick goes on and the precinct gets no orders |
 | `pulls` | the section `tick.md#sync-the-pull-requests` | none: the tick goes on and the precinct gets no orders |
 
-A failed `law-version`, `identity` or `issues` step ends the tick. Go to step 3. Write no order and do no later self step.
+A failed `law-version` or `identity` step ends the tick. Go to step 3. Write no order and do no later self step.
 
-When every step is done or a `pulls` step failed, continue the same tick. Never start a second tick.
+A failed `issues` or `pulls` step ends no tick. Do the later steps. When every step is done or failed, continue the same tick. Never start a second tick.
 
 ```
 bin/journal tick continue <id>
@@ -101,11 +101,11 @@ bin/journal tick continue <id>
 
 On a non-zero exit, end the tick with `failed` by step 3, with the first line of the message as the reason.
 
-The output is one part, framed like the start, with no `ALARM` line. It holds the `order` lines, `ended <outcome>` and the lines `report <line>`. The tick is over. Go to Answer.
+The output is one part, framed like the start. It holds the `ALARM` lines, the `order` lines, `ended <outcome>` and the lines `report <line>`. The tick is over. Go to Answer.
 
 ### Step 3: End the tick yourself
 
-End the tick here after a failed `law-version` step, a failed `identity` step, a failed `issues` step or a failed `continue`. The journal ends every other tick itself.
+End the tick here after a failed `law-version` step, a failed `identity` step or a failed `continue`. The journal ends every other tick itself.
 
 Send the report on stdin to `tick end`. Pass no `--precinct` and no `--department`. The outcome is the token that the step names.
 
@@ -127,7 +127,7 @@ Build the answer from these rules, in this order:
 
 1. If the tick stopped or failed, write one line `<outcome>: <reason>` first. The reason is the report line of the tick, or the line that step 0 names.
 2. Write every `ALARM` line that the sync of step 0.2 printed, one per line, verbatim.
-3. Write every `ALARM` line of the start, one per line, verbatim.
+3. Write every `ALARM` line of the start or the continuation, one per line, verbatim.
 4. Write every line of the update list that you built, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 

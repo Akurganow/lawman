@@ -138,13 +138,53 @@ describe("alarms and status", () => {
 			expect(alarm(later(6, 120)).out).not.toContain("tick-failing");
 		});
 
-		test("three stopped ticks without a precinct raise tick-failing under duty-desk/-", () => {
+		test("three stopped ticks without a precinct raise tick-failing under duty-desk/- and none for an unsynced precinct", () => {
 			seed((db) => {
+				precinct(db, "a");
 				tick(db, "duty-desk", later(0), later(0, 60), "stopped-law-drift");
 				tick(db, "duty-desk", later(1), later(1, 60), "stopped-dirty-law");
 				tick(db, "duty-desk", later(2), later(2, 60), "stopped-host-auth");
 			});
 			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
+		});
+
+		test("a precinct that none of the last three duty desk ticks synced raises tick-failing duty-desk/<precinct>, not after two", () => {
+			seed((db) => {
+				precinct(db, "a");
+				precinct(db, "b");
+				// b is synced by the third tick, a never
+				db.run(
+					"UPDATE precincts SET synced_at = ?1, pulls_synced_at = ?1 WHERE name = 'b'",
+					[later(2)],
+				);
+				tick(db, "duty-desk", later(0), later(0, 10), "ordered");
+				tick(db, "duty-desk", later(1), later(1, 10), "ordered");
+			});
+			expect(alarm(later(1, 30)).out).toBe("");
+			seed((db) => tick(db, "duty-desk", later(2), null, null));
+			alarmsOnce(
+				later(2, 30),
+				/^ALARM tick-failing duty-desk\/a last 3 duty desk ticks did not sync it\n$/,
+			);
+			// both syncs must reach the latest tick: one of them is no sync of the precinct
+			seed((db) =>
+				db.run("UPDATE precincts SET synced_at = ? WHERE name = 'a'", [
+					later(2),
+				]),
+			);
+			alarm(later(3));
+			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
+				{ cleared_at: null },
+			]);
+			seed((db) =>
+				db.run("UPDATE precincts SET pulls_synced_at = ? WHERE name = 'a'", [
+					later(2),
+				]),
+			);
+			expect(alarm(later(4)).out).toBe("");
+			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
+				{ cleared_at: later(4) },
+			]);
 		});
 	});
 
@@ -329,10 +369,33 @@ describe("decision-waiting", () => {
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 		setPull("UPDATE pulls SET url = 'https://git.example/o/main/pull/7'");
 		expect(alarm(later(1)).out).toBe("");
-		const repeat = call(later(2), ["tick", "start", "--role", "duty-desk"]);
+		const repeat = alarm(later(2), "--repeat");
 		expect(repeat.out).toContain(
 			line("main#7", `${WAITS_SPEC} https://git.example/o/main/pull/7`).trim(),
 		);
+	});
+
+	test("a vote alarm ends with the link of the newest spec comment, or of the pull request when the cache has none", () => {
+		const PULL = "https://git.example/o/main/pull/7";
+		const COMMENT = `${PULL}#issuecomment-1`;
+		put({ 3: handed(7) });
+		cachePull("main", 7, [3], "waiting", "todo", "IC_spec");
+		setPull(`UPDATE pulls SET url = '${PULL}'`);
+		const addComment = (url: string | null) =>
+			seed((db) =>
+				db.run(
+					"INSERT INTO comments (precinct, kind, number, id, at, body, url) VALUES ('main', 'pull', 7, 'IC_spec', 't', 'b', ?)",
+					[url],
+				),
+			);
+		addComment(null);
+		expect(alarm(BASE).out).toBe(line("main#7", `${WAITS_SPEC} ${PULL}`));
+		setPull(`UPDATE comments SET url = '${COMMENT}'`);
+		expect(alarm(later(1), "--repeat").out).toBe(
+			line("main#7", `${WAITS_SPEC} ${COMMENT}`),
+		);
+		setPull("UPDATE pulls SET spec = 'up', work = 'ready'");
+		expect(alarm(later(2)).out).toBe(line("main#7", `${WAITS_WORK} ${PULL}`));
 	});
 
 	test.each([
@@ -358,8 +421,31 @@ describe("decision-waiting", () => {
 		waitingSpec();
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
-		expect(alarm(later(1)).out).toBe("");
+		expect(alarm(later(1), "--fresh=").out).toBe("");
 		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
+	});
+
+	test("a host alarm of a precinct outside the fresh set raises, clears and repeats nothing, a journal alarm goes on", () => {
+		waitingSpec();
+		put({ 3: handed(1) }, "other");
+		cachePull("other", 1, [3], "waiting");
+		seed((db) => {
+			tick(db, "clerk", BASE, null, null);
+			tick(db, "clerk", later(1), null, null);
+		});
+		// only main is fresh: the alarm of other is not raised
+		expect(alarm(BASE, "--fresh=main").out).toBe(
+			`ALARM tick-hung 1 clerk started ${BASE}\n${line("main#7", WAITS_SPEC)}`,
+		);
+		expect(open()).toHaveLength(2);
+		// the cache of main changed, but main is not fresh: nothing clears, nothing prints
+		setPull("DELETE FROM pulls WHERE precinct = 'main'");
+		expect(alarm(later(1), "--repeat", "--fresh=other").out).toBe(
+			`${line("other#1", WAITS_SPEC)}ALARM tick-hung 1 clerk started ${BASE}\n`,
+		);
+		expect(open().map((a) => a.cleared_at)).toEqual([null, null, null]);
+		expect(alarm(later(2), "--fresh=main").out).toBe("");
+		expect(open().map((a) => a.cleared_at)).toEqual([null, later(2), null]);
 	});
 
 	test("a vote on the spec clears the alarm and a return brings it back", () => {

@@ -15,6 +15,17 @@ const TICK_FAILING_RUN = 3;
 const NO_PROGRESS = "checks found a takeable order and the role took none";
 
 type Candidate = { kind: string; ref: string; detail: string };
+export type Synced = {
+	synced_at: string | null;
+	pulls_synced_at: string | null;
+};
+
+// A precinct is fresh in a tick when both of its syncs are not older than the tick's start.
+export const isFresh = (p: Synced, started: string) =>
+	(p.synced_at ?? "") >= started && (p.pulls_synced_at ?? "") >= started;
+
+// the alarms that read the host data in the cache; their ref starts with the precinct
+const HOST_ALARMS = ["decision-waiting", "withheld-text", "no-constitution"];
 function ageMs(nowMs: number, since: string): number {
 	return nowMs - Date.parse(since);
 }
@@ -97,11 +108,39 @@ function tickFailing(db: Database): Candidate[] {
        ORDER BY role, precinct`,
 		)
 		.all() as { role: string; precinct: string }[];
-	return failing.map((f) => ({
-		kind: "tick-failing",
-		ref: `${f.role}/${f.precinct}`,
-		detail: `last ${TICK_FAILING_RUN} ticks stopped, skipped or failed`,
-	}));
+	return [
+		...failing.map((f) => ({
+			kind: "tick-failing",
+			ref: `${f.role}/${f.precinct}`,
+			detail: `last ${TICK_FAILING_RUN} ticks stopped, skipped or failed`,
+		})),
+		...unsyncedPrecincts(db),
+	];
+}
+
+// A precinct that none of the last duty desk ticks synced, ended or not. A tick that
+// stopped before its sync counts in the run above and not here.
+function unsyncedPrecincts(db: Database): Candidate[] {
+	const latest = db
+		.query(
+			`SELECT started_at FROM ticks WHERE role = 'duty-desk'
+         AND (outcome IS NULL OR NOT (outcome LIKE 'stopped-%' OR outcome LIKE 'skipped-%' OR outcome = 'failed'))
+       ORDER BY id DESC LIMIT ${TICK_FAILING_RUN}`,
+		)
+		.all() as { started_at: string }[];
+	if (latest.length < TICK_FAILING_RUN) return [];
+	const precincts = db
+		.query(
+			"SELECT name, synced_at, pulls_synced_at FROM precincts WHERE weight > 0 ORDER BY name",
+		)
+		.all() as ({ name: string } & Synced)[];
+	return precincts
+		.filter((p) => latest.every((t) => !isFresh(p, t.started_at)))
+		.map((p) => ({
+			kind: "tick-failing",
+			ref: `duty-desk/${p.name}`,
+			detail: `last ${TICK_FAILING_RUN} duty desk ticks did not sync it`,
+		}));
 }
 
 // the duty desk records the cause at each read of a precinct
@@ -245,25 +284,49 @@ const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 // from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
 function alarmLine(db: Database, a: Candidate): string {
 	const [precinct = "", number = ""] = a.ref.split("#");
+	const pull = (spec: boolean) =>
+		urlOf(db, precinct, "pull", Number(number), spec);
 	const url =
-		a.kind === "decision-waiting"
-			? urlOf(db, precinct, "pull", Number(number))
-			: null;
+		a.kind !== "decision-waiting"
+			? null
+			: ((a.detail === WAITS_FOR_VOTE ? pull(true) : null) ?? pull(false));
 	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
 }
 
+// A host alarm of a weighted precinct outside `fresh` rests on cache rows that this tick did
+// not refresh: it raises, clears and prints nothing, and an open one stays as it is.
 export function reconcileAlarms(
 	db: Database,
 	stamp: string,
 	repeat: boolean,
+	fresh: Set<string>,
 ): string[] {
 	const nowMs = Date.parse(stamp);
-	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
-	const open = db
-		.query(
-			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
-		)
-		.all() as OpenAlarm[];
+	const weighted = new Set(
+		(
+			db.query("SELECT name FROM precincts WHERE weight > 0").all() as {
+				name: string;
+			}[]
+		).map((r) => r.name),
+	);
+	const counted = (a: Candidate) => {
+		const precinct = a.ref.split("#")[0] ?? "";
+		return (
+			!HOST_ALARMS.includes(a.kind) ||
+			fresh.has(precinct) ||
+			!weighted.has(precinct)
+		);
+	};
+	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs)).filter(
+		counted,
+	);
+	const open = (
+		db
+			.query(
+				"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+			)
+			.all() as OpenAlarm[]
+	).filter(counted);
 	const wantedKeys = new Set(wanted.map(alarmKey));
 	const openKeys = new Set(open.map(alarmKey));
 	const lines: string[] = [];
