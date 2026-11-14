@@ -1,6 +1,23 @@
+![Ten robots in Old West dress pose on a frontier street at dusk, under the title LAWMAN and the line "The only lawman that actually works".](docs/assets/banner.png)
+
 # Lawman
 
-An executive branch for software repositories. Patrol files leads as issues. An investigation builds the case. A prosecutor decides whether to charge. A defender argues against the charge. A court rules. A clerk carries the verdict to a draft pull request. A spec writer writes its spec. An executor builds the approved change.
+**The only lawman that actually works.**
+
+[Install](#install) · [How it works](#how-it-works) · [Roles and stages](docs/pipeline.md) · [Design](docs/design.md) · [Changelog](CHANGELOG.md)
+
+An executive branch for software repositories. Ten roles take a finding from a lead to a pull request that is ready for review. The picture shows them:
+
+- **Duty desk**, at the telegraph key, writes the orders for the other roles.
+- **Patrol**, with the lantern, files leads as issues.
+- **Response unit**, with the mailbag, makes a lead from an issue that a human filed.
+- **Investigation**, with the magnifying glass, builds the case.
+- **Prosecutor**, with the law book, decides whether to charge.
+- **Defender**, in the bowler hat, argues against the charge.
+- **Court**, with the gavel, rules.
+- **Clerk**, with the stack of papers, carries the verdict to a draft pull request.
+- **Spec writer**, with the quill, writes its spec.
+- **Executor**, with the hammer, builds the approved change.
 
 Lawman runs inside the agent harness a developer already uses, on that harness's own schedule. It has no server, no dashboard and no access to a repository host of its own.
 
@@ -178,7 +195,7 @@ Identity: every role uses one account on the repository host, the one that the h
 - `skills/lawman-law/references/`: what every role shares. It holds the law, the contracts for constitutions and departments, and the marker grammar. It also holds the tick steps, the exhibit rules, the shared department pages and one page per harness.
 - `journal/`: the journal program, with its `package.json`, `bun.lock`, `tsconfig.json`, `biome.json`, `entitlements.plist` and `src/`.
 - `plugin.json` and `.claude-plugin/marketplace.json`: the manifests that make this repository an Agent Plugins package and a marketplace.
-- `docs/`: one page per concept of "How it works", and [the design page](docs/design.md) with the goals, the principles and the rejected alternatives.
+- `docs/`: one page per concept of "How it works", and [the design page](docs/design.md) with the goals, the principles and the rejected alternatives. `docs/assets/` holds the banner of this page.
 - `LAWMAN.md` and `.lawman/`: the constitution of Lawman itself and its own department page. Lawman is a precinct of itself.
 
 ## Development
