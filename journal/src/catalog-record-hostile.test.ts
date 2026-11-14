@@ -1,5 +1,4 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { recordAnswer } from "./catalog-record";
 import {
 	ANSWER,
 	expectCleanComment,
@@ -8,7 +7,6 @@ import {
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
-import { inProcessAsync } from "./catalog-test-run";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
 import { lead, tempDb } from "./test-helpers";
@@ -66,10 +64,7 @@ describe("a cleaning library that fails", () => {
 			new Error(`rules failed ${TOKEN}`),
 		);
 		try {
-			const result = await inProcessAsync(recordAnswer)(
-				ANSWER,
-				withSummary("fine words"),
-			);
+			const result = await inProcessAnswer(ANSWER, withSummary("fine words"));
 			expect(result.code).toBe(0);
 			expect(result.out).toContain(" dropped=summary summary=unknown\n");
 			expect(result.out + result.err).not.toContain("rules failed");

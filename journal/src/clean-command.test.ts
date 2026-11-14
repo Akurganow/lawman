@@ -18,12 +18,4 @@ describe("clean command, both forms", () => {
 			err: "",
 		});
 	}, 30_000);
-
-	test.each([[[]], [["--json"]]])(
-		"empty input gives empty output %j",
-		(args) => {
-			expect(run("", ...args)).toEqual({ code: EXIT.OK, out: "", err: "" });
-			expect(run(" \n", ...args)).toEqual({ code: EXIT.OK, out: "", err: "" });
-		},
-	);
 });

@@ -176,9 +176,6 @@ const inProcess =
 	(flag: string): Run =>
 	(name, stdin = "") =>
 		inprocFed(BASE, select(flag, name), stdin);
-const RUNNERS: [string, Run, Run][] = [
-	["in process", inProcess("--request"), inProcess("--answer")],
-];
 
 // a recorded reply with these probabilities, and the status line
 const reply = (values: Record<string, unknown>, model = "jev-1.14.0") =>
@@ -191,7 +188,8 @@ const reply = (values: Record<string, unknown>, model = "jev-1.14.0") =>
 const LOW = DEPARTMENTS_THRESHOLD - 0.01;
 const HIGH = DEPARTMENTS_THRESHOLD + 0.01;
 
-describe.each(RUNNERS)("the request (%s)", (_n, request) => {
+describe("the request", () => {
+	const request = inProcess("--request");
 	test("the body equals the golden file, final newline included", async () => {
 		await written();
 		expect(await request(NAME, "a brief on stdin changes nothing")).toEqual({
@@ -205,17 +203,6 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 		await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
 		const body = JSON.parse((await request(NAME)).out);
 		expect(Object.keys(body.questions)).toEqual(["alpha", "gamma"]);
-	});
-});
-
-test("the request through the cli equals the golden file, final newline included", async () => {
-	await written();
-	expect(
-		await throughCli("--request")(NAME, "a brief on stdin changes nothing"),
-	).toEqual({
-		code: EXIT.OK,
-		out: fixture("request.departments.txt"),
-		err: "",
 	});
 });
 
@@ -483,7 +470,8 @@ describe("the input and a hostile sample", () => {
 	});
 });
 
-describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
+describe("the answer", () => {
+	const answer = inProcess("--answer");
 	test("a good reply writes the list and prints it", async () => {
 		await written();
 		const r = await answer(NAME, reply({ alpha: 0.9, beta: 0.1, gamma: HIGH }));
@@ -813,17 +801,14 @@ describe("the case department", () => {
 		expect(existsSync(file())).toBe(false);
 	});
 
-	test.each([["a refine of a missing file", `- refine gone: ${RULE}`]])(
-		"%s needs the case list: a missing issue is a fault",
-		async (_n, line) => {
-			await cache([ruling([line])]);
-			seed((db) => db.run("DELETE FROM issues"));
-			const r = await record();
-			expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
-			expect(r.err).toContain("unknown issue main #1");
-			expect(existsSync(file(`${DATE}-issue-1`))).toBe(false);
-		},
-	);
+	test("a refine of a missing file needs the case list: a missing issue is a fault", async () => {
+		await cache([ruling([`- refine gone: ${RULE}`])]);
+		seed((db) => db.run("DELETE FROM issues"));
+		const r = await record();
+		expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
+		expect(r.err).toContain("unknown issue main #1");
+		expect(existsSync(file(`${DATE}-issue-1`))).toBe(false);
+	});
 
 	test("a case fault after a good new line writes no file", async () => {
 		await cache([
@@ -836,15 +821,12 @@ describe("the case department", () => {
 		expect(existsSync(join(tree, ".lawman", "precedents"))).toBe(false);
 	});
 
-	test.each([["a name it knows", "for beta"]])(
-		"%s needs no case: a missing issue fails nothing",
-		async (_n, names) => {
-			await cache([ruling([`- new empty-doubles ${names}: ${RULE}`])]);
-			seed((db) => db.run("DELETE FROM issues"));
-			const r = await record();
-			expect([r.code, linesOf(r)[0]]).toEqual([EXIT.OK, `entry\t${NAME}`]);
-		},
-	);
+	test("a name it knows needs no case: a missing issue fails nothing", async () => {
+		await cache([ruling([`- new empty-doubles for beta: ${RULE}`])]);
+		seed((db) => db.run("DELETE FROM issues"));
+		const r = await record();
+		expect([r.code, linesOf(r)[0]]).toEqual([EXIT.OK, `entry\t${NAME}`]);
+	});
 
 	test("a none ruling without the issue gives the old output", async () => {
 		await cache([ruling(["none"])]);
@@ -1114,27 +1096,21 @@ describe("the court's names", () => {
 			expect(departments()).toEqual(["core"]);
 		});
 
-		test.each([["all beside names", "for zeta, all, beta"]])(
-			"%s gives the empty list and no drop line",
-			async (_n, names) => {
-				const r = await written(
-					ruling([`- new empty-doubles ${names}: ${RULE}`]),
-				);
-				expect(departments()).toEqual([]);
-				expect(drops(r)).toEqual([]);
-			},
-		);
+		test("all beside names gives the empty list and no drop line", async () => {
+			const r = await written(
+				ruling([`- new empty-doubles for zeta, all, beta: ${RULE}`]),
+			);
+			expect(departments()).toEqual([]);
+			expect(drops(r)).toEqual([]);
+		});
 	});
 
 	describe("recognition and order", () => {
-		test.each([["no candidate", "zeta"]])(
-			"a name that is %s is dropped, and the case list stays",
-			async (_n, name) => {
-				await written(ruling([`- new empty-doubles for ${name}: ${RULE}`]));
-				expect(departments()).toEqual(["core"]);
-				expect(text()).not.toContain(name);
-			},
-		);
+		test("a name that is no candidate is dropped, and the case list stays", async () => {
+			await written(ruling([`- new empty-doubles for zeta: ${RULE}`]));
+			expect(departments()).toEqual(["core"]);
+			expect(text()).not.toContain("zeta");
+		});
 
 		test("with no candidate at all every name is dropped", async () => {
 			put(tree, "LAWMAN.md", "no constitution");

@@ -747,13 +747,11 @@ describe("law-update: the new binary", () => {
 		);
 	});
 
-	test.each([
-		[
-			"an error of invisible characters",
+	test("an error of invisible characters gives the new binary failed", async () => {
+		await fails(
 			"printf '\\342\\200\\213\\342\\201\\240\\357\\273\\277\\n' >&2\nexit 3",
-		],
-	])("%s gives the new binary failed", async (_, body) => {
-		await fails(body, "the new binary failed");
+			"the new binary failed",
+		);
 	});
 
 	test("a secret in the error is masked", async () => {

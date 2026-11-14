@@ -32,11 +32,11 @@ describe("clean command in process", () => {
 		});
 	});
 
-	test("--json cleans strings at any depth in a sequence", async () => {
-		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"x": []}[2]`;
+	test("--json cleans strings at any depth, keeps null and true, and reads values with no space between", async () => {
+		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"ok": true, "none": null, "list": [{"body": "${TOKEN}"}]}\n{"x": []}[2]`;
 		expect(await cleanIn(input, "--json")).toEqual({
 			code: EXIT.OK,
-			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"x":[]}\n[2]\n`,
+			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"ok":true,"none":null,"list":[{"body":"${LABEL}"}]}\n{"x":[]}\n[2]\n`,
 			err: "",
 		});
 	});
@@ -52,9 +52,12 @@ describe("clean command in process", () => {
 		expect(({} as Record<string, unknown>).polluted).toBeUndefined();
 	});
 
-	test.each([`{"body": "${TOKEN}"`, `{"body": "secret words ${TOKEN}", bad}`])(
-		"broken JSON gives exit 1 and quotes no input %j",
-		async (input) => {
+	test.each([
+		["an unfinished object", `{"body": "${TOKEN}"`],
+		["a bad token", `{"body": "secret words ${TOKEN}", bad}`],
+	])(
+		"broken JSON, %s, gives exit 1 and quotes no input",
+		async (_label, input) => {
 			const r = await cleanIn(input, "--json");
 			expect(r.code).toBe(EXIT.USAGE);
 			expect(r.out).toBe("");
@@ -74,11 +77,12 @@ describe("clean command in process", () => {
 	test.each([[[]], [["--json"]]])(
 		"empty input gives exit 0 %j",
 		async (args) => {
-			expect(await cleanIn("", ...args)).toEqual({
-				code: EXIT.OK,
-				out: "",
-				err: "",
-			});
+			for (const input of ["", " \n"])
+				expect(await cleanIn(input, ...args)).toEqual({
+					code: EXIT.OK,
+					out: "",
+					err: "",
+				});
 		},
 	);
 

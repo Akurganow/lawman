@@ -2,11 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { MIGRATIONS } from "./db";
 import { captured, inproc } from "./inproc";
 import { lawSync } from "./law-sync";
-import {
-	defineCases,
-	defineLocalOnly,
-	defineRename,
-} from "./law-sync-test-cases";
+import { defineCases, defineRename } from "./law-sync-test-cases";
 import { flags, lay, put, type Runner } from "./law-sync-test-fixture";
 import { BASE, dir, tempDb } from "./test-helpers";
 
@@ -33,10 +29,6 @@ describe("law-sync in process", () => {
 
 describe("law-sync in process, the swap", () => {
 	defineRename(runner);
-});
-
-describe("law-sync in process, local only", () => {
-	defineLocalOnly(runner);
 });
 
 describe("law-sync through the journal entry point", () => {

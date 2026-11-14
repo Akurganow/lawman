@@ -483,11 +483,6 @@ describe("a stale order", () => {
 	});
 });
 
-const DRIFT_REPORT: [string, string] = [
-	"stopped-law-drift",
-	"the law folder is not at law_commit",
-];
-
 type Ending = {
 	name: string;
 	role: string;
@@ -517,28 +512,24 @@ const ENDINGS: Ending[] = [
 		report: "config.yaml has no trusted_login",
 		taken: false,
 	},
-	...(
-		[
-			[
-				"a law folder at another commit",
-				() => lawVersion("2".repeat(40)),
-				DRIFT_REPORT,
-			],
-			[
-				"a law_commit outside its class",
-				() => config(CONFIG.replace(LAW_COMMIT, "../x")),
-				["stopped-law-drift", "a value is not safe"],
-			],
-		] as [string, () => void, [string, string]][]
-	).map(([name, setup, [outcome, report]]) => ({
-		name,
+	{
+		name: "a law folder at another commit",
 		role: "investigation",
 		order: { issue: 3 },
-		setup,
-		outcome,
-		report,
+		setup: () => lawVersion("2".repeat(40)),
+		outcome: "stopped-law-drift",
+		report: "the law folder is not at law_commit",
 		taken: false,
-	})),
+	},
+	{
+		name: "a law_commit outside its class",
+		role: "investigation",
+		order: { issue: 3 },
+		setup: () => config(CONFIG.replace(LAW_COMMIT, "../x")),
+		outcome: "stopped-law-drift",
+		report: "a value is not safe",
+		taken: false,
+	},
 	{
 		name: "another identity",
 		role: "investigation",
@@ -808,22 +799,19 @@ describe("the law folder at the start", () => {
 		expect(ticks()[0]).toMatchObject({ outcome: null });
 	});
 
-	test.each([["fails", () => command(shared(), "law-version", "exit 1")]])(
-		"a law-version command that %s gives the self step, as an absent one does",
-		(_name, broken) => {
-			setUp();
-			broken();
-			orderOf("investigation", { issue: 3 });
-			CASES.investigation?.setup();
-			const r = start("investigation");
-			expect(lines(r.out).filter((l) => l.startsWith("self "))[0]).toBe(
-				"self law-version",
-			);
-			expect(r.out).not.toContain("stopped-law-drift");
-			expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
-			expect(ticks()[0]).toMatchObject({ outcome: null, precinct: "main" });
-		},
-	);
+	test("a law-version command that fails gives the self step, as an absent one does", () => {
+		setUp();
+		command(shared(), "law-version", "exit 1");
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		const r = start("investigation");
+		expect(lines(r.out).filter((l) => l.startsWith("self "))[0]).toBe(
+			"self law-version",
+		);
+		expect(r.out).not.toContain("stopped-law-drift");
+		expect(orders()).toEqual([{ id: 1, taken_at: BASE, outcome: null }]);
+		expect(ticks()[0]).toMatchObject({ outcome: null, precinct: "main" });
+	});
 
 	test("wake, the start and tick input run law-version and nothing else of the installation", () => {
 		setUp();
@@ -853,29 +841,19 @@ describe("the law folder at the start", () => {
 		expect(records()).toEqual(["law-version"]);
 	});
 
-	test.each([["a drift", () => lawVersion("2".repeat(40))]])(
-		"%s stops the start before any host operation runs",
-		(_name, setup) => {
-			setUp();
-			orderOf("investigation", { issue: 3 });
-			CASES.investigation?.setup();
-			for (const op of [
-				"identity",
-				"fetch",
-				"issues",
-				"pulls",
-				"files",
-				"file",
-			])
-				command(configs("main"), op, recording("true"));
-			setup();
-			expect(lines(start("investigation").out)).toContainEqual(
-				expect.stringMatching(/^ended stopped-/),
-			);
-			expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
-			expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
-		},
-	);
+	test("a drift stops the start before any host operation runs", () => {
+		setUp();
+		orderOf("investigation", { issue: 3 });
+		CASES.investigation?.setup();
+		for (const op of ["identity", "fetch", "issues", "pulls", "files", "file"])
+			command(configs("main"), op, recording("true"));
+		lawVersion("2".repeat(40));
+		expect(lines(start("investigation").out)).toContainEqual(
+			expect.stringMatching(/^ended stopped-/),
+		);
+		expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
+		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
+	});
 });
 
 const OPERATIONS: [string, string, string][] = [

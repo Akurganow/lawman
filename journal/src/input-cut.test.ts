@@ -49,7 +49,7 @@ const TOKEN = ["gh", "p_", "a1B2c3D4e5F6g7H8i9J0k1L2m3N4"].join("");
 const LONG_ID = `IC_${"9".repeat(197)}`;
 const LONG_LOGIN = "l".repeat(39);
 const AT = T(10);
-const SIZES = [16000];
+const SIZE = 16000;
 
 const cost = (lines: string[]) =>
 	lines.reduce((n, l) => n + [...l].length + 1, 0);
@@ -461,25 +461,24 @@ describe("the fit", () => {
 		["plain", plainText],
 		["tildes", tildeText],
 	];
-	for (const size of SIZES)
-		for (const [name, make] of shapes) {
-			test(`a body and a comment of ${name} text above ${size} fit one part`, async () => {
-				const text = make(100889);
-				const body = await started(size, text);
-				const b = cutIn(body.parts);
-				expect(cost(b.lines)).toBeLessThanOrEqual(size);
-				for (const part of body.parts)
-					expect(cost(content(part))).toBeLessThanOrEqual(size);
-				const comment = await started(size, "short", [note(text)]);
-				const c = cutIn(comment.parts);
-				expect(cost(c.lines)).toBeLessThanOrEqual(size);
-				expect(c.head.body[0]).toBe(
-					`id=${JSON.stringify(LONG_ID)} author=${JSON.stringify(LONG_LOGIN)}`,
-				);
-				for (const part of comment.parts)
-					expect(cost(content(part))).toBeLessThanOrEqual(size);
-			});
-		}
+	for (const [name, make] of shapes) {
+		test(`a body and a comment of ${name} text above ${SIZE} fit one part`, async () => {
+			const text = make(100889);
+			const body = await started(SIZE, text);
+			const b = cutIn(body.parts);
+			expect(cost(b.lines)).toBeLessThanOrEqual(SIZE);
+			for (const part of body.parts)
+				expect(cost(content(part))).toBeLessThanOrEqual(SIZE);
+			const comment = await started(SIZE, "short", [note(text)]);
+			const c = cutIn(comment.parts);
+			expect(cost(c.lines)).toBeLessThanOrEqual(SIZE);
+			expect(c.head.body[0]).toBe(
+				`id=${JSON.stringify(LONG_ID)} author=${JSON.stringify(LONG_LOGIN)}`,
+			);
+			for (const part of comment.parts)
+				expect(cost(content(part))).toBeLessThanOrEqual(SIZE);
+		});
+	}
 
 	test("a text of 100 889 characters is one part at 16 000 where it was seven", async () => {
 		seed((d) => {
@@ -562,46 +561,43 @@ describe("a run of tildes in an uncut page", () => {
 		precedent,
 	};
 
-	test.each([16000])(
-		"it lengthens only the fence of its own part at %d, and the text rebuilds",
-		async (size) => {
-			rmSync(dir, { recursive: true, force: true });
-			mkdirSync(dir);
-			setUp(`${CONFIG}input_chars: ${size}\n`);
-			orderOf("patrol", { department: "fixtures" });
-			host({
-				tree: {
-					"LAWMAN.md": texts.constitution,
-					".lawman/departments/fixtures.md": texts.department,
-					".lawman/precedents/a.md": texts.precedent,
-				},
-			});
-			const r = await inprocAsync(BASE, [
-				"tick",
-				"start",
-				"--role",
-				"patrol",
-				"--order",
-				"1",
-			]);
-			expect(r.code).toBe(0);
-			const parts = JSON.parse(
-				String(rows("SELECT parts FROM ticks")[0]?.parts),
-			) as string[];
-			// one fence for every piece made each part cost over 40 000 characters
-			expect(parts.length).toBeLessThan(20);
-			for (const part of parts)
-				expect(cost(content(part))).toBeLessThanOrEqual(size);
-			for (const label of ["constitution", "department", "precedent"]) {
-				const body = parts
-					.flatMap((p) => events(content(p)))
-					.flatMap((e) => ("label" in e && e.label === label ? e.body : []));
-				const rebuilt = stripped(body.join("\n"));
-				expect(rebuilt).toContain(RUN);
-				expect(rebuilt.length).toBeGreaterThan(20000);
-			}
-		},
-	);
+	test("it lengthens only the fence of its own part at 16000, and the text rebuilds", async () => {
+		rmSync(dir, { recursive: true, force: true });
+		mkdirSync(dir);
+		setUp(`${CONFIG}input_chars: ${SIZE}\n`);
+		orderOf("patrol", { department: "fixtures" });
+		host({
+			tree: {
+				"LAWMAN.md": texts.constitution,
+				".lawman/departments/fixtures.md": texts.department,
+				".lawman/precedents/a.md": texts.precedent,
+			},
+		});
+		const r = await inprocAsync(BASE, [
+			"tick",
+			"start",
+			"--role",
+			"patrol",
+			"--order",
+			"1",
+		]);
+		expect(r.code).toBe(0);
+		const parts = JSON.parse(
+			String(rows("SELECT parts FROM ticks")[0]?.parts),
+		) as string[];
+		// one fence for every piece made each part cost over 40 000 characters
+		expect(parts.length).toBeLessThan(20);
+		for (const part of parts)
+			expect(cost(content(part))).toBeLessThanOrEqual(SIZE);
+		for (const label of ["constitution", "department", "precedent"]) {
+			const body = parts
+				.flatMap((p) => events(content(p)))
+				.flatMap((e) => ("label" in e && e.label === label ? e.body : []));
+			const rebuilt = stripped(body.join("\n"));
+			expect(rebuilt).toContain(RUN);
+			expect(rebuilt.length).toBeGreaterThan(20000);
+		}
+	});
 });
 
 describe("the key of a comment", () => {
@@ -704,15 +700,14 @@ describe("a tilde line and the search for the pieces", () => {
 		["at the end", (n) => `${rowsOf(50).join("\n")}\n${"~".repeat(n)}`],
 		["as the whole text", (n) => "~".repeat(n)],
 	];
-	for (const size of SIZES)
-		for (const [where, make] of TILDE_SHAPES)
-			test(`a body and a comment with a tilde line ${where} are cut to fit ${size}`, async () => {
-				const text = make(size);
-				const body = await started(size, text);
-				expect(cost(cutIn(body.parts).lines)).toBeLessThanOrEqual(size);
-				const comment = await started(size, "short", [note(text)]);
-				expect(cost(cutIn(comment.parts).lines)).toBeLessThanOrEqual(size);
-			});
+	for (const [where, make] of TILDE_SHAPES)
+		test(`a body and a comment with a tilde line ${where} are cut to fit ${SIZE}`, async () => {
+			const text = make(SIZE);
+			const body = await started(SIZE, text);
+			expect(cost(cutIn(body.parts).lines)).toBeLessThanOrEqual(SIZE);
+			const comment = await started(SIZE, "short", [note(text)]);
+			expect(cost(cutIn(comment.parts).lines)).toBeLessThanOrEqual(SIZE);
+		});
 
 	test("a mark of a removed secret split by the cut still counts as removed", () => {
 		const lines = rowsOf(100);

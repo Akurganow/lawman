@@ -107,6 +107,7 @@ const REPROS = [
 	"<title><img src=x></title>",
 	"<plaintext><img src=x>",
 	"<img src=x",
+	"<div>\n<img src=x\n\nnext",
 	"a <b <img src=x>",
 	"<img<img src=x>",
 	'<img alt="<img src=x>',

@@ -8,9 +8,9 @@ import {
 	inProcess,
 	list,
 	prepare,
+	RUNNERS,
 	type Run,
 	resultsReply,
-	throughCli,
 } from "./catalog-test-run";
 import { dbFile, precinct, seed, tempDb } from "./test-helpers";
 
@@ -51,12 +51,7 @@ const filedLine = (place: string, id: string, name: string, kind = "new") =>
 const start = (run: Run, tick: string, input: string) =>
 	run(request(tick, ["--precinct", "alpha"]), input);
 
-const RECORDED: [string, Run][] = [
-	["in process", inProcess],
-	["cli", throughCli],
-];
-
-test.each(RECORDED)(
+test.each(RUNNERS)(
 	"the recorded batch.hits reply maps to the entries it was recorded for (%s)",
 	(_name, run) => {
 		prepare();
@@ -103,7 +98,7 @@ test.each(RECORDED)(
 describe("catalog answer", () => {
 	const run = inProcess;
 
-	test("a reply is refused when no part was printed, or the part was answered", () => {
+	test("a reply is refused when the part was already answered", () => {
 		prepare();
 		start(run, "1", list(1));
 		expect(run(answer("1"), resultsReply([[]])).code).toBe(0);

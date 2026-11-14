@@ -35,6 +35,11 @@ describe("case: defender stage", () => {
 			"none",
 		],
 		[
+			"a new case after a defender return needs the prosecutor",
+			[defenderReturn("investigation"), caseMark()],
+			"prosecutor",
+		],
+		[
 			"a new case and charge after a defender return need the defender again",
 			[defenderReturn("investigation"), caseMark(), charge()],
 			"defender",

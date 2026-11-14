@@ -246,14 +246,11 @@ describe("old-precedent check", () => {
 		);
 	});
 
-	test.each([["a form outside its shape", "[]", "form"]])(
-		"%s gives ask for every line",
-		async (_, stdin, reason) => {
-			expect((await check(stdin, "1:2", "2:1")).out).toBe(
-				`line 1 ask reason=${reason}\nline 2 ask reason=${reason}\n`,
-			);
-		},
-	);
+	test("a form outside its shape gives ask for every line", async () => {
+		expect((await check("[]", "1:2", "2:1")).out).toBe(
+			"line 1 ask reason=form\nline 2 ask reason=form\n",
+		);
+	});
 
 	test("the precinct's issues command gives the form, and the cache stays as it was", async () => {
 		const path = join(dir, "form.json");

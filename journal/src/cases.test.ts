@@ -134,6 +134,11 @@ describe("case: failures", () => {
 		expect(call(BASE, ["case", "main", "9"]).code).toBe(1);
 	});
 
+	test("an unknown precinct exits 1", () => {
+		put({ 1: { body: [lead()] } });
+		expect(call(BASE, ["case", "nope", "1"]).code).toBe(1);
+	});
+
 	test("a bad argument shape exits 1", () => {
 		expect(call(BASE, ["case", "main"]).code).toBe(1);
 		expect(call(BASE, ["case", "main", "x"]).code).toBe(1);

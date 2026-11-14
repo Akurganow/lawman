@@ -39,7 +39,7 @@ const JOBS =
 const alarmLine = (law: string, config: string) =>
 	`ALARM contract-changed installation constitution contract ${law}, precincts at ${config}, run the assembly to amend\n`;
 
-// The one case the compiled binary runs: the swap of a real executable.
+// Runs through the compiled binary too: the swap of a real executable.
 export function defineRename(runner: Runner): void {
 	tempDb();
 	test("renames itself over bin/journal and records the release", () => {
@@ -65,7 +65,7 @@ export function defineRename(runner: Runner): void {
 	});
 }
 
-// Runs through the compiled binary too: an in-process Bun.spawnSync keeps the PATH of the
+// Runs through the compiled binary only: an in-process Bun.spawnSync keeps the PATH of the
 // process start, so only a real child process sees the empty PATH.
 export function defineLocalOnly(runner: Runner): void {
 	tempDb();

@@ -128,14 +128,11 @@ describe("intake", () => {
 		expect(waiting()).toBe("5");
 	});
 
-	test.each([["an issue with a lead origin", "patrol"]])(
-		"%s does not wait",
-		(_name, role) => {
-			addIssue(5);
-			addMarker(5, "lead", T(9), role);
-			expect(waiting()).toBe("");
-		},
-	);
+	test("an issue with a lead origin does not wait", () => {
+		addIssue(5);
+		addMarker(5, "lead", T(9), "patrol");
+		expect(waiting()).toBe("");
+	});
 
 	test("an out marker never waits, even after a reply", () => {
 		addIssue(5, { repliedAt: T(20) });

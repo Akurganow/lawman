@@ -26,13 +26,6 @@ const inProcess =
 			return { code: e.code, out: "", err: `journal: ${e.message}\n` };
 		}
 	};
-const throughCli =
-	(sub: string): Run =>
-	(kind, stdin) =>
-		cli(["jev", sub, "--kind", kind], {}, stdin);
-
-const request = throughCli("request");
-
 const KINDS = ["p0", "grade", "requirement"];
 const lines = (text: string) => text.trimEnd().split("\n");
 const fail = (message: string) => ({
@@ -117,7 +110,7 @@ describe("law consistency", () => {
 		const brief = skill.split(/^## Brief$/m)[1]?.split(/^## /m)[0] ?? "";
 		const example =
 			brief.split("A `requirement` brief:")[1]?.split("```")[1] ?? "";
-		const body = JSON.parse(request("requirement", example).out);
+		const body = JSON.parse(inProcess(requestLine)("requirement", example).out);
 		expect(Object.keys(body.state.brief)).toHaveLength(6);
 	});
 });

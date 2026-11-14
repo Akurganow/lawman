@@ -69,11 +69,8 @@ describe("rotation", () => {
 		expect(rotation([]).out).toBe("");
 	});
 
-	test.each([[3, "1"]])(
-		"%i open leads give the third field %s",
-		(open, want) => {
-			for (let i = 0; i < open; i++) openLead("core");
-			expect(lines(rotation(["core"]))).toEqual([`core\t-\t${want}`]);
-		},
-	);
+	test("3 open leads give the third field 1", () => {
+		for (let i = 0; i < 3; i++) openLead("core");
+		expect(lines(rotation(["core"]))).toEqual(["core\t-\t1"]);
+	});
 });
