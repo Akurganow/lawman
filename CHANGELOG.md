@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.3.0 - 2026-11-14
+#### Features
+- (**spec-writer**) open the Spec with a card for the owner (e8cb485)
+#### Bug Fixes
+- (**spec-writer**) tie each line of the case path to its marker (afdebc9)
+
+- - -
+
+
 ## v1.2.0 - 2026-11-13
 #### Features
 - (**journal**) write a dismissal with the precedent command (cb972d4)
