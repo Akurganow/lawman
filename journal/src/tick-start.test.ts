@@ -948,7 +948,7 @@ describe("an operation that is empty or fails", () => {
 					expect(own).toContain(`${operation} failed reason=exit`);
 					expect(r.out).toContain("\n~~~error\nbroken\n~~~\n");
 				} else expect(own).toContain(`${operation} empty`);
-				// a failed sync is no self step: the start goes on with the cache and names the stale time
+				// a failed sync is no self step: the unsynced line prints only past the stop on self steps
 				if (failing && SYNCED.includes(operation)) {
 					expect(own).not.toContain(`self ${step}`);
 					expect(own).toContain(`unsynced main ${operation} synced=never`);
@@ -958,23 +958,6 @@ describe("an operation that is empty or fails", () => {
 			}
 		},
 	);
-
-	test("a failed pull request sync prints the failure and the stale time, gives no self step and goes on with the cache", () => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		CASES.investigation?.setup();
-		command(configs("main"), "pulls", "echo broken >&2\nexit 1");
-		const r = start("investigation");
-		const own = lines(r.out);
-		expect(own).toContain("pulls failed reason=exit");
-		expect(own.filter((l) => l.startsWith("self "))).toEqual([]);
-		const stale = own.indexOf("unsynced main pulls synced=never");
-		expect(stale).toBeGreaterThan(own.indexOf("pulls failed reason=exit"));
-		expect(stale).toBeLessThan(own.findIndex((l) => l.startsWith("need=")));
-		expect(own).toContain("~~~issue");
-		expect(ticks()[0]).toMatchObject({ outcome: null });
-		expect(JSON.parse(String(ticks()[0]?.parts))).toHaveLength(1);
-	});
 
 	test("the alarms of a start read only the cache it refreshed: a pull request merged since the last sync raises none, a new decision of another precinct is not printed", () => {
 		setUp();

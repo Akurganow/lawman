@@ -110,11 +110,6 @@ describe("sync --pulls", () => {
 			{ id: "IC_1", url: null },
 			{ id: "IC_2", url: null },
 		]);
-		give(0, "https://git.example/o/main/pull/3#c9");
-		expect(feed(input).code).toBe(0);
-		expect(rows("SELECT url FROM comments WHERE id = 'IC_0'")).toEqual([
-			{ url: "https://git.example/o/main/pull/3#c9" },
-		]);
 	});
 
 	test("a pull request of another author without a comment id is no failure", () => {

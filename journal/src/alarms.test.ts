@@ -407,31 +407,8 @@ describe("decision-waiting", () => {
 		waitingSpec();
 		expect(alarm(BASE).out).toBe(line("main#7", WAITS_SPEC));
 		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
-		expect(alarm(later(1), "--fresh=").out).toBe("");
+		expect(alarm(later(1)).out).toBe("");
 		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
-	});
-
-	test("a host alarm of a precinct outside the fresh set raises, clears and repeats nothing, a journal alarm goes on", () => {
-		waitingSpec();
-		put({ 3: handed(1) }, "other");
-		cachePull("other", 1, [3], "waiting");
-		seed((db) => {
-			tick(db, "clerk", BASE, null, null);
-			tick(db, "clerk", later(1), null, null);
-		});
-		// only main is fresh: the alarm of other is not raised
-		expect(alarm(BASE, "--fresh=main").out).toBe(
-			`ALARM tick-hung 1 clerk started ${BASE}\n${line("main#7", WAITS_SPEC)}`,
-		);
-		expect(open()).toHaveLength(2);
-		// the cache of main changed, but main is not fresh: nothing clears, nothing prints
-		setPull("DELETE FROM pulls WHERE precinct = 'main'");
-		expect(alarm(later(1), "--repeat", "--fresh=other").out).toBe(
-			`${line("other#1", WAITS_SPEC)}ALARM tick-hung 1 clerk started ${BASE}\n`,
-		);
-		expect(open().map((a) => a.cleared_at)).toEqual([null, null, null]);
-		expect(alarm(later(2), "--fresh=main").out).toBe("");
-		expect(open().map((a) => a.cleared_at)).toEqual([null, later(2), null]);
 	});
 
 	test("a vote on the spec clears the alarm and a return brings it back", () => {

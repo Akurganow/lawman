@@ -284,9 +284,11 @@ const roleCounts = (counts: Map<string, number>) =>
 		.join(", ");
 
 // Steps 5 to 8: read the eligible precincts, close the stale orders, write the orders, end the tick.
+// `journal` holds the alarm lines of the start, and the continuation of the same tick has none.
 // `failed` holds the first line of the sync that failed at a precinct, which the continuation has none of.
 async function finish(
 	t: Tick,
+	journal: string[],
 	config: string | null,
 	known: string[] = [],
 	failed = new Map<string, string>(),
@@ -358,6 +360,7 @@ async function finish(
 		}),
 	);
 	return print(t, [
+		...journal,
 		...done.alarms,
 		...done.written.map(orderLine),
 		`ended ${done.outcome}`,
@@ -380,24 +383,19 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 			),
 		),
 	};
-	// an end before the sync has no fresh host data, so it prints the journal alarms only
-	const early = (outcome: string, report: string) =>
-		ended(
-			t,
-			withDb((db) =>
-				inTransaction(db, () => reconcileAlarms(db, stamp, true, new Set())),
-			),
-			outcome,
-			report,
-		);
+	// the journal alarms need no host data: every output of the start carries them first
+	const alarms = withDb((db) =>
+		inTransaction(db, () => reconcileAlarms(db, stamp, true, "journal")),
+	);
 	const config = readConfig();
-	if (config === null) return early("failed", "config.yaml is missing");
+	if (config === null)
+		return ended(t, alarms, "failed", "config.yaml is missing");
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
-		return early("failed", "config.yaml has no trusted_login");
+		return ended(t, alarms, "failed", "config.yaml has no trusted_login");
 	const law = await lawCheck(config);
 	if (law !== "current" && law !== "self")
-		return early(law.outcome, law.report);
+		return ended(t, alarms, law.outcome, law.report);
 	const selfs: string[] = law === "self" ? ["self law-version"] : [];
 	const failed = new Map<string, string>();
 	for (const p of weighted()) {
@@ -408,7 +406,9 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 		else {
 			const seen = who.text.replace(/\r?\n$/, "");
 			if (asciiLower(seen) !== asciiLower(login))
-				return early(
+				return ended(
+					t,
+					alarms,
 					"stopped-identity-changed",
 					`Host identity changed at ${p.name}: ${seen}`,
 				);
@@ -421,8 +421,8 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 				failed.set(p.name, firstLine(synced));
 		}
 	}
-	if (selfs.length > 0) return print(t, selfs);
-	return finish(t, config, [], failed);
+	if (selfs.length > 0) return print(t, [...alarms, ...selfs]);
+	return finish(t, alarms, config, [], failed);
 }
 
 type TickRow = { role: string; started_at: string; ended_at: string | null };
@@ -442,5 +442,5 @@ export async function dutyDeskContinue(args: string[]): Promise<number> {
 	// the self step of a failing `law-version` command is no stop, so the report names it
 	const failing =
 		(await lawVersion()) === "failed" ? ["law-version command failed"] : [];
-	return finish(t, readConfig(), failing);
+	return finish(t, [], readConfig(), failing);
 }

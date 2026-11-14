@@ -185,10 +185,6 @@ class Output {
 	line(line: string) {
 		this.blocks.push({ line });
 	}
-	// the alarms lead the group
-	lead(lines: string[]) {
-		this.blocks.unshift(...lines.map((line) => ({ line })));
-	}
 	all(): Block[] {
 		return [...this.blocks, ...this.selfs.map((s) => ({ line: `self ${s}` }))];
 	}
@@ -241,8 +237,8 @@ function ended(
 
 const call = (args: string[], author = "") => ({ args, author, reset: false });
 
-// The alarms of a group that is built from the cache, and a line for each sync of the
-// precinct that this tick did not refresh. The host alarms of any other precinct stay silent.
+// The host alarms of a precinct whose cache this tick refreshed, else none, and a line for
+// each sync of the precinct that this tick did not refresh.
 function cacheHead(
 	db: Database,
 	p: string,
@@ -253,12 +249,9 @@ function cacheHead(
 		.get(p) as Synced | null) ?? { synced_at: null, pulls_synced_at: null };
 	const at = { issues: row.synced_at, pulls: row.pulls_synced_at };
 	return {
-		alarms: reconcileAlarms(
-			db,
-			now(),
-			false,
-			isFresh(row, started) ? new Set([p]) : new Set(),
-		),
+		alarms: isFresh(row, started)
+			? reconcileAlarms(db, now(), false, new Set([p]))
+			: [],
 		stale: CACHES.filter((k) => (at[k] ?? "") < started).map(
 			(k) => `unsynced ${p} ${k} synced=${at[k] ?? "never"}`,
 		),
@@ -413,26 +406,19 @@ export async function tickStart(args: string[]): Promise<number> {
 		),
 	};
 	const o = new Output();
-	// an end before the sync has no fresh host data, so it prints the journal alarms only
-	const stop = (
-		outcome: string,
-		report: string,
-		closes: number | null = null,
-	) => {
-		o.lead(
-			withDb((db) =>
-				inTransaction(db, () => reconcileAlarms(db, stamp, false, new Set())),
-			),
-		);
-		return ended(t, o, outcome, report, closes);
-	};
-	if (config === null) return stop("failed", "config.yaml is missing");
+	// the journal alarms need no host data: every output of the start carries them first
+	const journal = withDb((db) =>
+		inTransaction(db, () => reconcileAlarms(db, stamp, false, "journal")),
+	);
+	for (const line of journal) o.line(line);
+	if (config === null)
+		return ended(t, o, "failed", "config.yaml is missing", null);
 	const login = configValue(config, "trusted_login");
 	if (login === undefined || !fits("login", login))
-		return stop("failed", "config.yaml has no trusted_login");
+		return ended(t, o, "failed", "config.yaml has no trusted_login", null);
 	const law = await lawCheck(config);
 	if (law === "self") o.selfs.push("law-version");
-	else if (law !== "current") return stop(law.outcome, law.report);
+	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);
 	const p = order.precinct;
 	const who = await operate(p, "identity", call([]));
 	o.add(...who.blocks);
@@ -440,7 +426,13 @@ export async function tickStart(args: string[]): Promise<number> {
 	else {
 		const seen = who.text.replace(/\r?\n$/, "");
 		if (asciiLower(seen) !== asciiLower(login))
-			return stop("stopped-identity-changed", `Host identity changed: ${seen}`);
+			return ended(
+				t,
+				o,
+				"stopped-identity-changed",
+				`Host identity changed: ${seen}`,
+				null,
+			);
 	}
 	const taken = withDb((db) =>
 		inTransaction(db, () => {
@@ -449,21 +441,21 @@ export async function tickStart(args: string[]): Promise<number> {
 			return true;
 		}),
 	);
-	if (!taken) return stop("silent", "No order.");
+	if (!taken) return ended(t, o, "silent", "No order.", null);
 	o.line(orderLine(order));
 	const fieldsFailed = fieldsFailure(input, order);
-	if (fieldsFailed !== null) return stop("failed", fieldsFailed, id);
+	if (fieldsFailed !== null) return ended(t, o, "failed", fieldsFailed, id);
 	const fetched = await operate(p, "fetch", call([]));
 	o.add(...fetched.blocks);
 	if (fetched.text === null) o.selfs.push("fetch");
-	// a failed sync leaves the cache as it was; only a command the host lacks is a self step
+	// a failed sync leaves the cache as it was, and only a command the host lacks is a self step
 	for (const kind of CACHES) {
 		const synced = await operate(p, kind, call([], login));
 		o.add(...synced.blocks);
 		if (empty(synced)) o.selfs.push(kind);
 	}
 	const head = withDb((db) => inTransaction(db, () => cacheHead(db, p, stamp)));
-	o.lead(head.alarms);
+	for (const line of head.alarms) o.line(line);
 	// the role does these steps itself, then `tick input` builds the group from the cache
 	if (o.selfs.some((s) => SYNC_STEPS.includes(s))) {
 		out(
@@ -624,8 +616,7 @@ export async function tickInput(args: string[]): Promise<number> {
 	const head = withDb((db) =>
 		inTransaction(db, () => cacheHead(db, order.precinct, row.started_at)),
 	);
-	o.lead(head.alarms);
-	for (const line of head.stale) o.line(line);
+	for (const line of [...head.alarms, ...head.stale]) o.line(line);
 	const stage =
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
 	if (input.stage !== null) {

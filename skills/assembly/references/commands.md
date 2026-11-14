@@ -10,7 +10,7 @@ Every command runs through the journal on a throwaway base before it enters the 
 
 A command file carries no value of a key or a token. A role never writes a command.
 
-A command of `issues` or `pulls` returns `url` for each issue and pull request, the address that opens it on the host, when the tool gives one. The `pulls` command returns `url` for each comment of a pull request too, the address that opens that comment in a browser. The journal puts these addresses into the alarms that the owner must act on. The proof compares nothing with them.
+A command of `issues` or `pulls` returns `url` for each issue and pull request when the tool gives one. The `url` is the address that opens it on the host. The `pulls` command returns `url` for each comment of a pull request too, the address that opens that comment in a browser. The journal puts these addresses into the alarms that the owner must act on. The proof compares nothing with them.
 
 ### The throwaway base
 

@@ -19,25 +19,25 @@ export function linkOrNull(v: unknown): string | null {
 	}
 }
 
-export type Subject = "issue" | "pull";
+export type Subject = "issue" | "pull" | "spec";
+
+const URL_OF: Record<Subject, string> = {
+	issue: "SELECT url FROM issues WHERE precinct = ? AND issue = ?",
+	pull: "SELECT url FROM pulls WHERE precinct = ? AND number = ?",
+	// the newest spec comment of a pull request
+	spec: "SELECT c.url FROM pulls p JOIN comments c ON c.precinct = p.precinct AND c.kind = 'pull' AND c.number = p.number AND c.id = p.spec_id WHERE p.precinct = ? AND p.number = ?",
+};
 
 // The one place that finds the address of a subject, for an alarm and for a role's input.
-// With `spec`, a pull request gives the address of its newest spec comment, or null when the cache has none.
+// It is null when the cache has none.
 export function urlOf(
 	db: Database,
 	precinct: string,
-	kind: Subject,
+	subject: Subject,
 	number: number,
-	spec = false,
 ): string | null {
-	const row = db
-		.query(
-			kind === "issue"
-				? "SELECT url FROM issues WHERE precinct = ? AND issue = ?"
-				: spec
-					? "SELECT c.url FROM pulls p JOIN comments c ON c.precinct = p.precinct AND c.kind = 'pull' AND c.number = p.number AND c.id = p.spec_id WHERE p.precinct = ? AND p.number = ?"
-					: "SELECT url FROM pulls WHERE precinct = ? AND number = ?",
-		)
-		.get(precinct, number) as { url: string | null } | null;
+	const row = db.query(URL_OF[subject]).get(precinct, number) as {
+		url: string | null;
+	} | null;
 	return row?.url ?? null;
 }

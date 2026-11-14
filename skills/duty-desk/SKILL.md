@@ -73,7 +73,7 @@ bin/journal tick start --role duty-desk
 
 The output is one part. Its first line is `lawman input <form> role=duty-desk tick=<id> part 1 of 1`. Keep the number after `tick=` as `<id>`. The lines of the part are:
 
-- `ALARM` lines, when no `self` line stands. A start that stops on `self` lines prints none. Keep each one, verbatim, for the answer.
+- `ALARM` lines. Keep each one, verbatim, for the answer.
 - `self <step> <precinct> <repo>` lines, when the journal could not do a step. The line `self law-version` names no precinct and stands first.
 - `order <id> <precinct> <repo> <department|-> <issue|->` lines, one for each order the journal wrote.
 - `ended <outcome>` and the lines `report <line>`, when the journal ended the tick.
@@ -127,7 +127,7 @@ Build the answer from these rules, in this order:
 
 1. If the tick stopped or failed, write one line `<outcome>: <reason>` first. The reason is the report line of the tick, or the line that step 0 names.
 2. Write every `ALARM` line that the sync of step 0.2 printed, one per line, verbatim.
-3. Write every `ALARM` line of the start or the continuation, one per line, verbatim.
+3. Write every `ALARM` line of the start and of the continuation, one per line, verbatim.
 4. Write every line of the update list that you built, one per line, verbatim.
 5. If none of these applies, write the silence form that the harness page names, alone. The journal holds the report.
 

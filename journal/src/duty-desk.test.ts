@@ -291,6 +291,22 @@ describe("the walk", () => {
 	});
 });
 
+// a pull request whose finished work waits for a review
+const WAITING = {
+	issues: { 3: handed(7) },
+	pulls: [
+		{
+			number: 7,
+			author: TRUSTED,
+			closes: [3],
+			comments: [
+				{ body: SPEC, author: TRUSTED, up: ["maint-a"] },
+				{ body: READY, author: TRUSTED, at: "2026-10-14T11:00:00Z" },
+			],
+		},
+	],
+};
+
 describe("the sync", () => {
 	test("a failed tracker stops no tick: the other precinct gets its orders, Blockers names the failed one, its host alarms stay as they were", () => {
 		setUp({ alpha: 1, main: 1 });
@@ -333,29 +349,15 @@ describe("the sync", () => {
 
 	test("a pull request merged since the last sync raises no decision-waiting alarm", () => {
 		setUp({ main: 1 });
-		const waiting = {
-			issues: { 3: handed(7) },
-			pulls: [
-				{
-					number: 7,
-					author: TRUSTED,
-					closes: [3],
-					comments: [
-						{ body: SPEC, author: TRUSTED, up: ["maint-a"] },
-						{ body: READY, author: TRUSTED, at: "2026-10-14T11:00:00Z" },
-					],
-				},
-			],
-		};
 		// the new decision is in the host data and not in the cache: the same tick alarms
-		hostOf("main", waiting);
+		hostOf("main", WAITING);
 		const first = startDesk();
 		expect(lines(first.out).filter((l) => l.startsWith("ALARM"))).toEqual([
 			`ALARM decision-waiting main#7 ${WAITS_WORK}`,
 		]);
 		// the pull request is merged: the host no longer lists it, and the cache holds it until the sync
 		seed((d) => d.run("DELETE FROM alarms"));
-		hostOf("main", { issues: waiting.issues });
+		hostOf("main", { issues: WAITING.issues });
 		expect(rows("SELECT work FROM pulls")).toEqual([{ work: "ready" }]);
 		const second = startDesk(later(1));
 		expect(second.out).not.toContain("decision-waiting");
@@ -557,9 +559,9 @@ describe("the self steps", () => {
 		expect(dispatches()).toEqual([]);
 	});
 
-	test("a start that stops on self lines prints no alarm, the continuation prints them", () => {
+	test("a start that stops on self lines prints the journal alarms, the continuation the host alarms and not those again", () => {
 		setUp({ main: 1 });
-		hostOf("main", WORK);
+		hostOf("main", WAITING);
 		without("main", "issues", "pulls");
 		// a tick with no end record while a later tick of its role exists
 		seed((d) => {
@@ -567,14 +569,15 @@ describe("the self steps", () => {
 			d.run("INSERT INTO ticks (role, started_at) VALUES ('court', ?)", [BASE]);
 		});
 		const first = startDesk(later(3));
-		expect(first.out).not.toContain("ALARM");
-		seed((d) =>
-			d.run("INSERT INTO ticks (role, started_at) VALUES ('clerk', ?)", [BASE]),
-		);
-		syncBy("main", WORK, later(3));
-		syncBy("main", WORK, later(3), true);
+		expect(lines(first.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+			`ALARM tick-hung 1 court started ${BASE}`,
+		]);
+		syncBy("main", WAITING, later(3));
+		syncBy("main", WAITING, later(3), true);
 		const r = proceed(3, later(3));
-		expect(lines(r.out)[1]).toBe(`ALARM tick-hung 1 court started ${BASE}`);
+		expect(lines(r.out).filter((l) => l.startsWith("ALARM"))).toEqual([
+			`ALARM decision-waiting main#7 ${WAITS_WORK}`,
+		]);
 		expect(lines(r.out)).toContain("ended ordered");
 	});
 });
