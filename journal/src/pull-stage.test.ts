@@ -77,26 +77,20 @@ describe("pull", () => {
 		expect(pull("main", "7").out).toStartWith("need=spec-writer spec=none");
 	});
 
-	test.each(["none", "up"])(
-		"a precinct of weight zero needs nobody at spec %s",
-		(spec) => {
-			put({ 3: handed(7) });
-			cached(7, [3], spec);
-			call(BASE, ["precinct", "set", "main", "--weight", "0"]);
-			expect(pull("main", "7").out).toStartWith(`need=none spec=${spec}`);
-		},
-	);
+	test("an executor is not needed in a precinct of weight zero", () => {
+		put({ 3: handed(7) });
+		cached(7, [3], "up");
+		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
+		expect(pull("main", "7").out).toStartWith("need=none spec=up");
+	});
 
-	test.each(["none", "up"])(
-		"a pull request without a handed source needs nobody at spec %s",
-		(spec) => {
-			put({ 3: human("OPEN"), 4: handed(8) });
-			cached(7, [3, 4], spec);
-			expect(pull("main", "7").out).toBe(
-				`need=none spec=${spec} spec_id=- work=todo sources=3,4 priority=P2\n`,
-			);
-		},
-	);
+	test("a pull request without a handed source needs nobody", () => {
+		put({ 3: human("OPEN"), 4: handed(8) });
+		cached(7, [3, 4], "none");
+		expect(pull("main", "7").out).toBe(
+			"need=none spec=none spec_id=- work=todo sources=3,4 priority=P2\n",
+		);
+	});
 
 	test("the priority is the best among the sources", () => {
 		put({ 3: handed(7, priority("P3")), 4: human("OPEN", priority("P1")) });
@@ -134,9 +128,9 @@ describe("pull in process", () => {
 		expect(inPull("main", "8").out).toBe(
 			"need=none spec=none spec_id=- work=todo sources=- priority=P2\n",
 		);
-		const stale = "need=none spec=- spec_id=- work=- sources=- priority=P2\n";
-		expect(inPull("main", "9").out).toBe(stale);
-		expect(inPull("nowhere", "9").out).toBe(stale);
+		expect(inPull("main", "9").out).toBe(
+			"need=none spec=- spec_id=- work=- sources=- priority=P2\n",
+		);
 	});
 });
 

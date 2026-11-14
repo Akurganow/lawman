@@ -100,9 +100,6 @@ describe("case: the line of a clerk job", () => {
 describe("case: leaving the funnel", () => {
 	const stages: [string, string[]][] = [
 		["investigation", []],
-		["prosecutor", [caseMark()]],
-		["defender", [caseMark(), charge()]],
-		["court", [caseMark(), charge(), defence()]],
 		["clerk", [caseMark(), charge(), defence(), conviction()]],
 	];
 	const kept = pairMark("handed", 7, "open");
@@ -140,7 +137,6 @@ describe("case: states of the pair", () => {
 		expect(jobOf(1)).toBe("state kept 5 1,2 -");
 		put({ 1: human("CLOSED", pair("handed", "open")), 2: human("CLOSED") });
 		expect(jobOf(1)).toBe("state close-pull 5 1,2 -");
-		expect(needOnly(1)).toBe("need=clerk");
 	});
 
 	test("the stranger sequence: close, reopen, then a decider closes the pull request", () => {

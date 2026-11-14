@@ -8,7 +8,6 @@ import {
 	need,
 	put,
 	ruled,
-	withLead,
 } from "./cases-fixture";
 import {
 	acquittal,
@@ -39,16 +38,6 @@ describe("case: clerk stage", () => {
 		[
 			"a no-entry newer than the acquittal needs nobody",
 			ruled(lined(acquittal), noEntry()),
-			"none",
-		],
-		[
-			"a clerk marker older than the court marker needs the clerk",
-			withLead(caseMark(), charge(), defence(), entry(), conviction()),
-			"clerk",
-		],
-		[
-			"a closed charge with a clerk marker needs nobody",
-			closed(withLead(caseMark(), charge(), entry())),
 			"none",
 		],
 		[

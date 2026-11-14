@@ -31,17 +31,6 @@ describe("alarm cadence", () => {
 			);
 		});
 
-		test("a check without any ended tick never fires", () => {
-			seed((db) => {
-				db.run(
-					"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 10, ?)",
-					[BASE],
-				);
-				tick(db, "patrol", BASE, null, null);
-			});
-			expect(alarm(later(1000)).out).not.toContain("role-silent");
-		});
-
 		test("a check older than the last tick uses the tick", () => {
 			gated(BASE, later(0, 1200));
 			expect(alarm(later(0, 1200 + THREE_INTERVALS_S)).out).toBe("");

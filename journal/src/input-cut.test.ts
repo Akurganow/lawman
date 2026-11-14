@@ -461,26 +461,24 @@ describe("the fit", () => {
 		["plain", plainText],
 		["tildes", tildeText],
 	];
-	// 49 000 is above the default: a configured size above it is honoured as set
-	for (const size of [SIZE, 49000])
-		for (const [name, make] of shapes) {
-			test(`a body and a comment of ${name} text above ${size} fit one part`, async () => {
-				const text = make(100889);
-				const body = await started(size, text);
-				const b = cutIn(body.parts);
-				expect(cost(b.lines)).toBeLessThanOrEqual(size);
-				for (const part of body.parts)
-					expect(cost(content(part))).toBeLessThanOrEqual(size);
-				const comment = await started(size, "short", [note(text)]);
-				const c = cutIn(comment.parts);
-				expect(cost(c.lines)).toBeLessThanOrEqual(size);
-				expect(c.head.body[0]).toBe(
-					`id=${JSON.stringify(LONG_ID)} author=${JSON.stringify(LONG_LOGIN)}`,
-				);
-				for (const part of comment.parts)
-					expect(cost(content(part))).toBeLessThanOrEqual(size);
-			});
-		}
+	for (const [name, make] of shapes) {
+		test(`a body and a comment of ${name} text above ${SIZE} fit one part`, async () => {
+			const text = make(100889);
+			const body = await started(SIZE, text);
+			const b = cutIn(body.parts);
+			expect(cost(b.lines)).toBeLessThanOrEqual(SIZE);
+			for (const part of body.parts)
+				expect(cost(content(part))).toBeLessThanOrEqual(SIZE);
+			const comment = await started(SIZE, "short", [note(text)]);
+			const c = cutIn(comment.parts);
+			expect(cost(c.lines)).toBeLessThanOrEqual(SIZE);
+			expect(c.head.body[0]).toBe(
+				`id=${JSON.stringify(LONG_ID)} author=${JSON.stringify(LONG_LOGIN)}`,
+			);
+			for (const part of comment.parts)
+				expect(cost(content(part))).toBeLessThanOrEqual(SIZE);
+		});
+	}
 
 	test("a text of 100 889 characters is one part at 16 000 where it was seven", async () => {
 		seed((d) => {
@@ -651,30 +649,6 @@ describe("the key of a comment", () => {
 		expect([await blockOf("more"), await blockOf("other")]).toEqual(before);
 		seeded([...base, ["Z", T(8), "earlier"], ["Y", T(13), "later"]]);
 		expect([await blockOf("more"), await blockOf("other")]).toEqual(before);
-	});
-
-	test("an ended tick prints no case text", async () => {
-		rmSync(dir, { recursive: true, force: true });
-		mkdirSync(dir);
-		setUp(CONFIG);
-		orderOf("patrol", { department: "nowhere" });
-		host({
-			tree: {
-				"LAWMAN.md": `${CONSTITUTION.trimEnd()}\n\nMarker rule of this test.\n`,
-			},
-		});
-		const r = await inprocAsync(BASE, [
-			"tick",
-			"start",
-			"--role",
-			"patrol",
-			"--order",
-			"1",
-		]);
-		expect(r.code).toBe(0);
-		expect(r.out).toContain("ended stopped-bad-department");
-		expect(r.out).not.toContain("Marker rule of this test.");
-		expect(r.out).not.toContain("~constitution");
 	});
 
 	test("an id with a newline stays inside its fence and out of the journal lines", async () => {

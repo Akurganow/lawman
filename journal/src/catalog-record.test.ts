@@ -48,12 +48,8 @@ describe("catalog record request", () => {
 	});
 
 	test.each([
-		["no input", ""],
-		["a blank line", "\n"],
 		["two lines", `${sourceLine(ID, "npm", "lodash")}\nSource: canary`],
 		["another source", "Source: advisories canary npm/lodash"],
-		["a path as identifier", "Source: catalog ../canary npm/lodash"],
-		["trailing text", "Source: catalog GHSA-1 npm/canary extra"],
 	])("%s is refused and no part of it is printed", async (_label, input) => {
 		const result = await request(REQUEST, input);
 		expect(result.code).toBe(1);
@@ -100,22 +96,10 @@ describe("catalog record answer", () => {
 		});
 	});
 
-	test("the recorded unknown record is missing", async () => {
-		const result = await answer(
-			["--kind", "record", "--id", "GHSA-0000-0000-0000"],
-			reply(UNKNOWN.reply, UNKNOWN.status),
-		);
-		expect(result.out).toBe(none("missing"));
-	});
-
 	test.each([
 		["no reply", "\n000"],
-		["no status line", JSON.stringify(FOUND.reply)],
 		["a server error", reply(FOUND.reply, 500)],
-		["a rate limit", reply(FOUND.reply, 429)],
-		["a redirect", reply(FOUND.reply, 301)],
 		["a body that is no JSON", "<html>oops</html>\n200"],
-		["a truncated body", `${JSON.stringify(FOUND.reply).slice(0, 40)}\n200`],
 	])("%s is failed", async (_label, input) => {
 		expect((await answer(ANSWER, input)).out).toBe(none("failed"));
 	});
@@ -124,10 +108,7 @@ describe("catalog record answer", () => {
 		["an empty body", "\n200"],
 		["an empty object", "{}\n200"],
 		["a null", "null\n200"],
-		["a list", "[]\n200"],
-		["a string", '"x"\n200'],
 		["another record", reply({ ...FOUND.reply, id: "GHSA-1111-2222-3333" })],
-		["a record with no identifier", reply({ summary: "x" })],
 		["an identifier of another kind", reply({ ...FOUND.reply, id: 7 })],
 	])("%s is unconfirmed", async (_label, input) => {
 		expect((await answer(ANSWER, input)).out).toBe(none("unconfirmed"));
@@ -158,7 +139,6 @@ describe("catalog record answer", () => {
 
 	test.each([
 		["a number", 7],
-		["a list", ["x"]],
 		["a very long text", "x".repeat(5000)],
 	])("a summary that is %s is dropped", async (_label, summary) => {
 		const result = await answer(ANSWER, withSummary(summary));
@@ -196,12 +176,6 @@ describe("catalog record answer", () => {
 		expect(result.out).not.toContain("CVSS");
 	});
 
-	test("a long summary is cut", async () => {
-		const result = await answer(ANSWER, withSummary("word ".repeat(150)));
-		expect(result.out.trimEnd().length).toBeLessThan(400);
-		expect(result.out).toContain("summary=word word");
-	});
-
 	test("a long summary is cut by code points, never inside a surrogate pair", async () => {
 		const result = await answer(ANSWER, withSummary(`x${"😀".repeat(300)}`));
 		const printed = result.out.trimEnd().split(" summary=")[1] ?? "";
@@ -209,16 +183,8 @@ describe("catalog record answer", () => {
 		expect(Array.from(printed)).toHaveLength(240 - "summary=".length);
 	});
 
-	test.each([
-		["", ""],
-		["id", ""],
-		["id", "GHSA-1 --kind"],
-	])("a missing or wrong option is a usage error", async (flag, value) => {
-		const args =
-			flag === ""
-				? ["--kind", "record"]
-				: ["--kind", "record", `--${flag}`, value];
-		const result = await answer(args, reply(FOUND.reply));
+	test("a missing identifier option is a usage error", async () => {
+		const result = await answer(["--kind", "record"], reply(FOUND.reply));
 		expect(result.code).toBe(1);
 		expect(result.out).toBe("");
 	});

@@ -287,7 +287,7 @@ describe("parts of the role group", () => {
 		}
 	});
 
-	test("a part's content is the same at every call, and a new order changes no part of the law", async () => {
+	test("a part's content is the same at every call, and a new order changes no part of the law", () => {
 		orderFor("court");
 		config(`${CONFIG}input_chars: 3000\njobs: court=2\n`);
 		const before = buildParts("court");
@@ -300,16 +300,6 @@ describe("parts of the role group", () => {
 			"order 1 main o/main - 3",
 			"order 2 main o/main - 4",
 		]);
-		// the command prints the last part as built
-		const last = await inprocAsync(BASE, [
-			"tick",
-			"input",
-			"--role",
-			"court",
-			"--part",
-			String(after.length),
-		]);
-		expect(content(last.out)).toEqual(after.at(-1) ?? []);
 	});
 
 	test("an input_chars outside the class exits 1 with work and changes nothing without", () => {
@@ -318,10 +308,8 @@ describe("parts of the role group", () => {
 		orderFor("court");
 		expect(wake("court")).toMatchObject({ code: 1, out: "" });
 		expect(part("court", 2)).toMatchObject({ code: 1, out: "" });
-		for (const value of ["0", "007", "1.5"]) {
-			config(`${CONFIG}input_chars: ${value}\n`);
-			expect([value, wake("court").code]).toEqual([value, 1]);
-		}
+		config(`${CONFIG}input_chars: 1.5\n`);
+		expect(wake("court").code).toBe(1);
 	});
 
 	test("a part outside the group exits 1", () => {

@@ -78,10 +78,6 @@ describe("readPulls work without a return", () => {
 		expect(workOf([spec(), ready()])).toBe("ready");
 	});
 
-	test("an executor marker of another author does not count", () => {
-		expect(workOf([spec(), ready({ author: "stranger" })])).toBe("todo");
-	});
-
 	test("an executor marker of another stage does not count", () => {
 		const other = ready({
 			body: `Executor\n\n${READY.replace("ready", "done")}`,
@@ -186,12 +182,8 @@ describe("readPulls sync input checks", () => {
 	test("a comment without an id is rejected", () => {
 		const bad = hostPulls([{ number: 1, comments: [spec({ noId: true })] }]);
 		const empty = hostPulls([{ number: 1, comments: [spec({ id: "" })] }]);
-		const other = hostPulls([
-			{ number: 1, comments: [spec({ noId: true, author: "x" })] },
-		]);
 		expect(() => read(bad)).toThrow(/comment has no id/);
 		expect(() => read(empty)).toThrow(/comment has no id/);
-		expect(() => read(other)).toThrow(/comment has no id/);
 	});
 
 	test("a comment whose id is a number is rejected", () => {

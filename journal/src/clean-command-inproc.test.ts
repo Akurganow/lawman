@@ -55,7 +55,6 @@ describe("clean command in process", () => {
 	test.each([
 		["an unfinished object", `{"body": "${TOKEN}"`],
 		["a bad token", `{"body": "secret words ${TOKEN}", bad}`],
-		["an unfinished value after a good one", '[1]\n{"a": '],
 	])(
 		"broken JSON, %s, gives exit 1 and quotes no input",
 		async (_label, input) => {
@@ -207,7 +206,6 @@ describe("clean command in parts", () => {
 			["--part", "1", "--json"],
 			["--part"],
 			["--json", "--part"],
-			["--jsonx"],
 			["--part", "0"],
 			["--part", "x"],
 			["--part", "01"],

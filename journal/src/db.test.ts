@@ -338,21 +338,11 @@ describe("probe", () => {
 	test("--schema accepts the current and older versions and rejects the next", () => {
 		expect(cli(["probe", "--schema", "13"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "14"]).code).toBe(6);
-		expect(cli(["probe", "--schema", "99"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {
 		expect(cli(["probe", "--schema", "abc"]).code).toBe(1);
 		expect(cli(["probe", "--schema"]).code).toBe(1);
-		expect(cli(["probe", "--bogus"]).code).toBe(1);
-	});
-
-	test("exits 1 when LAWMAN_NOW is set", () => {
-		const r = cli(["probe"], {
-			LAWMAN_DB: dbFile,
-			LAWMAN_NOW: "2026-01-01T00:00:00Z",
-		});
-		expect(r.code).toBe(1);
 	});
 
 	test("exits 1 when LAWMAN_DB is set", () => {

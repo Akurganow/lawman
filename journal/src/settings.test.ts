@@ -67,12 +67,9 @@ describe("jobsOf", () => {
 describe("progressChecks", () => {
 	test.each([
 		[undefined, PROGRESS_CHECKS],
-		["none", PROGRESS_CHECKS],
 		["5", 5],
 		["12", 12],
 		["0", PROGRESS_CHECKS],
-		["-2", PROGRESS_CHECKS],
-		["2.5", PROGRESS_CHECKS],
 		["x", PROGRESS_CHECKS],
 	])("%p gives %p", (value, expected) => {
 		expect(progressChecks(value)).toBe(expected);

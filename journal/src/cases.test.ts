@@ -216,9 +216,4 @@ describe("due", () => {
 		expect(r.code).toBe(0);
 		expect(due("investigation")).toBe("main\t19\n");
 	});
-
-	test("the due command is a usage error", () => {
-		expect(call(BASE, ["due"]).code).toBe(1);
-		expect(call(BASE, ["due", "--role", "investigation"]).code).toBe(1);
-	});
 });

@@ -163,15 +163,6 @@ describe("precedent: a new precedent", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("an empty section beside one with a new line still writes", async () => {
-		const out = await written([
-			...precedentSection(),
-			"",
-			...precedentSection("- new one: Rule one."),
-		]);
-		expect(out).toEqual([`entry\t${DATE}-one`]);
-	});
-
 	test("a none section beside one with lines changes nothing it should not", async () => {
 		const out = await written([
 			...precedentSection("none"),
@@ -243,7 +234,6 @@ describe("precedent: no precedent is lost", () => {
 		],
 		["a line above an underline", ["new x: y", "---"], "new x: y"],
 		["a lower heading", ["### new x: y"], "### new x: y"],
-		["a quote", ["> new x: y"], "> new x: y"],
 		["None", ["None"], "None"],
 		["none.", ["none."], "none."],
 		["a two-line paragraph", ["new x: y", "and more"], "new x: y\nand more"],

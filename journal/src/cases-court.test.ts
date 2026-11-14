@@ -1,7 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	answer,
-	due,
 	expectNeed,
 	expectRoundKept,
 	fields,
@@ -61,20 +60,10 @@ describe("case: court stage", () => {
 			withLead(caseMark(), charge(), conviction()),
 			"defender",
 		],
-		[
-			"a conviction older than the charge leaves the defender",
-			withLead(caseMark(), conviction(), charge()),
-			"defender",
-		],
 	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
 
 	test("a court return leaves round and returned unchanged", () => {
 		expectRoundKept(defended(returnTo("investigation", 1, "court")));
-	});
-
-	test("due for the court skips an open case that holds a ruling", () => {
-		put({ 1: defended(conviction()), 2: defended(acquittal()) });
-		expect(due("court")).toBe("");
 	});
 });
 

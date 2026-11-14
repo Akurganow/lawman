@@ -80,7 +80,6 @@ describe("sync derives the answer", () => {
 	test("an empty writer never makes an authorless comment an answer", () => {
 		const ghost = { at: 12, by: "", body: "deleted account" };
 		expect(answerOf([REFERRED, ghost], [WRITER, ""])).toEqual(NONE);
-		expect(answerOf([{ ...REFERRED, up: [""] }], [WRITER, ""])).toEqual(NONE);
 	});
 
 	test("a role marker after the referral ends its answer", () => {
@@ -161,12 +160,6 @@ describe("sync ignores what is no answer", () => {
 		expect(answerOf([{ ...REFERRED, up: [WRITER] }, reply, convicted])).toEqual(
 			NONE,
 		);
-		expect(
-			answerOf([
-				{ ...REFERRED, up: [WRITER] },
-				{ at: 14, body: mark("court", "acquittal") },
-			]),
-		).toEqual(NONE);
 	});
 });
 

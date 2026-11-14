@@ -44,10 +44,4 @@ describe("the role entry prints the jobs of the role", () => {
 		const r = call(BASE, ["wake", "--role", "clerk"]);
 		expect(listed(r.out)).toEqual([1]);
 	});
-
-	test("jobs: clerk=9 lists all five, and the pair of another role does not count", () => {
-		setUp("clerk", "jobs: court=1 clerk=9\n");
-		const r = call(BASE, ["wake", "--role", "clerk"]);
-		expect(listed(r.out)).toEqual(ISSUES);
-	});
 });

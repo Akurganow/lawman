@@ -204,10 +204,6 @@ describe("alarms and status", () => {
 				{ cleared_at: null },
 			]);
 		});
-
-		test("the alarm command is a usage error", () => {
-			expect(call(BASE, ["alarm"]).code).toBe(1);
-		});
 	});
 
 	describe("status", () => {

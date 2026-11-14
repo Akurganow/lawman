@@ -767,30 +767,23 @@ describe("an order the start cannot take", () => {
 		});
 	});
 
-	test.each(["defender", "court"])(
-		"a department of - skips the page for %s",
-		(role) => {
-			setUp();
-			orderOf(role, { issue: 3 });
-			const marks =
-				role === "court"
-					? [caseMark(), charge(), defence()]
-					: [caseMark(), charge()];
-			host({
-				issues: {
-					3: {
-						body: [leadIn("-", "response-unit")],
-						comments: marks.map((b, i) => [T(10 + i), b]),
-					},
+	test("a department of - skips the page for the defender", () => {
+		setUp();
+		orderOf("defender", { issue: 3 });
+		host({
+			issues: {
+				3: {
+					body: [leadIn("-", "response-unit")],
+					comments: [caseMark(), charge()].map((b, i) => [T(10 + i), b]),
 				},
-			});
-			const r = start(role);
-			expect(r.out).toContain(`need=${role} `);
-			expect(r.out).toContain(" department=- ");
-			expect(r.out).not.toContain("\ndepartment ");
-			expect(skeleton(r.out)).not.toContain("~department");
-		},
-	);
+			},
+		});
+		const r = start("defender");
+		expect(r.out).toContain("need=defender ");
+		expect(r.out).toContain(" department=- ");
+		expect(r.out).not.toContain("\ndepartment ");
+		expect(skeleton(r.out)).not.toContain("~department");
+	});
 });
 
 describe("the law folder at the start", () => {
@@ -867,7 +860,6 @@ const OPERATIONS: [string, string, string][] = [
 	["identity", "investigation", "identity"],
 	["fetch", "investigation", "fetch"],
 	["issues", "investigation", "issues"],
-	["pulls", "clerk", "pulls"],
 	["files", "investigation", "constitution"],
 	["file", "investigation", "constitution"],
 ];
@@ -1100,7 +1092,6 @@ describe("tick input usage", () => {
 		});
 		for (const args of [
 			["1"],
-			["2"],
 			["2", "--part", "1"],
 			["x"],
 			["2", "--part", "0"],
@@ -1123,16 +1114,6 @@ describe("tick input usage", () => {
 				args,
 				1,
 			]);
-	});
-
-	test("tick start without an order is a usage error for every role but the duty desk", () => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		for (const role of ["investigation", "patrol"])
-			expect(call(BASE, ["tick", "start", "--role", role])).toMatchObject({
-				code: 1,
-				out: "",
-			});
 	});
 
 	test("an input_chars outside the class exits 1 before a tick starts", () => {

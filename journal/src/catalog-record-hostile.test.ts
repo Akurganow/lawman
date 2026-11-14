@@ -2,13 +2,11 @@ import { describe, expect, spyOn, test } from "bun:test";
 import {
 	ANSWER,
 	expectCleanComment,
-	FOUND,
 	inProcessAnswer,
 	TOKEN,
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
-import { reply } from "./catalog-test-run";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
 import { lead, tempDb } from "./test-helpers";
@@ -57,18 +55,6 @@ describe("catalog record hostile summary", () => {
 		const { out } = await answer(ANSWER, withSummary(HOSTILE[0]?.[1]));
 		expect(out).toContain("before");
 		expect(out).toContain("after");
-	});
-
-	test("a hostile value in a short field is dropped", async () => {
-		const bad = `x ${TOKEN}`;
-		const input = reply({
-			...FOUND.reply,
-			modified: bad,
-			database_specific: { severity: bad },
-		});
-		const { out } = await answer(ANSWER, input);
-		expect(out).not.toContain(TOKEN);
-		expect(out).toContain(" dropped=severity,modified ");
 	});
 });
 

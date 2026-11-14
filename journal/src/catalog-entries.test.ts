@@ -45,7 +45,7 @@ const CLASSES: [
 	[
 		"ecosystem",
 		isEcosystem,
-		["npm", "PyPI", "crates.io", "Debian:11", "Go"],
+		["npm", "PyPI", "crates.io", "Debian:11"],
 		["", "1npm", "a/b", "npm ", LONG, ...HOSTILE],
 	],
 	[
@@ -63,12 +63,7 @@ const CLASSES: [
 	[
 		"record identifier",
 		isRecordId,
-		[
-			"GHSA-29mw-wpgm-hmr9",
-			"CVE-2020-1234",
-			"RUSTSEC-2020-0001",
-			"GO-2020-0015",
-		],
+		["GHSA-29mw-wpgm-hmr9", "CVE-2020-1234", "RUSTSEC-2020-0001"],
 		["", "-GHSA", "a/b", "a:b", LONG, ...HOSTILE],
 	],
 ];

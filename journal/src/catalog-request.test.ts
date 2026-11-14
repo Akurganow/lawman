@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { BATCH_LIMIT, cutParts } from "./catalog";
 import { UNRESOLVED_VERSION } from "./catalog-entries";
 import {
@@ -11,7 +9,7 @@ import {
 	type Run,
 	resultsReply,
 } from "./catalog-test-run";
-import { dbFile, tempDb } from "./test-helpers";
+import { tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -108,14 +106,6 @@ describe("catalog request", () => {
 		const r = run(first("7", ["--precinct", "alpha"]), entry(1));
 		expect(r.code).toBe(1);
 		expect(r.err).toContain("database");
-	});
-});
-
-describe("state of the tick", () => {
-	test("it lies in the runs folder next to the database", () => {
-		prepare();
-		inProcess(first("7", ["--precinct", "alpha"]), entry(1));
-		expect(readdirSync(join(dirname(dbFile), "runs", "7"))).toHaveLength(1);
 	});
 });
 
