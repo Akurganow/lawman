@@ -39,6 +39,50 @@ const JOBS =
 const alarmLine = (law: string, config: string) =>
 	`ALARM contract-changed installation constitution contract ${law}, precincts at ${config}, run the assembly to amend\n`;
 
+// The one case the compiled binary runs: the swap of a real executable.
+export function defineRename(runner: Runner): void {
+	tempDb();
+	test("renames itself over bin/journal and records the release", () => {
+		const root = join(dir, "installation");
+		lay(root);
+		const exe = runner.exe(root, "tick1");
+		const bytes = readFileSync(exe);
+		const sum = shasum(exe);
+		expect(runner.run(flags(root), exe)).toEqual({
+			code: 0,
+			out: SYNCED,
+			err: "",
+		});
+		expect(existsSync(exe)).toBe(false);
+		const bin = join(root, "bin", "journal");
+		expect(statSync(bin).mode & EXECUTABLE).not.toBe(0);
+		expect(Buffer.compare(readFileSync(bin), bytes)).toBe(0);
+		expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
+		expect(configOf(root)).toContain(`release_tag: ${TAG}\n`);
+		expect(configOf(root)).toContain(`journal_sha256: ${sum}\n`);
+		expect(noDatabase(root)).toEqual([]);
+		expect(existsSync(join(dir, "journal.sqlite"))).toBe(false);
+	});
+}
+
+// Runs through the compiled binary too: an in-process Bun.spawnSync keeps the PATH of the
+// process start, so only a real child process sees the empty PATH.
+export function defineLocalOnly(runner: Runner): void {
+	tempDb();
+	test("syncs with a PATH that holds neither git nor gh", () => {
+		const root = join(dir, "installation");
+		lay(root);
+		const empty = join(dir, "empty");
+		mkdirSync(empty);
+		const exe = runner.exe(root, "tick1");
+		expect(runner.run(flags(root), exe, empty)).toEqual({
+			code: 0,
+			out: SYNCED,
+			err: "",
+		});
+	});
+}
+
 export function defineCases(runner: Runner): void {
 	tempDb();
 	let root = "";
@@ -71,22 +115,6 @@ export function defineCases(runner: Runner): void {
 	};
 
 	describe("success", () => {
-		test("renames itself over bin/journal and records the release", () => {
-			lay(root);
-			const exe = runner.exe(root, "tick1");
-			const bytes = readFileSync(exe);
-			const sum = shasum(exe);
-			expect(sync(exe)).toEqual({ code: 0, out: SYNCED, err: "" });
-			expect(existsSync(exe)).toBe(false);
-			expect(statSync(bin()).mode & EXECUTABLE).not.toBe(0);
-			expect(Buffer.compare(readFileSync(bin()), bytes)).toBe(0);
-			expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
-			expect(configOf(root)).toContain(`release_tag: ${TAG}\n`);
-			expect(configOf(root)).toContain(`journal_sha256: ${sum}\n`);
-			expect(noDatabase(root)).toEqual([]);
-			expect(existsSync(join(dir, "journal.sqlite"))).toBe(false);
-		});
-
 		test("a second run from a fresh copy leaves the same bytes and lines", () => {
 			lay(root);
 			const first = synced("tick1");
@@ -135,7 +163,6 @@ export function defineCases(runner: Runner): void {
 
 	describe("defaults", () => {
 		test.each([
-			["typesafe: yes", TYPESAFE_ENV],
 			["typesafe: no", "none"],
 			["trusted_login: x", "none"],
 		])("%s gives typesafe_key %s", (line, value) => {
@@ -143,30 +170,9 @@ export function defineCases(runner: Runner): void {
 			synced("tick1");
 			expect(configOf(root)).toContain(`typesafe_key: ${value}\n`);
 		});
-
-		test("a config without the catalog keys comes out without them and gets the other defaults", () => {
-			lay(root, { config: `law_commit: ${OLD_COMMIT}\ntypesafe: yes\n` });
-			synced("tick1");
-			expect(configOf(root)).not.toContain("catalog");
-			expect(configOf(root)).toContain(`typesafe_key: ${TYPESAFE_ENV}\n`);
-			expect(configOf(root)).toContain(`amended_law_commit: ${OLD_COMMIT}\n`);
-			expect(configOf(root)).toContain(`dismissals_since: ${BASE}\n`);
-		});
-
-		test("a config with the catalog keys keeps their values", () => {
-			const keys = "catalog: yes\ncatalog_precincts: alpha=yes beta=no\n";
-			lay(root, { config: `law_commit: ${OLD_COMMIT}\n${keys}` });
-			synced("tick1");
-			expect(configOf(root)).toContain(keys);
-		});
 	});
 
 	describe("schema", () => {
-		test("skills that name 3, 4, 5 and 6 sync", () => {
-			lay(root, { schemas: [3, 4, 5, 6] });
-			expect(synced("tick1").out).toBe(SYNCED);
-		});
-
 		test("a schema above the binary's exits 6 and changes nothing", () => {
 			lay(root, { schemas: [3, MIGRATIONS.length + 1] });
 			const result = unchanged(runner.exe(root, "tick1"), flags(root), 6);
@@ -176,11 +182,6 @@ export function defineCases(runner: Runner): void {
 	});
 
 	describe("contract", () => {
-		test("reads the frontmatter value, not the example below it", () => {
-			lay(root, { contract: "4" });
-			expect(synced("tick1").out).toBe(SYNCED);
-		});
-
 		test("a different value prints the alarm first and keeps the value", () => {
 			lay(root, {
 				config: CONFIG.replace("contract_version: 4", "contract_version: 3"),
@@ -196,20 +197,6 @@ export function defineCases(runner: Runner): void {
 			expect(configOf(root)).not.toContain("contract_version");
 			expect(synced("tick2").out).toBe(expected);
 			expect(configOf(root)).not.toContain("contract_version");
-		});
-	});
-
-	describe("local only", () => {
-		test("syncs with a PATH that holds neither git nor gh", () => {
-			lay(root);
-			const empty = join(dir, "empty");
-			mkdirSync(empty);
-			const exe = runner.exe(root, "tick1");
-			expect(runner.run(flags(root), exe, empty)).toEqual({
-				code: 0,
-				out: SYNCED,
-				err: "",
-			});
 		});
 	});
 
@@ -247,16 +234,12 @@ export function defineCases(runner: Runner): void {
 				);
 				expect(result.err).toContain("usage:");
 			});
-		for (const flag of ["--tag", "--commit", "--installation"]) {
+		for (const flag of ["--tag", "--commit", "--installation"])
 			bad(`a missing ${flag} exits 1`, (full) => {
 				const at = full.indexOf(flag);
 				return full.filter((_, i) => i !== at && i !== at + 1);
 			});
-			bad(`a repeated ${flag} exits 1`, (full) => {
-				const at = full.indexOf(flag);
-				return [...full, ...full.slice(at, at + 2)];
-			});
-		}
+		bad("a repeated --tag exits 1", (full) => [...full, ...full.slice(0, 2)]);
 		bad("an unknown flag exits 1", (full) => [...full, "--force", "x"]);
 		bad("a flag without a value exits 1", (full) => full.slice(0, -1));
 

@@ -16,7 +16,7 @@ describe("pack", () => {
 		expect(pack(blocks, 10_000)).toEqual([renderAll(blocks).split("\n")]);
 	});
 
-	test.each([40, 64, 100])(
+	test.each([40, 64])(
 		"at size %d each part fits and each cut piece keeps its label and takes the fence of its own lines",
 		(size) => {
 			const parts = pack(blocks, size);

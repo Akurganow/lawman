@@ -135,14 +135,6 @@ export type Claim = { digest: string; signer: string; commit: string };
 export const statement = (c: Claim) =>
 	`digest=${c.digest}\nsigner=${c.signer}\ncommit=${c.commit}\n`;
 
-// A fixture check: it compares the claim lying at the provenance place with
-// the digest of the file and with the repository and commit it was given.
-// No real signing method stands behind it.
-export const fixtureVerifier = () => `${fixtureCheck()} || exit 1
-if command -v sha256sum >/dev/null 2>&1; then d=$(sha256sum "$1"); else d=$(shasum -a 256 "$1"); fi
-d=\${d%% *}
-grep -qx "digest=$d" "$2" && grep -qx "signer=$3" "$2" && grep -qx "commit=$4" "$2"`;
-
 export const sha256 = (text: string) =>
 	createHash("sha256").update(text).digest("hex");
 

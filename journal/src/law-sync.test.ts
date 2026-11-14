@@ -8,7 +8,7 @@ import {
 } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join } from "node:path";
-import { defineCases } from "./law-sync-test-cases";
+import { defineLocalOnly, defineRename } from "./law-sync-test-cases";
 import {
 	configOf,
 	flags,
@@ -56,7 +56,11 @@ const runner: Runner = {
 };
 
 describe("law-sync through the compiled binary", () => {
-	defineCases(runner);
+	defineRename(runner);
+});
+
+describe("law-sync through the compiled binary, local only", () => {
+	defineLocalOnly(runner);
 });
 
 describe("law-sync, CLI only", () => {

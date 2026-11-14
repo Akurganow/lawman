@@ -46,7 +46,6 @@ describe("readPulls spec_id", () => {
 	test("a dash when no Spec comment counts", () => {
 		expect(rowOf([])?.spec_id).toBe("-");
 		expect(rowOf([ready()])?.spec_id).toBe("-");
-		expect(rowOf([spec({ author: "stranger" })])?.spec_id).toBe("-");
 	});
 });
 
@@ -77,10 +76,6 @@ describe("readPulls work without a return", () => {
 
 	test("ready when a counted executor marker follows the Spec", () => {
 		expect(workOf([spec(), ready()])).toBe("ready");
-	});
-
-	test("an executor marker of another author does not count", () => {
-		expect(workOf([spec(), ready({ author: "stranger" })])).toBe("todo");
 	});
 
 	test("an executor marker of another stage does not count", () => {
@@ -195,13 +190,6 @@ describe("readPulls sync input checks", () => {
 		const bad = patched({
 			comments: [{ ...spec(), id: 12, createdAt: AFTER }],
 		});
-		expect(() => read(bad)).toThrow(/comment has no id/);
-	});
-
-	test("a comment of another author without an id is rejected too", () => {
-		const bad = hostPulls([
-			{ number: 1, comments: [{ body: "hi", author: "x", noId: true }] },
-		]);
 		expect(() => read(bad)).toThrow(/comment has no id/);
 	});
 

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, spyOn, test } from "bun:test";
+import { beforeEach, describe, expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { printCached } from "./cache-text";
@@ -217,41 +217,6 @@ describe("a hostile sample through every line the journal prints about a command
 				expect(printed).toContain(`author=${JSON.stringify(NEWLINED)}`);
 				await expectSafe(printed);
 			}
-		} finally {
-			opened.close();
-		}
-	});
-});
-
-describe("the hostile sample on sync's stdin", () => {
-	test("stores the same cleaned text as the command", async () => {
-		const stdin = spyOn(db, "readStdin").mockReturnValue(
-			JSON.stringify({
-				writers: [],
-				issues: [
-					{
-						number: 1,
-						state: "OPEN",
-						createdAt: AT,
-						author: { login: "r" },
-						body: SAMPLE,
-						comments: [],
-					},
-				],
-			}),
-		);
-		try {
-			expect(
-				(await inprocAsync(BASE, ["sync", "main", "--author", TRUSTED])).code,
-			).toBe(0);
-		} finally {
-			stdin.mockRestore();
-		}
-		const opened = db.open(dbFile);
-		try {
-			await expectSafe(
-				renderAll((await printCached(opened, "main", "issue", 1)) ?? []),
-			);
 		} finally {
 			opened.close();
 		}

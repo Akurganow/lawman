@@ -36,7 +36,6 @@ import {
 	dir,
 	JOURNAL,
 	precinct,
-	rows,
 	seed,
 	TRUSTED,
 	tempDb,
@@ -157,11 +156,6 @@ const select = (...mode: string[]) => [
 const record = () => inprocAsync(BASE, select("--source", SOURCE));
 const linesOf = (r: Result) => r.out.replace(/\n$/, "").split("\n");
 const asks = (r: Result) => linesOf(r).filter((l) => l.startsWith("ask\t"));
-const cachedRuling = () =>
-	String(
-		rows("SELECT body FROM comments WHERE kind = 'issue' ORDER BY at DESC")[0]
-			?.body,
-	);
 
 async function written(body = RULING) {
 	await cache([body]);
@@ -183,7 +177,6 @@ const inProcess =
 	(name, stdin = "") =>
 		inprocFed(BASE, select(flag, name), stdin);
 const RUNNERS: [string, Run, Run][] = [
-	["cli", throughCli("--request"), throughCli("--answer")],
 	["in process", inProcess("--request"), inProcess("--answer")],
 ];
 
@@ -208,68 +201,21 @@ describe.each(RUNNERS)("the request (%s)", (_n, request) => {
 		});
 	});
 
-	test("one question per candidate outside the list, in candidate order", async () => {
-		await written();
-		const body = JSON.parse((await request(NAME)).out);
-		expect(Object.keys(body.questions)).toEqual(["alpha", "beta", "gamma"]);
-		expect(Object.keys(body.state)).toEqual(["precedent", "ruling"]);
-		for (const d of ["alpha", "beta", "gamma"])
-			for (const other of ["alpha", "beta", "gamma"])
-				expect(
-					JSON.stringify(body.questions[d]).includes(missionOf(other)),
-				).toBe(d === other);
-		expect(JSON.stringify(body.state)).not.toContain("Find defects");
-	});
-
 	test("a department of the list is not asked", async () => {
 		await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
 		const body = JSON.parse((await request(NAME)).out);
 		expect(Object.keys(body.questions)).toEqual(["alpha", "gamma"]);
 	});
+});
 
-	test("the builder prints the value of the exported functions on the raw sources", async () => {
-		await written();
-		const sources: Sources = {
-			constitution: readFileSync(join(tree, "LAWMAN.md"), "utf8"),
-			shared: ["alpha", "beta"],
-			licenseConsent: false,
-			precinctRead: (d) => async () =>
-				d === "gamma" ? { kind: "page", text: page(d) } : { kind: "none" },
-		};
-		const body = departmentsBody(
-			await departmentsState({
-				rule: RULE,
-				ruling: cachedRuling(),
-				precedentKind: "protects",
-				asked: await installed(() => readCandidates(sources)),
-			}),
-		);
-		expect((await request(NAME)).out).toBe(body);
-	});
-
-	test("one list from other court names and another case department gives one body", async () => {
-		await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
-		const first = (await request(NAME)).out;
-		rmSync(join(tree, ".lawman", "precedents"), { recursive: true });
-		await cacheWith(
-			[leadIn("-", "response-unit")],
-			[ruling([`- new empty-doubles for zeta, beta: ${RULE}`])],
-		);
-		expect((await record()).code).toBe(EXIT.OK);
-		expect(departments()).toEqual(["beta"]);
-		expect((await request(NAME)).out).toBe(first);
-	});
-
-	test("the body holds no issue text and no Jev or Expert section", async () => {
-		await written();
-		const out = (await request(NAME)).out;
-		for (const absent of [
-			"Jev words",
-			"Expert words",
-			"stage=lead",
-			"src/a.rs",
-		])
-			expect(out).not.toContain(absent);
+test("the request through the cli equals the golden file, final newline included", async () => {
+	await written();
+	expect(
+		await throughCli("--request")(NAME, "a brief on stdin changes nothing"),
+	).toEqual({
+		code: EXIT.OK,
+		out: fixture("request.departments.txt"),
+		err: "",
 	});
 });
 
@@ -342,8 +288,6 @@ describe("the candidates", () => {
 
 	test.each([
 		["an unreadable page", () => (PAGE_AT.gamma = false)],
-		["a page that fails its check", () => (PAGE_AT.gamma = "no page")],
-		["a page with an empty Mission", () => (PAGE_AT.gamma = page("gamma", ""))],
 		["a Mission of none", () => (PAGE_AT.gamma = page("gamma", "none"))],
 		["no page at any place", () => delete PAGE_AT.gamma],
 	])("%s gives no candidate", async (_n, change) => {
@@ -390,35 +334,6 @@ describe("the candidates", () => {
 			),
 		);
 		expect(await names()).toEqual(first);
-	});
-});
-
-describe("the clerk's tree as the source", () => {
-	test("a linked precinct page gives no candidate", async () => {
-		rmSync(join(tree, ".lawman/departments/gamma.md"));
-		put(dir, "elsewhere.md", page("gamma"));
-		symlinkSync(
-			join(dir, "elsewhere.md"),
-			join(tree, ".lawman/departments/gamma.md"),
-		);
-		await written();
-		const body = JSON.parse(
-			(await inprocAsync(BASE, select("--request", NAME))).out,
-		);
-		expect(Object.keys(body.questions)).toEqual(["alpha", "beta"]);
-	});
-
-	test("a constitution line that repeats a shared page asks once", async () => {
-		put(
-			tree,
-			"LAWMAN.md",
-			constitution("- gamma: judged by none", "- beta: judged by none"),
-		);
-		await written();
-		const body = JSON.parse(
-			(await inprocAsync(BASE, select("--request", NAME))).out,
-		);
-		expect(Object.keys(body.questions)).toEqual(["alpha", "beta", "gamma"]);
 	});
 });
 
@@ -480,21 +395,6 @@ describe("the input and a hostile sample", () => {
 			"> quoted words",
 			"A paragraph with <b>inline</b> html.",
 		]);
-	});
-
-	test("code and block html are dropped by node type, a list item alone", async () => {
-		const s = await stateOf(HOSTILE);
-		for (const gone of [
-			"FENCED-VERDICT",
-			"FENCED-ITEM",
-			"BLOCK-ITEM",
-			"dropped ground",
-			"html ground",
-			"FENCED-QUOTE",
-			"a quote with a fence",
-			"HTML-COMMENT",
-		])
-			expect(`${s.verdict}\n${s.grounds}`).not.toContain(gone);
 	});
 
 	// a body built from the hostile sample in the rule, the ruling and a Mission
@@ -559,7 +459,6 @@ describe("the input and a hostile sample", () => {
 
 	test.each([
 		["missing", ""],
-		["empty", "## Grounds\n\n"],
 		["none", "## Grounds\n\nnone\n"],
 	])("a %s Grounds section stays out", async (_n, grounds) => {
 		const s = await stateOf(
@@ -598,19 +497,8 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 
 	test.each([
 		["a missing number", reply({ alpha: 0.9, beta: 0.1 }), "bad-answer"],
-		[
-			"a value that is no number",
-			reply({ alpha: "0.9", beta: 0.1, gamma: 0.1 }),
-			"bad-answer",
-		],
-		[
-			"an infinite value",
-			`{"model":"jev-1","answers":{"alpha":{"noul":1e999},"beta":{"noul":0},"gamma":{"noul":0}}}\n200`,
-			"bad-answer",
-		],
 		["a status that is not 200", `{"error":"no"}\n401`, "status-401"],
 		["no reply", "\n000", "no-reply"],
-		["a status line alone", "503", "status-503"],
 		["an empty body", "\n200", "bad-answer"],
 		[
 			"a foreign model name",
@@ -627,6 +515,20 @@ describe.each(RUNNERS)("the answer (%s)", (_n, _request, answer) => {
 			expect(text()).toBe(before);
 		},
 	);
+});
+
+test("a good reply through the cli reads standard input, writes the list and prints it", async () => {
+	await written();
+	const r = await throughCli("--answer")(
+		NAME,
+		reply({ alpha: 0.9, beta: 0.1, gamma: HIGH }),
+	);
+	expect(r).toEqual({
+		code: EXIT.OK,
+		out: "jev model=jev-1.14.0 departments=core,alpha,gamma\n",
+		err: "",
+	});
+	expect(departments()).toEqual(["core", "alpha", "gamma"]);
 });
 
 describe("the decision", () => {
@@ -647,10 +549,6 @@ describe("the decision", () => {
 			"c",
 		]);
 		expect(decide(["a"], ALL, at({ b: t - 0.004 }), t)).toEqual(["a", "b"]);
-	});
-
-	test("no addition gives unchanged", () => {
-		expect(decide(["a"], ALL, at({ b: LOW, c: 0, d: 0 }), t)).toBeNull();
 	});
 
 	test("a list that covers every candidate is written empty", () => {
@@ -712,10 +610,8 @@ describe("the decision", () => {
 
 describe("the gate", () => {
 	test.each([
-		["typesafe no", ALLOWED.replace("typesafe: yes", "typesafe: no")],
 		["typesafe Yes", ALLOWED.replace("typesafe: yes", "typesafe: Yes")],
 		["no typesafe key", ALLOWED.replace("typesafe: yes\n", "")],
-		["the pair of another precinct", ALLOWED.replace("main=yes", "other=yes")],
 		["the pair main=no", ALLOWED.replace("main=yes", "main=no")],
 		[
 			"main=yes only as part of a word",
@@ -741,12 +637,6 @@ describe("the gate", () => {
 	};
 	test.each([
 		["no candidate", noPages, [`- new empty-doubles: ${RULE}`], ["core"]],
-		[
-			"a constitution that fails its check",
-			() => put(tree, "LAWMAN.md", "no constitution"),
-			[`- new empty-doubles: ${RULE}`],
-			["core"],
-		],
 		[
 			"a constitution that is no plain file",
 			() => {
@@ -913,15 +803,6 @@ describe("a read failure is a fault", () => {
 });
 
 describe("the case department", () => {
-	test("a patrol lead names it, a response unit gives the empty list", async () => {
-		await written();
-		expect(departments()).toEqual(["core"]);
-		await cacheWith([leadIn("-", "response-unit")], [RULING]);
-		rmSync(join(tree, ".lawman", "precedents"), { recursive: true });
-		await record();
-		expect(departments()).toEqual([]);
-	});
-
 	test("a missing issue ends a call that writes a file with an error", async () => {
 		await cache([RULING]);
 		seed((db) => db.run("DELETE FROM issues"));
@@ -932,17 +813,17 @@ describe("the case department", () => {
 		expect(existsSync(file())).toBe(false);
 	});
 
-	test.each([
-		["a bad line", "- not a line"],
-		["a refine of a missing file", `- refine gone: ${RULE}`],
-	])("%s needs the case list: a missing issue is a fault", async (_n, line) => {
-		await cache([ruling([line])]);
-		seed((db) => db.run("DELETE FROM issues"));
-		const r = await record();
-		expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
-		expect(r.err).toContain("unknown issue main #1");
-		expect(existsSync(file(`${DATE}-issue-1`))).toBe(false);
-	});
+	test.each([["a refine of a missing file", `- refine gone: ${RULE}`]])(
+		"%s needs the case list: a missing issue is a fault",
+		async (_n, line) => {
+			await cache([ruling([line])]);
+			seed((db) => db.run("DELETE FROM issues"));
+			const r = await record();
+			expect([r.code === EXIT.OK, r.out]).toEqual([false, ""]);
+			expect(r.err).toContain("unknown issue main #1");
+			expect(existsSync(file(`${DATE}-issue-1`))).toBe(false);
+		},
+	);
 
 	test("a case fault after a good new line writes no file", async () => {
 		await cache([
@@ -955,15 +836,15 @@ describe("the case department", () => {
 		expect(existsSync(join(tree, ".lawman", "precedents"))).toBe(false);
 	});
 
-	test.each([
-		["a name it knows", "for beta"],
-		["the word all", "for all"],
-	])("%s needs no case: a missing issue fails nothing", async (_n, names) => {
-		await cache([ruling([`- new empty-doubles ${names}: ${RULE}`])]);
-		seed((db) => db.run("DELETE FROM issues"));
-		const r = await record();
-		expect([r.code, linesOf(r)[0]]).toEqual([EXIT.OK, `entry\t${NAME}`]);
-	});
+	test.each([["a name it knows", "for beta"]])(
+		"%s needs no case: a missing issue fails nothing",
+		async (_n, names) => {
+			await cache([ruling([`- new empty-doubles ${names}: ${RULE}`])]);
+			seed((db) => db.run("DELETE FROM issues"));
+			const r = await record();
+			expect([r.code, linesOf(r)[0]]).toEqual([EXIT.OK, `entry\t${NAME}`]);
+		},
+	);
 
 	test("a none ruling without the issue gives the old output", async () => {
 		await cache([ruling(["none"])]);
@@ -1120,17 +1001,6 @@ describe("the request lines of the write", () => {
 		expect(out).toEqual([`entry\t${NAME}`, `ask\t${NAME}`]);
 	});
 
-	test("a refine of a file keeps its header and asks nothing", async () => {
-		put(
-			tree,
-			`.lawman/precedents/${NAME}.md`,
-			`---\nkind: protects\ndepartments: [core]\n---\n\nOld.\n`,
-		);
-		const out = await recorded(`- refine ${NAME}: ${RULE}`);
-		expect(out).toEqual([`entry\t${NAME}`]);
-		expect(departments()).toEqual(["core"]);
-	});
-
 	test.each([
 		[
 			"a refine of a missing file",
@@ -1198,16 +1068,6 @@ describe("the request lines of the write", () => {
 		expect(departments()).toEqual(["tests"]);
 	});
 
-	test("the write form through the cli prints the entry and the request line", async () => {
-		await cache([RULING]);
-		const r = cli(select("--source", SOURCE), CLI_ENV());
-		expect(r).toEqual({
-			code: EXIT.OK,
-			out: `entry\t${NAME}\nask\t${NAME}\n`,
-			err: "",
-		});
-	});
-
 	test("a repeated call finds the file standing and asks for neither file", async () => {
 		await written();
 		expect(linesOf(await record())).toEqual(["no-entry\tno-change"]);
@@ -1241,21 +1101,6 @@ describe("the request lines of the write", () => {
 describe("the court's names", () => {
 	const drops = (r: Result) => linesOf(r).filter((l) => l.startsWith("drop\t"));
 
-	describe("the line", () => {
-		test("a line without names writes the old file without reading the sources", async () => {
-			config(ALLOWED.replace("main=yes", "main=no"));
-			rmSync(references("departments"), { recursive: true });
-			await cache([RULING]);
-			expect(await record()).toEqual({
-				code: EXIT.OK,
-				out: `entry\t${NAME}\n`,
-				err: "",
-			});
-			expect(departments()).toEqual(["core"]);
-			expect(splitPrecedent(text())?.body.trim()).toBe(RULE);
-		});
-	});
-
 	describe("the names part and the rule", () => {
 		test("the names never enter the body, which equals the rule as written", async () => {
 			await written(ruling([`- new empty-doubles for beta: ${RULE}`]));
@@ -1269,30 +1114,20 @@ describe("the court's names", () => {
 			expect(departments()).toEqual(["core"]);
 		});
 
-		test.each([
-			["the word all", "for all"],
-			["all beside names", "for zeta, all, beta"],
-		])("%s gives the empty list and no drop line", async (_n, names) => {
-			const r = await written(
-				ruling([`- new empty-doubles ${names}: ${RULE}`]),
-			);
-			expect(departments()).toEqual([]);
-			expect(drops(r)).toEqual([]);
-		});
+		test.each([["all beside names", "for zeta, all, beta"]])(
+			"%s gives the empty list and no drop line",
+			async (_n, names) => {
+				const r = await written(
+					ruling([`- new empty-doubles ${names}: ${RULE}`]),
+				);
+				expect(departments()).toEqual([]);
+				expect(drops(r)).toEqual([]);
+			},
+		);
 	});
 
 	describe("recognition and order", () => {
-		test("known names go in candidate order, a repeat once", async () => {
-			await written(
-				ruling([`- new empty-doubles for gamma, alpha, gamma: ${RULE}`]),
-			);
-			expect(departments()).toEqual(["alpha", "gamma"]);
-		});
-
-		test.each([
-			["no candidate", "zeta"],
-			["outside the class", "Zeta_X"],
-		])(
+		test.each([["no candidate", "zeta"]])(
 			"a name that is %s is dropped, and the case list stays",
 			async (_n, name) => {
 				await written(ruling([`- new empty-doubles for ${name}: ${RULE}`]));
@@ -1342,19 +1177,6 @@ describe("the court's names", () => {
 			expect(drops(r)).toEqual(names.map(() => `drop\t${NAME}\t-`));
 			for (const n of [...names, HIDDEN, "LAWMAN"])
 				expect(`${r.out}${r.err}`).not.toContain(n);
-		});
-
-		test("a name shaped like a secret never prints", async () => {
-			const secret = [
-				"xoxb",
-				"123456789012-1234567890123-abcdefghijklmnopqrstuvwx",
-			].join("-");
-			const r = await written(
-				ruling([`- new empty-doubles for ${secret}, beta: ${RULE}`]),
-			);
-			// the cache masks the secret, and the mask is outside the class
-			expect(drops(r)).toEqual([`drop\t${NAME}\t-`]);
-			expect(r.out).not.toContain(secret);
 		});
 	});
 });

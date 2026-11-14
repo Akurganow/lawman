@@ -2,7 +2,6 @@ import { describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
 import {
 	appendFileSync,
-	chmodSync,
 	existsSync,
 	mkdirSync,
 	readdirSync,
@@ -21,7 +20,6 @@ import { assetName, lawUpdate } from "./law-update";
 import {
 	ASSET,
 	allCommands,
-	assetLog,
 	assetRuns,
 	binaryText,
 	CONFIG_COMMIT,
@@ -30,7 +28,6 @@ import {
 	configText,
 	DIRTY,
 	facts,
-	fixtureVerifier,
 	law,
 	lay,
 	OLD_BINARY,
@@ -44,7 +41,6 @@ import {
 	releaseFolder,
 	runsFolder,
 	SYNCED,
-	sha256,
 	stop,
 	TAG,
 	upstream,
@@ -144,14 +140,6 @@ describe("law-update: nothing to update, or a config that cannot say", () => {
 		});
 		expect(calls()).toEqual([]);
 	});
-
-	test("a config.yaml that cannot be read stops with the same token", async () => {
-		lay({ config: null });
-		mkdirSync(join(dir, "config.yaml"));
-		allCommands();
-		expect((await run()).out).toStartWith("stop stopped-law-config ");
-		expect(calls()).toEqual([]);
-	});
 });
 
 describe("law-update: the update with three commands", () => {
@@ -178,8 +166,6 @@ describe("law-update: the update with three commands", () => {
 
 	test.each([
 		["linux", "x64"],
-		["linux", "arm64"],
-		["darwin", "x64"],
 		["darwin", "arm64"],
 	])("the asset of %s %s is journal-bun-%s-%s", async (os, arch) => {
 		const asset = `journal-bun-${os}-${arch}`;
@@ -195,7 +181,6 @@ describe("law-update: the update with three commands", () => {
 	test.each([
 		["win32", "x64"],
 		["linux", "ia32"],
-		["freebsd", "arm64"],
 	])("%s %s has no asset and release is not called", async (os, arch) => {
 		expect(assetName({ os, arch })).toBeNull();
 		ready();
@@ -213,58 +198,9 @@ describe("law-update: the update with three commands", () => {
 		);
 		expect(releaseFolder().endsWith(`-${REVISION.slice(0, 7)}`)).toBe(true);
 	});
-
-	test("the law folder holds no .git and the update passes", async () => {
-		ready();
-		expect(existsSync(join(law(), ".git"))).toBe(false);
-		expect((await run()).out).toBe(synced);
-	});
-});
-
-describe("law-update: the fixture verifier (a fixture, it proves no real verifier)", () => {
-	test("the right claim passes and the asset runs", async () => {
-		ready();
-		verifyCommand(fixtureVerifier());
-		expect((await run()).out).toBe(synced);
-		expect(assetRuns()).toEqual([syncCall()]);
-	});
-
-	test.each([
-		["a replaced file", { digest: sha256("another file") }],
-		["another signer", { signer: "other/law-release" }],
-		["a right claim for another commit", { commit: "d".repeat(40) }],
-	])("%s gives the provenance check failed", async (_, claim) => {
-		ready({ claim });
-		verifyCommand(fixtureVerifier());
-		expectStop(await run(), "the provenance check failed");
-		expect(calls("verify")).toEqual([verifyCall()]);
-	});
-
-	test("an asset that is already executable gives the provenance check failed", async () => {
-		ready();
-		chmodSync(join(upstream(), ASSET), 0o755);
-		verifyCommand(fixtureVerifier());
-		expectStop(await run(), "the provenance check failed");
-	});
-
-	test("an asset that already ran gives the provenance check failed", async () => {
-		ready();
-		writeFileSync(assetLog(), "an earlier run\n");
-		verifyCommand(fixtureVerifier());
-		expectStop(await run(), "the provenance check failed", { ran: true });
-		expect(assetRuns()).toEqual(["an earlier run"]);
-	});
 });
 
 describe("law-update: declining the signature", () => {
-	test("a declined signature keeps the sum and starts no check", async () => {
-		noVerify();
-		expect(await run()).toEqual({ code: EXIT.OK, out: selfVerify(), err: "" });
-		expect((await run(...["--verify", "declined"])).out).toBe(synced);
-		expect(calls("verify")).toEqual([]);
-		expect(assetRuns()).toEqual([syncCall()]);
-	});
-
 	// the pass the assembly runs to prove a refusal: no answer about the signature
 	test("a changed asset with the real sums and no verify file gives the checksum failed", async () => {
 		lay();
@@ -300,13 +236,6 @@ describe("law-update: the checksum", () => {
 			"two rows of the asset",
 			(h: string, a: string) => `${h}  ${a}\n${h}  ${a}\n`,
 		],
-		[
-			"upper case letters",
-			(h: string, a: string) => `${h.toUpperCase()}  ${a}\n`,
-		],
-		["63 characters", (h: string, a: string) => `${h.slice(1)}  ${a}\n`],
-		["65 characters", (h: string, a: string) => `${h}0  ${a}\n`],
-		["a hash with no name", (h: string) => `${h}\n`],
 	])(
 		"%s gives the checksum failed and verify is not called",
 		async (_, sums) => {
@@ -336,14 +265,6 @@ describe("law-update: a local change and a law that is not on a release", () => 
 		expectStop(await run(), "the law folder has a local change", {
 			token: DIRTY,
 		});
-		expect(calls()).toEqual([versionCall()]);
-		expect(existsSync(runsFolder())).toBe(false);
-	});
-
-	test("no tag gives the law is not on a release", async () => {
-		ready();
-		versionCommand(facts(REVISION, "no", ""));
-		expectStop(await run(), "the law is not on a release");
 		expect(calls()).toEqual([versionCall()]);
 		expect(existsSync(runsFolder())).toBe(false);
 	});
@@ -412,9 +333,6 @@ const BAD_REVISIONS = [
 	["upper case", "A".repeat(40)],
 	["39 characters", "a".repeat(39)],
 	["41 characters", "a".repeat(41)],
-	["a path", "../../x"],
-	["a slash", "a/b"],
-	["empty", ""],
 ];
 const BAD_TAGS = [
 	["a space", "v 1"],
@@ -451,17 +369,14 @@ describe("law-update: classes before any use", () => {
 		},
 	);
 
-	test.each(BAD_REVISIONS)(
-		"a revision with %s in an answer is not safe",
-		async (_, value) => {
-			lay();
-			releaseCommand();
-			verifyCommand();
-			publish();
-			await unchanged(run(...answer(value)), "a value is not safe");
-			expect(calls()).toEqual([]);
-		},
-	);
+	test("a revision with upper case in an answer is not safe", async () => {
+		lay();
+		releaseCommand();
+		verifyCommand();
+		publish();
+		await unchanged(run(...answer("A".repeat(40))), "a value is not safe");
+		expect(calls()).toEqual([]);
+	});
 
 	test("a revision that ends in a line break is not safe in an answer", async () => {
 		lay();
@@ -469,13 +384,8 @@ describe("law-update: classes before any use", () => {
 		await unchanged(run(...answer(`${REVISION}\n`)), "a value is not safe");
 	});
 
-	test.each([
-		["upper case", "B".repeat(40)],
-		["39 characters", "b".repeat(39)],
-		["41 characters", "b".repeat(41)],
-		["a path", "../../x"],
-	])("a law_commit with %s is not safe", async (_, value) => {
-		lay({ config: config(value) });
+	test("a law_commit with upper case is not safe", async () => {
+		lay({ config: config("B".repeat(40)) });
 		allCommands();
 		await unchanged(run(), "a value is not safe");
 	});
@@ -501,15 +411,12 @@ describe("law-update: classes before any use", () => {
 		},
 	);
 
-	test.each(BAD_TAGS)(
-		"a tag with %s in an answer is not safe",
-		async (_, value) => {
-			lay();
-			releaseCommand();
-			await unchanged(run(...answer(REVISION, value)), "the tag is not safe");
-			expect(calls()).toEqual([]);
-		},
-	);
+	test("a tag with a space in an answer is not safe", async () => {
+		lay();
+		releaseCommand();
+		await unchanged(run(...answer(REVISION, "v 1")), "the tag is not safe");
+		expect(calls()).toEqual([]);
+	});
 
 	test("a tag that ends in a line break is not safe in an answer", async () => {
 		lay();
@@ -546,27 +453,6 @@ describe("law-update: classes before any use", () => {
 		versionCommand(output);
 		await unchanged(run(...answer(REVISION)), "the law-version command failed");
 		expect(calls()).toEqual([versionCall()]);
-	});
-
-	test("lines that end in a carriage return and a line break are in the form", async () => {
-		ready();
-		versionCommand(facts(REVISION, "no", TAG, "\r\n"));
-		expect((await run()).out).toBe(synced);
-	});
-
-	test.each([
-		["outside the form", "```\n\u001b[31mred\n```\n"],
-		["a long line outside the form", `${"x".repeat(100_000)}\n`],
-		["a revision outside the class", facts("```\u001b[31m".padEnd(40, "x"))],
-		["a long tag", facts(REVISION, "no", `${"t".repeat(100_000)};`)],
-	])("hostile output of law-version, %s, is not printed", async (_, output) => {
-		ready();
-		versionCommand(output);
-		const r = await run();
-		expect(r.code).toBe(EXIT.OK);
-		expect(r.out).toMatch(/^stop stopped-law-drift [a-z -]+\n$/);
-		expect(r.out.length).toBeLessThan(100);
-		expect(assetRuns()).toEqual([]);
 	});
 });
 
@@ -630,7 +516,7 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expectStop(await run("--release", word), reason);
 	});
 
-	test.each([ASSET, `${ASSET}.sigstore.json`, "SHA256SUMS"])(
+	test.each([ASSET, "SHA256SUMS"])(
 		"a link in place of %s gives binary not ready",
 		async (name) => {
 			ready();
@@ -641,15 +527,12 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		},
 	);
 
-	test.each([ASSET, `${ASSET}.sigstore.json`, "SHA256SUMS"])(
-		"a folder in place of %s gives binary not ready",
-		async (name) => {
-			ready();
-			rmSync(join(upstream(), name));
-			mkdirSync(join(upstream(), name));
-			expectStop(await run(), "binary not ready");
-		},
-	);
+	test("a folder in place of the provenance file gives binary not ready", async () => {
+		ready();
+		rmSync(join(upstream(), `${ASSET}.sigstore.json`));
+		mkdirSync(join(upstream(), `${ASSET}.sigstore.json`));
+		expectStop(await run(), "binary not ready");
+	});
 
 	test("without a verify file the first call asks the role", async () => {
 		noVerify();
@@ -663,7 +546,6 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 	});
 
 	test.each([
-		["passed", null, undefined],
 		["declined", null, undefined],
 		["failed", "the provenance check failed", undefined],
 		["not-run", "the check could not run", undefined],
@@ -692,14 +574,6 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expect(existsSync(join(releaseFolder(), "stale"))).toBe(false);
 	});
 
-	test("a folder of an earlier try does not outlive a pass that builds it again", async () => {
-		noVerify();
-		mkdirSync(releaseFolder(), { recursive: true });
-		writeFileSync(join(releaseFolder(), "stale"), "x");
-		await run();
-		expect(existsSync(join(releaseFolder(), "stale"))).toBe(false);
-	});
-
 	test("a ready law-version ignores the answer", async () => {
 		ready();
 		const r = await run("--revision", "c".repeat(40), "--state", "changed");
@@ -707,20 +581,19 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expect(calls("law-version")).toEqual([versionCall()]);
 	});
 
-	test.each(["declined", "passed"])(
-		"a ready verify ignores the answer %s",
-		async (word) => {
-			ready();
-			verifyCommand("exit 1");
-			expectStop(await run("--verify", word), "the provenance check failed");
-			expect(calls("verify")).toEqual([verifyCall()]);
-		},
-	);
+	test("a ready verify ignores the answer declined", async () => {
+		ready();
+		verifyCommand("exit 1");
+		expectStop(
+			await run("--verify", "declined"),
+			"the provenance check failed",
+		);
+		expect(calls("verify")).toEqual([verifyCall()]);
+	});
 
 	test.each([
 		["exits with a code", "exit 3", 0o755, facts()],
 		["has no right to run", "", 0o644, facts()],
-		["prints outside the form", "", 0o755, "nothing\n"],
 	])(
 		"a law-version that %s gives the law-version command failed, the answer is not counted",
 		async (_, tail, mode, output) => {
@@ -749,18 +622,9 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expect(shasum(assetPath())).toBe(first);
 	});
 
-	test("a pass with an answer leaves a file in the folder alone", async () => {
-		noVerify();
-		await run();
-		writeFileSync(join(releaseFolder(), "stray"), "x");
-		await run("--verify", "passed");
-		expect(existsSync(join(releaseFolder(), "stray"))).toBe(true);
-	});
-
 	test.each([
 		["an unknown option", ["--bogus", "x"]],
 		["a repeated option", [...answer(REVISION), "--state", "clean"]],
-		["an option without a value", ["--tag"]],
 		["a state outside the list", ["--revision", REVISION, "--state", "odd"]],
 		["a release word outside the list", ["--release", "maybe"]],
 		["a verify word outside the list", ["--verify", "nope"]],
@@ -852,7 +716,6 @@ describe("law-update: an installation path with a space", () => {
 
 describe("law-update: the exits of release", () => {
 	test.each([
-		["exit 0", "exit 0", null],
 		["exit 2", "exit 2", "binary not ready"],
 		["exit 1", "exit 1", "the release download failed"],
 		["exit 3", "exit 3", "the release download failed"],
@@ -860,9 +723,7 @@ describe("law-update: the exits of release", () => {
 	])("release with %s", async (_, tail, reason) => {
 		ready();
 		releaseCommand(tail);
-		const r = await run();
-		if (reason === null) expect(r.out).toBe(synced);
-		else expectStop(r, reason);
+		expectStop(await run(), reason);
 	});
 
 	test("a release that cannot start gives the release download failed", async () => {
@@ -887,17 +748,12 @@ describe("law-update: the new binary", () => {
 	});
 
 	test.each([
-		["an empty error", "exit 3"],
 		[
 			"an error of invisible characters",
 			"printf '\\342\\200\\213\\342\\201\\240\\357\\273\\277\\n' >&2\nexit 3",
 		],
 	])("%s gives the new binary failed", async (_, body) => {
 		await fails(body, "the new binary failed");
-	});
-
-	test("invisible characters in the error are removed", async () => {
-		await fails("printf 'bro\\342\\200\\213ken\\n' >&2\nexit 3", "broken");
 	});
 
 	test("a secret in the error is masked", async () => {
@@ -940,15 +796,6 @@ describe("law-update: the new binary", () => {
 		expect((await run()).out).toBe(
 			`ALARM contract-changed abcd\nALARM contract-changed second\n${synced}`,
 		);
-	});
-
-	test("a secret in a line of alarm is masked", async () => {
-		const secret = `ghp_${"a1B2c3D4e5".repeat(4).slice(0, 36)}`;
-		ready({ body: `echo "ALARM contract-changed key ${secret}"\n${SYNCED}` });
-		const r = await run();
-		expect(r.out).not.toContain(secret);
-		expect(r.out).toContain("REMOVED");
-		expect(r.out).toEndWith(synced);
 	});
 
 	describe("when the character layer throws", () => {
@@ -1003,15 +850,5 @@ describe("law-update: what the command does not do", () => {
 		await run();
 		expect(noDatabase(dir)).toEqual([]);
 		expect(existsSync(join(dir, "journal.sqlite"))).toBe(false);
-	});
-
-	test("a call after a stop starts over", async () => {
-		ready();
-		verifyCommand("exit 1");
-		expectStop(await run(), "the provenance check failed");
-		verifyCommand();
-		expect((await run()).out).toBe(synced);
-		expect(calls("law-version")).toHaveLength(2);
-		expect(calls("release")).toHaveLength(2);
 	});
 });

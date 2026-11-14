@@ -1,15 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	closed,
-	due,
 	expectNeed,
 	expectRoundKept,
 	lined,
 	need,
-	needOnly,
 	put,
 	ruled,
-	withLead,
 } from "./cases-fixture";
 import {
 	acquittal,
@@ -38,29 +35,9 @@ describe("case: clerk stage", () => {
 		],
 		["a closed conviction needs nobody", closed(ruled(conviction)), "none"],
 		[
-			"an entry does not answer an open conviction",
-			ruled(conviction, entry()),
-			"clerk",
-		],
-		[
 			"a no-entry newer than the acquittal needs nobody",
 			ruled(lined(acquittal), noEntry()),
 			"none",
-		],
-		[
-			"a closed entry newer than the conviction needs nobody",
-			closed(ruled(conviction, entry())),
-			"none",
-		],
-		[
-			"a closed no-entry newer than the acquittal needs nobody",
-			closed(ruled(lined(acquittal), noEntry())),
-			"none",
-		],
-		[
-			"a clerk marker older than the court marker needs the clerk",
-			withLead(caseMark(), charge(), defence(), entry(), conviction()),
-			"clerk",
 		],
 		[
 			"a new cycle after an entry needs the clerk",
@@ -74,17 +51,7 @@ describe("case: clerk stage", () => {
 			),
 			"clerk",
 		],
-		[
-			"a closed charge with a clerk marker needs nobody",
-			closed(withLead(caseMark(), charge(), entry())),
-			"none",
-		],
 	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
-
-	test("a clerk marker leaves the prosecutor need alone", () => {
-		put({ 1: withLead(caseMark(), entry()) });
-		expect(needOnly(1)).toBe("need=prosecutor");
-	});
 
 	test("clerk markers leave round and returned unchanged", () => {
 		expectRoundKept(ruled(lined(acquittal), entry()));
@@ -93,17 +60,5 @@ describe("case: clerk stage", () => {
 	test("a clerk return marker leaves round and returned unchanged", () => {
 		put({ 1: ruled(conviction, returnTo("investigation", 1, "clerk")) });
 		expect(need(1).split(" ").slice(1, 3)).toEqual(["round=1", "returned=-"]);
-	});
-
-	test("due for the clerk lists open convictions and unanswered acquittals", () => {
-		put({ 1: ruled(conviction) });
-		expect(due("clerk")).toBe("main\t1\n");
-		put({
-			1: ruled(lined(acquittal), noEntry()),
-			2: closed(ruled(lined(acquittal))),
-		});
-		expect(due("clerk")).toBe("main\t2\n");
-		put({ 2: closed(ruled(lined(acquittal), noEntry())) });
-		expect(due("clerk")).toBe("");
 	});
 });

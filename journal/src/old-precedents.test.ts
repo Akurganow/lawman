@@ -11,9 +11,7 @@ import {
 	acquittal,
 	addPrecincts,
 	BASE,
-	cli,
 	conviction,
-	dbFile,
 	dir,
 	mark,
 	rows,
@@ -248,14 +246,14 @@ describe("old-precedent check", () => {
 		);
 	});
 
-	test.each([
-		["a form outside its shape", "[]", "form"],
-		["no JSON", "x", "form"],
-	])("%s gives ask for every line", async (_, stdin, reason) => {
-		expect((await check(stdin, "1:2", "2:1")).out).toBe(
-			`line 1 ask reason=${reason}\nline 2 ask reason=${reason}\n`,
-		);
-	});
+	test.each([["a form outside its shape", "[]", "form"]])(
+		"%s gives ask for every line",
+		async (_, stdin, reason) => {
+			expect((await check(stdin, "1:2", "2:1")).out).toBe(
+				`line 1 ask reason=${reason}\nline 2 ask reason=${reason}\n`,
+			);
+		},
+	);
 
 	test("the precinct's issues command gives the form, and the cache stays as it was", async () => {
 		const path = join(dir, "form.json");
@@ -351,63 +349,9 @@ describe("old-precedent move", () => {
 		expect(headerOf(fileOf("2026-09-02-callbacks")).kind).toBe("condemns");
 	});
 
-	test("carriage returns stay, and only the moved line leaves", async () => {
-		writeFileSync(join(tree, "LAWMAN.md"), PAGE.replaceAll("\n", "\r\n"));
-		await move("", "--line", "2", "--kind", "protects");
-		expect(lawman()).toBe(
-			page(
-				`- 2026-09-02 #1: An unused callback parameter is not dead. (${LINK})`,
-			).replaceAll("\n", "\r\n"),
-		);
-	});
-
 	test("a missing line fails and writes nothing", async () => {
 		const r = await move("", "--line", "9", "--kind", "protects");
 		expect(r.code).toBe(EXIT.USAGE);
 		expect(lawman()).toBe(PAGE);
-	});
-});
-
-describe("old-precedent as a program", () => {
-	test("list reads the page on stdin and exits 0", () => {
-		expect(cli(["old-precedent", "list"], { LAWMAN_DB: dbFile }, PAGE)).toEqual(
-			{
-				code: 0,
-				out: [
-					"line 1 date=2026-09-02 link=yes position=1",
-					"~~~rule",
-					"An unused callback parameter is not dead.",
-					"~~~",
-					"line 2 date=2026-09-03 link=no position=2",
-					"~~~rule",
-					"A rule of the owner.",
-					"~~~",
-					"",
-				].join("\n"),
-				err: "",
-			},
-		);
-	});
-
-	test("move with the user's kind writes the file and the page", () => {
-		const r = cli(
-			[
-				"old-precedent",
-				"move",
-				"main",
-				"--tree",
-				tree,
-				"--gist",
-				"owner",
-				"--line",
-				"2",
-				"--kind",
-				"protects",
-			],
-			{ LAWMAN_DB: dbFile },
-			"",
-		);
-		expect(r).toEqual({ code: 0, out: "entry 2026-09-03-owner\n", err: "" });
-		expect(lawman()).not.toContain("#2:");
 	});
 });

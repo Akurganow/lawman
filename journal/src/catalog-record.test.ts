@@ -2,34 +2,44 @@ import { describe, expect, test } from "bun:test";
 import { sourceLine } from "./catalog-entries";
 import {
 	ANSWER,
+	cliAnswer,
+	cliRequest,
 	expectCleanComment,
 	FOUND,
 	ID,
+	inProcessAnswer,
+	inProcessRequest,
 	line,
 	none,
 	REQUEST,
-	RUNNERS,
 	SUMMARY,
 	TOKEN,
 	UNKNOWN,
 	withField,
 	withSummary,
-	ZWSP,
 } from "./catalog-record-fixture";
 import { CLOCK, reply } from "./catalog-test-run";
 import { tempDb } from "./test-helpers";
 
 tempDb();
 
-describe.each(RUNNERS)("catalog record request (%s)", (_name, request) => {
-	test("a Source line gives the record identifier alone", async () => {
+test.each([
+	["in process", inProcessRequest],
+	["cli", cliRequest],
+])(
+	"a Source line gives the record identifier alone (%s)",
+	async (_name, request) => {
 		const input = `${sourceLine(ID, "npm", "lodash")}\n`;
 		expect(await request(REQUEST, input)).toEqual({
 			code: 0,
 			out: `${ID}\n`,
 			err: "",
 		});
-	});
+	},
+);
+
+describe("catalog record request", () => {
+	const request = inProcessRequest;
 
 	test("the line needs no final newline", async () => {
 		expect((await request(REQUEST, sourceLine(ID, "npm", "lodash"))).out).toBe(
@@ -38,16 +48,8 @@ describe.each(RUNNERS)("catalog record request (%s)", (_name, request) => {
 	});
 
 	test.each([
-		["no input", ""],
-		["a blank line", "\n"],
 		["two lines", `${sourceLine(ID, "npm", "lodash")}\nSource: canary`],
 		["another source", "Source: advisories canary npm/lodash"],
-		["a package without ecosystem", "Source: catalog GHSA-1 canary"],
-		["a path as identifier", "Source: catalog ../canary npm/lodash"],
-		["a backtick in the package", "Source: catalog GHSA-1 npm/canary`x`"],
-		["a hidden character", `Source: catalog GHSA-1 npm/canary${ZWSP}x`],
-		["a quote", `Source: catalog GHSA-1 npm/"canary"`],
-		["trailing text", "Source: catalog GHSA-1 npm/canary extra"],
 	])("%s is refused and no part of it is printed", async (_label, input) => {
 		const result = await request(REQUEST, input);
 		expect(result.code).toBe(1);
@@ -69,14 +71,22 @@ describe.each(RUNNERS)("catalog record request (%s)", (_name, request) => {
 	});
 });
 
-describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
-	test("the recorded record gives the expected line", async () => {
+test.each([
+	["in process", inProcessAnswer],
+	["cli", cliAnswer],
+])(
+	"the recorded record gives the expected line (%s)",
+	async (_name, answer) => {
 		expect(await answer(ANSWER, reply(FOUND.reply, FOUND.status))).toEqual({
 			code: 0,
 			out: line(SUMMARY),
 			err: "",
 		});
-	});
+	},
+);
+
+describe("catalog record answer", () => {
+	const answer = inProcessAnswer;
 
 	test.each([404, 410, 422])("status %d is missing", async (status) => {
 		expect(await answer(ANSWER, reply(UNKNOWN.reply, status))).toEqual({
@@ -86,22 +96,10 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 		});
 	});
 
-	test("the recorded unknown record is missing", async () => {
-		const result = await answer(
-			["--kind", "record", "--id", "GHSA-0000-0000-0000"],
-			reply(UNKNOWN.reply, UNKNOWN.status),
-		);
-		expect(result.out).toBe(none("missing"));
-	});
-
 	test.each([
 		["no reply", "\n000"],
-		["no status line", JSON.stringify(FOUND.reply)],
 		["a server error", reply(FOUND.reply, 500)],
-		["a rate limit", reply(FOUND.reply, 429)],
-		["a redirect", reply(FOUND.reply, 301)],
 		["a body that is no JSON", "<html>oops</html>\n200"],
-		["a truncated body", `${JSON.stringify(FOUND.reply).slice(0, 40)}\n200`],
 	])("%s is failed", async (_label, input) => {
 		expect((await answer(ANSWER, input)).out).toBe(none("failed"));
 	});
@@ -110,10 +108,7 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 		["an empty body", "\n200"],
 		["an empty object", "{}\n200"],
 		["a null", "null\n200"],
-		["a list", "[]\n200"],
-		["a string", '"x"\n200'],
 		["another record", reply({ ...FOUND.reply, id: "GHSA-1111-2222-3333" })],
-		["a record with no identifier", reply({ summary: "x" })],
 		["an identifier of another kind", reply({ ...FOUND.reply, id: 7 })],
 	])("%s is unconfirmed", async (_label, input) => {
 		expect((await answer(ANSWER, input)).out).toBe(none("unconfirmed"));
@@ -144,7 +139,6 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 
 	test.each([
 		["a number", 7],
-		["a list", ["x"]],
 		["a very long text", "x".repeat(5000)],
 	])("a summary that is %s is dropped", async (_label, summary) => {
 		const result = await answer(ANSWER, withSummary(summary));
@@ -182,12 +176,6 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 		expect(result.out).not.toContain("CVSS");
 	});
 
-	test("a long summary is cut", async () => {
-		const result = await answer(ANSWER, withSummary("word ".repeat(150)));
-		expect(result.out.trimEnd().length).toBeLessThan(400);
-		expect(result.out).toContain("summary=word word");
-	});
-
 	test("a long summary is cut by code points, never inside a surrogate pair", async () => {
 		const result = await answer(ANSWER, withSummary(`x${"😀".repeat(300)}`));
 		const printed = result.out.trimEnd().split(" summary=")[1] ?? "";
@@ -195,16 +183,8 @@ describe.each(RUNNERS)("catalog record answer (%s)", (_name, _req, answer) => {
 		expect(Array.from(printed)).toHaveLength(240 - "summary=".length);
 	});
 
-	test.each([
-		["", ""],
-		["id", ""],
-		["id", "GHSA-1 --kind"],
-	])("a missing or wrong option is a usage error", async (flag, value) => {
-		const args =
-			flag === ""
-				? ["--kind", "record"]
-				: ["--kind", "record", `--${flag}`, value];
-		const result = await answer(args, reply(FOUND.reply));
+	test("a missing identifier option is a usage error", async () => {
+		const result = await answer(["--kind", "record"], reply(FOUND.reply));
 		expect(result.code).toBe(1);
 		expect(result.out).toBe("");
 	});

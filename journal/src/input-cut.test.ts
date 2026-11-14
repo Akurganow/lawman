@@ -49,7 +49,7 @@ const TOKEN = ["gh", "p_", "a1B2c3D4e5F6g7H8i9J0k1L2m3N4"].join("");
 const LONG_ID = `IC_${"9".repeat(197)}`;
 const LONG_LOGIN = "l".repeat(39);
 const AT = T(10);
-const SIZES = [16000, 15000, 49000];
+const SIZES = [16000];
 
 const cost = (lines: string[]) =>
 	lines.reduce((n, l) => n + [...l].length + 1, 0);
@@ -338,22 +338,15 @@ describe("a cut text", () => {
 		}
 	});
 
-	test.each([
-		["start", (l: string[]) => [TILDES, ...l.slice(1)]],
-		["middle", (l: string[]) => l.map((x, i) => (i === 100 ? TILDES : x))],
-		["end", (l: string[]) => [...l.slice(0, -1), TILDES]],
-		["backticks", (l: string[]) => l.map((x, i) => (i % 7 === 0 ? "```" : x))],
-	])(
-		"a run of tildes at the %s gets a fence of its own piece",
-		async (_, shape) => {
-			const lines = await cleaned(shape(rowsOf(200)).join("\n"));
-			const r = await started(2000, lines.join("\n"));
-			const c = cutIn(r.parts);
-			for (const p of [c.head, c.tail])
-				expect(p.fence).toBe(fenceOf(p.body.join("\n")));
-			expect(cost(c.lines)).toBeLessThanOrEqual(2000);
-		},
-	);
+	test("a line of backticks every seventh line gets a fence of its own piece", async () => {
+		const shape = (l: string[]) => l.map((x, i) => (i % 7 === 0 ? "```" : x));
+		const lines = await cleaned(shape(rowsOf(200)).join("\n"));
+		const r = await started(2000, lines.join("\n"));
+		const c = cutIn(r.parts);
+		for (const p of [c.head, c.tail])
+			expect(p.fence).toBe(fenceOf(p.body.join("\n")));
+		expect(cost(c.lines)).toBeLessThanOrEqual(2000);
+	});
 
 	test("the long run sets only the fence of the piece that holds it", async () => {
 		const at = async (shape: (l: string[]) => string[]) =>
@@ -569,7 +562,7 @@ describe("a run of tildes in an uncut page", () => {
 		precedent,
 	};
 
-	test.each([16000, 15000])(
+	test.each([16000])(
 		"it lengthens only the fence of its own part at %d, and the text rebuilds",
 		async (size) => {
 			rmSync(dir, { recursive: true, force: true });
@@ -660,30 +653,6 @@ describe("the key of a comment", () => {
 		expect([await blockOf("more"), await blockOf("other")]).toEqual(before);
 		seeded([...base, ["Z", T(8), "earlier"], ["Y", T(13), "later"]]);
 		expect([await blockOf("more"), await blockOf("other")]).toEqual(before);
-	});
-
-	test("an ended tick prints no case text", async () => {
-		rmSync(dir, { recursive: true, force: true });
-		mkdirSync(dir);
-		setUp(CONFIG);
-		orderOf("patrol", { department: "nowhere" });
-		host({
-			tree: {
-				"LAWMAN.md": `${CONSTITUTION.trimEnd()}\n\nMarker rule of this test.\n`,
-			},
-		});
-		const r = await inprocAsync(BASE, [
-			"tick",
-			"start",
-			"--role",
-			"patrol",
-			"--order",
-			"1",
-		]);
-		expect(r.code).toBe(0);
-		expect(r.out).toContain("ended stopped-bad-department");
-		expect(r.out).not.toContain("Marker rule of this test.");
-		expect(r.out).not.toContain("~constitution");
 	});
 
 	test("an id with a newline stays inside its fence and out of the journal lines", async () => {

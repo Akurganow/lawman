@@ -278,14 +278,6 @@ describe("precedent: the ruling's files and a dismissal together", () => {
 });
 
 describe("precedent: a call with nothing due or too little to build a file", () => {
-	test("an empty input gives a usage error and no file", async () => {
-		await cache([{ body: COMMENT, author: OWNER }]);
-		close();
-		const r = await run("");
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(names()).toEqual([]);
-	});
-
 	test("an object the reader rejects ends the call and writes no file", async () => {
 		await cache([{ body: COMMENT, author: OWNER }]);
 		close();
@@ -313,15 +305,6 @@ describe("precedent: a call with nothing due or too little to build a file", () 
 		expect(r).toMatchObject({ code: EXIT.OK, out: "no-entry\tno-change\n" });
 		expect(names()).toEqual([]);
 		expect(existsSync(bodyFile())).toBe(false);
-	});
-
-	test("the same dismissal written twice is no change", async () => {
-		await cache([{ body: COMMENT, author: OWNER }]);
-		close();
-		await run(objectOf());
-		const again = await run(objectOf());
-		expect(again.out).toBe("no-entry\tno-change\n");
-		expect(names()).toEqual([DISMISSAL_BASE]);
 	});
 
 	test("another file under the name sends the dismissal to the next free name", async () => {

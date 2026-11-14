@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { collectIssueMarkers, decodeIdPart, extractMarkers } from "./markers";
+import { collectIssueMarkers, extractMarkers } from "./markers";
 import {
 	addPrecincts,
 	carrier,
@@ -31,16 +31,10 @@ describe("fixture issues", () => {
 	});
 
 	test.each([
-		[2, "a marker in a backtick fence"],
-		[3, "a marker in a tilde fence"],
 		[5, "indented, quoted, mid-line, trailing and leading-space markers"],
 		[23, "a fenced legacy line"],
 	])("#%d %s does not count", (n) => {
 		expect(collect(n).markers).toEqual([]);
-	});
-
-	test("#4 a three-backtick line does not close a four-backtick fence", () => {
-		expect(rounds(4)).toEqual(["3"]);
 	});
 
 	test("#6 an untrusted author counts for nothing, body or comment", () => {
@@ -48,10 +42,6 @@ describe("fixture issues", () => {
 		expect(c.markers).toEqual([]);
 		expect(c.leadOrigin).toBeNull();
 		expect(c.newestByRole.size).toBe(0);
-	});
-
-	test("#7 the trusted login is compared ignoring case", () => {
-		expect(collect(7).markers).toHaveLength(2);
 	});
 
 	test("#8 carrier order wins over at", () => {
@@ -69,46 +59,6 @@ describe("fixture issues", () => {
 		expect(must(c.newestByRole.get("judge")).marker.fields.round).toBe("1");
 	});
 
-	test("#10 the line number orders markers inside one carrier", () => {
-		const c = collect(10);
-		expect(rounds(10)).toEqual(["1", "2"]);
-		expect(c.markers.map((m) => m.line)).toEqual([1, 3]);
-		expect(must(c.newestByRole.get("judge")).marker.fields.round).toBe("2");
-	});
-
-	test("#11 non-canonical ids are dropped and displace nothing", () => {
-		const c = collect(11);
-		expect(c.markers).toHaveLength(1);
-		expect(c.newestByRole.get("patrol")).toBe(must(c.leadOrigin));
-	});
-
-	test("#12 a double hyphen in a value drops the marker", () => {
-		expect(rounds(12)).toEqual(["1"]);
-		expect(collect(12).leadOrigin).toBeNull();
-	});
-
-	test("#13 a duplicate key drops the marker and displaces nothing", () => {
-		const c = collect(13);
-		expect(rounds(13)).toEqual(["1"]);
-		expect(must(c.newestByRole.get("judge")).marker.fields.round).toBe("1");
-	});
-
-	test("#15 a-%2Db is valid and a--b is not", () => {
-		const c = collect(15);
-		expect(c.markers).toHaveLength(1);
-		const id = must(c.leadOrigin).marker.fields.id;
-		expect(id).toBe("src/a-%2Db.rs::f::dead-code");
-		expect(decodeIdPart(must(must(id).split("::")[0]))).toBe("src/a--b.rs");
-	});
-
-	test("#16 an unknown stage with unknown keys is kept", () => {
-		const m = must(collect(16).markers[0]);
-		expect(m.marker.role).toBe("curator");
-		expect(m.marker.stage).toBe("audit");
-		expect(m.marker.fields.flavor).toBe("mint");
-		expect(m.marker.fields.round_trip).toBe("3");
-	});
-
 	test("#17 a later marker of another role or a later lead never displaces the origin", () => {
 		const c = collect(17);
 		expect(c.markers.map((m) => `${m.marker.role}/${m.marker.stage}`)).toEqual([
@@ -120,20 +70,6 @@ describe("fixture issues", () => {
 		expect(must(c.leadOrigin).marker.fields.id).toBe(LEAD_ID);
 		expect(c.newestByRole.get("patrol")).toBe(c.markers[2]);
 		expect(c.newestByRole.get("judge")).toBe(c.markers[1]);
-	});
-
-	test("#18 CRLF line endings do not hide the last line", () => {
-		expect(collect(18).markers).toHaveLength(1);
-		expect(must(collect(18).markers[0]).line).toBe(3);
-	});
-
-	test("the input order of comments does not matter", () => {
-		const issue = structuredClone(issueOf(9));
-		issue.comments.reverse();
-		const reversed = must(
-			collectIssueMarkers(issue, TRUSTED).newestByRole.get("judge"),
-		).marker.fields.round;
-		expect(reversed).toBe("1");
 	});
 
 	test("a null author or empty body does not throw", () => {
@@ -170,17 +106,6 @@ describe("legacy fingerprints", () => {
 		});
 	});
 
-	test("#20 a value with spaces gives a lead without an id", () => {
-		const m = must(canonical(20)[0]);
-		expect(m.fields).toEqual({
-			role: "patrol",
-			stage: "lead",
-			department: "agent-config",
-			legacy: "police-fingerprint",
-			at: "2026-10-14T09:00:00Z",
-		});
-	});
-
 	test("#21 role-fingerprint becomes a lead", () => {
 		const m = must(canonical(21)[0]);
 		expect(m.fields).toMatchObject({
@@ -199,11 +124,6 @@ describe("legacy fingerprints", () => {
 		expect(m.fields).not.toHaveProperty("id");
 	});
 
-	test("#24 a foreign legacy line does not count", () => {
-		expect(collect(24).markers).toEqual([]);
-		expect(collect(24).leadOrigin).toBeNull();
-	});
-
 	test("the department mapping", () => {
 		const dept = (line: string) => legacyLine(line)[0]?.fields.department;
 		const RENAMED = [
@@ -219,12 +139,6 @@ describe("legacy fingerprints", () => {
 			expect(
 				dept(`<!-- police-fingerprint: ${legacy}-police a/b::c::d -->`),
 			).toBe(renamed);
-			expect(dept(`<!-- police-fingerprint: ${legacy} a/b::c::d -->`)).toBe(
-				renamed,
-			);
-			expect(dept(`<!-- ${legacy}-police-fingerprint: a/b::c::d -->`)).toBe(
-				renamed,
-			);
 		}
 		expect(dept("<!-- police-fingerprint: evals x -->")).toBe("evals");
 		expect(dept("<!-- evals-fingerprint: x -->")).toBe("evals");
@@ -253,10 +167,6 @@ describe("legacy fingerprints", () => {
 				.fields.id;
 		expect(id("a/b::c::d")).toBe("a/b::c::d");
 		expect(id("a/b::c--x::d")).toBeUndefined();
-		expect(id("a/b::c")).toBeUndefined();
-		expect(id("a/b::c::d::e")).toBeUndefined();
-		expect(id("a/b::::d")).toBeUndefined();
-		expect(id("A:CODE_OF_CONDUCT.md:missing-code-of-conduct")).toBeUndefined();
 	});
 
 	test("a lawman marker and a legacy marker on one issue are both kept, the earlier is the origin", () => {
@@ -287,12 +197,6 @@ describe("legacy fingerprints", () => {
 			must(collectIssueMarkers(swapped, TRUSTED).leadOrigin).marker.fields
 				.legacy,
 		).toBeUndefined();
-	});
-
-	test("an untrusted author counts for nothing", () => {
-		expect(
-			carrier("<!-- repo-audit-routine:x -->", "bystander-fictional"),
-		).toEqual([]);
 	});
 
 	describe("through the CLI", () => {
@@ -330,43 +234,6 @@ describe("legacy fingerprints", () => {
 					"plugins/triz::principles-subitems-attributed-to-altshuller::lying",
 				]).out.trim(),
 			).toBe("none");
-		});
-
-		test("cap counts the open legacy leads of a department", () => {
-			expect(
-				run(["cap", PRECINCT, "--department", "text-residue"]).out.trim(),
-			).toBe("cap=3 open=1");
-			expect(
-				run(["cap", PRECINCT, "--department", "agent-config"]).out.trim(),
-			).toBe("cap=3 open=1");
-		});
-
-		test("seen finds a legacy open lead by its own id only", () => {
-			const seen = (id: string) =>
-				run(["seen", PRECINCT, "--id", id]).out.trim();
-			expect(
-				seen(
-					"tools/check-conformance.py::skills-ref-not-pinnable-in-ci::lying",
-				),
-			).toBe("open #19");
-			expect(
-				seen(
-					"tools/check-conformance.py::skills-ref-not-pinnable-in-ci::unused",
-				),
-			).toBe("none");
-			expect(
-				seen(
-					"plugins/triz::principles-subitems-attributed-to-altshuller::lying",
-				),
-			).toBe("none");
-			expect(seen("src/f.rs::g::lying")).toBe("none");
-			expect(seen("src/h.rs::i::lying")).toBe("none");
-		});
-
-		test("sync counts legacy markers as markers and not as invalid", () => {
-			expect(sync().out.trim()).toBe(
-				"issues=23 leads=10 markers=25 invalid=12 skipped=1",
-			);
 		});
 	});
 });

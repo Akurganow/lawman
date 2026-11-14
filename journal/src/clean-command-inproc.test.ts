@@ -33,10 +33,10 @@ describe("clean command in process", () => {
 	});
 
 	test("--json cleans strings at any depth in a sequence", async () => {
-		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]`;
+		const input = `{"a": {"b": ["x\u200By", 2]}}\n["${TOKEN}"]\n{"x": []}[2]`;
 		expect(await cleanIn(input, "--json")).toEqual({
 			code: EXIT.OK,
-			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n`,
+			out: `{"a":{"b":["xy",2]}}\n["${LABEL}"]\n{"x":[]}\n[2]\n`,
 			err: "",
 		});
 	});
@@ -52,13 +52,24 @@ describe("clean command in process", () => {
 		expect(({} as Record<string, unknown>).polluted).toBeUndefined();
 	});
 
-	test("broken JSON gives exit 1 and quotes no input", async () => {
-		const r = await cleanIn(`{"body": "${TOKEN}"`, "--json");
-		expect(r.code).toBe(EXIT.USAGE);
-		expect(r.out).toBe("");
-		expect(r.err).toContain("clean:");
-		expect(r.err).not.toContain(TOKEN);
-	});
+	test.each([`{"body": "${TOKEN}"`, `{"body": "secret words ${TOKEN}", bad}`])(
+		"broken JSON gives exit 1 and quotes no input %j",
+		async (input) => {
+			const r = await cleanIn(input, "--json");
+			expect(r.code).toBe(EXIT.USAGE);
+			expect(r.out).toBe("");
+			expect(r.err).toContain("clean:");
+			for (const leak of [
+				"secret words",
+				TOKEN,
+				"bad",
+				"SyntaxError",
+				"Parse error",
+				"Failed to parse",
+			])
+				expect(r.err).not.toContain(leak);
+		},
+	);
 
 	test.each([[[]], [["--json"]]])(
 		"empty input gives exit 0 %j",

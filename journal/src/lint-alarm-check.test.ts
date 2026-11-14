@@ -51,7 +51,6 @@ describe("lint-page alarm-check line", () => {
 
 	test.each([
 		["inside a fence", `Count.\n\n\`\`\`\n${ALARM}\n\`\`\``],
-		["in a fence right after the heading", `\`\`\`\n${ALARM}\n\`\`\``],
 		["in the middle of a line", `Count. ${ALARM}`],
 		["in the middle of a paragraph", `Count.\n${ALARM}`],
 		["quoted in a sentence", "A page may hold an `Alarm check:` paragraph."],

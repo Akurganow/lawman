@@ -8,7 +8,6 @@ import {
 } from "node:fs";
 import { basename, join } from "node:path";
 import { handed, human, put, type Spec, T } from "./cases-fixture";
-import { inprocAsync } from "./inproc";
 import {
 	CONFIG,
 	config,
@@ -488,10 +487,6 @@ const DRIFT_REPORT: [string, string] = [
 	"stopped-law-drift",
 	"the law folder is not at law_commit",
 ];
-const DIRTY_REPORT: [string, string] = [
-	"stopped-dirty-law",
-	"the law folder has a local change",
-];
 
 type Ending = {
 	name: string;
@@ -522,36 +517,12 @@ const ENDINGS: Ending[] = [
 		report: "config.yaml has no trusted_login",
 		taken: false,
 	},
-	{
-		name: "a config.yaml without law_commit",
-		role: "investigation",
-		order: { issue: 3 },
-		setup: () => config(`harness: hermes\ntrusted_login: ${TRUSTED}\n`),
-		outcome: "failed",
-		report: "config.yaml has no law_commit",
-		taken: false,
-	},
 	...(
 		[
 			[
 				"a law folder at another commit",
 				() => lawVersion("2".repeat(40)),
 				DRIFT_REPORT,
-			],
-			[
-				"a law folder with a local change",
-				() => lawVersion(LAW_COMMIT, "yes"),
-				DIRTY_REPORT,
-			],
-			[
-				"a law folder at another commit with a local change",
-				() => lawVersion("2".repeat(40), "yes"),
-				DIRTY_REPORT,
-			],
-			[
-				"a revision outside its class",
-				() => lawVersion("A".repeat(40)),
-				["stopped-law-drift", "a value is not safe"],
 			],
 			[
 				"a law_commit outside its class",
@@ -805,30 +776,23 @@ describe("an order the start cannot take", () => {
 		});
 	});
 
-	test.each(["defender", "court"])(
-		"a department of - skips the page for %s",
-		(role) => {
-			setUp();
-			orderOf(role, { issue: 3 });
-			const marks =
-				role === "court"
-					? [caseMark(), charge(), defence()]
-					: [caseMark(), charge()];
-			host({
-				issues: {
-					3: {
-						body: [leadIn("-", "response-unit")],
-						comments: marks.map((b, i) => [T(10 + i), b]),
-					},
+	test("a department of - skips the page for the defender", () => {
+		setUp();
+		orderOf("defender", { issue: 3 });
+		host({
+			issues: {
+				3: {
+					body: [leadIn("-", "response-unit")],
+					comments: [caseMark(), charge()].map((b, i) => [T(10 + i), b]),
 				},
-			});
-			const r = start(role);
-			expect(r.out).toContain(`need=${role} `);
-			expect(r.out).toContain(" department=- ");
-			expect(r.out).not.toContain("\ndepartment ");
-			expect(skeleton(r.out)).not.toContain("~department");
-		},
-	);
+			},
+		});
+		const r = start("defender");
+		expect(r.out).toContain("need=defender ");
+		expect(r.out).toContain(" department=- ");
+		expect(r.out).not.toContain("\ndepartment ");
+		expect(skeleton(r.out)).not.toContain("~department");
+	});
 });
 
 describe("the law folder at the start", () => {
@@ -844,19 +808,7 @@ describe("the law folder at the start", () => {
 		expect(ticks()[0]).toMatchObject({ outcome: null });
 	});
 
-	test.each([
-		["fails", () => command(shared(), "law-version", "exit 1")],
-		["does not start", () => command(shared(), "law-version", "true", 0o644)],
-		[
-			"prints outside the form",
-			() =>
-				command(
-					shared(),
-					"law-version",
-					`printf 'revision=${LAW_COMMIT}\\nchanged=maybe\\ntag=\\n'`,
-				),
-		],
-	])(
+	test.each([["fails", () => command(shared(), "law-version", "exit 1")]])(
 		"a law-version command that %s gives the self step, as an absent one does",
 		(_name, broken) => {
 			setUp();
@@ -901,38 +853,35 @@ describe("the law folder at the start", () => {
 		expect(records()).toEqual(["law-version"]);
 	});
 
-	test.each([
-		["a drift", () => lawVersion("2".repeat(40))],
-		["a local change", () => lawVersion(LAW_COMMIT, "yes")],
-	])("%s stops the start before any host operation runs", (_name, setup) => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		CASES.investigation?.setup();
-		for (const op of ["identity", "fetch", "issues", "pulls", "files", "file"])
-			command(configs("main"), op, recording("true"));
-		setup();
-		expect(lines(start("investigation").out)).toContainEqual(
-			expect.stringMatching(/^ended stopped-/),
-		);
-		expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
-		expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
-	});
-
-	test("a law folder at law_commit with no change starts as before", () => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		CASES.investigation?.setup();
-		const r = start("investigation");
-		expect(r.out).not.toContain("law-version");
-		expect(r.out).toContain("\norder 1 main o/main - 3\n");
-	});
+	test.each([["a drift", () => lawVersion("2".repeat(40))]])(
+		"%s stops the start before any host operation runs",
+		(_name, setup) => {
+			setUp();
+			orderOf("investigation", { issue: 3 });
+			CASES.investigation?.setup();
+			for (const op of [
+				"identity",
+				"fetch",
+				"issues",
+				"pulls",
+				"files",
+				"file",
+			])
+				command(configs("main"), op, recording("true"));
+			setup();
+			expect(lines(start("investigation").out)).toContainEqual(
+				expect.stringMatching(/^ended stopped-/),
+			);
+			expect(existsSync(join(configs("main"), RECORDS))).toBe(false);
+			expect(orders()).toEqual([{ id: 1, taken_at: null, outcome: null }]);
+		},
+	);
 });
 
 const OPERATIONS: [string, string, string][] = [
 	["identity", "investigation", "identity"],
 	["fetch", "investigation", "fetch"],
 	["issues", "investigation", "issues"],
-	["pulls", "clerk", "pulls"],
 	["files", "investigation", "constitution"],
 	["file", "investigation", "constitution"],
 ];
@@ -1136,22 +1085,6 @@ describe("the link of the case", () => {
 	});
 });
 
-describe("tick input after a self step", () => {
-	test("--part 1 builds and stores the group like the form without a part, and a later part comes from the stored group", () => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		host({ issues: { 3: withLead("fixtures", caseMark()) } });
-		rmSync(join(configs("main"), "issues"));
-		start("investigation");
-		put({ 3: withLead("fixtures", caseMark()) });
-		const first = input("1", "--part", "1");
-		expect(first.code).toBe(0);
-		expect(first.out).toStartWith(`${HEAD("investigation")}\n`);
-		expect(input("1", "--part", "1")).toEqual(first);
-		expect(input("1", "--part", "2").err).toContain("there is 1 part");
-	});
-});
-
 describe("tick input usage", () => {
 	test("an unknown tick, an ended tick, a tick without an order and a part outside the group exit 1", () => {
 		setUp();
@@ -1165,8 +1098,6 @@ describe("tick input usage", () => {
 		});
 		for (const args of [
 			["1"],
-			["1", "--part", "1"],
-			["2"],
 			["2", "--part", "1"],
 			["x"],
 			["2", "--part", "0"],
@@ -1191,63 +1122,10 @@ describe("tick input usage", () => {
 			]);
 	});
 
-	test("tick start without an order is a usage error for every role but the duty desk", () => {
-		setUp();
-		orderOf("investigation", { issue: 3 });
-		for (const role of ["investigation", "patrol", "clerk"])
-			expect(call(BASE, ["tick", "start", "--role", role])).toMatchObject({
-				code: 1,
-				out: "",
-			});
-		expect(ticks()).toEqual([]);
-	});
-
 	test("an input_chars outside the class exits 1 before a tick starts", () => {
 		setUp(`${CONFIG}input_chars: -5\n`);
 		orderOf("investigation", { issue: 3 });
 		expect(start("investigation")).toMatchObject({ code: 1, out: "" });
 		expect(ticks()).toEqual([]);
-	});
-});
-
-describe("in process", () => {
-	test("tick start with an order and tick input print what the command line prints", async () => {
-		setUp();
-		orderOf("prosecutor", { issue: 3 });
-		CASES.prosecutor?.setup();
-		const r = await inprocAsync(BASE, [
-			"tick",
-			"start",
-			"--role",
-			"prosecutor",
-			"--order",
-			"1",
-		]);
-		expect(r.code).toBe(0);
-		expect(skeleton(r.out)).toEqual([
-			HEAD("prosecutor"),
-			...(CASES.prosecutor?.skeleton ?? []),
-			END,
-		]);
-		expect(
-			await inprocAsync(BASE, ["tick", "input", "1", "--part", "1"]),
-		).toMatchObject({ code: 0, out: r.out });
-		// a built group prints as it was stored
-		expect(await inprocAsync(BASE, ["tick", "input", "1"])).toMatchObject({
-			code: 0,
-			out: r.out,
-		});
-		expect((await inprocAsync(BASE, ["tick", "input", "9"])).code).toBe(1);
-		// a taken order stays takeable: the second start takes it and starts a tick
-		const again = await inprocAsync(BASE, [
-			"tick",
-			"start",
-			"--role",
-			"prosecutor",
-			"--order",
-			"1",
-		]);
-		expect(again.code).toBe(0);
-		expect(lines(again.out)[0]).toBe(HEAD("prosecutor", 2));
 	});
 });

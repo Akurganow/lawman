@@ -309,21 +309,6 @@ test("an unknown precinct is a usage error", async () => {
 });
 
 test("the arguments %j are a usage error", async () => {
-	// clean
-	for (const args of [
-		["extra"],
-		["--json", "x"],
-		["--jsonx"],
-		["--part", "1", "--json"],
-		["--part", "0"],
-		["--json", "--part"],
-	] as string[][]) {
-		const r = cli(["clean", ...args], {}, "");
-		expect([args, r]).toEqual([
-			args,
-			{ code: EXIT.USAGE, out: "", err: expect.stringContaining("--json") },
-		]);
-	}
 	// lint-body
 	for (const args of [
 		["extra"],

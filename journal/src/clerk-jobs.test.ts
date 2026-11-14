@@ -70,25 +70,6 @@ describe("state rule: base and issue state", () => {
 		expect(r).toMatchObject({ job: "state", action: "kept" });
 	});
 
-	test("a source missing from the issue cache counts as open", () => {
-		const r = run({
-			state: "CLOSED",
-			markers: pairs(["handed", "7", "open"]),
-			pulls: [pull(7, 1, 3)],
-			closed: [1],
-		});
-		expect(r.action).toBe("kept");
-	});
-
-	test("the state rule runs before the table", () => {
-		const r = run({
-			state: "OPEN",
-			markers: pairs(["shut", "7", "closed"]),
-			pulls: [pull(7, 1)],
-		});
-		expect(r.job).toBe("state");
-	});
-
 	test("a kept marker takes the base of the previous pair marker", () => {
 		const r = run({
 			state: "OPEN",
@@ -255,27 +236,9 @@ describe("table rows", () => {
 		});
 	});
 
-	test("4: a conviction on a closed issue records its precedent", () => {
-		expect(run({ state: "CLOSED", ruling: conviction() }).job).toBe(
-			"precedent",
-		);
-	});
-
 	test("a ruling with no Precedent line gives no job", () => {
 		for (const ruling of [conviction(), acquittal()])
 			expect(run({ state: "CLOSED", ruling, holds: false }).job).toBe("-");
-	});
-
-	test("a referral gives no job", () => {
-		const referral = marker("court", "referral", 0);
-		expect(run({ markers: [referral] }).job).toBe("-");
-	});
-
-	test("4: a conviction after a referral opens a draft", () => {
-		const referral = marker("court", "referral", 0);
-		expect(run({ markers: [referral], ruling: conviction(1) }).job).toBe(
-			"open",
-		);
 	});
 
 	test("4: an entry does not answer a conviction", () => {

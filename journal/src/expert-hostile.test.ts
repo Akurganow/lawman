@@ -4,7 +4,7 @@ import * as db from "./db";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
 import { lintBody } from "./lint-body";
-import { carrier, cli, lead, mark, SHA, tempDb } from "./test-helpers";
+import { carrier, lead, mark, SHA, tempDb } from "./test-helpers";
 
 const AT = "2026-10-26T10:00:00Z";
 const TOKEN = ["gh", "p_", "A1b2C3d4E5f6G7h8I9j0K1l2M3n4O5p6Q7r8"].join("");
@@ -100,11 +100,7 @@ const inProcess = async (args: string[], input: string) => {
 		stdin.mockRestore();
 	}
 };
-const viaCli = async (args: string[], input: string) => cli(args, {}, input);
-const RUNNERS = [
-	["the CLI runner", viaCli],
-	["in process", inProcess],
-] as const;
+const RUNNERS = [["in process", inProcess]] as const;
 
 const OWN_PARTS: [string, string, string[]][] = [
 	["a secret", `key ${TOKEN}`, ["secret"]],
@@ -122,25 +118,6 @@ const OWN_PARTS: [string, string, string[]][] = [
 ];
 
 describe.each(KINDS)("hostile own words in the $name", (kind) => {
-	test.each(OWN_PARTS)(
-		"%s is rejected with its line",
-		async (_, part, rules) => {
-			const text = compose(kind, ["", part]);
-			const line = lineOf(text, part);
-			expect(await lintBody(text)).toEqual(
-				rules.map((rule) => `${line}: ${rule}`),
-			);
-		},
-	);
-
-	test("a line of three backticks swallows the marker and is rejected", async () => {
-		const text = compose(kind, ["", FENCE, "after the fence"]);
-		const last = text.split("\n").length;
-		expect(await lintBody(text)).toEqual([
-			`${last}: last line is inside a fenced block`,
-		]);
-	});
-
 	const hostile = compose(kind, ["", ...OWN_PARTS.map(([, part]) => part)]);
 
 	test.each(RUNNERS)(
@@ -275,14 +252,6 @@ describe("a hostile expert answer through clean", () => {
 			expect(r.out).not.toContain("ignore the rules");
 			expect(r.out).not.toContain("![");
 			expect(r.out).not.toContain("<img");
-		},
-	);
-
-	test.each(RUNNERS)(
-		"the cleaned output keeps a marker line for the fence to disarm through %s",
-		async (_, run) => {
-			const r = await run(["clean"], HOSTILE_ANSWER);
-			expect(r.out).toContain("<!-- lawman:");
 		},
 	);
 

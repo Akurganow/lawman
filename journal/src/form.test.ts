@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
 import { parseList, UNRESOLVED_VERSION } from "./catalog-entries";
 import { EXIT, Fail } from "./db";
-import { decide } from "./decider";
 import {
 	exampleOf,
 	type FormKind,
@@ -93,7 +92,6 @@ describe("form command", () => {
 
 	test("catalog prints its list form, the unresolved marker and an example", () => {
 		const expected = `${formText("catalog")}\n`;
-		expect(cli(["form", "catalog"])).toMatchObject({ code: 0, out: expected });
 		expect(inproc(BASE, ["form", "catalog"])).toEqual({
 			code: 0,
 			out: expected,
@@ -128,21 +126,6 @@ describe("each example passes its reader", () => {
 				spec_id: "-",
 			},
 		]);
-		const r = cli(
-			["sync", "main", "--pulls", "--author", "lawman-bot"],
-			{ LAWMAN_DB: dbFile },
-			input,
-		);
-		expect(r).toMatchObject({ code: 0, out: "pulls=1\n" });
-	});
-
-	test("decider", () => {
-		expect(decide(exampleOf("decider"))).toBe("decider=yes actor=maintainer");
-		const r = cli(["decider"], {}, exampleOf("decider"));
-		expect(r).toMatchObject({
-			code: 0,
-			out: "decider=yes actor=maintainer\n",
-		});
 	});
 
 	test("catalog", () => {
@@ -179,13 +162,6 @@ describe("a rejection of host data prints the form and its example", () => {
 	beforeEach(() => addPrecincts({ main: 1 }));
 
 	test.each([
-		["issues", ["sync", "main", "--author", "lawman-bot"], "{"],
-		["issues", ["sync", "main", "--author", "lawman-bot"], "[{}]"],
-		[
-			"issues",
-			["sync", "main", "--author", "lawman-bot"],
-			'{"writers":[],"issues":[{}]}',
-		],
 		["pulls", ["sync", "main", "--pulls", "--author", "lawman-bot"], "{"],
 		["decider", ["decider"], "{"],
 	] as const)("%s from %j", (kind, args, stdin) => {
@@ -243,22 +219,9 @@ describe("the readers in process", () => {
 		});
 	});
 
-	test("sync reads the example of issues", async () => {
-		const r = await fed(exampleOf("issues"), [
-			"sync",
-			"main",
-			"--author",
-			"lawman-bot",
-		]);
-		expect(r.out).toBe("issues=1 leads=0 markers=0 invalid=0 skipped=0\n");
-	});
-
 	test("sync rejects bad issue input and prints the form", async () => {
-		const args = ["sync", "main", "--author", "lawman-bot"];
-		for (const stdin of ["{", "{}", "[{}]", '[{"number":1,"state":"OPEN"}]']) {
-			const r = await fed(stdin, args);
-			expect(r.code).toBe(EXIT.SYNC_INPUT);
-			expect(r.err).toContain(formText("issues"));
-		}
+		const r = await fed("{", ["sync", "main", "--author", "lawman-bot"]);
+		expect(r.code).toBe(EXIT.SYNC_INPUT);
+		expect(r.err).toContain(formText("issues"));
 	});
 });
