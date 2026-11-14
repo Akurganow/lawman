@@ -4,6 +4,17 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.4.0 - 2026-11-14
+#### Features
+- (**journal**) give every role fresh host data before its alarms and input (4f77074)
+#### Bug Fixes
+- (**journal**) count the duty desk's failed syncs per precinct (b4cdf74)
+#### Refactoring
+- (**journal**) judge each alarm when its data is current (95e8a6c)
+
+- - -
+
+
 ## v1.3.1 - 2026-11-14
 #### Documentation
 - (**readme**) restore the alt text that describes the banner (eaead3b)
