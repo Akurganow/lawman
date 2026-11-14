@@ -104,8 +104,8 @@ const rowOf = (body: string) =>
 			],
 		}),
 		TRUSTED,
-	)[0]?.row;
-const sourcesOf = (body: string) => rowOf(body)?.issues;
+	)[0];
+const sourcesOf = (body: string) => rowOf(body)?.row.issues;
 const tracedOf = (body: string) => rowOf(body)?.traced;
 
 const call = (...args: string[]) => inprocAsync(BASE, args);
@@ -124,7 +124,7 @@ describe("the body of a conviction", () => {
 		await cache([convicted("Fix `x`.")]);
 		const body = await pullBody();
 		expect(body).toBe(`Closes #1\n\n${CLERK_TRACE}\n`);
-		expect(tracedOf(body)).toBe(1);
+		expect(tracedOf(body)).toBe(true);
 	});
 
 	test.each([

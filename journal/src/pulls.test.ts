@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fixture from "./fixtures/pulls.json";
-import { readPulls } from "./pulls";
+import { CLERK_TRACE, readPulls } from "./pulls";
 import {
 	BOT,
 	type Comment,
@@ -111,15 +111,16 @@ describe("readPulls rows", () => {
 		expect(readOf([{ number: 1, body }])[0]?.issues).toBe("6");
 	});
 
-	test("a fingerprint line or a hand-over comment of the login is a trace of a role", () => {
-		const handoff = `Clerk\n\n<!-- lawman: role=clerk stage=handoff at=2026-10-14T09:00:00Z -->`;
-		const rows = readOf([
-			{ number: 1, body: "<!-- pipeline-work-fingerprint: a sources=#6 -->" },
-			{ number: 2, comments: [{ body: handoff }] },
-			{ number: 3, comments: [{ body: handoff, author: "stranger" }] },
-			{ number: 4, body: "Closes #6", closes: [6] },
-		]);
-		expect(rows.map((r) => r.traced)).toEqual([1, 1, 0, 0]);
+	test("a fingerprint line or the clerk's line is the trace of a role", () => {
+		const bodies = [
+			"<!-- pipeline-work-fingerprint: a sources=#6 -->",
+			`Closes #6\r\n\r\n${CLERK_TRACE}`,
+			`Closes #6 ${CLERK_TRACE}`,
+			"Closes #6",
+		];
+		const pulls = bodies.map((body, number) => ({ number, body }));
+		const read = readPulls(JSON.stringify(hostPulls(pulls)), BOT);
+		expect(read.map((p) => p.traced)).toEqual([true, true, false, false]);
 	});
 });
 

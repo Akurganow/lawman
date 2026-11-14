@@ -104,14 +104,14 @@ export const convicted = (priority: string): Spec =>
 		mark("court", "conviction", ` sha=${SHA} priority=${priority}`),
 	);
 
-// traced: the pull request carries a trace of a role
-export function cache(...pulls: [number, number[], string?, boolean?][]) {
+// the pull requests of these cases carry a trace of a role
+export function cache(...pulls: [number, number[], string?][]) {
 	seed((db) => {
 		db.run("DELETE FROM pulls");
-		for (const [number, issues, spec, traced] of pulls)
+		for (const [number, issues, spec] of pulls)
 			db.run(
-				"INSERT INTO pulls (precinct, number, issues, spec, traced) VALUES ('main', ?, ?, ?, ?)",
-				[number, issues.join(","), spec ?? "none", Number(traced ?? false)],
+				"INSERT INTO pulls (precinct, number, issues, spec, traced) VALUES ('main', ?, ?, ?, 1)",
+				[number, issues.join(","), spec ?? "none"],
 			);
 	});
 }

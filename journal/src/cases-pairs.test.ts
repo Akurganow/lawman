@@ -99,7 +99,7 @@ describe("case: the line of a clerk job", () => {
 			human("OPEN"),
 		]) {
 			put({ 1: spec });
-			cache([7, [1], "none", true]);
+			cache([7, [1]]);
 			expect(needOnly(1)).toBe("need=clerk");
 			expect(jobOf(1)).toBe("adopt - 7 1 -");
 		}
@@ -107,7 +107,7 @@ describe("case: the line of a clerk job", () => {
 
 	test("the lowest pull request of the issue is adopted", () => {
 		put({ 1: human("OPEN") });
-		cache([9, [1], "none", true], [4, [1, 2], "none", true], [3, [2]]);
+		cache([9, [1]], [4, [1, 2]], [3, [2]]);
 		expect(jobOf(1)).toBe("adopt - 4 1,2 -");
 	});
 
@@ -177,7 +177,7 @@ describe("case: leaving the funnel", () => {
 
 	test("a human issue needs the clerk for a job", () => {
 		put({ 1: human("OPEN") });
-		cache([7, [1], "none", true]);
+		cache([7, [1]]);
 		expect(need(1)).toBe(
 			"need=clerk round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=adopt action=- pull=7 sources=1 branch=- kind=- answer=- answer_id=-",
 		);

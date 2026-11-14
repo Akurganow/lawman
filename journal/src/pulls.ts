@@ -20,7 +20,6 @@ export type PullRow = {
 	spec: Vote;
 	work: Work;
 	spec_id: string;
-	traced: number;
 };
 
 type Obj = Record<string, unknown>;
@@ -45,9 +44,8 @@ const FINGERPRINT =
 	/^<!-- pipeline-work-fingerprint: [a-z0-9-]+ sources=(#[0-9]+(?:,#[0-9]+)*) -->$/;
 const SPEC = { role: "spec-writer", stage: "spec" };
 const READY = { role: "executor", stage: "ready" };
-const HANDOFF = { role: "clerk", stage: "handoff" };
-// the last line of the body of a pull request the clerk opens, a trace from its start
-export const CLERK_TRACE = "<!-- lawman: opened by the clerk -->";
+// the last line of a body the clerk writes; with a fingerprint line, the trace of a role
+export const CLERK_TRACE = "<!-- pull request of the Lawman clerk -->";
 const NO_SPEC_ID = "-";
 
 const reject = (why: string) =>
@@ -114,14 +112,11 @@ function readForm(input: string): { writers: Set<string>; pulls: unknown[] } {
 	};
 }
 
-// the sources that the fingerprint lines of the body name, such as `#12`
-const fingerprinted = (pull: Pull) =>
-	pull.body
-		.split("\n")
-		.flatMap((line) => stripCr(line).match(FINGERPRINT)?.[1]?.split(",") ?? []);
-
 function sourceNumbers(pull: Pull): string {
-	const named = fingerprinted(pull).map((source) => Number(source.slice(1)));
+	const named = pull.body
+		.split("\n")
+		.flatMap((line) => stripCr(line).match(FINGERPRINT)?.[1]?.split(",") ?? [])
+		.map((source) => Number(source.slice(1)));
 	return [...new Set([...pull.closes, ...named])].sort(ascending).join(",");
 }
 
@@ -180,7 +175,12 @@ function workOf(
 		: "ready";
 }
 
-export type ReadPull = { row: PullRow; text: HostText; url: string | null };
+export type ReadPull = {
+	row: PullRow;
+	traced: boolean;
+	text: HostText;
+	url: string | null;
+};
 type StoredPull = Omit<ReadPull, "text"> & { text: TextDone };
 
 const pullText = (pull: Pull): HostText => ({
@@ -209,13 +209,11 @@ export function readPulls(input: string, login: string): ReadPull[] {
 				spec: specVote(spec, writers),
 				work: workOf(pull, login, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
-				// a trace of a role: a fingerprint line, the clerk's own line or a hand-over comment
-				traced: Number(
-					fingerprinted(pull).length > 0 ||
-						pull.body.split("\n").some((l) => stripCr(l) === CLERK_TRACE) ||
-						newestMarker(pull, login, HANDOFF) !== null,
-				),
 			},
+			traced: pull.body
+				.split("\n")
+				.map(stripCr)
+				.some((line) => line === CLERK_TRACE || FINGERPRINT.test(line)),
 			text: pullText(pull),
 			url: pull.url,
 		});
@@ -226,7 +224,7 @@ export function readPulls(input: string, login: string): ReadPull[] {
 function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
 	dropComments(db, name, "pull");
-	for (const { row, text, url } of read) {
+	for (const { row, traced, text, url } of read) {
 		db.run(
 			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, traced, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[
@@ -236,7 +234,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 				row.spec,
 				row.work,
 				row.spec_id,
-				row.traced,
+				Number(traced),
 				text.body.text,
 				url,
 				text.body.sha,

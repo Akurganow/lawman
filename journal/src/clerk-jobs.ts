@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import type { CaseMarker } from "./cases";
 
-// traced: the pull request carries a trace of a role, so the clerk may take it up
+// traced: a pull request of a role; one without a trace is the owner's
 export type CachedPull = {
 	number: number;
 	issues: number[];
@@ -132,15 +132,15 @@ function tableRow(
 	const points = pull !== undefined && Number(k?.fields.pull) === pull.number;
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
-	if (pull !== undefined && !points && open && pull.traced) return job("adopt");
-	// an open pull request without a trace is the owner's work: the clerk only briefs it
-	const ownersPull = pull !== undefined && !points && !pull.traced;
+	if (pull !== undefined && !points && open) return job("adopt");
+	// the clerk never takes the owner's pull request: it only briefs it on a ruling
+	const owners = i.pulls.find((p) => !p.traced && p.issues.includes(i.issue));
 	if (
-		ownersPull &&
+		owners !== undefined &&
 		i.ruling !== undefined &&
-		!briefed(i.markers, pull.number, i.ruling.ord)
+		!briefed(i.markers, owners.number, i.ruling.ord)
 	)
-		return { ...job("brief"), pull: String(pull.number) };
+		return { ...job("brief"), pull: String(owners.number) };
 	if (pull === undefined && base === "handed") return job("settle");
 	const decided = awaitingDecision(i.markers).find(
 		(m) => !i.pulls.some((p) => p.number === m),
@@ -152,7 +152,7 @@ function tableRow(
 		i.ruling?.stage === "conviction" &&
 		k === undefined &&
 		open &&
-		!ownersPull
+		owners === undefined
 	)
 		return job("open");
 	const due = precedentDue(i);
@@ -252,11 +252,8 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 	const pull =
 		named ??
 		i.pulls
-			.filter((p) => p.issues.includes(i.issue))
-			// the owner's pull request comes first, so a role never doubles the owner's work
-			.sort(
-				(a, b) => Number(a.traced) - Number(b.traced) || a.number - b.number,
-			)[0];
+			.filter((p) => p.traced && p.issues.includes(i.issue))
+			.sort((a, b) => a.number - b.number)[0];
 	const row = rowOf(i, k, baseOf(pairs), pull);
 	const found = pull === undefined ? NONE : String(pull.number);
 	return {

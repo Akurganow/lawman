@@ -29,17 +29,10 @@ describe("sync --pulls", () => {
 		);
 	const stored = (p = "main") =>
 		rows(
-			`SELECT number, issues, spec, work, spec_id, traced FROM pulls WHERE precinct = '${p}' ORDER BY number`,
+			`SELECT number, issues, spec, work, spec_id FROM pulls WHERE precinct = '${p}' ORDER BY number`,
 		);
 	const OLD = [
-		{
-			number: 99,
-			issues: "1",
-			spec: "waiting",
-			work: "todo",
-			spec_id: "-",
-			traced: 0,
-		},
+		{ number: 99, issues: "1", spec: "waiting", work: "todo", spec_id: "-" },
 	];
 	const seedOld = () =>
 		seed((db) => {
@@ -76,14 +69,7 @@ describe("sync --pulls", () => {
 		expect(feed(fixture).code).toBe(0);
 		expect(stored().map((r) => r.number)).toEqual([7, 12]);
 		expect(stored("other")).toEqual([
-			{
-				number: 5,
-				issues: "",
-				spec: "none",
-				work: "todo",
-				spec_id: "-",
-				traced: 0,
-			},
+			{ number: 5, issues: "", spec: "none", work: "todo", spec_id: "-" },
 		]);
 	});
 
@@ -158,7 +144,7 @@ describe("syncPulls in process", () => {
 		expect(r).toMatchObject({ code: 0, out: "pulls=2\n" });
 		expect(
 			rows(
-				"SELECT number, issues, spec, work, spec_id, traced FROM pulls ORDER BY number",
+				"SELECT number, issues, spec, work, spec_id FROM pulls ORDER BY number",
 			),
 		).toEqual(FIXTURE_ROWS);
 	});
