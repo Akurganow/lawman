@@ -110,6 +110,17 @@ describe("readPulls rows", () => {
 		const body = "<!-- pipeline-work-fingerprint: a sources=#6 -->\r\nmore";
 		expect(readOf([{ number: 1, body }])[0]?.issues).toBe("6");
 	});
+
+	test("only a trace of a role makes a pull request adoptable", () => {
+		const handoff = `Clerk\n\n<!-- lawman: role=clerk stage=handoff at=2026-10-14T09:00:00Z -->`;
+		const rows = readOf([
+			{ number: 1, body: "<!-- pipeline-work-fingerprint: a sources=#6 -->" },
+			{ number: 2, comments: [{ body: handoff }] },
+			{ number: 3, comments: [{ body: handoff, author: "stranger" }] },
+			{ number: 4, body: "Closes #6", closes: [6] },
+		]);
+		expect(rows.map((r) => r.adoptable)).toEqual([1, 1, 0, 0]);
+	});
 });
 
 describe("readPulls times", () => {

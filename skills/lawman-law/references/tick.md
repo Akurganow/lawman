@@ -51,7 +51,7 @@ The journal prints a long output in parts. The role group and the tick group are
 
 Each part runs between its first line and its last. The first line is `lawman input 1 … part <k> of <n>`. The last line is `end part <k> of <n>`.
 
-Read a group to its last part. The orders stand at the end of the role group. The `self` lines stand at the end of the tick group.
+Read a group to its last part. The orders stand at the end of the role group. The duty desk is the exception: its orders stand in the output of its tick start. The `self` lines stand at the end of the tick group.
 
 Ask for part `<k>` alone with `--part <k>` on `tick input`. The commands `wake` and `tick start` take no `--part`.
 
@@ -144,7 +144,8 @@ bin/journal clean
 ```
 bin/journal clean --json
 ```
-- Never open the installation's journal database or run SQL on it. The journal's commands are the only way in. `bin/journal tick end` prints nothing, and exit 0 confirms the record. `bin/journal status` prints the open orders, the last tick of each role, the open alarms and the lead counts.
+- Never open the installation's journal database or run SQL on it. The journal's commands are the only way in. `bin/journal tick end` prints nothing, and exit 0 confirms the record.
+- Read the output of a journal command whole. Never cut it by lines or bytes. The journal prints a long output in parts.
 - A diff view is one line for each changed path, with its count of added lines and its count of removed lines. Read the diff view of a change before you read the content of any changed path. Read the content of a path when the work needs it.
 - When `clean` prints a frame line with `part 1 of n`, the cleaned text is longer than one part. Read the host again for the same reply. Send it through `clean` with the number of each other part you need, and read only what the journal prints.
 ```
@@ -215,7 +216,7 @@ Issue roles other than the response unit only.
 bin/journal case <p> <n>
 ```
 
-The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED> lead=<body|comment> related=<list> priority=<P0|P1|P2|P3> job=<state|reopen-issue|adopt|settle|open|precedent|decision|-> action=<close-pull|reopen|open|kept|-> pull=<m|-> sources=<a,b|-> branch=<lawman/execute-<n>-<k>|lawman/precedent-<n>-<k>|-> kind=<requirement|defect|-> answer=<up|down|comment|-> answer_id=<id|->`. Exit 1 gives `failed`. The skill says when the order is stale.
+The output is `need=<investigation|prosecutor|defender|court|clerk|none> round=<n> returned=<prosecutor|defender|prosecutor,defender|-> department=<d|-> sha=<sha|-> state=<OPEN|CLOSED> lead=<body|comment> related=<list> priority=<P0|P1|P2|P3> job=<state|reopen-issue|adopt|brief|settle|open|precedent|decision|-> action=<close-pull|reopen|open|kept|-> pull=<m|-> sources=<a,b|-> branch=<lawman/execute-<n>-<k>|lawman/precedent-<n>-<k>|-> kind=<requirement|defect|-> answer=<up|down|comment|-> answer_id=<id|->`. Exit 1 gives `failed`. The skill says when the order is stale.
 
 For an issue without a lead, the output is `need=clerk` or `need=none`, with `-` in the lead fields, and the exit is 0.
 

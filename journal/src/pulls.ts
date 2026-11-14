@@ -20,6 +20,7 @@ export type PullRow = {
 	spec: Vote;
 	work: Work;
 	spec_id: string;
+	adoptable: number;
 };
 
 type Obj = Record<string, unknown>;
@@ -44,6 +45,7 @@ const FINGERPRINT =
 	/^<!-- pipeline-work-fingerprint: [a-z0-9-]+ sources=(#[0-9]+(?:,#[0-9]+)*) -->$/;
 const SPEC = { role: "spec-writer", stage: "spec" };
 const READY = { role: "executor", stage: "ready" };
+const HANDOFF = { role: "clerk", stage: "handoff" };
 const NO_SPEC_ID = "-";
 
 const reject = (why: string) =>
@@ -110,11 +112,14 @@ function readForm(input: string): { writers: Set<string>; pulls: unknown[] } {
 	};
 }
 
-function sourceNumbers(pull: Pull): string {
-	const named = pull.body
+// the sources that the fingerprint lines of the body name, such as `#12`
+const fingerprinted = (pull: Pull) =>
+	pull.body
 		.split("\n")
-		.flatMap((line) => stripCr(line).match(FINGERPRINT)?.[1]?.split(",") ?? [])
-		.map((source) => Number(source.slice(1)));
+		.flatMap((line) => stripCr(line).match(FINGERPRINT)?.[1]?.split(",") ?? []);
+
+function sourceNumbers(pull: Pull): string {
+	const named = fingerprinted(pull).map((source) => Number(source.slice(1)));
 	return [...new Set([...pull.closes, ...named])].sort(ascending).join(",");
 }
 
@@ -202,6 +207,11 @@ export function readPulls(input: string, login: string): ReadPull[] {
 				spec: specVote(spec, writers),
 				work: workOf(pull, login, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
+				// a trace of a role: a fingerprint line of the old pipeline or a hand-over comment
+				adoptable: Number(
+					fingerprinted(pull).length > 0 ||
+						newestMarker(pull, login, HANDOFF) !== null,
+				),
 			},
 			text: pullText(pull),
 			url: pull.url,
@@ -215,7 +225,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	dropComments(db, name, "pull");
 	for (const { row, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, adoptable, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[
 				name,
 				row.number,
@@ -223,6 +233,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 				row.spec,
 				row.work,
 				row.spec_id,
+				row.adoptable,
 				text.body.text,
 				url,
 				text.body.sha,

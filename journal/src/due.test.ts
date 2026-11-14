@@ -33,7 +33,7 @@ beforeEach(() => addPrecincts({ main: 1, side: 1 }));
 describe("due for the clerk", () => {
 	test("an issue without a lead is a candidate", () => {
 		put({ 1: human("OPEN") });
-		cache([7, [1]]);
+		cache([7, [1], "none", true]);
 		expect(due("clerk")).toBe("main\t1\n");
 	});
 

@@ -148,7 +148,7 @@ journal wake --role <r>
 
 ### Alarms and status
 
-- `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name. It then prints the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
+- `status`: prints the open alarms, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name. It then prints the last tick of each role, the lead counts and, last, the open orders. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
 
 No command computes the alarms alone. Every tick start does, and prints a line `ALARM …` for each new alarm. [The pipeline](pipeline.md#alarms) lists the alarms and says who raises each. The start of the duty desk prints the open alarms again, except those it raised itself.
 

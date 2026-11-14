@@ -9,6 +9,7 @@ import {
 	pull,
 	run,
 	type Spec,
+	traced,
 } from "./clerk-jobs-fixture";
 
 describe("state rule: base and issue state", () => {
@@ -141,8 +142,8 @@ describe("table rows", () => {
 		expect(r.job).toBe("-");
 	});
 
-	test("2: an open pull request of an open issue is adopted", () => {
-		const r = run({ pulls: [pull(9, 1), pull(7, 1, 2)] });
+	test("2: an open pull request with a trace of a role is adopted", () => {
+		const r = run({ pulls: [traced(9, 1), traced(7, 1, 2)] });
 		expect(r).toMatchObject({
 			job: "adopt",
 			action: "-",
@@ -153,13 +154,30 @@ describe("table rows", () => {
 	});
 
 	test("2: a closed issue adopts nothing", () => {
-		expect(run({ state: "CLOSED", pulls: [pull(7, 1)] }).job).toBe("-");
+		expect(run({ state: "CLOSED", pulls: [traced(7, 1)] }).job).toBe("-");
+	});
+
+	test("2: the owner's pull request is never adopted, and is briefed once per ruling", () => {
+		const brief = marker("clerk", "brief", 2, { pull: "7" });
+		const ruling = conviction(1);
+		expect(run({ pulls: [pull(7, 1)] }).job).toBe("-");
+		for (const state of ["OPEN", "CLOSED"])
+			expect(run({ state, ruling, pulls: [pull(7, 1)] })).toMatchObject({
+				job: "brief",
+				pull: "7",
+				sources: "1",
+			});
+		const after = { ruling, pulls: [pull(7, 1)], holds: false };
+		expect(run({ ...after, markers: [brief] }).job).toBe("-");
+		expect(run({ ...after, markers: [brief], ruling: acquittal(3) }).job).toBe(
+			"brief",
+		);
 	});
 
 	test("2: a pair marker for another pull request adopts the new one", () => {
 		const r = run({
 			markers: pairs(["handed", "5", "open"]),
-			pulls: [pull(7, 1)],
+			pulls: [traced(7, 1)],
 		});
 		expect(r).toMatchObject({ job: "adopt", pull: "7" });
 	});

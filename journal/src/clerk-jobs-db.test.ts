@@ -20,8 +20,8 @@ describe("clerk-job readers", () => {
 	test("pullsOf lists the cached pull requests with numeric sources", () => {
 		cache([7, [1, 2]], [9, []]);
 		expect(inDb((db) => pullsOf(db, "main"))).toEqual([
-			{ number: 7, issues: [1, 2] },
-			{ number: 9, issues: [] },
+			{ number: 7, issues: [1, 2], adoptable: false },
+			{ number: 9, issues: [], adoptable: false },
 		]);
 		expect(inDb((db) => pullsOf(db, "side"))).toEqual([]);
 	});

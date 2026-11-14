@@ -14,7 +14,7 @@ import {
 tempDb();
 
 describe("status queue lines", () => {
-	test("one line per role with open orders, by role name, after the order lines", () => {
+	test("one line per role with open orders, by role name, before the order lines", () => {
 		seed((d) => {
 			precinct(d, "main");
 			order(d, "main", "investigation", { issue: 5, at: later(2) });
@@ -29,10 +29,9 @@ describe("status queue lines", () => {
 			`queue clerk 3 oldest ${BASE}`,
 			`queue investigation 1 oldest ${later(2)}`,
 		]);
-		const first = kinds.indexOf("queue");
-		expect(kinds.slice(0, first)).toEqual(Array(4).fill("order"));
-		expect(kinds.slice(first, first + 2)).toEqual(["queue", "queue"]);
-		expect(kinds.slice(first + 2)).not.toContain("order");
+		const first = kinds.indexOf("order");
+		expect(kinds.slice(0, first)).toContain("queue");
+		expect(kinds.slice(first)).toEqual(Array(4).fill("order"));
 	});
 
 	test("no open order, no queue line", () => {

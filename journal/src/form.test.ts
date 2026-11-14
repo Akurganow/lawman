@@ -126,6 +126,7 @@ describe("each example passes its reader", () => {
 				spec: "none",
 				work: "todo",
 				spec_id: "-",
+				adoptable: 0,
 			},
 		]);
 		const r = cli(

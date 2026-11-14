@@ -189,6 +189,22 @@ Taken up by the clerk as a draft that counts as not started.
 5. Make the pull request a draft.
 6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it.
 
+## brief
+
+`<pull>` is the owner's pull request. Change nothing on it but this one comment.
+
+1. Read the ruling.
+2. In the same cleaned output, take the URL of the newest comment by `<login>` with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`. Leave out a part that has none.
+3. Write the brief on pull request `<pull>`, as the `tick.md#write-a-comment` section says. Its heading is `Clerk`. Its body is the sentence `Issue #<n> was investigated and ruled on. This pull request stays as its author left it.`, a blank line, and one line for each part, in this order:
+   ```
+   - Case: <URL>
+   - Charge: <URL>
+   - Defence: <URL>
+   - Ruling, <conviction|acquittal>: <ruling URL>
+   ```
+   Its marker is `<!-- lawman: role=clerk stage=brief pull=<pull> at=<UTC> -->`.
+4. Write the comment on the issue `<n>`, with the sentence `Pull request #<pull> holds the brief of this case.` and the same marker form.
+
 ## precedent
 
 The title is `Precedents of #<n>: ` and the names of the files the `precedent` output wrote or cancelled, separated by commas. Take them from each `entry` line and from each `cancel` line that holds a name and no `missing`. The journal holds each of these names to a fixed class, so the title needs no body check. The body is the file `runs/<tick id>/pull-body.md`, left by the write call.

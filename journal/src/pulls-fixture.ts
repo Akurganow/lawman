@@ -13,8 +13,16 @@ export const FIXTURE_ROWS: PullRow[] = [
 		spec: "up",
 		work: "ready",
 		spec_id: "IC_spec_7",
+		adoptable: 1,
 	},
-	{ number: 12, issues: "", spec: "none", work: "todo", spec_id: "-" },
+	{
+		number: 12,
+		issues: "",
+		spec: "none",
+		work: "todo",
+		spec_id: "-",
+		adoptable: 0,
+	},
 ];
 
 export type Reactions = { up?: string[]; down?: string[] };

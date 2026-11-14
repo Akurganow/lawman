@@ -162,7 +162,7 @@ Lead: #<n>, "<the claim, quoted>"
 <the commits of each named path>
 
 ## Related
-<open pull requests of the trusted login on the same paths; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
+<open pull requests of the trusted login on the same paths, each by number; any other open pull request only in a count, never by number; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
 
 ## Not established
 <what could not be established, and why. For a missing path: the commit, its subject, and the new path, the removal, or that no commit touched the path>
