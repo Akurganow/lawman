@@ -170,6 +170,12 @@ export const WORK: Host = {
 			closes: [7],
 			comments: [{ body: SPEC, author: TRUSTED, up: ["maint-a"] }],
 		},
-		{ number: 9, author: TRUSTED, closes: [5] },
+		// left by the old pipeline, so the clerk adopts it
+		{
+			number: 9,
+			author: TRUSTED,
+			closes: [5],
+			body: "<!-- pipeline-work-fingerprint: old-work sources=#5 -->",
+		},
 	],
 };

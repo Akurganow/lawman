@@ -143,6 +143,7 @@ describe("open", () => {
 				url: null,
 				raw_sha: null,
 				withheld: 0,
+				traced: 0,
 			},
 		]);
 		expect(() =>
@@ -175,6 +176,7 @@ describe("open", () => {
 				url: null,
 				raw_sha: null,
 				withheld: 0,
+				traced: 0,
 			},
 		]);
 		db.run(
@@ -255,7 +257,7 @@ describe("open", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
 			issues: { body: "", url: null, raw_sha: null, withheld: 0 },
-			pulls: { body: "", url: null, raw_sha: null, withheld: 0 },
+			pulls: { body: "", url: null, raw_sha: null, withheld: 0, traced: 0 },
 			ticks: { dispatch: null, parts: null },
 			precincts: {
 				pulls_synced_at: null,
@@ -310,7 +312,7 @@ describe("migration 9", () => {
 			},
 			roles: { checks: 0 },
 			issues: { url: null, raw_sha: null, withheld: 0 },
-			pulls: { url: null, raw_sha: null, withheld: 0 },
+			pulls: { url: null, raw_sha: null, withheld: 0, traced: 0 },
 			comments: { raw_sha: null, withheld: 0, url: null },
 		};
 		for (const [table, list] of Object.entries(before)) {
@@ -372,6 +374,7 @@ describe("probe", () => {
 	});
 
 	test("--schema accepts the current and older versions and rejects the next", () => {
+		expect(cli(["probe", "--schema", "13"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "12"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "11"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
@@ -382,7 +385,7 @@ describe("probe", () => {
 		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "13"]).code).toBe(6);
+		expect(cli(["probe", "--schema", "14"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {

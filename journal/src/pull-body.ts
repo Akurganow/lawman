@@ -5,6 +5,7 @@ import { unified } from "unified";
 import { visit } from "unist-util-visit";
 import { cleanCharacters } from "./clean";
 import { splitPrecedent } from "./precedent-file";
+import { CLERK_TRACE } from "./pulls";
 
 // The ruling is already a public comment. A pull request body adds two risks: the
 // host may close or reference an issue that the words name, and the journal reads
@@ -73,6 +74,7 @@ export function convictionBody(
 			disposition ? fenced([`Disposition: ${disposition}`]) : LEFT_OUT,
 			`Ruling: ${source}`,
 		);
+	parts.push(CLERK_TRACE);
 	return `${parts.join("\n\n")}\n`;
 }
 

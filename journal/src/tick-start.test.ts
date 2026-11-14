@@ -206,7 +206,14 @@ const CASES: Record<string, Case> = {
 		setup: () =>
 			host({
 				issues: { 3: human("OPEN") },
-				pulls: [{ number: 7, author: TRUSTED, closes: [3] }],
+				pulls: [
+					{
+						number: 7,
+						author: TRUSTED,
+						closes: [3],
+						body: "<!-- pipeline-work-fingerprint: old-work sources=#3 -->",
+					},
+				],
 			}),
 		skeleton: [
 			...RAN,

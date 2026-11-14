@@ -48,6 +48,12 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > That is safe because no role reacts and the clerk marks its own closes and reopens.
 
+### Pairs
+
+> The owner and the roles work under one login. Only a trace of a role tells a pull request that a role left behind from the owner's own work.
+
+> A second pull request beside the owner's would do the same work twice. The brief keeps the case and the ruling beside the owner's work.
+
 ### The leak rule
 
 > A precinct's tools write absolute paths into files, and adding files by name reads no content.
@@ -67,6 +73,8 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Working rules
 
 > A line of the text equal to the delimiter would end the heredoc early and run the rest as commands.
+
+> A cut output loses the lines after the cut, and the alarms and the orders can stand there.
 
 ## markers.md
 
@@ -129,6 +137,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 > A stop there is answered, not recorded, because no tick exists yet.
 
 > Read the tick group to its last part, as item 1 says, because the `self` lines stand at the end.
+
+### Case format
+
+> A host can link every pull request that a comment names by number, so a number puts a link to the case into a pull request that has nothing to do with it.
 
 ## skills/patrol/SKILL.md
 

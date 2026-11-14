@@ -58,7 +58,14 @@ export const run = (s: Scene): ClerkCase => clerkCase(inputOf(s));
 
 export const conviction = (i = 0) => marker("court", "conviction", i);
 export const acquittal = (i = 0) => marker("court", "acquittal", i);
+// a pull request that carries a trace of a role
 export const pull = (number: number, ...issues: number[]): CachedPull => ({
 	number,
 	issues,
+	traced: true,
+});
+// a pull request of the owner's own work
+export const owners = (number: number, ...issues: number[]): CachedPull => ({
+	...pull(number, ...issues),
+	traced: false,
 });

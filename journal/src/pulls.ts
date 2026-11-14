@@ -45,6 +45,8 @@ const FINGERPRINT =
 	/^<!-- pipeline-work-fingerprint: [a-z0-9-]+ sources=(#[0-9]+(?:,#[0-9]+)*) -->$/;
 const SPEC = { role: "spec-writer", stage: "spec" };
 const READY = { role: "executor", stage: "ready" };
+// the last line of a body the clerk writes; with a fingerprint line, the trace of a role
+export const CLERK_TRACE = "<!-- pull request of the Lawman clerk -->";
 const NO_SPEC_ID = "-";
 
 const reject = (why: string) =>
@@ -175,7 +177,12 @@ function workOf(
 		: "ready";
 }
 
-export type ReadPull = { row: PullRow; text: HostText; url: string | null };
+export type ReadPull = {
+	row: PullRow;
+	traced: boolean;
+	text: HostText;
+	url: string | null;
+};
 type StoredPull = Omit<ReadPull, "text"> & { text: TextDone };
 
 const pullText = (pull: Pull): HostText => ({
@@ -206,6 +213,10 @@ export function readPulls(input: string, login: string): ReadPull[] {
 				work: workOf(pull, login, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
+			traced: pull.body
+				.split("\n")
+				.map(stripCr)
+				.some((line) => line === CLERK_TRACE || FINGERPRINT.test(line)),
 			text: pullText(pull),
 			url: pull.url,
 		});
@@ -216,9 +227,9 @@ export function readPulls(input: string, login: string): ReadPull[] {
 function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	db.run("DELETE FROM pulls WHERE precinct = ?", [name]);
 	dropComments(db, name, "pull");
-	for (const { row, text, url } of read) {
+	for (const { row, traced, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, traced, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[
 				name,
 				row.number,
@@ -226,6 +237,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 				row.spec,
 				row.work,
 				row.spec_id,
+				Number(traced),
 				text.body.text,
 				url,
 				text.body.sha,

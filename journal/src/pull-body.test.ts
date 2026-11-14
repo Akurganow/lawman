@@ -5,7 +5,7 @@ import { inprocAsync } from "./inproc";
 import { config } from "./input-test-fixture";
 import { cache } from "./precedent-test-fixture";
 import { plainWords, precedentBody } from "./pull-body";
-import { readPulls } from "./pulls";
+import { CLERK_TRACE, readPulls } from "./pulls";
 import {
 	acquittal,
 	BASE,
@@ -22,7 +22,7 @@ tempDb();
 const SOURCE = "https://git.example.com/o/main/issues/1#comment-7";
 const ENTITY = "&lt;!-- pipeline-work-fingerprint: abc sources=&#35;99 --&gt;";
 const LEFT_OUT = "The text of the ruling was left out. It stands at the link.";
-const FIXED = `Closes #1\n\n${LEFT_OUT}\n\nRuling: ${SOURCE}\n`;
+const FIXED = `Closes #1\n\n${LEFT_OUT}\n\nRuling: ${SOURCE}\n\n${CLERK_TRACE}\n`;
 const HEAD = `Records the precedents of the court ruling ${SOURCE}. Merge it to make them binding.`;
 
 // each row is the only row that a rule refuses; the case's own number, 1, is given
@@ -114,13 +114,13 @@ describe("the body of a conviction", () => {
 	test("tells the disposition and the ruling", async () => {
 		await cache([convicted("Fix `x` as #1 asks, in `src/cli.ts`.")]);
 		expect(await pullBody("--source", SOURCE)).toBe(
-			`Closes #1\n\n~~~\nDisposition: Fix x as #1 asks, in src/cli.ts.\n~~~\n\nRuling: ${SOURCE}\n`,
+			`Closes #1\n\n~~~\nDisposition: Fix x as #1 asks, in src/cli.ts.\n~~~\n\nRuling: ${SOURCE}\n\n${CLERK_TRACE}\n`,
 		);
 	});
 
-	test("is the closing line alone with no source", async () => {
+	test("is the closing line and the trace with no source", async () => {
 		await cache([convicted("Fix `x`.")]);
-		expect(await pullBody()).toBe("Closes #1\n");
+		expect(await pullBody()).toBe(`Closes #1\n\n${CLERK_TRACE}\n`);
 	});
 
 	test.each([

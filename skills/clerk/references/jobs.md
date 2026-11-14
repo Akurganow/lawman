@@ -173,10 +173,12 @@ A publish that fails because the branch exists means an earlier tick published i
 
 ## adopt
 
-The fixed body is one `Closes #<s>` line for every `<s>`, a blank line, and this sentence:
+The fixed body is one `Closes #<s>` line for every `<s>`, a blank line, and these lines:
 
 ````
 Taken up by the clerk as a draft that counts as not started.
+
+<!-- pull request of the Lawman clerk -->
 ````
 
 1. Read whether the pull request is a draft.
@@ -188,6 +190,22 @@ Taken up by the clerk as a draft that counts as not started.
 4. Read the body back. It must equal the fixed body, ignoring line endings and trailing blank lines.
 5. Make the pull request a draft.
 6. For every `<s>`, read its state. Write the marker `handed` with `pull=<pull>` and `issue=<that state>` on it.
+
+## brief
+
+`<pull>` is the owner's pull request. Change nothing on it but this one comment.
+
+1. Read the ruling.
+2. In the cleaned output of step 1, take the URL of the newest comment by `<login>` with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`.
+3. Write the brief on pull request `<pull>`, as the `tick.md#write-a-comment` section says. Its heading is `Clerk`. Its body is the sentence `Issue #<n> was investigated and ruled on. This pull request stays as its author left it.`, a blank line, and these four lines in this order. Leave out the Case, Charge or Defence line when step 2 found no such comment.
+   ```
+   - Case: <URL>
+   - Charge: <URL>
+   - Defence: <URL>
+   - Ruling, <conviction|acquittal>: <ruling URL>
+   ```
+   Its marker is `<!-- lawman: role=clerk stage=brief pull=<pull> at=<UTC> -->`.
+4. Write a comment on the issue `<n>` as the `tick.md#write-a-comment` section says. Its heading is `Clerk`, its sentence is `Pull request #<pull> holds the brief of this case.`, and its marker is `<!-- lawman: role=clerk stage=brief pull=<pull> at=<UTC> -->`. It is the last write of the job.
 
 ## precedent
 

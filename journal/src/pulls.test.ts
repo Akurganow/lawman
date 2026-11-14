@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import fixture from "./fixtures/pulls.json";
-import { readPulls } from "./pulls";
+import { CLERK_TRACE, readPulls } from "./pulls";
 import {
 	BOT,
 	type Comment,
@@ -109,6 +109,18 @@ describe("readPulls rows", () => {
 	test("a CRLF fingerprint line still counts", () => {
 		const body = "<!-- pipeline-work-fingerprint: a sources=#6 -->\r\nmore";
 		expect(readOf([{ number: 1, body }])[0]?.issues).toBe("6");
+	});
+
+	test("a fingerprint line or the clerk's line is the trace of a role", () => {
+		const bodies = [
+			"<!-- pipeline-work-fingerprint: a sources=#6 -->",
+			`Closes #6\r\n\r\n${CLERK_TRACE}`,
+			`Closes #6 ${CLERK_TRACE}`,
+			"Closes #6",
+		];
+		const pulls = bodies.map((body, number) => ({ number, body }));
+		const read = readPulls(JSON.stringify(hostPulls(pulls)), BOT);
+		expect(read.map((p) => p.traced)).toEqual([true, true, false, false]);
 	});
 });
 

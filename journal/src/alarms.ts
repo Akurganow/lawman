@@ -418,12 +418,13 @@ function statusLeads(db: Database): string[] {
 export function status(args: string[]): void {
 	if (args.length > 0) throw usage("status");
 	withDb((db) => {
+		// the short summary comes first, the long list of open orders last
 		const sections = [
-			statusOrders,
+			statusAlarms,
 			statusQueue,
 			statusTicks,
-			statusAlarms,
 			statusLeads,
+			statusOrders,
 		];
 		for (const section of sections) for (const line of section(db)) out(line);
 	});

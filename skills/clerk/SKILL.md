@@ -1,6 +1,6 @@
 ---
 name: clerk
-description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, decision, open, adopt, settle, reopen, reopen-issue, close-pull or kept), then exits.
+description: Runs one tick of a Lawman clerk, which takes one order, does the one job the journal names on that issue and its pull request (precedent, decision, open, adopt, brief, settle, reopen, reopen-issue, close-pull or kept), then exits.
 ---
 
 # Clerk
@@ -86,7 +86,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role clerk --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 12
+      bin/journal probe --schema 13
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <issue|->`, in the order to take. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order.
    ```
@@ -112,7 +112,7 @@ The tick group prints issue `<n>` with its comments. With a line `self issue <n>
 
 ### Step 3: the pull request
 
-When the stage names a pull request in `pull`, the tick group prints it with its comments. With a line `self pull <m>`, read it from the host instead, as the host notes record, with its comments, every page. A failed read gives `stopped-issue-read`.
+When the stage names a pull request in `pull`, the tick group prints it with its comments. Read the pull request from the host only where a recipe says so. A line `self pull <m>` asks for no read of its own.
 
 ### Step 4: the stage
 
@@ -128,7 +128,7 @@ Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
 1. `job=state`: run the `tick.md#check-the-decider` section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
 2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author can reopen a pull request. The author is the trusted login.
-3. `job=adopt`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
+3. `job=adopt`, `brief`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
 | `action` | Recipe |
 | :-- | :-- |
@@ -153,6 +153,7 @@ The outcome is the token below. After a failed step it is the token that the ste
 | **close-pull** | `shut`. `silent` when the pull request is not open. |
 | **settle** | `settled` for a merged pull request. `shut` for a closed one. `silent` for an open one. |
 | **kept** | `kept` |
+| **brief** | `briefed` |
 
 Run the `tick.md#end-the-tick` section.
 

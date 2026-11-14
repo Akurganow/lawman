@@ -99,14 +99,15 @@ The court names one priority. P0 is a live secret, a vulnerability or a serious 
 The clerk takes an order for one job on an issue. The journal names the job. The clerk is the only role that opens a pull request and the only role that links an issue to its pull request.
 
 - For a conviction it opens a draft pull request from a new branch.
-- It takes up an open pull request of the trusted login.
+- It takes up an open pull request of the trusted login that a role left behind. A line of its body is a fingerprint line of the old pipeline or `<!-- pull request of the Lawman clerk -->`, which ends every body the clerk writes for a pair.
+- It never changes your own pull request. After a ruling on an issue that your pull request closes, it writes one brief there instead. The brief links the case, the charge, the defence and the ruling. It opens no pull request of its own for that issue.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
 - It records a precedent: the journal writes the precedent files of a ruling. TypeSafe Jev may add to the departments the court named. The clerk opens a pull request with them for you to merge.
 - It records a dismissal: the journal writes one file for a lead that closed with no fix. The clerk opens a pull request for you to merge.
 - It records your decision on that pull request.
 
-After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry` and `final`. A hand-over comment on the pull request carries `stage=handoff`. The clerk never merges, never reviews and never reacts.
+After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, `settled`, `kept`, `entry`, `no-entry`, `final` and `brief`. A hand-over comment on the pull request carries `stage=handoff`. The brief and its note on the issue carry `stage=brief`. The clerk never merges, never reviews and never reacts.
 
 ### Spec writer
 
@@ -243,7 +244,7 @@ A tick that ends `skipped-*` means the precinct or the department cannot be work
 
 ### Reports
 
-The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders. It ends with the last tick of each role, the open alarms and the lead counts.
+The full report of every tick lives in the journal. `bin/journal tick list` prints ticks with their reports. `bin/journal status` prints the open alarms, then a line `queue <role> <number> oldest <time>` for each role with open orders. The last tick of each role and the lead counts follow. The open orders come last.
 
 ## What the maintainer does
 

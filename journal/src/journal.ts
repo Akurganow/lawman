@@ -98,4 +98,9 @@ export function main(argv: string[]): number | Promise<number> {
 	}
 }
 
-if (import.meta.main) process.exitCode = await main(process.argv.slice(2));
+if (import.meta.main) {
+	// a failed write to stdout, such as to a reader that closed the pipe, comes
+	// as an event outside main and takes the same one-line exit
+	process.stdout.on("error", (e) => process.exit(failed(e)));
+	process.exitCode = await main(process.argv.slice(2));
+}

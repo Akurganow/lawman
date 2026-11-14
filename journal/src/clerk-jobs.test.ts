@@ -5,6 +5,7 @@ import {
 	conviction,
 	inputOf,
 	marker,
+	owners,
 	pairs,
 	pull,
 	run,
@@ -154,6 +155,47 @@ describe("table rows", () => {
 
 	test("2: a closed issue adopts nothing", () => {
 		expect(run({ state: "CLOSED", pulls: [pull(7, 1)] }).job).toBe("-");
+	});
+
+	test("2: the owner's pull request is never adopted, and is briefed once per ruling", () => {
+		const brief = marker("clerk", "brief", 2, { pull: "7" });
+		const ruling = conviction(1);
+		expect(run({ pulls: [owners(7, 1)] }).job).toBe("-");
+		for (const state of ["OPEN", "CLOSED"])
+			expect(run({ state, ruling, pulls: [owners(7, 1)] })).toMatchObject({
+				job: "brief",
+				pull: "7",
+			});
+		const after = { ruling, pulls: [owners(7, 1)], holds: false };
+		expect(run({ ...after, markers: [brief] }).job).toBe("-");
+		const both = {
+			...after,
+			markers: [brief],
+			pulls: [owners(7, 1), owners(8, 1)],
+		};
+		expect(run(both)).toMatchObject({ job: "brief", pull: "8" });
+		expect(run({ ...after, markers: [brief], ruling: acquittal(3) }).job).toBe(
+			"brief",
+		);
+	});
+
+	test("2: the owner's pull request gets the brief and leaves the pair to settle", () => {
+		const r = run({
+			markers: pairs(["handed", "5", "open"]),
+			ruling: conviction(1),
+			pulls: [owners(9, 1)],
+		});
+		expect(r).toMatchObject({ job: "brief", pull: "9" });
+		const pair = { markers: pairs(["handed", "5", "open"]) };
+		expect(run({ ...pair, pulls: [owners(9, 1)] }).job).toBe("settle");
+		// a pair's pull request from before the trace line is no owner's
+		const old = {
+			...pair,
+			ruling: conviction(1),
+			pulls: [owners(5, 1)],
+			holds: false,
+		};
+		expect(run(old).job).toBe("-");
 	});
 
 	test("2: a pair marker for another pull request adopts the new one", () => {
