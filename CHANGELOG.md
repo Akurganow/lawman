@@ -4,6 +4,22 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.0 - 2026-11-14
+#### Features
+- (**clerk**) leave the owner's pull request alone and brief it after a ruling (d440171)
+#### Bug Fixes
+- (**clerk**) brief every open pull request of the owner and say who is the owner's (8323c78)
+- (**clerk**) count a pair's pull request as Lawman's, and drop the unused error handler (abeb71b)
+- (**clerk**) brief the owner's pull request itself and mark the clerk's own body (7d79f9d)
+- (**journal**) end every error outside a command with one journal line (d2f23c3)
+#### Tests
+- (**journal**) pin the trace line in the conviction body only (f09a9c2)
+#### Refactoring
+- (**clerk**) make the trace one body line and keep the owner's pull request out of the pair (2238e47)
+
+- - -
+
+
 ## v1.4.0 - 2026-11-14
 #### Features
 - (**journal**) give every role fresh host data before its alarms and input (4f77074)
