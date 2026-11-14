@@ -6,7 +6,7 @@
 
 [Install](#install) · [How it works](#how-it-works) · [Roles and stages](docs/pipeline.md) · [Design](docs/design.md) · [Changelog](CHANGELOG.md)
 
-An executive branch for software repositories. Ten roles take a finding from a lead to a pull request that is ready for review. The picture shows them:
+An executive branch for software repositories. Ten roles take a finding from a lead towards a pull request that is ready for review. The picture shows them:
 
 - **Duty desk**, at the telegraph key, writes the orders for the other roles.
 - **Patrol**, with the lantern, files leads as issues.
@@ -16,7 +16,7 @@ An executive branch for software repositories. Ten roles take a finding from a l
 - **Defender**, in the bowler hat, argues against the charge.
 - **Court**, with the gavel, rules.
 - **Clerk**, with the stack of papers, carries the verdict to a draft pull request.
-- **Spec writer**, with the quill, writes its spec.
+- **Spec writer**, with the quill, writes the spec for that pull request.
 - **Executor**, with the hammer, builds the approved change.
 
 Lawman runs inside the agent harness a developer already uses, on that harness's own schedule. It has no server, no dashboard and no access to a repository host of its own.
