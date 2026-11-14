@@ -12,7 +12,9 @@ permissions:
 
 jobs:
   # The suite does not depend on the compile target, so it runs once per
-  # operating system, and no binary is built before it passes.
+  # operating system, and no binary is built before it passes. It runs on each
+  # operating system the binaries are built on, so the os list here must cover
+  # every os of the build matrix.
   test:
     strategy:
       matrix:
