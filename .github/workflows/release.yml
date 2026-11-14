@@ -11,7 +11,34 @@ permissions:
   contents: read
 
 jobs:
+  # The suite does not depend on the compile target, so it runs once per
+  # operating system, and no binary is built before it passes. It runs on each
+  # operating system the binaries are built on, so the os list here must cover
+  # every os of the build matrix.
+  test:
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.4.3"
+      - name: Install
+        working-directory: journal
+        run: bun install --frozen-lockfile
+      # A beta keeps the version of its branch, so only a version tag is checked.
+      - name: Check the version against the tag
+        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
+        working-directory: journal
+        run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
+      - name: Test
+        working-directory: journal
+        run: bun run test
+
   build:
+    needs: test
     strategy:
       matrix:
         include:
@@ -32,14 +59,6 @@ jobs:
       - name: Install
         working-directory: journal
         run: bun install --frozen-lockfile
-      # A beta keeps the version of its branch, so only a version tag is checked.
-      - name: Check the version against the tag
-        if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v')
-        working-directory: journal
-        run: test "$(bun run src/journal.ts --version)" = "${GITHUB_REF_NAME#v}"
-      - name: Test
-        working-directory: journal
-        run: bun run test
       - name: Compile
         working-directory: journal
         run: bun build --compile --target=${{ matrix.target }} src/journal.ts src/clean-worker.ts --outfile ../journal-${{ matrix.target }}

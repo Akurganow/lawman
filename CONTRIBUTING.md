@@ -43,6 +43,7 @@ CI runs on every push and pull request, in these jobs.
 
 - `commits` runs on pull requests. It checks that every commit of the pull request is a conventional commit, because the release tool reads every commit since the last version tag.
 - `test` runs in `journal/`. It installs with the frozen lockfile, then runs `bun run check` and the tests. It compiles a Linux binary and runs it with `--version`. It checks its `clean` output on a small sample.
+- `test-macos` runs in `journal/`. It installs with the frozen lockfile and runs the tests on macOS, as the release does, so a failure there shows on the pull request. The required check stays `test`.
 - `fence` keeps repository-specific text out of `skills/`, except `skills/assembly` and the harness pages. The patterns in `fence-patterns.txt` match paths, manifests and build tools of one repository.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
@@ -62,7 +63,7 @@ Never bump a version, write a changelog entry or push a version tag by hand. The
 
 The merge starts the bump workflow on `main`. It runs [cocogitto](https://docs.cocogitto.io) with `cog.toml`. The workflow asks for the major version itself when a breaking change came after the last version tag, and does not rely on `--auto` alone. It writes the new version into `plugin.json` and `journal/package.json` and the entry into `CHANGELOG.md`, then commits both and tags the commit. It pushes the commit and the tag with the deploy key, whose private half is the `RELEASE_DEPLOY_KEY` secret.
 
-A version tag starts with `v`, and it starts the release workflow. The workflow installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests. It builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
+A version tag starts with `v`, and it starts the release workflow. The workflow installs the dependencies with the frozen lockfile, checks that `journal --version` equals the tag and runs the tests once on macOS and once on Linux. After the tests pass it builds the journal for four targets and signs the macOS binaries ad hoc. It attests each binary and places its provenance file, `journal-bun-<os>-<arch>.sigstore.json`, beside it. It writes and attests `SHA256SUMS` and publishes the release, with the changelog entry as its notes. A tag cannot be reused, so a failed release is fixed by the next merge.
 
 A push to `release-trial` runs the same build, tests and attestations without the version check. It publishes nothing: no release, no tag and no pre-release.
 

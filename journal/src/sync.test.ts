@@ -237,8 +237,14 @@ describe("sync", () => {
 		).toEqual([{ n: 2 }]);
 	});
 
-	test("%s exits 4 and leaves the cache", async () => {
+	test("a rejected sync input exits 4 and leaves the cache", async () => {
+		// One fill serves a loop: each case compares against its own snapshot, so
+		// a case that wrote fails its own check.
 		// sync through the program
+		fresh();
+		addPrecincts({ [PRECINCT]: 1 });
+		expect(sync(issues).code).toBe(0);
+		expect(snapshot().issues).not.toEqual([]);
 		for (const [name, input] of [
 			["empty stdin", ""],
 			["not json", "not json"],
@@ -267,9 +273,6 @@ describe("sync", () => {
 				withTimes({ state: "CLOSED", stateReason: 42 }),
 			],
 		] as [string, unknown][]) {
-			fresh();
-			addPrecincts({ [PRECINCT]: 1 });
-			sync(issues);
 			const before = snapshot();
 			const r = sync(input);
 			expect([name, r.code, r.err]).toEqual([
@@ -280,6 +283,10 @@ describe("sync", () => {
 			expect(snapshot()).toEqual(before);
 		}
 		// sync in process
+		fresh();
+		addPrecincts({ [PRECINCT]: 1 });
+		expect((await fed(issuesForm(issues))).code).toBe(0);
+		expect(rows("SELECT * FROM issues")).not.toEqual([]);
 		for (const [name, input] of [
 			["no writers", { issues: [] }],
 			["no issues", { writers: [] }],
@@ -299,9 +306,6 @@ describe("sync", () => {
 				commented({ id: "c1", ...reacted(), rejectedBy: [7] }),
 			],
 		] as [string, unknown][]) {
-			fresh();
-			addPrecincts({ [PRECINCT]: 1 });
-			await fed(issuesForm(issues));
 			const before = rows("SELECT * FROM issues ORDER BY issue");
 			const r = await fed(input);
 			expect([name, r.code, r.err]).toEqual([
