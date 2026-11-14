@@ -43,6 +43,7 @@ CI runs on every push and pull request, in these jobs.
 
 - `commits` runs on pull requests. It checks that every commit of the pull request is a conventional commit, because the release tool reads every commit since the last version tag.
 - `test` runs in `journal/`. It installs with the frozen lockfile, then runs `bun run check` and the tests. It compiles a Linux binary and runs it with `--version`. It checks its `clean` output on a small sample.
+- `test-macos` runs in `journal/`. It installs with the frozen lockfile and runs the tests on macOS, as the release does, so a failure there shows on the pull request. The required check stays `test`.
 - `fence` keeps repository-specific text out of `skills/`, except `skills/assembly` and the harness pages. The patterns in `fence-patterns.txt` match paths, manifests and build tools of one repository.
 - `leaks` rejects home paths and GitHub tokens in every file.
 - `ignore` checks that `docs/gangsta/` stays ignored by git.
