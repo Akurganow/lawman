@@ -43,7 +43,7 @@ describe("law-sync through the journal entry point", () => {
 		);
 	});
 
-	test("ends with the schema exit before it can touch the runtime", () => {
+	test("reaches law-sync through the entry point and ends with the schema exit", () => {
 		lay(dir, { schemas: [MIGRATIONS.length + 1] });
 		const result = inproc(BASE, ["law-sync", ...flags(dir)]);
 		expect(result).toMatchObject({ code: 6, out: "" });
