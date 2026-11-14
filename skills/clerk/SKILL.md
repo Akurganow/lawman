@@ -29,9 +29,9 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
   - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections say.
-  - Read the comments of an issue, and the state of an issue.
+  - Read the comments of an issue, the state of an issue and the time of its newest reopen.
   - Read one comment by its id, for the read-back.
-  - Read the state, the merge commit, the draft state, the link and the body of a pull request, or fewer of these.
+  - Read the state, the merge commit, the time of the merge or close, the draft state, the link and the body of a pull request, or fewer of these.
   - Open a draft pull request with the title and the body of the open recipe.
   - Open a pull request that is not a draft, with the title and the body of the precedent recipe, for the precedent job only.
   - Replace the body of a pull request with the fixed body only.

@@ -82,8 +82,8 @@ The clerk takes one order, a job on an issue. It is the only role that opens a p
 
 - `recorded`: the clerk opened a pull request with precedent files.
 - `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
-- `shut`: the clerk closed a pull request or the source issues of a closed one. It also recorded a decider's close of a precedent pull request, which has no sources.
-- `settled`: the clerk closed the source issues of a merged pull request, or recorded the merge of a precedent pull request, which has no sources.
+- `shut`: the clerk closed a pull request or the source issues of a closed one, except a source reopened after the close. It also recorded a decider's close of a precedent pull request, which has no sources.
+- `settled`: the clerk closed the source issues of a merged pull request, except a source reopened after the merge, or recorded the merge of a precedent pull request, which has no sources.
 - `kept`: the clerk recorded a close or reopen by a non-decider, or the close of a precedent pull request by one, and changed nothing.
 - `briefed`: the clerk wrote a brief on the owner's pull request.
 

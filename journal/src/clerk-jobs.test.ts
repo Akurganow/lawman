@@ -69,15 +69,20 @@ describe("state rule: base and issue state", () => {
 		expect(r).toMatchObject({ job: "state", action, pull: "7" });
 	});
 
-	test("a reopen after a merge, with the owner's pull request closing the issue, is kept", () => {
-		const r = run({
-			markers: pairs(["settled", "7", "closed"]),
-			pulls: [owners(9, 1)],
+	test("a reopen after a merge waits while the owner's pull request closes the issue", () => {
+		const markers = pairs(["settled", "7", "closed"]);
+		const ruling = conviction();
+		expect(run({ markers, ruling, pulls: [owners(9, 1)] })).toMatchObject({
+			job: "brief",
+			pull: "9",
 		});
-		expect(r).toMatchObject({ job: "state", action: "kept" });
+		expect(run({ markers, ruling })).toMatchObject({
+			job: "state",
+			action: "open",
+		});
 	});
 
-	test("a reopen by a non-decider after settle does not start a state job again", () => {
+	test("a kept marker over settled does not start a state job again", () => {
 		const r = run({
 			markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
 		});

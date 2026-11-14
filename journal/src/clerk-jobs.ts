@@ -202,7 +202,7 @@ function rowOf(
 	pull: CachedPull | undefined,
 ): Row {
 	const closed = i.state === "CLOSED";
-	// a settled or shut pair has no pull request left, so an open issue under it is a reopen, whatever the marker says
+	// a settled or shut marker expects a closed issue: an open one under it is a reopen, whatever its issue field says
 	const gone = k?.stage === "settled" || k?.stage === "shut";
 	if (
 		k !== undefined &&
@@ -211,8 +211,9 @@ function rowOf(
 		const closePull =
 			pull?.issues.includes(i.issue) === true && pull.issues.every(i.isClosed);
 		const action = stateAction(base, closed, closePull);
-		const owned = action === "open" && ownersOf(i, k).length > 0;
-		return job("state", owned ? "kept" : action);
+		// the reopen waits while the owner's pull request closes the issue, and is carried once it is gone
+		if (action !== "open" || ownersOf(i, k).length === 0)
+			return job("state", action);
 	}
 	return tableRow(i, k, base, pull);
 }
