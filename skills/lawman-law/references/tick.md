@@ -8,7 +8,7 @@ The input of a role comes in two groups. The role group holds the law the role r
 
 The tick group holds the results of these steps, as far as the role gets each: the check of the law folder and the identity, the fetched commit, the sync of the tracker and of the pull requests, the alarms, the stage and its stale rule, the link of the case, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and labels of an issue, or the state and title of a pull request. It never prints the files a role reads later in its work, the tree of a precinct or the results of a search.
 
-A line `stale <precinct> <issues|pulls> synced=<time|never>` means that the sync of that cache failed in this tick. The cache holds older data, or none. Go on with the cache. Name the `stale` line in Blockers.
+A line `unsynced <precinct> <issues|pulls> synced=<time|never>` means that the sync of that cache failed in this tick. The cache holds older data, or none. Go on with the cache. Name the `unsynced` line in Blockers.
 
 The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Do no step of it. Its skill says how to go on.
 
@@ -32,7 +32,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 
 The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-version`. The line `self law-version` names no precinct. Each other self step line of the duty desk names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `issues` or `pulls` step does not end the duty desk tick. That precinct goes without orders and without stale closes. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
 
-- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group. Read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. That output holds the alarms and a `stale` line for each sync that failed. The journal applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
+- With a line `self fetch`, `self issues` or `self pulls`, the start printed its lines and stopped. Do those steps. Then have the journal build the rest of the tick group. Read it as the first group: every part, then its `self` lines at once. The duty desk calls its continuation instead, as the paragraph above says. That output holds the alarms and a `unsynced` line for each sync that failed. The journal applies no stale rule, so the stale rule of the skill applies. Its `self constitution`, `self department <d>` and `self precedents` lines stand in place of the fences that the skill names.
   ```
   bin/journal tick input <tick id>
   ```
@@ -197,7 +197,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid= skipped=`, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure fails the sync. A failed sync ends no tick, and the cache keeps its old data. The `stale` line of the intro names it.
+The output is `issues= leads= markers= invalid= skipped=`, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure fails the sync. A failed sync ends no tick, and the cache keeps its old data. The `unsynced` line of the intro names it.
 
 ## Sync the pull requests
 

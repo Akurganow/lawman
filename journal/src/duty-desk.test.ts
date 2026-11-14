@@ -322,6 +322,13 @@ describe("the sync", () => {
 			{ ref: "alpha", detail: "old detail", cleared_at: null },
 		]);
 		expect(ticks()[0]?.outcome).toBe("ordered");
+		// the run that tick-failing duty-desk/<precinct> counts: alpha failed once, main starts again
+		expect(
+			rows("SELECT name, sync_failures FROM precincts ORDER BY name"),
+		).toEqual([
+			{ name: "alpha", sync_failures: 1 },
+			{ name: "main", sync_failures: 0 },
+		]);
 	});
 
 	test("a pull request merged since the last sync raises no decision-waiting alarm", () => {

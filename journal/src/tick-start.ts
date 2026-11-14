@@ -24,7 +24,7 @@ import { lawCheck } from "./law-version";
 import { urlOf } from "./link";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
-import { operate } from "./operations";
+import { empty, operate } from "./operations";
 import {
 	DISMISSAL,
 	departmentsField,
@@ -51,7 +51,7 @@ const CASE_TEXTS = [
 	"comment",
 ];
 const SYNC_STEPS = ["fetch", "issues", "pulls"];
-const SYNCS = ["issues", "pulls"] as const;
+const CACHES = ["issues", "pulls"] as const;
 
 type Stage = StageFields & { department: string; pull: string; line: string };
 type Tick = { id: number; role: string };
@@ -259,8 +259,8 @@ function cacheHead(
 			false,
 			isFresh(row, started) ? new Set([p]) : new Set(),
 		),
-		stale: SYNCS.filter((k) => (at[k] ?? "") < started).map(
-			(k) => `stale ${p} ${k} synced=${at[k] ?? "never"}`,
+		stale: CACHES.filter((k) => (at[k] ?? "") < started).map(
+			(k) => `unsynced ${p} ${k} synced=${at[k] ?? "never"}`,
 		),
 	};
 }
@@ -417,14 +417,14 @@ export async function tickStart(args: string[]): Promise<number> {
 	const stop = (
 		outcome: string,
 		report: string,
-		order: number | null = null,
+		closes: number | null = null,
 	) => {
 		o.lead(
 			withDb((db) =>
 				inTransaction(db, () => reconcileAlarms(db, stamp, false, new Set())),
 			),
 		);
-		return ended(t, o, outcome, report, order);
+		return ended(t, o, outcome, report, closes);
 	};
 	if (config === null) return stop("failed", "config.yaml is missing");
 	const login = configValue(config, "trusted_login");
@@ -457,10 +457,10 @@ export async function tickStart(args: string[]): Promise<number> {
 	o.add(...fetched.blocks);
 	if (fetched.text === null) o.selfs.push("fetch");
 	// a failed sync leaves the cache as it was; only a command the host lacks is a self step
-	for (const kind of SYNCS) {
+	for (const kind of CACHES) {
 		const synced = await operate(p, kind, call([], login));
 		o.add(...synced.blocks);
-		if (synced.text === null && synced.code === EXIT.OK) o.selfs.push(kind);
+		if (empty(synced)) o.selfs.push(kind);
 	}
 	const head = withDb((db) => inTransaction(db, () => cacheHead(db, p, stamp)));
 	o.lead(head.alarms);

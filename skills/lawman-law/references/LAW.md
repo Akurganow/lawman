@@ -321,11 +321,11 @@ An alarm is a condition the owner must see. Examples are a role that checks for 
 - A precinct is fresh in a tick when both its tracker and its pull requests were synced after the tick began. The alarms `decision-waiting`, `withheld-text` and `no-constitution` rest on host data. A tick computes them only for a fresh precinct.
 - The duty desk computes them for every fresh precinct. A working role computes them for its own precinct. A host alarm of another precinct stays open and unchanged, and that role does not print it.
 - The alarms `no-progress`, `tick-hung`, `role-silent` and `tick-failing` rest on the journal's own records. Every tick computes them.
-- `tick-failing` also rises for a precinct that the last three duty desk ticks could not sync. Its ref is `duty-desk/<precinct>`. It clears when a sync of that precinct succeeds.
+- `tick-failing` also rises for a precinct that the last three duty desk ticks could not sync. Its ref is `duty-desk/<precinct>`. It clears when a duty desk tick syncs that precinct. A duty desk tick that stops before its sync counts no failure.
 - A new alarm is printed by the tick that found it.
 - Only the duty desk repeats an open alarm, once at each of its ticks. It repeats the alarms of the fresh precincts and the journal's own alarms.
 - No duplicates. A condition that disappears clears its alarm.
-- A tick computes the alarms after its sync. A tick that ends before the sync prints the journal's own alarms.
+- A tick computes the alarms after its sync. A tick that the journal ends before the sync prints the journal's own alarms. A duty desk tick that the model ends itself prints none.
 
 ## Returns instead of stops
 

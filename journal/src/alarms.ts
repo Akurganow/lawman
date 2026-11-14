@@ -118,29 +118,18 @@ function tickFailing(db: Database): Candidate[] {
 	];
 }
 
-// A precinct that none of the last duty desk ticks synced, ended or not. A tick that
-// stopped before its sync counts in the run above and not here.
+// the duty desk counts its ticks in a row that could not sync a precinct; a stop before the sync counts none
 function unsyncedPrecincts(db: Database): Candidate[] {
-	const latest = db
+	const names = db
 		.query(
-			`SELECT started_at FROM ticks WHERE role = 'duty-desk'
-         AND (outcome IS NULL OR NOT (outcome LIKE 'stopped-%' OR outcome LIKE 'skipped-%' OR outcome = 'failed'))
-       ORDER BY id DESC LIMIT ${TICK_FAILING_RUN}`,
+			"SELECT name FROM precincts WHERE weight > 0 AND sync_failures >= ? ORDER BY name",
 		)
-		.all() as { started_at: string }[];
-	if (latest.length < TICK_FAILING_RUN) return [];
-	const precincts = db
-		.query(
-			"SELECT name, synced_at, pulls_synced_at FROM precincts WHERE weight > 0 ORDER BY name",
-		)
-		.all() as ({ name: string } & Synced)[];
-	return precincts
-		.filter((p) => latest.every((t) => !isFresh(p, t.started_at)))
-		.map((p) => ({
-			kind: "tick-failing",
-			ref: `duty-desk/${p.name}`,
-			detail: `last ${TICK_FAILING_RUN} duty desk ticks did not sync it`,
-		}));
+		.all(TICK_FAILING_RUN) as { name: string }[];
+	return names.map((p) => ({
+		kind: "tick-failing",
+		ref: `duty-desk/${p.name}`,
+		detail: `last ${TICK_FAILING_RUN} duty desk ticks did not sync it`,
+	}));
 }
 
 // the duty desk records the cause at each read of a precinct

@@ -148,39 +148,25 @@ describe("alarms and status", () => {
 			alarmsOnce(later(3), /^ALARM tick-failing duty-desk\/- .+\n$/);
 		});
 
-		test("a precinct that none of the last three duty desk ticks synced raises tick-failing duty-desk/<precinct>, not after two", () => {
+		test("a precinct that three duty desk ticks in a row could not sync raises tick-failing duty-desk/<precinct>, not after two", () => {
+			const failures = (n: number) =>
+				seed((db) => {
+					db.run("UPDATE precincts SET sync_failures = ? WHERE name = 'a'", [
+						n,
+					]);
+				});
 			seed((db) => {
 				precinct(db, "a");
 				precinct(db, "b");
-				// b is synced by the third tick, a never
-				db.run(
-					"UPDATE precincts SET synced_at = ?1, pulls_synced_at = ?1 WHERE name = 'b'",
-					[later(2)],
-				);
-				tick(db, "duty-desk", later(0), later(0, 10), "ordered");
-				tick(db, "duty-desk", later(1), later(1, 10), "ordered");
 			});
-			expect(alarm(later(1, 30)).out).toBe("");
-			seed((db) => tick(db, "duty-desk", later(2), null, null));
+			failures(2);
+			expect(alarm(later(1)).out).toBe("");
+			failures(3);
 			alarmsOnce(
-				later(2, 30),
+				later(2),
 				/^ALARM tick-failing duty-desk\/a last 3 duty desk ticks did not sync it\n$/,
 			);
-			// both syncs must reach the latest tick: one of them is no sync of the precinct
-			seed((db) =>
-				db.run("UPDATE precincts SET synced_at = ? WHERE name = 'a'", [
-					later(2),
-				]),
-			);
-			alarm(later(3));
-			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
-				{ cleared_at: null },
-			]);
-			seed((db) =>
-				db.run("UPDATE precincts SET pulls_synced_at = ? WHERE name = 'a'", [
-					later(2),
-				]),
-			);
+			failures(0);
 			expect(alarm(later(4)).out).toBe("");
 			expect(rows("SELECT cleared_at FROM alarms")).toEqual([
 				{ cleared_at: later(4) },

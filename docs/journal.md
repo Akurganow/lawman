@@ -150,7 +150,7 @@ journal wake --role <r>
 
 - `status`: prints the open orders, then a line `queue <role> <number> oldest <time>` for each role with open orders, by role name. It then prints the last tick of each role, the open alarms and the lead counts. `oldest` is the time of the oldest open order of the role, as `since` shows it on an `order` line.
 
-No command computes the alarms alone. Every tick computes them after its sync and prints a line `ALARM …` for each new alarm. A tick that ends before its sync, on a missing config, a law stop or a changed identity, still prints the journal's own alarms. [The pipeline](pipeline.md#alarms) lists the alarms and says who raises each. The duty desk prints the open alarms again at the end of its tick, except those it raised itself. It repeats the alarms of its fresh precincts and the journal's own alarms.
+No command computes the alarms alone. Every tick computes them after its sync and prints a line `ALARM …` for each new alarm. A tick that ends before its sync, on a missing config, a law stop or a changed identity, still prints the journal's own alarms. A duty desk tick that the model ends itself after a failed self step prints none; the next tick prints them. [The pipeline](pipeline.md#alarms) lists the alarms and says who raises each. The duty desk prints the open alarms again at the end of its tick, except those it raised itself. It repeats the alarms of its fresh precincts and the journal's own alarms.
 
 ```
 journal status
@@ -160,7 +160,7 @@ journal status
 
 The journal's cache is refreshed when a role syncs. Issues by bots (an author with `is_bot` set, or a login that starts with `app/`) and issues with no author do not enter the cache. Every working role syncs the tracker and the pull requests of its precinct at its tick start. The duty desk syncs both for every precinct with a weight above zero before it writes stage orders. An order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
 
-The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The journal refreshes it right after the issue cache of the same precinct. A precinct is fresh in a tick when both caches were synced after the tick began. A failed sync of one cache ends no tick. The cache keeps its old data. The duty desk writes no order and closes no stale order for that precinct in that tick. A working role goes on with the cache. The start prints the failure lines and then `stale <precinct> <issues|pulls> synced=<time|never>`. A fresh precinct alone gets the alarms `decision-waiting`, `withheld-text` and `no-constitution`, as [the alarms](pipeline.md#alarms) say.
+The pull request cache holds every open pull request of the trusted login, with its source issues, its spec vote and its `work`. The journal refreshes it right after the issue cache of the same precinct. A precinct is fresh in a tick when both caches were synced after the tick began. A failed sync of one cache ends no tick. The cache keeps its old data. The duty desk writes no order and closes no stale order for that precinct in that tick. A working role goes on with the cache. The start prints the failure lines and then `unsynced <precinct> <issues|pulls> synced=<time|never>`. A fresh precinct alone gets the alarms `decision-waiting`, `withheld-text` and `no-constitution`, as [the alarms](pipeline.md#alarms) say.
 
 - `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. Each text is cleaned alone, and only when its content or the journal version changed since the last sync: a sync of unchanged texts cleans nothing. A text that the cleaning cannot process, or that does not finish within 5 seconds, is stored as the fixed line "This text could not be cleaned and is withheld." It is never stored raw or partly cleaned, and the sync goes on. The sync line ends with `withheld=<n>` when the sync withheld texts, and the alarm `withheld-text` names them. To restore a withheld text, edit or delete it on the host and sync again.
 - `leads`: lists the open leads of a precinct, or of one department.
@@ -483,7 +483,7 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 14. It prints the texts: the issue title in a `title` fence, then the issue or the pull request from the cache. The clerk also gets the pull request of the stage's `pull` field. A text longer than one part is cut, as [cut texts](#cut-texts) says.
 15. The self lines come last.
 
-A failed or empty operation prints the lines of `run` and a self line, and the start goes on. A failed `issues` or `pulls` is the exception. It prints the lines of `run` and then `stale <precinct> <issues|pulls> synced=<time|never>`, and the start goes on with the cache. For `fetch` and for an empty `issues` or `pulls` the start stops at step 9. Only a usage error and a broken database exit non-zero.
+An empty operation, and a failed `identity` or `fetch`, prints the lines of `run` and a self line, and the start goes on. A failed `issues` or `pulls` prints the lines of `run` and then `unsynced <precinct> <issues|pulls> synced=<time|never>`, and the start goes on with the cache. For `fetch` and for an empty `issues` or `pulls` the start stops at step 9. Only a usage error and a broken database exit non-zero.
 
 ### The outcomes the journal writes
 
@@ -503,7 +503,7 @@ The order of a tick that never ended stays open; a later tick of its role takes 
 | `skipped-contract-version`, `skipped-bad-constitution` | `Constitution check failed at <revision>` |
 | `stopped-bad-department` | `Department page check failed: <d>`, or `The department name is not safe` |
 
-The stale rules of the issue roles and the pull request roles are the rules of their skills. The journal applies the rule to the cache that the start has, fresh or marked `stale`.
+The stale rules of the issue roles and the pull request roles are the rules of their skills. The journal applies the rule to the cache that the start has, fresh or marked `unsynced`.
 
 An ended tick prints one part, `part 1 of 1`, whatever its size. Its last lines are `ended <outcome>` and `report <report>`. It prints no `title`, `constitution`, `department` or `precedent` fence and no case text. A constitution or department outcome prints only its `lint` fence. The role then only answers.
 
@@ -540,7 +540,7 @@ The start runs these steps in order.
 9. It computes the alarms. It computes the host alarms for each fresh precinct, and the journal's own alarms. It prints the open alarms again, except those it raised in this step. The `ALARM` lines print first in the output.
 10. It ends the tick `ordered`, when it wrote an order, and `silent` otherwise. A precinct that was skipped goes into the report under Blockers. A precinct that was not fresh goes there too, as `<p>: not synced in this tick, issues <time|never>, pulls <time|never>`. The line ends with `: <first line of the failure>` when the journal ran the failed command itself. A failing `law-version` command is no stop, and the report names it under Blockers.
 
-When the last three duty desk ticks could not sync a precinct, the journal raises `tick-failing` with ref `duty-desk/<precinct>` and the detail `last 3 duty desk ticks did not sync it`. A sync of that precinct that succeeds clears it.
+When three duty desk ticks in a row could not sync a precinct, the journal raises `tick-failing` with ref `duty-desk/<precinct>` and the detail `last 3 duty desk ticks did not sync it`. A duty desk tick that syncs the precinct clears it. A tick that stops before its sync counts no failure.
 
 The output is one part, framed as the tick group. It holds the `ALARM` lines, the `order` lines of the orders written, `ended <outcome>` and the lines `report <line>`. A start that stopped on self lines holds the self lines and no `ALARM` line.
 
@@ -573,7 +573,7 @@ The tick group:
 - `order <id> <precinct> <repository> <department|-> <issue or pull request number|->`;
 - `order <id> untakeable`, without a frame, the only line of the output;
 - `login=<login>`, `revision=<revision>` and the sync counts as `journal run` prints them;
-- `stale <precinct> <issues|pulls> synced=<time|never>` for each sync that failed, after the failure lines of that sync;
+- `unsynced <precinct> <issues|pulls> synced=<time|never>` for each sync that failed, after the failure lines of that sync;
 - the `ALARM` lines of the new alarms;
 - the stage line as `case`, `intake` or `pull` prints it;
 - `link <precinct>#<number> <url>`, right after the stage line, when the cache holds the link of the order's issue or pull request. The role copies it onto an alarm about that case;
@@ -587,7 +587,7 @@ The tick group:
 
 ### Self steps
 
-A line `self <step>` names a step that the journal could not do. The role does it itself. In the role group the line stands in place of its block. In the tick group the lines come last, and `self law-version` stands first among them. The list stays open: a step joins it with every new block. A self step `issues` or `pulls` that fails ends no tick. `tick input <tick id>` prints the `stale` line for it.
+A line `self <step>` names a step that the journal could not do. The role does it itself. In the role group the line stands in place of its block. In the tick group the lines come last, and `self law-version` stands first among them. The list stays open: a step joins it with every new block. A self step `issues` or `pulls` that fails ends no tick. `tick input <tick id>` prints the `unsynced` line for it.
 
 The line `self law-version` of the tick group is not the line that `law-update` prints. The first belongs to the check at the start of a tick, and its stop ends the tick. The second asks for the facts of an update, and the facts that differ from `law_commit` start the update, as [Updates](#updates) says.
 
@@ -621,7 +621,7 @@ The size of a part is the key `input_chars` of `config.yaml`, 16 000 without the
 
 The journal stores the tick group when it builds it. `journal tick input <tick id> --part <k>` prints a stored part. `tick end` and an end by the journal clear the parts.
 
-The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>`, with or without `--part <k>`, then builds the tick group from the cache and stores it. It prints part `k`, or the first part. When the tick group is already stored, it prints the stored first part instead. It prints the `ALARM` lines that the tick computes after its self steps, a `stale` line for each cache that a failed sync left old, the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
+The output of a start that stopped on its own steps is one part and is not stored. `journal tick input <tick id>`, with or without `--part <k>`, then builds the tick group from the cache and stores it. It prints part `k`, or the first part. When the tick group is already stored, it prints the stored first part instead. It prints the `ALARM` lines that the tick computes after its self steps, a `unsynced` line for each cache that a failed sync left old, the stage line and the texts. A failed stage check gives the self line `stage`. The constitution, the precedents and the department page become self lines. It ends no tick and applies no stale rule.
 
 An unknown tick, an ended tick, a role without an input and a part outside the group are usage errors with exit 1.
 

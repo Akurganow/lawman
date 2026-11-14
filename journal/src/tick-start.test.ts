@@ -951,7 +951,7 @@ describe("an operation that is empty or fails", () => {
 				// a failed sync is no self step: the start goes on with the cache and names the stale time
 				if (failing && SYNCED.includes(operation)) {
 					expect(own).not.toContain(`self ${step}`);
-					expect(own).toContain(`stale main ${operation} synced=never`);
+					expect(own).toContain(`unsynced main ${operation} synced=never`);
 				} else expect(own).toContain(`self ${step}`);
 				rmSync(dir, { recursive: true, force: true });
 				mkdirSync(dir);
@@ -968,7 +968,7 @@ describe("an operation that is empty or fails", () => {
 		const own = lines(r.out);
 		expect(own).toContain("pulls failed reason=exit");
 		expect(own.filter((l) => l.startsWith("self "))).toEqual([]);
-		const stale = own.indexOf("stale main pulls synced=never");
+		const stale = own.indexOf("unsynced main pulls synced=never");
 		expect(stale).toBeGreaterThan(own.indexOf("pulls failed reason=exit"));
 		expect(stale).toBeLessThan(own.findIndex((l) => l.startsWith("need=")));
 		expect(own).toContain("~~~issue");
@@ -995,7 +995,7 @@ describe("an operation that is empty or fails", () => {
 		);
 	});
 
-	test("tick input after a self sync that the model left undone prints a stale line for it", () => {
+	test("tick input after a self sync that the model left undone prints an unsynced line for it", () => {
 		setUp();
 		orderOf("investigation", { issue: 3 });
 		CASES.investigation?.setup();
@@ -1005,9 +1005,9 @@ describe("an operation that is empty or fails", () => {
 		);
 		put({ 3: withLead("fixtures") });
 		const own = lines(input("1").out);
-		expect(own).toContain("stale main pulls synced=never");
-		expect(own.some((l) => l.startsWith("stale main issues"))).toBe(false);
-		expect(own.indexOf("stale main pulls synced=never")).toBeLessThan(
+		expect(own).toContain("unsynced main pulls synced=never");
+		expect(own.some((l) => l.startsWith("unsynced main issues"))).toBe(false);
+		expect(own.indexOf("unsynced main pulls synced=never")).toBeLessThan(
 			own.findIndex((l) => l.startsWith("need=")),
 		);
 	});

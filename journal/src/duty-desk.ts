@@ -20,7 +20,7 @@ import { configValue } from "./law-sync";
 import { lawCheck, lawVersion } from "./law-version";
 import { lintPage } from "./lint";
 import { asciiLower, stripCr } from "./markers";
-import { type Operated, operate } from "./operations";
+import { empty, type Operated, operate } from "./operations";
 import { rotationOrder } from "./rotation";
 import { JOBS } from "./settings";
 import { stageFor } from "./tick-start";
@@ -58,7 +58,6 @@ type Written = Taken & { role: string };
 const call = (args: string[], author = "") => ({ args, author, reset: false });
 const firstLine = (r: Operated) =>
 	r.blocks[0] !== undefined && "line" in r.blocks[0] ? r.blocks[0].line : "";
-const empty = (r: Operated) => r.text === null && r.code === EXIT.OK;
 const listed = (files: string, path: string) =>
 	files.split("\n").map(stripCr).includes(path);
 
@@ -329,6 +328,11 @@ async function finish(
 						v.cause,
 						name,
 					]);
+			for (const p of precincts)
+				db.run(
+					"UPDATE precincts SET sync_failures = CASE WHEN ? THEN 0 ELSE sync_failures + 1 END WHERE name = ?",
+					[Number(fresh.has(p.name)), p.name],
+				);
 			const alarms = reconcileAlarms(db, stamp, true, fresh);
 			const lacking = lackingPrecincts(db);
 			const closed = closeUnneeded(db, new Set(visits.keys()), lacking, stamp);
