@@ -110,7 +110,7 @@ After a job the clerk leaves a marker comment. The stages are `handed`, `shut`, 
 
 ### Spec writer
 
-The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment. A short summary for the owner comes first, then the sections Problem, Change, Acceptance and Out of scope. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
+The spec writer takes an order on a pull request. It reads the pull request and every source issue in full, as evidence. It writes one `Spec` comment. A short card for the owner comes first. It says what is proposed and how to vote. It lists the path of the case: one line per stage of each source, copied word for word from that stage's comment, with a link. A source with no ruling gets one line that says so, with links to the issue and to the clerk's hand-over. The sections Problem, Change, Acceptance and Out of scope follow. The marker is `stage=spec` with the tip `sha`. It never edits a spec. A revision is a new comment. Specs go out back to back, so a pending vote blocks nothing.
 
 ### Executor
 
