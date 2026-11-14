@@ -4,6 +4,18 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.1 - 2026-11-14
+#### Tests
+- share the in-process parts build and check each fill of the sync loops (6599d24)
+- build the court parts and fill the sync cache once per test (a538bf2)
+#### Continuous Integration
+- say that the release test os list must cover the build matrix (5f6213b)
+- run the test suite on macOS for every pull request (4592fe0)
+- run the release tests once per operating system before any build (8f21a6b)
+
+- - -
+
+
 ## v1.5.0 - 2026-11-14
 #### Features
 - (**clerk**) leave the owner's pull request alone and brief it after a ruling (d440171)
