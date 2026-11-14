@@ -99,10 +99,8 @@ export function main(argv: string[]): number | Promise<number> {
 }
 
 if (import.meta.main) {
-	// a failed write to stdout, such as a reader that closed the pipe, and any
-	// other error outside main take the same one-line exit as an error inside it
-	const exit = (e: unknown) => process.exit(failed(e));
-	process.stdout.on("error", exit);
-	process.on("uncaughtException", exit);
+	// a failed write to stdout, such as to a reader that closed the pipe, comes
+	// as an event outside main and takes the same one-line exit
+	process.stdout.on("error", (e) => process.exit(failed(e)));
 	process.exitCode = await main(process.argv.slice(2));
 }

@@ -182,6 +182,14 @@ describe("table rows", () => {
 		expect(r).toMatchObject({ job: "brief", pull: "9" });
 		const pair = { markers: pairs(["handed", "5", "open"]) };
 		expect(run({ ...pair, pulls: [owners(9, 1)] }).job).toBe("settle");
+		// a pair's pull request from before the trace line is no owner's
+		const old = {
+			...pair,
+			ruling: conviction(1),
+			pulls: [owners(5, 1)],
+			holds: false,
+		};
+		expect(run(old).job).toBe("-");
 	});
 
 	test("2: a pair marker for another pull request adopts the new one", () => {

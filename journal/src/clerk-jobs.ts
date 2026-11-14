@@ -1,7 +1,7 @@
 import type { Database } from "bun:sqlite";
 import type { CaseMarker } from "./cases";
 
-// traced: a pull request of a role; one without a trace is the owner's
+// traced: the body carries a trace of a role
 export type CachedPull = {
 	number: number;
 	issues: number[];
@@ -133,8 +133,13 @@ function tableRow(
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
-	// the clerk never takes the owner's pull request: it only briefs it on a ruling
-	const owners = i.pulls.find((p) => !p.traced && p.issues.includes(i.issue));
+	// the owner's pull request has no trace and is no pair's; the clerk only briefs it
+	const owners = i.pulls.find(
+		(p) =>
+			!p.traced &&
+			p.number !== Number(k?.fields.pull) &&
+			p.issues.includes(i.issue),
+	);
 	if (
 		owners !== undefined &&
 		i.ruling !== undefined &&
