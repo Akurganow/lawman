@@ -118,6 +118,15 @@ function stateAction(
 	return "kept";
 }
 
+// the owner's pull requests have no trace and are no pair's; the clerk only briefs them
+const ownersOf = (i: ClerkInput, k: CaseMarker | undefined) =>
+	i.pulls.filter(
+		(p) =>
+			!p.traced &&
+			p.number !== Number(k?.fields.pull) &&
+			p.issues.includes(i.issue),
+	);
+
 type Row = { job: Job; action: Action; pull?: string };
 const job = (j: Job, action: Action = NONE): Row => ({ job: j, action });
 const NO_JOB = job(NONE);
@@ -133,13 +142,7 @@ function tableRow(
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
-	// the owner's pull requests have no trace and are no pair's; the clerk only briefs them
-	const owners = i.pulls.filter(
-		(p) =>
-			!p.traced &&
-			p.number !== Number(k?.fields.pull) &&
-			p.issues.includes(i.issue),
-	);
+	const owners = ownersOf(i, k);
 	const ruling = i.ruling;
 	const unbriefed =
 		ruling && owners.find((p) => !briefed(i.markers, p.number, ruling.ord));
@@ -199,10 +202,18 @@ function rowOf(
 	pull: CachedPull | undefined,
 ): Row {
 	const closed = i.state === "CLOSED";
-	if (k !== undefined && k.fields.issue !== i.state.toLowerCase()) {
+	// a settled or shut marker expects a closed issue: an open one under it is a reopen, whatever its issue field says
+	const gone = k?.stage === "settled" || k?.stage === "shut";
+	if (
+		k !== undefined &&
+		(k.fields.issue !== i.state.toLowerCase() || (gone && !closed))
+	) {
 		const closePull =
 			pull?.issues.includes(i.issue) === true && pull.issues.every(i.isClosed);
-		return job("state", stateAction(base, closed, closePull));
+		const action = stateAction(base, closed, closePull);
+		// the reopen waits while the owner's pull request closes the issue, and is carried once it is gone
+		if (action !== "open" || ownersOf(i, k).length === 0)
+			return job("state", action);
 	}
 	return tableRow(i, k, base, pull);
 }

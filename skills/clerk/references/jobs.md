@@ -28,7 +28,7 @@ Reopen the issue `<s>` as the end of the `tick.md#close-the-issue` section says.
 
 ### Pull request state
 
-Read the state of the pull request `<pull>` from the host, with its draft state, its merge commit and its link. The state is open, merged or closed. A failed read gives `stopped-issue-read`.
+Read the state of the pull request `<pull>` from the host, with its draft state, its merge commit, the time of its merge or close, and its link. The state is open, merged or closed. A failed read gives `stopped-issue-read`.
 
 ### Make the pull request a draft
 
@@ -123,16 +123,18 @@ Run it when the decider check said `no`, or when `action` is `kept`.
 
 ## settle
 
+A source reopened after the merge or the close of the pull request stays open. Read the time of its newest reopen from the host and compare it with the time of the merge or the close. A source with no reopen, or one reopened earlier, is closed as below. The marker of each `<s>` carries `issue=<the state in which you leave it>`, with the sentence of the row for that state.
+
 1. Read the pull request state.
 2. `OPEN`: the cache is stale. End the tick with `silent` and the report `Order stale: pull request #<pull> is open`.
 3. `MERGED`:
    1. Take the merge commit of the pull request. It must match `^[0-9a-f]{40}$`.
-   2. For every `<s>`, read its state. When it is `OPEN`, close it with the class `gone at <merge commit>`, as completed.
-   3. Write the marker `settled` with `pull=<pull>` and `issue=closed` on every `<s>`.
+   2. For every `<s>`, read its state. Close every `OPEN` source that does not stay open with the class `gone at <merge commit>`, as completed.
+   3. Write the marker `settled` with `pull=<pull>` on every `<s>`.
    4. The outcome is `settled`.
 4. `CLOSED`:
-   1. For every `<s>`, read its state. When it is `OPEN`, close it with the class `declined by the owner`, as not planned.
-   2. Write the marker `shut` with `pull=<pull>` and `issue=closed` on every `<s>`. Use the sentence for settle.
+   1. For every `<s>`, read its state. Close every `OPEN` source that does not stay open with the class `declined by the owner`, as not planned.
+   2. Write the marker `shut` with `pull=<pull>` on every `<s>`. Use the sentence for settle.
    3. The outcome is `shut`.
 
 ## reopen

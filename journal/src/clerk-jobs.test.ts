@@ -45,6 +45,14 @@ describe("state rule: base and issue state", () => {
 		],
 		["settled, open", ["settled", "7", "closed"], "OPEN", [], "open"],
 		[
+			"settled recorded open, open",
+			["settled", "7", "open"],
+			"OPEN",
+			[],
+			"open",
+		],
+		["shut recorded open, open", ["shut", "7", "open"], "OPEN", [], "reopen"],
+		[
 			"settled recorded open, closed",
 			["settled", "7", "open"],
 			"CLOSED",
@@ -59,6 +67,26 @@ describe("state rule: base and issue state", () => {
 			closed,
 		});
 		expect(r).toMatchObject({ job: "state", action, pull: "7" });
+	});
+
+	test("a reopen after a merge waits while the owner's pull request closes the issue", () => {
+		const markers = pairs(["settled", "7", "closed"]);
+		const ruling = conviction();
+		expect(run({ markers, ruling, pulls: [owners(9, 1)] })).toMatchObject({
+			job: "brief",
+			pull: "9",
+		});
+		expect(run({ markers, ruling })).toMatchObject({
+			job: "state",
+			action: "open",
+		});
+	});
+
+	test("a kept marker over settled does not start a state job again", () => {
+		const r = run({
+			markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
+		});
+		expect(r.job).not.toBe("state");
 	});
 
 	test("a closed issue whose pull request left the cache is kept, not closed", () => {
@@ -238,7 +266,9 @@ describe("table rows", () => {
 	});
 
 	test("3: a shut or settled pair does not settle again", () => {
-		expect(run({ markers: pairs(["shut", "7", "open"]) }).job).toBe("-");
+		expect(
+			run({ state: "CLOSED", markers: pairs(["shut", "7", "closed"]) }).job,
+		).toBe("-");
 		expect(
 			run({ state: "CLOSED", markers: pairs(["settled", "7", "closed"]) }).job,
 		).toBe("-");

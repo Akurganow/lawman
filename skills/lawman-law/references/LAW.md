@@ -82,8 +82,8 @@ The clerk takes one order, a job on an issue. It is the only role that opens a p
 
 - `recorded`: the clerk opened a pull request with precedent files.
 - `handed`: the clerk opened a draft pull request, took one up, or brought a pair back open.
-- `shut`: the clerk closed a pull request or the source issues of a closed one. It also recorded a decider's close of a precedent pull request, which has no sources.
-- `settled`: the clerk closed the source issues of a merged pull request, or recorded the merge of a precedent pull request, which has no sources.
+- `shut`: the clerk closed a pull request or the source issues of a closed one, except a source reopened after the close. It also recorded a decider's close of a precedent pull request, which has no sources.
+- `settled`: the clerk closed the source issues of a merged pull request, except a source reopened after the merge, or recorded the merge of a precedent pull request, which has no sources.
 - `kept`: the clerk recorded a close or reopen by a non-decider, or the close of a precedent pull request by one, and changed nothing.
 - `briefed`: the clerk wrote a brief on the owner's pull request.
 
@@ -387,9 +387,9 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 - The owner's pull request is never adopted. No role changes its body, its draft state or its code. After each ruling on an issue that it closes, the clerk writes one brief on it while it is open. The brief links the case, the charge, the defence and the ruling. The brief marker on the issue is no pair marker.
 - The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing. That close or reopen is not undone on the host.
   - All sources closed by a decider: the clerk closes the pull request. One source closed while others stay open is no refusal.
-  - Pull request closed by a decider: the clerk closes the open sources as not planned, class `declined by the owner`.
-  - Pull request merged: the clerk closes the open sources as completed, class `gone at <sha>` with the merge commit.
-  - Source reopened by a decider: the clerk reopens the same pull request and the sources closed with it. It sets the pull request back to draft. If the pull request was merged, it opens a new draft pull request on a new branch, with no precedent files.
+  - Pull request closed by a decider: the clerk closes the open sources as not planned, class `declined by the owner`. A source reopened after the close stays open and counts as reopened.
+  - Pull request merged: the clerk closes the open sources as completed, class `gone at <sha>` with the merge commit. A source reopened after the merge stays open and counts as reopened.
+  - Source reopened by a decider: the clerk reopens the same pull request and the sources closed with it. It sets the pull request back to draft. If the pull request was merged, it opens a new draft pull request on a new branch, with no precedent files, unless the owner's pull request closes the issue.
   - Pull request reopened by a decider: the clerk reopens the sources closed with it.
 - A precedent pull request has no source issue and is no pair. Its `entry` marker names it. The owner decides on it. A merge is binding, and the clerk records `final`. A close by a decider takes no effect, and the clerk records `final`. A close by anyone else changes nothing, and the clerk records `kept`.
 - A write comes first, then its read-back, then the marker. A tick that fails before the marker repeats the job.

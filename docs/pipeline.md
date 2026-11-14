@@ -256,7 +256,7 @@ The funnel runs without you until a decision needs a person. On a pull request, 
 - **Send finished work back.** React with 👎 to the newest `Executor` comment, or submit a Request changes review after it. Approvals, dismissed reviews and bot remarks return nothing.
 - **Review and merge the pull request.** No role merges. After your merge the clerk closes the source issues as completed.
 - **Close a pull request to decline it.** The clerk then closes its open source issues as not planned. Each of them leaves a dismissal for you to merge.
-- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. A close or reopen by someone who is no decider is recorded and changes nothing. A dismissal stops applying while its lead is open again or fixed. A lead that you reopen and close again gets no second dismissal. The first one applies again, when you merged it. To remove a dismissal for good, delete its file from `.lawman/precedents/`.
+- **Reopen an issue or a pull request.** The clerk reopens the other side of the pair. For an issue whose pull request you merged, it opens a new pull request, unless your own pull request closes the issue. A close or reopen by someone who is no decider is recorded and changes nothing. A dismissal stops applying while its lead is open again or fixed. A lead that you reopen and close again gets no second dismissal. The first one applies again, when you merged it. To remove a dismissal for good, delete its file from `.lawman/precedents/`.
 - **Merge constitution pull requests.** The assembly drafts the constitution and its amendments, and the clerk opens precedent pull requests. A precedent binds the roles only after you merge it. See [constitution](constitution.md).
 
 ## Where the rules live
