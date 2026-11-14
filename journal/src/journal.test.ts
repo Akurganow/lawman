@@ -28,6 +28,24 @@ describe("cli", () => {
 		expect(cli([]).code).toBe(1);
 	});
 
+	test("a reader that closes the pipe gets one journal line and a non-zero exit", () => {
+		// the reader closes its end at once, before the journal writes
+		const r = Bun.spawnSync(
+			[
+				"bash",
+				"-c",
+				'set -o pipefail; "$0" src/journal.ts --version | (exec <&-; sleep 1)',
+				process.execPath,
+			],
+			{
+				cwd: JOURNAL,
+				env: { PATH: process.env.PATH ?? "", LAWMAN_DB: dbFile },
+			},
+		);
+		expect(r.stderr.toString()).toBe("journal: EPIPE: broken pipe, write\n");
+		expect(r.exitCode).toBe(EXIT.USAGE);
+	});
+
 	test("database newer than the binary makes a command exit 6", async () => {
 		const newer = new Database(dbFile);
 		newer.run(`PRAGMA user_version = ${MIGRATIONS.length + 1}`);
