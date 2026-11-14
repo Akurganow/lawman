@@ -4,6 +4,14 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.2 - 2026-11-14
+#### Bug Fixes
+- (**clerk**) let a reopen wait for the owner's pull request (5156c4e)
+- (**clerk**) keep a source reopened after its pull request left (5729078)
+
+- - -
+
+
 ## v1.5.1 - 2026-11-14
 #### Tests
 - share the in-process parts build and check each fill of the sync loops (6599d24)
