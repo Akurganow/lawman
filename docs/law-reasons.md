@@ -186,6 +186,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > A reply without a valid id gives `stopped-readback`, because the read-back cannot run.
 
+### Comment format
+
+> The card copies each line of the path word for word, so that it cannot drift from its source.
+
 ## skills/clerk/references/jobs.md
 
 ### precedent
