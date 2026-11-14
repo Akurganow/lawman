@@ -272,18 +272,26 @@ describe("parts of the role group", () => {
 		expect(all.flatMap(content)).toEqual(whole);
 	});
 
-	test("a part's content is the same at every call, and a new order changes no part of the law", async () => {
+	// Each call of tick input builds the whole group again, so this test builds
+	// the parts in process, once per state of the orders.
+	test("a part's content is the same at every call, and a new order changes no part of the law", () => {
 		orderFor("court");
 		config(`${CONFIG}input_chars: 3000\njobs: court=2\n`);
-		const before = await parts("court");
-		expect((await parts("court")).map(content)).toEqual(before.map(content));
+		const build = () => {
+			let built: string[][] = [];
+			captured(BASE, () => {
+				const orders = withDb((d) => takeableOrders(d, "court"));
+				built = roleParts("court", orders, readConfig());
+			});
+			return built;
+		};
+		const before = build();
+		expect(build()).toEqual(before);
 		seed((d) => order(d, "main", "court", { at: later(1), issue: 4 }));
-		const after = await parts("court");
+		const after = build();
 		expect(after.length).toBe(before.length);
-		expect(after.slice(0, -1).map(content)).toEqual(
-			before.slice(0, -1).map(content),
-		);
-		expect(content(after.at(-1) ?? "")).toEqual([
+		expect(after.slice(0, -1)).toEqual(before.slice(0, -1));
+		expect(after.at(-1)).toEqual([
 			"order 1 main o/main - 3",
 			"order 2 main o/main - 4",
 		]);

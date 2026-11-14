@@ -238,7 +238,12 @@ describe("sync", () => {
 	});
 
 	test("%s exits 4 and leaves the cache", async () => {
+		// Every case leaves the cache as it was, so the cache is filled once per
+		// loop and each case checks it against the state before that case.
 		// sync through the program
+		fresh();
+		addPrecincts({ [PRECINCT]: 1 });
+		sync(issues);
 		for (const [name, input] of [
 			["empty stdin", ""],
 			["not json", "not json"],
@@ -267,9 +272,6 @@ describe("sync", () => {
 				withTimes({ state: "CLOSED", stateReason: 42 }),
 			],
 		] as [string, unknown][]) {
-			fresh();
-			addPrecincts({ [PRECINCT]: 1 });
-			sync(issues);
 			const before = snapshot();
 			const r = sync(input);
 			expect([name, r.code, r.err]).toEqual([
@@ -280,6 +282,9 @@ describe("sync", () => {
 			expect(snapshot()).toEqual(before);
 		}
 		// sync in process
+		fresh();
+		addPrecincts({ [PRECINCT]: 1 });
+		await fed(issuesForm(issues));
 		for (const [name, input] of [
 			["no writers", { issues: [] }],
 			["no issues", { writers: [] }],
@@ -299,9 +304,6 @@ describe("sync", () => {
 				commented({ id: "c1", ...reacted(), rejectedBy: [7] }),
 			],
 		] as [string, unknown][]) {
-			fresh();
-			addPrecincts({ [PRECINCT]: 1 });
-			await fed(issuesForm(issues));
 			const before = rows("SELECT * FROM issues ORDER BY issue");
 			const r = await fed(input);
 			expect([name, r.code, r.err]).toEqual([
