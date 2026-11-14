@@ -14,7 +14,21 @@ const ROLE_SILENT_INTERVALS = 3;
 const TICK_FAILING_RUN = 3;
 const NO_PROGRESS = "checks found a takeable order and the role took none";
 
-type Candidate = { kind: string; ref: string; detail: string };
+type Candidate = {
+	kind: string;
+	ref: string;
+	detail: string;
+	url?: string | null;
+};
+export type Synced = {
+	synced_at: string | null;
+	pulls_synced_at: string | null;
+};
+
+// A precinct is fresh in a tick when both of its syncs are not older than the tick's start.
+export const isFresh = (p: Synced, started: string) =>
+	(p.synced_at ?? "") >= started && (p.pulls_synced_at ?? "") >= started;
+
 function ageMs(nowMs: number, since: string): number {
 	return nowMs - Date.parse(since);
 }
@@ -97,10 +111,27 @@ function tickFailing(db: Database): Candidate[] {
        ORDER BY role, precinct`,
 		)
 		.all() as { role: string; precinct: string }[];
-	return failing.map((f) => ({
+	return [
+		...failing.map((f) => ({
+			kind: "tick-failing",
+			ref: `${f.role}/${f.precinct}`,
+			detail: `last ${TICK_FAILING_RUN} ticks stopped, skipped or failed`,
+		})),
+		...unsyncedPrecincts(db),
+	];
+}
+
+// the duty desk counts its ticks in a row that could not sync a precinct, and a stop before the sync counts none
+function unsyncedPrecincts(db: Database): Candidate[] {
+	const names = db
+		.query(
+			"SELECT name FROM precincts WHERE weight > 0 AND sync_failures >= ? ORDER BY name",
+		)
+		.all(TICK_FAILING_RUN) as { name: string }[];
+	return names.map((p) => ({
 		kind: "tick-failing",
-		ref: `${f.role}/${f.precinct}`,
-		detail: `last ${TICK_FAILING_RUN} ticks stopped, skipped or failed`,
+		ref: `duty-desk/${p.name}`,
+		detail: `last ${TICK_FAILING_RUN} duty desk ticks did not sync it`,
 	}));
 }
 
@@ -195,6 +226,11 @@ function decisionWaiting(db: Database): Candidate[] {
 			kind: "decision-waiting",
 			ref: `${p.precinct}#${p.number}`,
 			detail: p.detail,
+			// a vote on the newest spec links its comment, any other wait the pull request
+			url:
+				(p.detail === WAITS_FOR_VOTE
+					? urlOf(db, p.precinct, "spec", p.number)
+					: null) ?? urlOf(db, p.precinct, "pull", p.number),
 		}));
 }
 
@@ -221,15 +257,15 @@ function precedentWaiting(db: Database): Waiting[] {
 		.map((p) => ({ ...p, detail: WAITS_FOR_PRECEDENT }));
 }
 
-const DETECTORS = [
-	noProgress,
-	tickHung,
-	roleSilent,
-	tickFailing,
-	decisionWaiting,
-	noConstitution,
-	withheldTexts,
-] as ((db: Database, nowMs: number) => Candidate[])[];
+type Detector = (db: Database, nowMs: number) => Candidate[];
+// the alarms that read the journal's own records
+const JOURNAL: Detector[] = [noProgress, tickHung, roleSilent, tickFailing];
+// the alarms that read the host data in the cache, by kind, with refs that start with the precinct
+const HOST: Record<string, Detector> = {
+	"decision-waiting": decisionWaiting,
+	"withheld-text": withheldTexts,
+	"no-constitution": noConstitution,
+};
 
 type OpenAlarm = {
 	id: number;
@@ -242,50 +278,61 @@ type OpenAlarm = {
 const alarmKey = (a: Candidate) => `${a.kind} ${a.ref} ${a.detail}`;
 
 // An alarm about an issue or a pull request ends with its link. The address is looked up
-// from the alarm's subject, never stored in the alarm, so it is no part of the alarm's identity.
-function alarmLine(db: Database, a: Candidate): string {
-	const [precinct = "", number = ""] = a.ref.split("#");
-	const url =
-		a.kind === "decision-waiting"
-			? urlOf(db, precinct, "pull", Number(number))
-			: null;
-	return `ALARM ${a.kind} ${a.ref} ${a.detail}${url === null ? "" : ` ${url}`}`;
-}
+// when the alarm is judged, never stored in the alarm, so it is no part of the alarm's identity.
+const alarmLine = (a: Candidate) =>
+	`ALARM ${a.kind} ${a.ref} ${a.detail}${a.url ? ` ${a.url}` : ""}`;
+
+// "journal" judges the alarms of the journal's own records. A set of precincts judges the host
+// alarms of those precincts, whose cache was just refreshed, and clears the open host alarms of a
+// precinct that gets none, a weight 0 or an unknown one. Everything else stays as it is.
+export type Scope = "journal" | Set<string>;
 
 export function reconcileAlarms(
 	db: Database,
 	stamp: string,
 	repeat: boolean,
+	scope: Scope,
 ): string[] {
+	const weighted = new Set(
+		(
+			db.query("SELECT name FROM precincts WHERE weight > 0").all() as {
+				name: string;
+			}[]
+		).map((r) => r.name),
+	);
+	const mine = ({ kind, ref }: Candidate) => {
+		if (scope === "journal") return !(kind in HOST);
+		const precinct = ref.split("#")[0] ?? "";
+		return kind in HOST && (scope.has(precinct) || !weighted.has(precinct));
+	};
 	const nowMs = Date.parse(stamp);
-	const wanted = DETECTORS.flatMap((detect) => detect(db, nowMs));
-	const open = db
-		.query(
-			"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
-		)
-		.all() as OpenAlarm[];
-	const wantedKeys = new Set(wanted.map(alarmKey));
+	const wanted = (scope === "journal" ? JOURNAL : Object.values(HOST))
+		.flatMap((detect) => detect(db, nowMs))
+		.filter(mine);
+	const open = (
+		db
+			.query(
+				"SELECT id, kind, ref, detail FROM alarms WHERE cleared_at IS NULL ORDER BY id",
+			)
+			.all() as OpenAlarm[]
+	).filter(mine);
+	const wantedBy = new Map(wanted.map((w) => [alarmKey(w), w]));
 	const openKeys = new Set(open.map(alarmKey));
-	const lines: string[] = [];
-	for (const o of open) {
-		if (!wantedKeys.has(alarmKey(o)))
+	for (const o of open)
+		if (!wantedBy.has(alarmKey(o)))
 			db.run("UPDATE alarms SET cleared_at = ? WHERE id = ?", [stamp, o.id]);
-	}
-	for (const w of wanted) {
-		if (openKeys.has(alarmKey(w))) continue;
+	const raised = wanted.filter((w) => !openKeys.has(alarmKey(w)));
+	for (const w of raised)
 		db.run(
 			// the notified_at column is never read; it stays so the schema does not change
 			"INSERT INTO alarms (kind, ref, detail, raised_at, notified_at) VALUES (?, ?, ?, ?, ?)",
 			[w.kind, w.ref, w.detail, stamp, stamp],
 		);
-		lines.push(alarmLine(db, w));
-	}
-	// the duty desk repeats an open alarm at each of its ticks; the alarms this
-	// call raised are printed once above and never repeated here
-	if (repeat)
-		for (const o of open)
-			if (wantedKeys.has(alarmKey(o))) lines.push(alarmLine(db, o));
-	return lines;
+	// the duty desk repeats an open alarm at each of its ticks, except one this call raised
+	const repeated = repeat
+		? open.flatMap((o) => wantedBy.get(alarmKey(o)) ?? [])
+		: [];
+	return [...raised, ...repeated].map(alarmLine);
 }
 
 function statusOrders(db: Database): string[] {

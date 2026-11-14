@@ -197,13 +197,21 @@ export const later = (hours: number, seconds = 0) =>
 export const call = (clock: string, args: string[], stdin = "") =>
 	cli(args, { LAWMAN_DB: dbFile, LAWMAN_NOW: clock }, stdin);
 // The alarms as the starts compute them, in this process: the journal has no alarm command.
+// The journal alarms, then the host alarms of every precinct.
 export function alarm(clock: string, ...flags: string[]) {
 	const saved = process.env.LAWMAN_DB;
 	process.env.LAWMAN_DB = dbFile;
 	const db = open(dbFile);
 	try {
+		const precincts = new Set(
+			(db.query("SELECT name FROM precincts").all() as { name: string }[]).map(
+				(r) => r.name,
+			),
+		);
 		const lines = inTransaction(db, () =>
-			reconcileAlarms(db, clock, flags.includes("--repeat")),
+			(["journal", precincts] as const).flatMap((scope) =>
+				reconcileAlarms(db, clock, flags.includes("--repeat"), scope),
+			),
 		);
 		return { code: 0, out: lines.map((l) => `${l}\n`).join(""), err: "" };
 	} finally {

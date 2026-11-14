@@ -8,7 +8,6 @@ import type { TextKind } from "./cache-text";
 export const INTRO = "intro";
 export const WHOLE = "";
 type Read = [file: string, sections: string[]];
-type Sync = "issues" | "pulls";
 type StageKind = "case" | "intake" | "pull";
 // the fields a stale rule reads from a stage function's structure
 export type StageFields = { need: string; state: string };
@@ -16,7 +15,6 @@ export type StageFields = { need: string; state: string };
 export type RoleInput = {
 	law: Read[];
 	number: "issue" | "pull" | "department";
-	sync: Sync[];
 	stage: StageKind | null;
 	// absent for a role without a stage
 	stale?: (s: StageFields) => boolean;
@@ -179,6 +177,8 @@ const EVERY_ROLE = [
 	"Working rules",
 	"Instructions and evidence",
 	"Fetch the precinct",
+	"Sync the tracker",
+	"Sync the pull requests",
 	"End the tick",
 ];
 
@@ -220,7 +220,6 @@ const either =
 		rules.some((rule) => rule(s));
 
 const CASE_STEPS = [
-	"Sync the tracker",
 	"Read the stage",
 	"Check the constitution",
 	"Write a comment",
@@ -233,7 +232,6 @@ const CLOSING_STEPS = [
 ];
 const JUDGING_STEPS = [...CLOSING_STEPS, "Resolve the department page"];
 const PULL_STEPS = [
-	"Sync the pull requests",
 	"Read the pull stage",
 	"Check the constitution",
 	"Write a comment",
@@ -242,7 +240,6 @@ const PULL_STEPS = [
 type Shared = Omit<RoleInput, "law" | "stale">;
 const ISSUE_ROLE: Shared = {
 	number: "issue",
-	sync: ["issues"],
 	stage: "case",
 	constitution: true,
 	department: null,
@@ -252,7 +249,6 @@ const ISSUE_ROLE: Shared = {
 };
 const PULL_ROLE: Shared = {
 	number: "pull",
-	sync: ["pulls"],
 	stage: "pull",
 	constitution: true,
 	department: null,
@@ -265,12 +261,7 @@ export const ROLES: Record<string, RoleInput> = {
 	patrol: {
 		law: law(
 			"patrol",
-			[
-				"Sync the tracker",
-				"Check the constitution",
-				"Resolve the department page",
-				"Alarm",
-			],
+			["Check the constitution", "Resolve the department page", "Alarm"],
 			[
 				// the sections behind the step that writes a lead marker
 				[
@@ -281,7 +272,6 @@ export const ROLES: Record<string, RoleInput> = {
 			],
 		),
 		number: "department",
-		sync: ["issues"],
 		stage: null,
 		constitution: true,
 		department: "order",
@@ -294,7 +284,6 @@ export const ROLES: Record<string, RoleInput> = {
 		law: law(
 			"response-unit",
 			[
-				"Sync the tracker",
 				"Check the intake order",
 				"Check the constitution",
 				"Reading without a tree",
@@ -334,15 +323,12 @@ export const ROLES: Record<string, RoleInput> = {
 	clerk: {
 		...ISSUE_ROLE,
 		law: law("clerk", [
-			"Sync the tracker",
-			"Sync the pull requests",
 			"Read the stage",
 			"Check the decider",
 			"Write a comment",
 			"Close the issue",
 			"Alarm",
 		]),
-		sync: ["issues", "pulls"],
 		stale: needNot("clerk"),
 		constitution: false,
 		precedents: null,

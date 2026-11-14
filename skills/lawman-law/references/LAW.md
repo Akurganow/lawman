@@ -288,7 +288,6 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
-- `stopped-sync`: syncing the issue or pull request cache failed.
 - `stopped-issue-read`: reading the issue, the pull request or their comments failed.
 - `stopped-source-read`: reading an external source failed, so investigation writes no case. For `licenses` it means only a read that could not start: no network or no tool, or a refused approval.
 - `stopped-bad-department`: the department page became unavailable or failed the page check between the order and the tick.
@@ -313,16 +312,19 @@ A new slug is added to this list before any role uses it.
 
 ## Alarms the journal computes
 
-An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed is a further example. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
+An alarm is a condition the owner must see. Examples are a role that checks for work and never takes it. Further examples are a tick that has no end record while a later tick of its role exists, and a role that stopped ticking. A role whose last three ticks on a precinct stopped, skipped or failed is a further example. So is a precinct that the last three duty desk ticks could not sync. A pull request whose newest spec or finished work waits for a decider is an example too. The journal computes these alarms.
 
 - An open precedent pull request raises `decision-waiting` while the clerk's newest marker for it is `entry`. A `final` or `kept` marker ends it. A merge or a close ends it too. The journal computes it from the markers for a pull request with no source and no `handed` marker.
 - A handed pull request raises `decision-waiting` when its newest spec has no decider's vote, or when its finished work waits for a decider. It prints once and clears when the condition ends. A decider's vote on the spec ends the first case. A merge or a close ends both. A return of the work or a newer spec ends the second. A decider's 👍 on the finished work and an approving review do not end the second. A decider's decision on finished work is the merge or the return.
 - When a text of a case reads `This text could not be cleaned and is withheld.`, the journal withheld it. The role reads no claim or instruction from that text, and works on the rest of the case.
 - `no-progress` is for a role whose entry finds a takeable order and no take, N checks in a row. N is `progress_checks` in `config.yaml`, 3 by default. A take, or a check that finds no takeable order, starts the count again.
+- A precinct is fresh in a tick when both its tracker and its pull requests were synced after the tick began. The alarms `decision-waiting`, `withheld-text` and `no-constitution` rest on host data. A tick computes them only for a fresh precinct.
+- The duty desk computes them for every fresh precinct. A working role computes them for its own precinct. A host alarm of another precinct stays open and unchanged, and that role does not print it.
+- The alarms `no-progress`, `tick-hung`, `role-silent` and `tick-failing` rest on the journal's own records. Every tick computes them at its start.
+- `tick-failing` also rises for a precinct that the last three duty desk ticks could not sync. Its ref is `duty-desk/<precinct>`. It clears when a duty desk tick syncs that precinct. A duty desk tick that stops before its sync counts no failure.
 - A new alarm is printed by the tick that found it.
-- Only the duty desk repeats an open alarm, once at each of its ticks.
+- Only the duty desk repeats an open alarm, once at each of its ticks. It repeats the alarms of the fresh precincts and the journal's own alarms.
 - No duplicates. A condition that disappears clears its alarm.
-- Alarms are computed before any work is chosen.
 
 ## Returns instead of stops
 

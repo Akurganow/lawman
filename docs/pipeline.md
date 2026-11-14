@@ -27,7 +27,7 @@ The duty desk, the clerk, the spec writer and the executor are not stages of the
 
 ### Duty desk
 
-The duty desk runs its own tick, and the journal does the work of it. The journal computes the alarms and checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero. It reads each precinct, closes stale orders and writes the orders. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose pull request sync failed gets no orders for any role. The duty desk files nothing and comments on nothing. It leaves no marker.
+The duty desk runs its own tick, and the journal does the work of it. The journal checks the identity. It syncs the tracker and the pull requests of each precinct with a weight above zero. It reads each precinct, closes stale orders, writes the orders and computes the alarms. The duty desk model starts the tick, does the steps the journal cannot do, and answers. It writes one order for every case, pull request, waiting issue and patrol visit that needs a role. An open order on the same precinct, role and issue is the only bar. A precinct whose tracker sync or pull request sync failed gets no orders for any role, and none of its orders closes as stale. The duty desk files nothing and comments on nothing. It leaves no marker.
 
 ### Patrol
 
@@ -168,13 +168,13 @@ No daemon runs. The harness scheduler starts a role, the role does one unit of w
 
 The duty desk runs first.
 
-- The journal computes the alarms.
 - It checks the identity and syncs the tracker and the pull requests of each precinct with a weight above zero. A step that it cannot do comes back as a self step. The duty desk does it, then calls `bin/journal tick continue <id>` and not a second start.
-- A failed tracker sync stops the tick. A failed pull request sync leaves that precinct without orders.
+- A failed sync stops no tick. It leaves that precinct without orders and without stale closes. The other precincts go on.
 - For every other precinct it writes an order for each case or pull request that a role is due on.
 - It writes an order for each issue that waits for the response unit.
 - It writes one patrol order for each precinct whose department it can choose, by rotation and cap. See [departments](departments.md).
 - It closes the stale orders of the precincts it read.
+- It computes the alarms, as [Alarms](#alarms) says.
 
 The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
@@ -184,7 +184,7 @@ A role sees only orders that the duty desk already wrote. So a case moves one st
 
 ### Every tick
 
-Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the trusted login and computes the alarms. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. A step that the journal could not do comes back as a self step, and the role does it itself.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the trusted login. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. It then syncs the tracker and the pull requests of the order's precinct, and computes the alarms. A step that the journal could not do comes back as a self step, and the role does it itself. A sync that fails ends no tick. The role goes on with the cache and names the line `unsynced <precinct> <issues|pulls> synced=<time|never>` in its Blockers.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 
@@ -203,7 +203,7 @@ The role entry tells a harness whether a role has work. The harness runs a small
 
 The entry reads only local files and runs no command. The duty desk always has work, so its entry is never empty. A check counts as activity for the `role-silent` alarm. The assembly writes the files. See [the journal](journal.md#the-role-entry).
 
-The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the order, the alarms, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
+The input comes in two calls. The entry gives the local part. `bin/journal tick start --role <role> --order <id>` then takes the order and prints the case. The case holds the alarms, the order, the identity, the fetched commit, the sync, the stage, the constitution, the precedents and the department page. It also holds the texts of the issue or the pull request. A tick whose outcome follows from what the journal read ends there, and the order closes with it.
 
 An input larger than the harness's output limit comes in parts. Each part names its number and the count, and `bin/journal tick input` prints the others.
 
@@ -220,8 +220,8 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `no-progress` | journal | The entry of a role found a takeable order and the role took none, for `progress_checks` checks in a row. The default is 3. A take, or a check with no takeable order, starts the count again. |
 | `tick-hung` | journal | A tick has no end record while a later tick of its role exists. |
 | `role-silent` | journal | A role with an ended tick on record shows no tick start and no entry check for three intervals. |
-| `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. |
-| `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. |
+| `tick-failing` | journal | The last three ticks of a role on a precinct stopped, skipped or failed. Also the last three duty desk ticks could not sync a precinct. That case has the ref `duty-desk/<precinct>` and the detail `last 3 duty desk ticks did not sync it`, and a duty desk tick that syncs the precinct clears it. |
+| `decision-waiting` | journal | A handed pull request has a newest spec with no decider's vote, or finished work that waits for a decider. A precedent pull request waits for a decision. The line of a vote on a spec ends with the link of the newest `Spec` comment. The other forms end with the link of the pull request. |
 | `no-constitution` | journal | A precinct has no constitution on its main branch, or its constitution fails the page check. The line names the precinct and the cause. The roles that need the constitution get no new orders there, an order already taken ends itself, and the clerk goes on. The alarm clears when the constitution is usable. |
 | `withheld-text` | journal | The sync could not clean a text, or the cleaning of a text did not finish in time. The line names the precinct, the count and the first three texts with their links. The role reads a fixed line in place of each. The alarm clears when no text of the precinct is withheld. |
 | `contract-changed` | [law update](journal.md#updates) | The update prints it while the new law's constitution contract differs from the version in `config.yaml`. It is not stored, and the duty desk does not repeat it. Run the assembly to amend. |
@@ -229,9 +229,11 @@ The column Raised by says who prints each alarm. The `case` and `sweep` alarms n
 | `sweep` | a role | Patrol finds a live secret in the tree or the history. |
 | `referral` | a role | The court refers a requirement to a decider. |
 
-The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. When the cache holds no link, the alarm has none, and a role never looks one up. An alarm line defeats the silence form, so the reply is delivered.
+The alarms `decision-waiting`, `withheld-text` and `no-constitution` come from host data. A precinct is fresh in a tick when the tick synced both its tracker and its pull requests after the tick began. A tick computes these alarms only for a fresh precinct. The duty desk does it for every fresh precinct, and a working role for its own. A host alarm of another precinct stays open and unchanged, and that role does not print it. The alarms `no-progress`, `tick-hung`, `role-silent` and `tick-failing` come from the journal's own records. Every tick computes them at its start.
 
-The duty desk repeats an open alarm at each of its ticks while the condition holds. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
+The tick that finds an alarm prints it first in its reply. The `case`, `sweep` and `referral` lines read `ALARM case <precinct>#<issue> <one line> <link>`. They also read `ALARM sweep <precinct> <path>:<line> <one line>` and `ALARM referral <precinct>#<issue> <one line> <link>`. An alarm about an issue or a pull request ends with the link to it: `case`, `referral` and `decision-waiting` do. The link is the address that the host reports. The alarm `decision-waiting` for a vote on a spec ends with the link of the newest `Spec` comment. Without that link in the cache, it ends with the link of the pull request. An installation gets the comment links after its assembly rewrites the `pulls` command. When the cache holds no link, the alarm has none, and a role never looks one up. An alarm line defeats the silence form, so the reply is delivered.
+
+The duty desk repeats an open alarm at each of its ticks while the condition holds. It repeats the alarms of the fresh precincts and the journal's own alarms. A condition that disappears clears its alarm. Nothing repeats a `case` or a `referral` alarm. A `decision-waiting` alarm clears when a decider votes on the spec or when the pull request merges or closes. It also clears when the work returns or a newer spec replaces it. An approving review and a 👍 on the finished work do not clear it. The alarm of a precedent pull request clears when the clerk records `final` or `kept`, or when the pull request leaves the open ones. A `sweep` alarm repeats at every run of an `Alarm check:` paragraph that finds the secret while the secret stays.
 
 ### Failures and stops
 

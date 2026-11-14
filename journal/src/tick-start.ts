@@ -1,5 +1,5 @@
 import type { Database } from "bun:sqlite";
-import { reconcileAlarms } from "./alarms";
+import { isFresh, reconcileAlarms, type Synced } from "./alarms";
 import {
 	check,
 	count,
@@ -24,7 +24,7 @@ import { lawCheck } from "./law-version";
 import { urlOf } from "./link";
 import { lintPage, type PageKind, pageLines } from "./lint";
 import { asciiLower, stripCr } from "./markers";
-import { operate } from "./operations";
+import { empty, operate } from "./operations";
 import {
 	DISMISSAL,
 	departmentsField,
@@ -51,6 +51,7 @@ const CASE_TEXTS = [
 	"comment",
 ];
 const SYNC_STEPS = ["fetch", "issues", "pulls"];
+const CACHES = ["issues", "pulls"] as const;
 
 type Stage = StageFields & { department: string; pull: string; line: string };
 type Tick = { id: number; role: string };
@@ -236,6 +237,27 @@ function ended(
 
 const call = (args: string[], author = "") => ({ args, author, reset: false });
 
+// The host alarms of a precinct whose cache this tick refreshed, else none, and a line for
+// each sync of the precinct that this tick did not refresh.
+function cacheHead(
+	db: Database,
+	p: string,
+	started: string,
+): { alarms: string[]; stale: string[] } {
+	const row = (db
+		.query("SELECT synced_at, pulls_synced_at FROM precincts WHERE name = ?")
+		.get(p) as Synced | null) ?? { synced_at: null, pulls_synced_at: null };
+	const at = { issues: row.synced_at, pulls: row.pulls_synced_at };
+	return {
+		alarms: isFresh(row, started)
+			? reconcileAlarms(db, now(), false, new Set([p]))
+			: [],
+		stale: CACHES.filter((k) => (at[k] ?? "") < started).map(
+			(k) => `unsynced ${p} ${k} synced=${at[k] ?? "never"}`,
+		),
+	};
+}
+
 function fieldsFailure(input: RoleInput, order: Taken): string | null {
 	if (input.number === "issue" && order.issue === null)
 		return "The order has no issue number";
@@ -384,10 +406,11 @@ export async function tickStart(args: string[]): Promise<number> {
 		),
 	};
 	const o = new Output();
-	for (const line of withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, false)),
-	))
-		o.line(line);
+	// the journal alarms need no host data: every output of the start carries them first
+	const journal = withDb((db) =>
+		inTransaction(db, () => reconcileAlarms(db, stamp, false, "journal")),
+	);
+	for (const line of journal) o.line(line);
 	if (config === null)
 		return ended(t, o, "failed", "config.yaml is missing", null);
 	const login = configValue(config, "trusted_login");
@@ -425,11 +448,14 @@ export async function tickStart(args: string[]): Promise<number> {
 	const fetched = await operate(p, "fetch", call([]));
 	o.add(...fetched.blocks);
 	if (fetched.text === null) o.selfs.push("fetch");
-	for (const kind of input.sync) {
+	// a failed sync leaves the cache as it was, and only a command the host lacks is a self step
+	for (const kind of CACHES) {
 		const synced = await operate(p, kind, call([], login));
 		o.add(...synced.blocks);
-		if (synced.text === null) o.selfs.push(kind);
+		if (empty(synced)) o.selfs.push(kind);
 	}
+	const head = withDb((db) => inTransaction(db, () => cacheHead(db, p, stamp)));
+	for (const line of head.alarms) o.line(line);
 	// the role does these steps itself, then `tick input` builds the group from the cache
 	if (o.selfs.some((s) => SYNC_STEPS.includes(s))) {
 		out(
@@ -438,6 +464,7 @@ export async function tickStart(args: string[]): Promise<number> {
 		);
 		return EXIT.OK;
 	}
+	for (const line of head.stale) o.line(line);
 	const revision = (fetched.text ?? "").replace(/\r?\n$/, "");
 	const stage =
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
@@ -537,6 +564,7 @@ export async function tickStart(args: string[]): Promise<number> {
 
 type TickRow = {
 	role: string;
+	started_at: string;
 	ended_at: string | null;
 	dispatch: number | null;
 	parts: string | null;
@@ -550,7 +578,9 @@ export async function tickInput(args: string[]): Promise<number> {
 	const row = withDb(
 		(db) =>
 			db
-				.query("SELECT role, ended_at, dispatch, parts FROM ticks WHERE id = ?")
+				.query(
+					"SELECT role, started_at, ended_at, dispatch, parts FROM ticks WHERE id = ?",
+				)
 				.get(id) as TickRow | null,
 	);
 	if (row === null || row.ended_at !== null)
@@ -583,6 +613,10 @@ export async function tickInput(args: string[]): Promise<number> {
 	const size = inputChars(readConfig());
 	const t: Tick = { id, role: row.role };
 	const o = new Output();
+	const head = withDb((db) =>
+		inTransaction(db, () => cacheHead(db, order.precinct, row.started_at)),
+	);
+	for (const line of [...head.alarms, ...head.stale]) o.line(line);
 	const stage =
 		input.stage === null ? null : withDb((db) => stageFor(db, input, order));
 	if (input.stage !== null) {

@@ -17,6 +17,7 @@ export type CommentText = {
 	author: string | null;
 	at: string;
 	body: string;
+	url?: string | null | undefined;
 };
 export type HostText = { body: string; comments: CommentText[] };
 
@@ -72,10 +73,11 @@ export async function cleanTexts<I>(
 		item,
 		done: {
 			body: doneOf(text.body),
-			comments: text.comments.map(({ id, author, at, body }) => ({
+			comments: text.comments.map(({ id, author, at, body, url }) => ({
 				id,
 				author,
 				at,
+				url,
 				done: doneOf(body),
 			})),
 		},
@@ -117,7 +119,7 @@ export function storeComments(
 	for (const c of comments) {
 		try {
 			db.run(
-				"INSERT INTO comments (precinct, kind, number, id, author, at, body, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+				"INSERT INTO comments (precinct, kind, number, id, author, at, body, raw_sha, withheld, url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 				[
 					precinct,
 					kind,
@@ -128,6 +130,7 @@ export function storeComments(
 					c.done.text,
 					c.done.sha,
 					Number(c.done.withheld),
+					c.url ?? null,
 				],
 			);
 		} catch (e) {

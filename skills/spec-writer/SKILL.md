@@ -38,7 +38,7 @@ These are the only host actions the spec writer takes. `<owner/repo>` is the rep
 - Write a conversation comment on pull request `<m>`.
 - Read a comment back by its id, with its author and the last non-empty line of its body.
 
-The pull request sync is the one other action. The `tick.md#sync-the-pull-requests` section of the tick file says how it runs.
+The sync of the tracker and the sync of the pull requests are the other actions. The `tick.md#sync-the-tracker` and `tick.md#sync-the-pull-requests` sections of the tick file say how they run.
 
 These are forbidden, with no exception:
 
@@ -96,7 +96,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    1. Sync the law as the section `tick.md#sync-the-law` says. A stop there is answered, not recorded. After the line `synced <tag>`, the role group you hold is stale. Read every part of it again with `bin/journal tick input --role spec-writer --part <k>`.
    2. Check the journal schema. Exit 1 or 6: answer `journal unavailable: <stderr>` and stop.
       ```
-      bin/journal probe --schema 11
+      bin/journal probe --schema 12
       ```
 3. Start the tick with the first order that this session has not tried. The `order` lines read `order <id> <precinct> <repo> <department|-> <pull request|->`, in the order to take. `<p>`, `<owner/repo>` and `<m>` are the precinct, the repository and the pull request of the order.
    ```
@@ -116,7 +116,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
 
 The `revision=` line gives the fetched commit, the tip. Use it as `<tip>` and as `<ref>` in every step below. The pull line is the stage, as the `tick.md#read-the-pull-stage` section says.
 
-The journal ends a stale order itself. After a self step `fetch`, `pulls` or `stage`, the order is stale unless `need` is `spec-writer`. End a stale order with `silent` and the report `Order stale: <the line>`.
+The journal ends a stale order itself. After a self step `fetch`, `issues`, `pulls` or `stage`, the order is stale unless `need` is `spec-writer`. End a stale order with `silent` and the report `Order stale: <the line>`.
 
 Keep `spec` and `sources`. `sources` holds the source issue numbers. Empty `sources` with `need=spec-writer` ends the tick with `failed`.
 
