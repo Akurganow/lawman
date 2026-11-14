@@ -168,6 +168,12 @@ describe("table rows", () => {
 			});
 		const after = { ruling, pulls: [owners(7, 1)], holds: false };
 		expect(run({ ...after, markers: [brief] }).job).toBe("-");
+		const both = {
+			...after,
+			markers: [brief],
+			pulls: [owners(7, 1), owners(8, 1)],
+		};
+		expect(run(both)).toMatchObject({ job: "brief", pull: "8" });
 		expect(run({ ...after, markers: [brief], ruling: acquittal(3) }).job).toBe(
 			"brief",
 		);

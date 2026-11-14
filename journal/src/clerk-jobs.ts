@@ -133,19 +133,17 @@ function tableRow(
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
 	if (pull !== undefined && !points && open) return job("adopt");
-	// the owner's pull request has no trace and is no pair's; the clerk only briefs it
-	const owners = i.pulls.find(
+	// the owner's pull requests have no trace and are no pair's; the clerk only briefs them
+	const owners = i.pulls.filter(
 		(p) =>
 			!p.traced &&
 			p.number !== Number(k?.fields.pull) &&
 			p.issues.includes(i.issue),
 	);
-	if (
-		owners !== undefined &&
-		i.ruling !== undefined &&
-		!briefed(i.markers, owners.number, i.ruling.ord)
-	)
-		return { ...job("brief"), pull: String(owners.number) };
+	const ruling = i.ruling;
+	const unbriefed =
+		ruling && owners.find((p) => !briefed(i.markers, p.number, ruling.ord));
+	if (unbriefed) return { ...job("brief"), pull: String(unbriefed.number) };
 	if (pull === undefined && base === "handed") return job("settle");
 	const decided = awaitingDecision(i.markers).find(
 		(m) => !i.pulls.some((p) => p.number === m),
@@ -157,7 +155,7 @@ function tableRow(
 		i.ruling?.stage === "conviction" &&
 		k === undefined &&
 		open &&
-		owners === undefined
+		owners.length === 0
 	)
 		return job("open");
 	const due = precedentDue(i);

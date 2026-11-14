@@ -29,13 +29,14 @@ describe("cli", () => {
 	});
 
 	test("a reader that closes the pipe gets one journal line and a non-zero exit", () => {
-		// the reader closes its end at once, before the journal writes
+		// the journal starts only after the reader closed its end and said so
 		const r = Bun.spawnSync(
 			[
 				"bash",
 				"-c",
-				'set -o pipefail; "$0" src/journal.ts --version | (exec <&-)',
+				'set -o pipefail; mkfifo "$1"; { read -r _ <"$1"; "$0" src/journal.ts --version; } | { exec <&-; echo >"$1"; }',
 				process.execPath,
+				join(dir, "closed"),
 			],
 			{
 				cwd: JOURNAL,
