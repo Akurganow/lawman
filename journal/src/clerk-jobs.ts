@@ -1,11 +1,11 @@
 import type { Database } from "bun:sqlite";
 import type { CaseMarker } from "./cases";
 
-// adoptable: the pull request carries a trace of a role, so the clerk may take it up
+// traced: the pull request carries a trace of a role, so the clerk may take it up
 export type CachedPull = {
 	number: number;
 	issues: number[];
-	adoptable: boolean;
+	traced: boolean;
 };
 export type Job =
 	| "state"
@@ -132,12 +132,15 @@ function tableRow(
 	const points = pull !== undefined && Number(k?.fields.pull) === pull.number;
 	if (pull !== undefined && base === "shut" && points)
 		return job("reopen-issue");
-	if (pull !== undefined && !points && open && pull.adoptable)
-		return job("adopt");
+	if (pull !== undefined && !points && open && pull.traced) return job("adopt");
 	// an open pull request without a trace is the owner's work: the clerk only briefs it
-	const owners = pull !== undefined && !points && !pull.adoptable;
-	if (owners && i.ruling !== undefined && !briefed(i, pull.number))
-		return job("brief");
+	const ownersPull = pull !== undefined && !points && !pull.traced;
+	if (
+		ownersPull &&
+		i.ruling !== undefined &&
+		!briefed(i.markers, pull.number, i.ruling.ord)
+	)
+		return { ...job("brief"), pull: String(pull.number) };
 	if (pull === undefined && base === "handed") return job("settle");
 	const decided = awaitingDecision(i.markers).find(
 		(m) => !i.pulls.some((p) => p.number === m),
@@ -145,7 +148,12 @@ function tableRow(
 	if (decided !== undefined)
 		return { ...job("decision"), pull: String(decided) };
 	if (i.ruling === undefined && open) return NO_JOB;
-	if (i.ruling?.stage === "conviction" && k === undefined && open && !owners)
+	if (
+		i.ruling?.stage === "conviction" &&
+		k === undefined &&
+		open &&
+		!ownersPull
+	)
 		return job("open");
 	const due = precedentDue(i);
 	if (!due.ruling && !due.dismissal) return NO_JOB;
@@ -155,14 +163,14 @@ function tableRow(
 	return { ...job("precedent"), pull: left ? (k?.fields.pull ?? NONE) : NONE };
 }
 
-// whether a brief on the pull request is newer than the ruling
-const briefed = (i: ClerkInput, pull: number) =>
-	i.markers.some(
+// whether the issue holds a brief marker for the pull request newer than the ruling
+const briefed = (markers: CaseMarker[], pull: number, rulingOrd: string) =>
+	markers.some(
 		(m) =>
 			m.role === "clerk" &&
 			m.stage === "brief" &&
 			m.fields.pull === String(pull) &&
-			m.ord > (i.ruling?.ord ?? ""),
+			m.ord > rulingOrd,
 	);
 
 const answeredClerk = (m: CaseMarker) =>
@@ -245,7 +253,10 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 		named ??
 		i.pulls
 			.filter((p) => p.issues.includes(i.issue))
-			.sort((a, b) => a.number - b.number)[0];
+			// the owner's pull request comes first, so a role never doubles the owner's work
+			.sort(
+				(a, b) => Number(a.traced) - Number(b.traced) || a.number - b.number,
+			)[0];
 	const row = rowOf(i, k, baseOf(pairs), pull);
 	const found = pull === undefined ? NONE : String(pull.number);
 	return {
@@ -260,12 +271,12 @@ export function clerkCase(i: ClerkInput): ClerkCase {
 export function pullsOf(db: Database, precinct: string): CachedPull[] {
 	return (
 		db
-			.query("SELECT number, issues, adoptable FROM pulls WHERE precinct = ?")
-			.all(precinct) as { number: number; issues: string; adoptable: number }[]
+			.query("SELECT number, issues, traced FROM pulls WHERE precinct = ?")
+			.all(precinct) as { number: number; issues: string; traced: number }[]
 	).map((p) => ({
 		number: p.number,
 		issues: p.issues.split(",").filter(Boolean).map(Number),
-		adoptable: p.adoptable === 1,
+		traced: p.traced === 1,
 	}));
 }
 

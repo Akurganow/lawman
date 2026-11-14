@@ -62,10 +62,10 @@ export const acquittal = (i = 0) => marker("court", "acquittal", i);
 export const pull = (number: number, ...issues: number[]): CachedPull => ({
 	number,
 	issues,
-	adoptable: false,
+	traced: false,
 });
 // a pull request that carries a trace of a role
 export const traced = (number: number, ...issues: number[]): CachedPull => ({
 	...pull(number, ...issues),
-	adoptable: true,
+	traced: true,
 });

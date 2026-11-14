@@ -20,7 +20,7 @@ export type PullRow = {
 	spec: Vote;
 	work: Work;
 	spec_id: string;
-	adoptable: number;
+	traced: number;
 };
 
 type Obj = Record<string, unknown>;
@@ -46,6 +46,8 @@ const FINGERPRINT =
 const SPEC = { role: "spec-writer", stage: "spec" };
 const READY = { role: "executor", stage: "ready" };
 const HANDOFF = { role: "clerk", stage: "handoff" };
+// the last line of the body of a pull request the clerk opens, a trace from its start
+export const CLERK_TRACE = "<!-- lawman: opened by the clerk -->";
 const NO_SPEC_ID = "-";
 
 const reject = (why: string) =>
@@ -207,9 +209,10 @@ export function readPulls(input: string, login: string): ReadPull[] {
 				spec: specVote(spec, writers),
 				work: workOf(pull, login, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
-				// a trace of a role: a fingerprint line of the old pipeline or a hand-over comment
-				adoptable: Number(
+				// a trace of a role: a fingerprint line, the clerk's own line or a hand-over comment
+				traced: Number(
 					fingerprinted(pull).length > 0 ||
+						pull.body.split("\n").some((l) => stripCr(l) === CLERK_TRACE) ||
 						newestMarker(pull, login, HANDOFF) !== null,
 				),
 			},
@@ -225,7 +228,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 	dropComments(db, name, "pull");
 	for (const { row, text, url } of read) {
 		db.run(
-			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, adoptable, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+			"INSERT INTO pulls (precinct, number, issues, spec, work, spec_id, traced, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 			[
 				name,
 				row.number,
@@ -233,7 +236,7 @@ function replacePulls(db: Database, name: string, read: StoredPull[]): void {
 				row.spec,
 				row.work,
 				row.spec_id,
-				row.adoptable,
+				row.traced,
 				text.body.text,
 				url,
 				text.body.sha,

@@ -194,8 +194,8 @@ Taken up by the clerk as a draft that counts as not started.
 `<pull>` is the owner's pull request. Change nothing on it but this one comment.
 
 1. Read the ruling.
-2. In the same cleaned output, take the URL of the newest comment by `<login>` with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`. Leave out a part that has none.
-3. Write the brief on pull request `<pull>`, as the `tick.md#write-a-comment` section says. Its heading is `Clerk`. Its body is the sentence `Issue #<n> was investigated and ruled on. This pull request stays as its author left it.`, a blank line, and one line for each part, in this order:
+2. In the cleaned output of step 1, take the URL of the newest comment by `<login>` with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`.
+3. When `<pull>` already holds a brief by `<login>` that is newer than the ruling, go to step 4. Otherwise write the brief on pull request `<pull>`, as the `tick.md#write-a-comment` section says. Its heading is `Clerk`. Its body is the sentence `Issue #<n> was investigated and ruled on. This pull request stays as its author left it.`, a blank line, and these four lines in this order. Leave out the Case, Charge or Defence line when step 2 found no such comment.
    ```
    - Case: <URL>
    - Charge: <URL>
@@ -203,7 +203,7 @@ Taken up by the clerk as a draft that counts as not started.
    - Ruling, <conviction|acquittal>: <ruling URL>
    ```
    Its marker is `<!-- lawman: role=clerk stage=brief pull=<pull> at=<UTC> -->`.
-4. Write the comment on the issue `<n>`, with the sentence `Pull request #<pull> holds the brief of this case.` and the same marker form.
+4. Write a comment on the issue `<n>` as the `tick.md#write-a-comment` section says. Its heading is `Clerk`, its sentence is `Pull request #<pull> holds the brief of this case.`, and its marker is `<!-- lawman: role=clerk stage=brief pull=<pull> at=<UTC> -->`. It is the last write of the job.
 
 ## precedent
 

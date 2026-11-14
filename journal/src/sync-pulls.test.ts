@@ -29,7 +29,7 @@ describe("sync --pulls", () => {
 		);
 	const stored = (p = "main") =>
 		rows(
-			`SELECT number, issues, spec, work, spec_id, adoptable FROM pulls WHERE precinct = '${p}' ORDER BY number`,
+			`SELECT number, issues, spec, work, spec_id, traced FROM pulls WHERE precinct = '${p}' ORDER BY number`,
 		);
 	const OLD = [
 		{
@@ -38,7 +38,7 @@ describe("sync --pulls", () => {
 			spec: "waiting",
 			work: "todo",
 			spec_id: "-",
-			adoptable: 0,
+			traced: 0,
 		},
 	];
 	const seedOld = () =>
@@ -82,7 +82,7 @@ describe("sync --pulls", () => {
 				spec: "none",
 				work: "todo",
 				spec_id: "-",
-				adoptable: 0,
+				traced: 0,
 			},
 		]);
 	});
@@ -158,7 +158,7 @@ describe("syncPulls in process", () => {
 		expect(r).toMatchObject({ code: 0, out: "pulls=2\n" });
 		expect(
 			rows(
-				"SELECT number, issues, spec, work, spec_id, adoptable FROM pulls ORDER BY number",
+				"SELECT number, issues, spec, work, spec_id, traced FROM pulls ORDER BY number",
 			),
 		).toEqual(FIXTURE_ROWS);
 	});

@@ -111,7 +111,7 @@ describe("readPulls rows", () => {
 		expect(readOf([{ number: 1, body }])[0]?.issues).toBe("6");
 	});
 
-	test("only a trace of a role makes a pull request adoptable", () => {
+	test("a fingerprint line or a hand-over comment of the login is a trace of a role", () => {
 		const handoff = `Clerk\n\n<!-- lawman: role=clerk stage=handoff at=2026-10-14T09:00:00Z -->`;
 		const rows = readOf([
 			{ number: 1, body: "<!-- pipeline-work-fingerprint: a sources=#6 -->" },
@@ -119,7 +119,7 @@ describe("readPulls rows", () => {
 			{ number: 3, comments: [{ body: handoff, author: "stranger" }] },
 			{ number: 4, body: "Closes #6", closes: [6] },
 		]);
-		expect(rows.map((r) => r.adoptable)).toEqual([1, 1, 0, 0]);
+		expect(rows.map((r) => r.traced)).toEqual([1, 1, 0, 0]);
 	});
 });
 

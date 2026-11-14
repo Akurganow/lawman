@@ -34,7 +34,7 @@ describe("cli", () => {
 			[
 				"bash",
 				"-c",
-				'set -o pipefail; "$0" src/journal.ts --version | (exec <&-; sleep 1)',
+				'set -o pipefail; "$0" src/journal.ts --version | (exec <&-)',
 				process.execPath,
 			],
 			{

@@ -104,14 +104,14 @@ export const convicted = (priority: string): Spec =>
 		mark("court", "conviction", ` sha=${SHA} priority=${priority}`),
 	);
 
-// adoptable: the pull request carries a trace of a role
+// traced: the pull request carries a trace of a role
 export function cache(...pulls: [number, number[], string?, boolean?][]) {
 	seed((db) => {
 		db.run("DELETE FROM pulls");
-		for (const [number, issues, spec, adoptable] of pulls)
+		for (const [number, issues, spec, traced] of pulls)
 			db.run(
-				"INSERT INTO pulls (precinct, number, issues, spec, adoptable) VALUES ('main', ?, ?, ?, ?)",
-				[number, issues.join(","), spec ?? "none", Number(adoptable ?? false)],
+				"INSERT INTO pulls (precinct, number, issues, spec, traced) VALUES ('main', ?, ?, ?, ?)",
+				[number, issues.join(","), spec ?? "none", Number(traced ?? false)],
 			);
 	});
 }

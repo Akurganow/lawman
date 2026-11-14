@@ -112,7 +112,7 @@ The tick group prints issue `<n>` with its comments. With a line `self issue <n>
 
 ### Step 3: the pull request
 
-When the stage names a pull request in `pull`, the tick group prints it with its comments. A line `self pull <m>` asks for no read here. Each recipe reads from the host what it needs of the pull request.
+When the stage names a pull request in `pull`, the tick group prints it with its comments. Read the pull request from the host only where a recipe says so. A line `self pull <m>` asks for no read of its own.
 
 ### Step 4: the stage
 

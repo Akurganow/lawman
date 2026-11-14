@@ -143,7 +143,7 @@ describe("open", () => {
 				url: null,
 				raw_sha: null,
 				withheld: 0,
-				adoptable: 0,
+				traced: 0,
 			},
 		]);
 		expect(() =>
@@ -176,7 +176,7 @@ describe("open", () => {
 				url: null,
 				raw_sha: null,
 				withheld: 0,
-				adoptable: 0,
+				traced: 0,
 			},
 		]);
 		db.run(
@@ -257,7 +257,7 @@ describe("open", () => {
 		expect(userVersion(db)).toBe(MIGRATIONS.length);
 		const added: Record<string, object> = {
 			issues: { body: "", url: null, raw_sha: null, withheld: 0 },
-			pulls: { body: "", url: null, raw_sha: null, withheld: 0, adoptable: 0 },
+			pulls: { body: "", url: null, raw_sha: null, withheld: 0, traced: 0 },
 			ticks: { dispatch: null, parts: null },
 			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
@@ -304,7 +304,7 @@ describe("migration 9", () => {
 			precincts: { pulls_synced_at: null, constitution_cause: null },
 			roles: { checks: 0 },
 			issues: { url: null, raw_sha: null, withheld: 0 },
-			pulls: { url: null, raw_sha: null, withheld: 0, adoptable: 0 },
+			pulls: { url: null, raw_sha: null, withheld: 0, traced: 0 },
 			comments: { raw_sha: null, withheld: 0 },
 		};
 		for (const [table, list] of Object.entries(before)) {

@@ -174,6 +174,15 @@ describe("table rows", () => {
 		);
 	});
 
+	test("2: the brief goes to the owner's pull request, which wins over a traced one", () => {
+		const r = run({
+			markers: pairs(["handed", "5", "open"]),
+			ruling: conviction(1),
+			pulls: [traced(4, 1), pull(9, 1)],
+		});
+		expect(r).toMatchObject({ job: "brief", pull: "9", sources: "1" });
+	});
+
 	test("2: a pair marker for another pull request adopts the new one", () => {
 		const r = run({
 			markers: pairs(["handed", "5", "open"]),

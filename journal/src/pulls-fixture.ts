@@ -13,7 +13,7 @@ export const FIXTURE_ROWS: PullRow[] = [
 		spec: "up",
 		work: "ready",
 		spec_id: "IC_spec_7",
-		adoptable: 1,
+		traced: 1,
 	},
 	{
 		number: 12,
@@ -21,7 +21,7 @@ export const FIXTURE_ROWS: PullRow[] = [
 		spec: "none",
 		work: "todo",
 		spec_id: "-",
-		adoptable: 0,
+		traced: 0,
 	},
 ];
 

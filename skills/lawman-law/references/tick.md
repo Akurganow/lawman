@@ -145,7 +145,7 @@ bin/journal clean
 bin/journal clean --json
 ```
 - Never open the installation's journal database or run SQL on it. The journal's commands are the only way in. `bin/journal tick end` prints nothing, and exit 0 confirms the record.
-- Read the output of a journal command whole. Never cut it by lines or bytes. The journal prints a long output in parts.
+- Read every line of a journal output, in every part. Never cut it by lines or bytes. Asking for one part with `--part` is no cut.
 - A diff view is one line for each changed path, with its count of added lines and its count of removed lines. Read the diff view of a change before you read the content of any changed path. Read the content of a path when the work needs it.
 - When `clean` prints a frame line with `part 1 of n`, the cleaned text is longer than one part. Read the host again for the same reply. Send it through `clean` with the number of each other part you need, and read only what the journal prints.
 ```
