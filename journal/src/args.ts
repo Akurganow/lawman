@@ -11,7 +11,7 @@ const PATTERNS = {
 	number: /^[1-9][0-9]*$/,
 	precedent: /^[A-Za-z0-9][A-Za-z0-9._-]*$/,
 	outcome:
-		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|defended|refuted|convicted|acquitted|recorded|admitted|asked|handed|shut|settled|kept|specified|out|executed|referred|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
+		/^(silent|ordered|filed|capped|failed|investigated|charged|returned|declined|defended|refuted|convicted|acquitted|recorded|admitted|asked|handed|shut|settled|kept|briefed|specified|out|executed|referred|skipped-[a-z0-9-]+|stopped-[a-z0-9-]+)$/,
 };
 
 export const fits = (kind: keyof typeof PATTERNS, value: string) =>
