@@ -4,6 +4,17 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.4 - 2026-11-15
+#### Tests
+- name what the law-sync entry point test asserts (bebcd75)
+- drop the restores that guard nothing anyone depends on (2caeb59)
+- restore the deletions no kept test stands for (6fa6327)
+- restore three lost checks and repair leftovers of the cut (3484355)
+- remove tests that repeat another test's check (753f2cf)
+
+- - -
+
+
 ## v1.5.3 - 2026-11-14
 #### Bug Fixes
 - (**assembly**) state the path of old-form pull requests without classing each (b2d04b4)
