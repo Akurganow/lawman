@@ -4,6 +4,13 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v1.5.5 - 2026-11-15
+#### Bug Fixes
+- accept the briefed outcome token in the journal (a87bef2)
+
+- - -
+
+
 ## v1.5.4 - 2026-11-15
 #### Tests
 - name what the law-sync entry point test asserts (bebcd75)
