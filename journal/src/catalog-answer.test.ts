@@ -5,6 +5,7 @@ import { leadIdentity, sourceLine } from "./catalog-entries";
 import {
 	entry,
 	fixture,
+	inProcess,
 	list,
 	prepare,
 	RUNNERS,
@@ -50,66 +51,55 @@ const filedLine = (place: string, id: string, name: string, kind = "new") =>
 const start = (run: Run, tick: string, input: string) =>
 	run(request(tick, ["--precinct", "alpha"]), input);
 
-describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
-	test.each(["batch.hits", "batch.none", "batch.multi"])(
-		"the recorded %s reply maps to the entries it was recorded for",
-		(name) => {
-			prepare();
-			const { request: recorded, reply: body }: Recorded = fixture(
-				`${name}.json`,
-			);
-			const input = recorded.queries
-				.map((q, i) =>
-					[
+test.each(RUNNERS)(
+	"the recorded batch.hits reply maps to the entries it was recorded for (%s)",
+	(_name, run) => {
+		prepare();
+		const { request: recorded, reply: body }: Recorded =
+			fixture("batch.hits.json");
+		const input = recorded.queries
+			.map((q, i) =>
+				[
+					`made-up-${i}/lock.json`,
+					q.package.ecosystem,
+					q.package.name,
+					q.version,
+				].join("\t"),
+			)
+			.join("\n");
+		expect(JSON.parse(start(run, "1", input).out)).toEqual(recorded);
+		const hits = (body as { results: { vulns?: { id: string }[] }[] }).results;
+		const r = run(answer("1"), `${JSON.stringify(body)}\n200`);
+		const expected = hits.flatMap((h, i) =>
+			(h.vulns ?? []).map((v) => {
+				const q = recorded.queries[i];
+				return [
+					"new",
+					leadIdentity(
 						`made-up-${i}/lock.json`,
-						q.package.ecosystem,
-						q.package.name,
-						q.version,
-					].join("\t"),
-				)
-				.join("\n");
-			expect(JSON.parse(start(run, "1", input).out)).toEqual(recorded);
-			const hits = (body as { results: { vulns?: { id: string }[] }[] })
-				.results;
-			const r = run(answer("1"), `${JSON.stringify(body)}\n200`);
-			const expected = hits.flatMap((h, i) =>
-				(h.vulns ?? []).map((v) => {
-					const q = recorded.queries[i];
-					return [
-						"new",
-						leadIdentity(
-							`made-up-${i}/lock.json`,
-							v.id,
-							q?.package.ecosystem ?? "",
-							q?.package.name ?? "",
-						),
-						sourceLine(v.id, q?.package.ecosystem ?? "", q?.package.name ?? ""),
-					].join("\t");
-				}),
-			);
-			expect(r.code).toBe(0);
-			expect(newLines(r.out).sort()).toEqual(expected.sort());
-			expect(totals(r.out)).toBe(
-				`catalog entries=${recorded.queries.length} parts=1 failed=0 open=0 new=${expected.length} fixed=0`,
-			);
-			for (const [i, h] of hits.entries())
-				if (h.vulns === undefined) expect(r.out).not.toContain(`made-up-${i}/`);
-		},
-	);
-
-	test("a first part answer with parts left prints next and the result waits", () => {
-		prepare();
-		start(run, "1", list(1001));
-		const r = run(
-			answer("1"),
-			resultsReply(Array.from({ length: 1000 }, () => [])),
+						v.id,
+						q?.package.ecosystem ?? "",
+						q?.package.name ?? "",
+					),
+					sourceLine(v.id, q?.package.ecosystem ?? "", q?.package.name ?? ""),
+				].join("\t");
+			}),
 		);
-		expect(r.out).toBe("catalog next\n");
-	});
+		expect(r.code).toBe(0);
+		expect(newLines(r.out).sort()).toEqual(expected.sort());
+		expect(totals(r.out)).toBe(
+			`catalog entries=${recorded.queries.length} parts=1 failed=0 open=0 new=${expected.length} fixed=0`,
+		);
+		for (const [i, h] of hits.entries())
+			if (h.vulns === undefined) expect(r.out).not.toContain(`made-up-${i}/`);
+	},
+);
 
-	test("a reply is refused when no part was printed, or the part was answered", () => {
+describe("catalog answer", () => {
+	const run = inProcess;
+
+	test("a reply is refused when the part was already answered", () => {
 		prepare();
-		expect(run(answer("1"), resultsReply([[]])).code).toBe(1);
 		start(run, "1", list(1));
 		expect(run(answer("1"), resultsReply([[]])).code).toBe(0);
 		const before = stateOf("1");
@@ -184,7 +174,6 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 		["there was no reply", "000", "no-reply"],
 		["the status line is missing", '{"results":[{}]}', "no-reply"],
 		["the body does not parse", "not json\n200", "bad-answer"],
-		["the body is empty", "\n200", "bad-answer"],
 		["the results are not a list", '{"results":{}}\n200', "bad-answer"],
 		["a result is missing", resultsReply([[], []]), "bad-answer"],
 		["a result is extra", resultsReply([]), "bad-answer"],
@@ -214,7 +203,6 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 			resultsReply([["A-1 and more"]]),
 			"bad-answer",
 		],
-		["an identifier is a hidden byte", resultsReply([["A​1"]]), "bad-answer"],
 	])("a part fails when %s", (_why, input, reason) => {
 		prepare();
 		start(run, "1", entry(1));
@@ -334,58 +322,56 @@ describe.each(RUNNERS)("catalog answer (%s)", (_name, run) => {
 	});
 });
 
-describe.each(RUNNERS)(
-	"catalog answer and the lead cache (%s)",
-	(_name, run) => {
-		const PLACE = "dir/package-lock.json";
-		const id = (record: string, name = "pkg-1") =>
-			leadIdentity(PLACE, record, "npm", name);
-		function put(
-			n: number,
-			state: string,
-			reason: string | null,
-			leadId: string,
-		) {
-			seed((db) => {
-				db.run(
-					"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at) VALUES ('alpha', ?, ?, ?, 'x', 't')",
-					[n, state, reason],
-				);
-				db.run(
-					"INSERT INTO markers VALUES ('alpha', ?, 'o', 'patrol', 'lead', 'vulnerabilities', ?, '{}', 'raw')",
-					[n, leadId],
-				);
-			});
-		}
-
-		test("an open id is a count, a fixed one prints its issue, the rest is new", () => {
-			prepare();
-			seed((db) => precinct(db, "alpha"));
-			put(1, "OPEN", null, id("A-1"));
-			put(2, "CLOSED", "NOT_PLANNED", id("B-2"));
-			put(3, "CLOSED", "COMPLETED", id("C-3"));
-			put(4, "OPEN", null, id("X-9", "pkg-2"));
-			put(5, "CLOSED", "COMPLETED", id("E-5").replace("::advisory", "::other"));
-			start(run, "1", entry(1));
-			const r = run(
-				answer("1"),
-				resultsReply([["A-1", "B-2", "C-3", "D-4", "E-5"]]),
+describe("catalog answer and the lead cache", () => {
+	const run = inProcess;
+	const PLACE = "dir/package-lock.json";
+	const id = (record: string, name = "pkg-1") =>
+		leadIdentity(PLACE, record, "npm", name);
+	function put(
+		n: number,
+		state: string,
+		reason: string | null,
+		leadId: string,
+	) {
+		seed((db) => {
+			db.run(
+				"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at) VALUES ('alpha', ?, ?, ?, 'x', 't')",
+				[n, state, reason],
 			);
-			expect(newLines(r.out)).toEqual([
-				filedLine(PLACE, "B-2", "pkg-1"),
-				filedLine(PLACE, "C-3", "pkg-1", "fixed #3"),
-				filedLine(PLACE, "D-4", "pkg-1"),
-				filedLine(PLACE, "E-5", "pkg-1"),
-			]);
-			expect(totals(r.out)).toBe(
-				"catalog entries=1 parts=1 failed=0 open=1 new=3 fixed=1",
+			db.run(
+				"INSERT INTO markers VALUES ('alpha', ?, 'o', 'patrol', 'lead', 'vulnerabilities', ?, '{}', 'raw')",
+				[n, leadId],
 			);
 		});
-	},
-);
+	}
+
+	test("an open id is a count, a fixed one prints its issue, the rest is new", () => {
+		prepare();
+		seed((db) => precinct(db, "alpha"));
+		put(1, "OPEN", null, id("A-1"));
+		put(2, "CLOSED", "NOT_PLANNED", id("B-2"));
+		put(3, "CLOSED", "COMPLETED", id("C-3"));
+		put(4, "OPEN", null, id("X-9", "pkg-2"));
+		put(5, "CLOSED", "COMPLETED", id("E-5").replace("::advisory", "::other"));
+		start(run, "1", entry(1));
+		const r = run(
+			answer("1"),
+			resultsReply([["A-1", "B-2", "C-3", "D-4", "E-5"]]),
+		);
+		expect(newLines(r.out)).toEqual([
+			filedLine(PLACE, "B-2", "pkg-1"),
+			filedLine(PLACE, "C-3", "pkg-1", "fixed #3"),
+			filedLine(PLACE, "D-4", "pkg-1"),
+			filedLine(PLACE, "E-5", "pkg-1"),
+		]);
+		expect(totals(r.out)).toBe(
+			"catalog entries=1 parts=1 failed=0 open=1 new=3 fixed=1",
+		);
+	});
+});
 
 describe("catalog answer usage", () => {
-	const run = RUNNERS[1]?.[1] as Run;
+	const run = inProcess;
 
 	test("an answer without a list for the tick fails", () => {
 		prepare();

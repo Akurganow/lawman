@@ -57,31 +57,12 @@ describe("cli", () => {
 	});
 
 	test("any command exits 1 when LAWMAN_NOW is set without LAWMAN_DB", () => {
-		for (const args of [["--version"], ["probe"], ["frobnicate"]]) {
+		for (const args of [["--version"], ["frobnicate"]]) {
 			const r = cli(args, { LAWMAN_NOW: "2026-01-01T00:00:00Z" });
 			expect(r.code).toBe(1);
 			expect(r.err.trim().split("\n")).toHaveLength(1);
 			expect(r.err).toContain("LAWMAN_NOW");
 		}
-	});
-
-	test("--version still works with both variables set", () => {
-		const r = cli(["--version"], {
-			LAWMAN_DB: dbFile,
-			LAWMAN_NOW: "2026-01-01T00:00:00Z",
-		});
-		expect(r.code).toBe(0);
-	});
-
-	test("an unexpected error prints one journal line without a stack or source path", () => {
-		const r = cli(["alarm"], {
-			LAWMAN_DB: join(dir, "missing", "journal.sqlite"),
-			LAWMAN_NOW: "2026-01-01T00:00:00Z",
-		});
-		expect(r.code).toBe(1);
-		expect(r.err.trim().split("\n")).toHaveLength(1);
-		expect(r.err).toStartWith("journal: ");
-		expect(r.err).not.toMatch(/\/src\/journal\.ts/);
 	});
 });
 

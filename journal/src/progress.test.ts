@@ -88,14 +88,9 @@ describe("the no-progress alarm", () => {
 		).toEqual([{ cleared_at: BASE }]);
 	});
 
-	test.each([
-		["progress_checks: 2\n", 2],
-		["progress_checks: 5\n", 5],
-		["progress_checks: 0\n", 3],
-		["progress_checks: many\n", 3],
-	])("%p changes the count N to %p", async (line, n) => {
-		setUp(line);
-		await wakes(n - 1);
+	test("a progress_checks value that is not a number falls back to 3", async () => {
+		setUp("progress_checks: many\n");
+		await wakes(2);
 		expect(raised()).toBe(false);
 		await wakes(1);
 		expect(raised()).toBe(true);

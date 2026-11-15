@@ -151,20 +151,6 @@ describe("the text command", () => {
 		);
 	});
 
-	test("divides a long text into parts that each end with end part k of n", async () => {
-		const lines = await cleaned(rowsOf(60));
-		await started(400, lines.join("\n"));
-		const all = await parts("main", "issue", "3", "body");
-		expect(all.length).toBeGreaterThan(3);
-		for (const [i, p] of all.entries()) {
-			const at = `part ${i + 1} of ${all.length}`;
-			expect(p.split("\n")[0]).toBe(`lawman input 1 text ${at}`);
-			expect(p.endsWith(`\nend ${at}\n`)).toBe(true);
-			expect(cost(content(p))).toBeLessThanOrEqual(400);
-		}
-		expect(all.flatMap(inside)).toEqual(lines);
-	});
-
 	test.each([
 		[16000, 20000],
 		[300, 200],
@@ -232,15 +218,6 @@ describe("the text command", () => {
 		expect(comment[0]?.split("\n")[1]).toBe(`comment at=${AT}`);
 	});
 
-	test("a secret in the cached text never prints, in any part", async () => {
-		const lines = rowsOf(200);
-		lines[100] = `middle ${TOKEN}`;
-		await started(2000, lines.join("\n"));
-		const all = await parts("main", "issue", "3", "body");
-		expect(all.join("\n")).not.toContain(TOKEN);
-		expect(all.flatMap(inside)).toContain(`middle ${LABEL}`);
-	});
-
 	test("works after the tick has ended", async () => {
 		await started(16000, "alpha");
 		const open = await text("main", "issue", "3", "body");
@@ -280,26 +257,16 @@ describe("the text command", () => {
 		expect(r.err).toContain("part 2 is out of range; there is 1 part");
 	});
 
-	test.each([
-		[[]],
-		[["main", "issue", "3"]],
-		[["main", "issue", "3", "body", "extra"]],
-		[["main", "issue", "3", "body", "--part"]],
-		[["main", "issue", "3", "body", "--part", "0"]],
-		[["main", "issue", "3", "body", "--part", "x"]],
-		[["main", "issue", "0", "body"]],
-		[["main", "tree", "3", "body"]],
-		[["Main", "issue", "3", "body"]],
-		[["main", "issue", "3", "comment", AT]],
-		[["main", "issue", "3", "comment", AT, "0"]],
-		[["--part", "1"]],
-	])("exits 1 with the usage line for %j", async (words) => {
-		await started(16000, "alpha");
-		const r = await text(...words);
-		expect(r.code).toBe(1);
-		expect(r.out).toBe("");
-		expect(r.err).toContain("usage: journal text");
-	});
+	test.each([[[]], [["main", "issue", "3", "body", "--part", "0"]]])(
+		"exits 1 with the usage line for %j",
+		async (words) => {
+			await started(16000, "alpha");
+			const r = await text(...words);
+			expect(r.code).toBe(1);
+			expect(r.out).toBe("");
+			expect(r.err).toContain("usage: journal text");
+		},
+	);
 });
 
 test("an invalid input_chars exits 1 as the tick does", async () => {

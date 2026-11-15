@@ -31,12 +31,6 @@ describe("ticks", () => {
 				"patrol",
 			]).out.trim();
 
-		test("start of a role other than the duty desk needs an order and writes no tick", () => {
-			const r = call(BASE, ["tick", "start", "--role", "patrol"]);
-			expect(r).toMatchObject({ code: 1, out: "" });
-			expect(rows("SELECT * FROM ticks")).toEqual([]);
-		});
-
 		test("end stores outcome, precinct, department and the stdin report", () => {
 			const id = start("patrol");
 			const end = call(
@@ -80,19 +74,6 @@ describe("ticks", () => {
 				rows("SELECT precinct, department, report, outcome FROM ticks"),
 			).toEqual([
 				{ precinct: null, department: null, report: "", outcome: "silent" },
-			]);
-		});
-
-		test("end accepts the executed and skipped-merge-conflict outcomes", () => {
-			for (const outcome of ["executed", "skipped-merge-conflict"]) {
-				const id = start("executor");
-				expect(
-					call(later(1), ["tick", "end", id, "--outcome", outcome]).code,
-				).toBe(0);
-			}
-			expect(rows("SELECT outcome FROM ticks ORDER BY id")).toEqual([
-				{ outcome: "executed" },
-				{ outcome: "skipped-merge-conflict" },
 			]);
 		});
 

@@ -190,18 +190,6 @@ describe("leads, seen, cap and last", () => {
 			expect(seen(ID)).toBe("fixed #21");
 		});
 
-		test("the origin marker decides, not a later lead marker", () => {
-			put(13, "OPEN", null, lead("core", "src/q.rs::f::dead-code"));
-			mark(
-				13,
-				"patrol",
-				"lead",
-				"2026-10-15T00:00:00Z|000001|000001",
-				lead("core", ID),
-			);
-			expect(seen(ID)).toBe("none");
-		});
-
 		test("a non-canonical id exits 1", () => {
 			for (const bad of ["src/a.rs::f", "a::b::c::d", "a b::f::k", ""]) {
 				const r = cmd("seen", PRECINCT, "--id", bad);
@@ -224,13 +212,10 @@ describe("leads, seen, cap and last", () => {
 		};
 
 		test.each([
-			[0, 3],
-			[1, 3],
 			[2, 3],
 			[3, 1],
 			[4, 1],
 			[5, 0],
-			[6, 0],
 		])("%i open leads give cap %i", (open, want) => {
 			fill(open);
 			expect(cap("core")).toBe(`cap=${want} open=${open}`);

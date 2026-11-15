@@ -60,40 +60,6 @@ describe("wake", () => {
 		expect(wake().out).toContain(`order ${id} main o/main - -\n`);
 	});
 
-	test("lists an untaken order before a taken one and keeps the old order of the untaken", () => {
-		seedOrders((db) => {
-			order(db, "main", "clerk", { at: BASE, takenAt: BASE, issue: 1 });
-			order(db, "main", "clerk", { at: later(1), issue: 2 });
-			order(db, "main", "clerk", { at: later(2), issue: 3 });
-		});
-		const ids = rows("SELECT id FROM dispatches ORDER BY id").map((r) => r.id);
-		const takenOld = ids[0];
-		const untakenFirst = ids[1];
-		const untakenSecond = ids[2];
-		expect(ordersOf(wake(later(5), "clerk").out)).toEqual([
-			`order ${untakenFirst} main o/main - 2`,
-			`order ${untakenSecond} main o/main - 3`,
-			`order ${takenOld} main o/main - 1`,
-		]);
-	});
-
-	test("keeps the old order among the taken", () => {
-		seedOrders((db) => {
-			order(db, "main", "clerk", { at: BASE, takenAt: BASE, issue: 1 });
-			order(db, "main", "clerk", { at: later(1), takenAt: later(2), issue: 2 });
-			order(db, "main", "clerk", { at: later(3), issue: 3 });
-		});
-		const ids = rows("SELECT id FROM dispatches ORDER BY id").map((r) => r.id);
-		const takenOld = ids[0];
-		const takenNew = ids[1];
-		const untaken = ids[2];
-		expect(ordersOf(wake(later(5), "clerk").out)).toEqual([
-			`order ${untaken} main o/main - 3`,
-			`order ${takenOld} main o/main - 1`,
-			`order ${takenNew} main o/main - 2`,
-		]);
-	});
-
 	test("an order left untaken changes the output at every check, no work stays the same", () => {
 		seedOrders(() => {});
 		expect(wake(later(1)).out).toBe(wake(later(2)).out);

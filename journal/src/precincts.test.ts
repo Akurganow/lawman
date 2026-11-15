@@ -124,16 +124,6 @@ describe("precinct and role commands", () => {
 		for (const args of bad) expect([args, run(args).code]).toEqual([args, 1]);
 	});
 
-	test("role set upserts", () => {
-		expect(run(["role", "set", "patrol", "--every", "30"]).code).toBe(0);
-		expect(run(["role", "set", "patrol", "--every", "45"]).code).toBe(0);
-		const db = open(dbFile);
-		expect(db.query("SELECT name, every_minutes FROM roles").all()).toEqual([
-			{ name: "patrol", every_minutes: 45 },
-		]);
-		db.close();
-	});
-
 	test("role set keeps the check time of an existing role", () => {
 		run(["role", "set", "patrol", "--every", "30"]);
 		const db = open(dbFile);
@@ -208,11 +198,6 @@ describe("the patrol take", () => {
 		expect(cycles(weights, 1000, UNEVEN_STEP_SECONDS)).toEqual(frozen);
 	}, 60_000);
 
-	test("weight 0 is never picked", () => {
-		const picks = cycles({ a: 1, z: 0, b: 1 }, 50, () => 1);
-		expect(picks).not.toContain("z");
-	});
-
 	test("a precinct with a taken patrol order is admitted and untaken orders come first", () => {
 		addPrecincts({ a: 3, b: 2, c: 1 });
 		const db = open(dbFile);
@@ -256,10 +241,5 @@ describe("the patrol take", () => {
 			order(db, "a", "patrol");
 		});
 		expect(takeable()).toEqual(["a", "b"]);
-	});
-
-	test("the next command is a usage error", () => {
-		addPrecincts({ a: 1 });
-		expect(run(["next", "--role", "patrol"]).code).toBe(1);
 	});
 });

@@ -6,7 +6,6 @@ import { convicted, handed, human, T } from "./cases-fixture";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
-	DESK,
 	dispatches,
 	failing,
 	type Host,
@@ -23,7 +22,6 @@ import {
 	WORK,
 	without,
 } from "./duty-desk-fixture";
-import { inprocAsync } from "./inproc";
 import { LAW_COMMIT, lawVersion, lines } from "./input-test-fixture";
 import { intakeWaiting } from "./intake";
 import {
@@ -133,20 +131,6 @@ describe("the orders of the duty desk start", () => {
 			["beta", "abstraction", null],
 			["main", "abstraction", null],
 		]);
-	});
-
-	test("a precinct of weight 0 gets no order of the spec-writer or the executor", () => {
-		setUp({ main: 1, idle: 1 });
-		hostOf("main", WORK);
-		idle("idle");
-		// the cache holds the pull requests of the idle precinct, so the absence of orders is the weight
-		expect(
-			rows("SELECT number FROM pulls WHERE precinct = 'idle'").length,
-		).toBe(3);
-		startDesk();
-		expect(openOrders().filter((o) => o.precinct === "idle")).toEqual([]);
-		expect(openOrders().filter((o) => o.role === "spec-writer").length).toBe(1);
-		expect(openOrders().filter((o) => o.role === "executor").length).toBe(1);
 	});
 
 	test("a repeat start writes no second order for the same precinct, role and issue", () => {
@@ -826,33 +810,6 @@ describe("the output of the start", () => {
 		expect(call(BASE, ["tick", "start"]).code).toBe(1);
 		expect(ticks()).toEqual([]);
 		expect(rows("SELECT * FROM dispatches")).toEqual([]);
-	});
-});
-
-describe("the command forms in process", () => {
-	test("tick start --role duty-desk", async () => {
-		setUp({ main: 1 });
-		hostOf("main", WORK);
-		const r = await inprocAsync(BASE, DESK);
-		expect(r.code).toBe(0);
-		expect(lines(r.out)).toContain("ended ordered");
-		expect(openOrders().length).toBeGreaterThan(0);
-	});
-
-	test("tick continue <id>", async () => {
-		setUp({ main: 1 });
-		hostOf("main", WORK);
-		without("main", "issues", "pulls");
-		const first = await inprocAsync(BASE, DESK);
-		expect(lines(first.out)).toContain("self issues main o/main");
-		syncBy("main", WORK);
-		syncBy("main", WORK, BASE, true);
-		const r = await inprocAsync(BASE, ["tick", "continue", "1"]);
-		expect(r.code).toBe(0);
-		expect(lines(r.out)).toContain("ended ordered");
-		const again = await inprocAsync(BASE, ["tick", "continue", "1"]);
-		expect(again.code).toBe(1);
-		expect(again.err).toContain("no open tick with id 1 for this role");
 	});
 });
 

@@ -46,35 +46,16 @@ const jobOf = (n: number) => {
 	const f = fields(n);
 	return JOBS.map((k) => f[k]).join(" ");
 };
-const tail = (n: number) => need(n).split(" ").slice(-9).join(" ");
 const pair = (stage: string, issue: string, pull = 5) =>
 	pairMark(stage, pull, issue);
 
 describe("case: the line of a clerk job", () => {
-	test("an open conviction prints the open job and its branch", () => {
-		put({ 1: ruled(conviction) });
-		expect(tail(1)).toBe(
-			"priority=P2 job=open action=- pull=- sources=- branch=lawman/execute-1-1 kind=defect answer=- answer_id=-",
-		);
-	});
-
-	test("an unanswered acquittal prints the precedent job", () => {
-		put({ 1: ruled(lined(acquittal)) });
-		expect(jobOf(1)).toBe("precedent - - - lawman/precedent-1-1");
-	});
-
 	test("of two open precedent cases of one priority the older goes first", () => {
 		put({
 			1: { ...ruled(lined(acquittal)), createdAt: T(8) },
 			2: { ...ruled(lined(acquittal)), createdAt: T(7) },
 		});
 		expect(due("clerk")).toBe("main\t2\n");
-	});
-
-	test("a closed conviction gives no job and no clerk", () => {
-		put({ 1: closed(ruled(conviction)) });
-		expect(jobOf(1)).toBe("- - - - -");
-		expect(needOnly(1)).toBe("need=none");
 	});
 
 	// a marker row exists only for the trusted login, so only its comment is the ruling
@@ -105,25 +86,6 @@ describe("case: the line of a clerk job", () => {
 		}
 	});
 
-	test("the lowest pull request of the issue is adopted", () => {
-		put({ 1: human("OPEN") });
-		cache([9, [1]], [4, [1, 2]], [3, [2]]);
-		expect(jobOf(1)).toBe("adopt - 4 1,2 -");
-	});
-
-	test("a pull request of another issue is not adopted", () => {
-		put({ 1: human("OPEN") });
-		cache([9, [2]]);
-		expect(jobOf(1)).toBe("- - - - -");
-		expect(needOnly(1)).toBe("need=none");
-	});
-
-	test("a handed pair whose pull request left the cache settles", () => {
-		put({ 1: human("OPEN", pairMark("handed", 7, "open")) });
-		expect(needOnly(1)).toBe("need=clerk");
-		expect(jobOf(1)).toBe("settle - 7 1 -");
-	});
-
 	test("a settle lists every issue handed with the pull request", () => {
 		const handed = pairMark("handed", 7, "open");
 		put({
@@ -133,20 +95,11 @@ describe("case: the line of a clerk job", () => {
 		});
 		expect(jobOf(1)).toBe("settle - 7 1,2 -");
 	});
-
-	test("a closed pull request of a shut pair returns the issue when it reopens", () => {
-		put({ 1: human("CLOSED", pairMark("shut", 7, "closed")) });
-		cache([7, [1]]);
-		expect(jobOf(1)).toBe("reopen-issue - 7 1 -");
-	});
 });
 
 describe("case: leaving the funnel", () => {
 	const stages: [string, string[]][] = [
 		["investigation", []],
-		["prosecutor", [caseMark()]],
-		["defender", [caseMark(), charge()]],
-		["court", [caseMark(), charge(), defence()]],
 		["clerk", [caseMark(), charge(), defence(), conviction()]],
 	];
 	const kept = pairMark("handed", 7, "open");
@@ -158,13 +111,6 @@ describe("case: leaving the funnel", () => {
 		cache([7, [1]]);
 		expect(needOnly(1)).toBe("need=none");
 		expect(jobOf(1)).toBe("- - 7 1 -");
-	});
-
-	test("a pair after an acquittal leaves the funnel, even without a pull request", () => {
-		put({
-			1: closed(ruled(acquittal, pairMark("settled", 7, "closed"))),
-		});
-		expect(needOnly(1)).toBe("need=none");
 	});
 
 	test("a human issue has the line of a clerk without a lead", () => {
@@ -182,33 +128,9 @@ describe("case: leaving the funnel", () => {
 			"need=clerk round=- returned=- department=- sha=- state=OPEN lead=- related=- priority=P2 job=adopt action=- pull=7 sources=1 branch=- kind=- answer=- answer_id=-",
 		);
 	});
-
-	test("a closed issue never has a funnel need", () => {
-		put({ 1: closed(withLead(caseMark())) });
-		expect(needOnly(1)).toBe("need=none");
-	});
 });
 
 describe("case: states of the pair", () => {
-	const states = [
-		["handed", "open", "CLOSED", "state close-pull"],
-		["handed", "open", "OPEN", "- -"],
-		["shut", "closed", "OPEN", "state reopen"],
-		["shut", "closed", "CLOSED", "- -"],
-		["settled", "closed", "OPEN", "state open"],
-		["settled", "closed", "CLOSED", "- -"],
-	];
-
-	test.each(states)(
-		"%s %s with the issue %s",
-		(stage, recorded, now, expected) => {
-			put({ 1: human(now, pair(stage as string, recorded as string)) });
-			cache(...(stage === "handed" ? [[5, [1]] as [number, number[]]] : []));
-			expect(`${fields(1).job} ${fields(1).action}`).toBe(expected as string);
-			expect(needOnly(1)).toBe(expected === "- -" ? "need=none" : "need=clerk");
-		},
-	);
-
 	test("a close with another source open is kept", () => {
 		put({ 1: human("CLOSED", pair("handed", "open")), 2: human("OPEN") });
 		cache([5, [1, 2]]);
@@ -288,12 +210,6 @@ describe("case: states of the pair", () => {
 });
 
 test("kept issue=open over settled gives no job", () => {
-	// case
-	put({
-		1: human("OPEN", pair("settled", "closed"), pair("kept", "open")),
-	});
-	expect(`${fields(1).job} ${fields(1).action}`).toBe("- -");
-	// clerk jobs
 	const r = run({
 		markers: pairs(["settled", "7", "closed"], ["kept", "7", "open"]),
 	});

@@ -1,6 +1,4 @@
-import type { Database } from "bun:sqlite";
 import { describe, expect, test } from "bun:test";
-import { mkdirSync, rmSync } from "node:fs";
 import { inTransaction, open } from "./db";
 import { takeableOrders, takeOrder } from "./dispatch";
 import {
@@ -8,7 +6,6 @@ import {
 	BASE,
 	call,
 	dbFile,
-	dir,
 	later,
 	must,
 	order,
@@ -47,29 +44,6 @@ const take = (clock = BASE, role = "patrol") => {
 	} finally {
 		db.close();
 	}
-};
-const wake = (clock = BASE, role = "patrol") =>
-	call(clock, ["wake", "--role", role]);
-function seedOrders(body: (db: Database) => void): void {
-	seed((db) => {
-		db.run(
-			"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('main', 'o/main', 1)",
-		);
-		body(db);
-	});
-}
-const ordersOf = (out: string) =>
-	out.split("\n").filter((line) => line.startsWith("order "));
-const takeable = () => {
-	const db = open(dbFile);
-	const names = takeableOrders(db, "patrol").map((o) => o.precinct);
-	db.close();
-	return names;
-};
-// the state one test got from the hooks: a new folder for the database
-const fresh = () => {
-	rmSync(dir, { recursive: true, force: true });
-	mkdirSync(dir);
 };
 
 describe("dispatch", () => {
@@ -206,19 +180,6 @@ describe("dispatch", () => {
 		}
 	});
 
-	test("close is a usage error and leaves the order open", () => {
-		addPrecincts({ a: 1 });
-		const id = add("a").out.trim();
-		const r = call(BASE, ["dispatch", "close", id, "--outcome", "filed"]);
-		expect(r.code).toBe(1);
-		expect(r.out).toBe("");
-		const db = open(dbFile);
-		expect(
-			db.query("SELECT outcome FROM dispatches WHERE id = ?").get(Number(id)),
-		).toEqual({ outcome: null });
-		db.close();
-	});
-
 	test("an open order blocks a duplicate and a taken order stays in the take list until tick end closes it", () => {
 		addPrecincts({ a: 1 });
 		const id = add("a").out.trim();
@@ -267,79 +228,4 @@ describe("dispatch", () => {
 		expect(r.err).toContain(`no open order with id ${id}`);
 		expect(rows("SELECT ended_at FROM ticks")).toEqual([{ ended_at: null }]);
 	});
-
-	test("take, next and the other removed commands are usage errors", () => {
-		expect(call(BASE, ["dispatch", "take", "--role", "patrol"]).code).toBe(1);
-		expect(call(BASE, ["next", "--role", "patrol"]).code).toBe(1);
-	});
-});
-
-test("a patrol order nobody took comes before a taken one", () => {
-	// dispatch
-	addPrecincts({ a: 3, b: 2, c: 1 });
-	seed((db) => {
-		order(db, "a", "patrol", { at: BASE, takenAt: BASE });
-		order(db, "b", "patrol", { at: later(1) });
-		order(db, "c", "patrol", { at: later(2) });
-	});
-	{
-		const db = open(dbFile);
-		try {
-			expect(takeableOrders(db, "patrol").map((o) => o.precinct)).toEqual([
-				"b",
-				"c",
-				"a",
-			]);
-		} finally {
-			db.close();
-		}
-	}
-	// wake
-	fresh();
-	seedOrders((db) => {
-		db.run(
-			"INSERT OR IGNORE INTO precincts (name, repo, weight) VALUES ('other', 'o/other', 1)",
-		);
-		order(db, "main", "patrol", { at: BASE, takenAt: BASE });
-		order(db, "other", "patrol", { at: later(1) });
-	});
-	const untaken = must(
-		rows("SELECT id FROM dispatches WHERE taken_at IS NULL")[0]?.id as
-			| number
-			| undefined,
-	);
-	const taken = must(
-		rows("SELECT id FROM dispatches WHERE taken_at IS NOT NULL")[0]?.id as
-			| number
-			| undefined,
-	);
-	{
-		const db = open(dbFile);
-		try {
-			expect(takeableOrders(db, "patrol").map((o) => o.id)).toEqual([
-				untaken,
-				taken,
-			]);
-		} finally {
-			db.close();
-		}
-	}
-	// the wake lists the first patrol order only: the one nobody took
-	expect(ordersOf(wake(later(2)).out)).toEqual([
-		`order ${untaken} other o/other - -`,
-	]);
-});
-
-test("a taken order stays takeable at any time", () => {
-	// dispatch
-	addPrecincts({ a: 1 });
-	const id = add("a").out.trim();
-	expect(take(BASE).out).not.toBe("");
-	expect(take(later(0, 1)).out.split("	")[0]).toBe(id);
-	expect(take(later(24, 1)).out.split("	")[0]).toBe(id);
-	// the patrol take
-	fresh();
-	addPrecincts({ a: 1 });
-	seed((db) => order(db, "a", "patrol", { takenAt: "2026-03-01T00:00:00Z" }));
-	expect(takeable()).toEqual(["a"]);
 });

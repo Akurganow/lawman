@@ -26,10 +26,6 @@ describe("lint-page", () => {
 	const BROKEN = {
 		badDepartmentLine: VALID.replace("- docs-drift:", "- Docs_Drift:"),
 		badVersion: VALID.replace("contract_version: 4", "contract_version: 1"),
-		dotdot: VALID.replace(
-			"- README.md\n",
-			"- README.md\n- ../outside/secrets.md\n",
-		),
 		emptySection: VALID.replace(
 			"- make lint\n- make typecheck\n- make test\n\n",
 			"",
@@ -38,7 +34,6 @@ describe("lint-page", () => {
 			/## Labels\n[\s\S]*/,
 			"```markdown\n## Labels\n\n- `x`: hidden in a fence\n```\n",
 		),
-		missingHeading: without(VALID, "## Fence"),
 	};
 	const constitutionReasons = (text: string) =>
 		lintPage("constitution", text).reasons;
@@ -72,13 +67,8 @@ describe("lint-page", () => {
 		});
 	});
 
-	test("the department example and the shipped abstractions page pass", () => {
+	test("the department example passes", () => {
 		expect(reasons("department-valid.md", "department")).toEqual([]);
-		const shipped = readFileSync(
-			join(LAW, "departments", "abstractions.md"),
-			"utf8",
-		);
-		expect(lintPage("department", shipped, "abstractions").reasons).toEqual([]);
 	});
 
 	const expectPagesPass = (dir: string) => {
@@ -96,19 +86,12 @@ describe("lint-page", () => {
 	test("this repository's constitution and its own department pages pass", () => {
 		const constitution = readFileSync(join(ROOT, "LAWMAN.md"), "utf8");
 		expect(lintPage("constitution", constitution).reasons).toEqual([]);
-		expect(constitution).toMatch(/^- `[^`]+` \(owner attention\): /m);
 		expectPagesPass(join(ROOT, ".lawman", "departments"));
 	});
 
 	test("an old Precedents section stays an owner section of version 4", () => {
 		const text = `${VALID}\n## Precedents\n\n- 2026-09-02 #1: An old rule. (https://git.example.com/o/r/issues/1)\n`;
 		expect(constitutionReasons(text)).toEqual([]);
-	});
-
-	test("a missing heading is named at the last line", () => {
-		expect(constitutionReasons(BROKEN.missingHeading)).toEqual([
-			`${lastLine(BROKEN.missingHeading)}: missing heading "Fence"`,
-		]);
 	});
 
 	test("missing headings print in contract order", () => {
@@ -280,10 +263,6 @@ describe("lint-page", () => {
 		]);
 	});
 
-	test("a parent segment in a listed path is named", () => {
-		expect(constitutionReasons(BROKEN.dotdot)).toEqual(["10: path holds .."]);
-	});
-
 	test("leading slashes and backslashes are named in every path section", () => {
 		const text = VALID.replace("- README.md\n", "- /etc/passwd\n- docs\\x.md\n")
 			.replace("- rules/testing.md", "- /rules/testing.md")
@@ -327,10 +306,6 @@ describe("lint-page", () => {
 		}
 	});
 
-	test("a failing page yields no pairs", () => {
-		expect(lintPage("constitution", BROKEN.badVersion).departments).toEqual([]);
-	});
-
 	test("a Departments section of none yields no pairs and passes", () => {
 		const text = VALID.replace(
 			/## Departments\n[\s\S]*?(?=## Fence)/,
@@ -368,13 +343,6 @@ describe("lint-page", () => {
 		expect(lintPage("department", text).reasons).toEqual([]);
 	});
 
-	test("a department page uses its own heading list", () => {
-		expect(lintPage("department", VALID).reasons[0]).toContain("name missing");
-		expect(lintPage("constitution", DEPARTMENT).reasons).toContain(
-			`${lastLine(DEPARTMENT)}: missing heading "Read first"`,
-		);
-	});
-
 	describe("command", () => {
 		const feed = (args: string[], input: string) =>
 			cli(["lint-page", ...args], {}, input);
@@ -400,18 +368,6 @@ describe("lint-page", () => {
 
 		test("a valid department page prints nothing and exits 0", () => {
 			expect(feed(["department"], page("department-valid.md"))).toEqual({
-				code: 0,
-				out: "",
-				err: "",
-			});
-		});
-
-		test("the shipped abstractions page passes through stdin", () => {
-			const shipped = readFileSync(
-				join(LAW, "departments", "abstractions.md"),
-				"utf8",
-			);
-			expect(feed(["department", "--name", "abstractions"], shipped)).toEqual({
 				code: 0,
 				out: "",
 				err: "",

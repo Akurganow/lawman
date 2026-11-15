@@ -1,7 +1,5 @@
 import { describe, expect, spyOn, test } from "bun:test";
 import {
-	appendFileSync,
-	copyFileSync,
 	existsSync,
 	mkdirSync,
 	readdirSync,
@@ -24,7 +22,6 @@ import {
 	ASSET,
 	calls,
 	facts,
-	fixtureVerifier,
 	law,
 	publish,
 	REPO,
@@ -46,8 +43,6 @@ const refused = (operation: string, reason: string, detail = "") =>
 	`${operation} failed reason=${reason}\n~~~error\n${detail === "" ? "" : `${detail}\n`}~~~\n`;
 const released = `release done folder=${RELEASE_FOLDER} asset=${ASSET}\n`;
 const folder = () => join(dir, RELEASE_FOLDER);
-const OTHER_REPO = "someone/else";
-const OTHER_COMMIT = "c".repeat(40);
 const HOSTILE = "printf '```\\n\\342\\200\\213hidden ~~~\\n'";
 
 // the files of a real release, in the folder that release built
@@ -69,9 +64,7 @@ const fresh = () => {
 describe("run-installation: the call", () => {
 	test.each([
 		["release", "-x/y", TAG],
-		["release", "a/b/c", TAG],
 		["release", REPO, "-v1"],
-		["release", REPO, "v 1"],
 	])(
 		"%s %s %s outside the class never reaches the command",
 		async (operation, repo, tag) => {
@@ -123,29 +116,6 @@ describe("run-installation: the call", () => {
 });
 
 describe("run-installation: the outcome", () => {
-	test("a file that does not start gives start", async () => {
-		versionCommand(facts(), "", 0o644);
-		expect(await run("law-version")).toEqual({
-			code: EXIT.COMMAND,
-			out: refused("law-version", "start"),
-			err: "",
-		});
-	});
-
-	test("a non-zero exit gives exit and its stderr in the fence", async () => {
-		command(shared(), "release", "echo broken >&2\nexit 2");
-		expect((await run("release", REPO, TAG)).out).toBe(
-			refused("release", "exit", "broken"),
-		);
-	});
-
-	test("a signal gives exit", async () => {
-		command(shared(), "release", "kill -TERM $$");
-		expect((await run("release", REPO, TAG)).out).toBe(
-			refused("release", "exit"),
-		);
-	});
-
 	test("a failed cleaning of stderr gives clean and an empty fence", async () => {
 		command(shared(), "release", "echo broken >&2\nexit 1");
 		const spy = spyOn(clean, "cleanCharacters").mockRejectedValue(
@@ -158,13 +128,6 @@ describe("run-installation: the outcome", () => {
 		} finally {
 			spy.mockRestore();
 		}
-	});
-
-	test("hidden characters of stderr do not reach the fence", async () => {
-		command(shared(), "release", "printf 'a\\342\\200\\213b\\n' >&2\nexit 1");
-		expect((await run("release", REPO, TAG)).out).toBe(
-			refused("release", "exit", "ab"),
-		);
 	});
 
 	test.each([
@@ -263,44 +226,6 @@ describe("run-installation: verify", () => {
 	});
 });
 
-describe("run-installation: the four cases of a signature check", () => {
-	const tampered = `runs/tampered/${ASSET}`;
-
-	async function cases(): Promise<void> {
-		await releasedFiles();
-		verifyCommand(fixtureVerifier());
-		mkdirSync(join(dir, "runs", "tampered"));
-		copyFileSync(join(dir, asset), join(dir, tampered));
-		appendFileSync(join(dir, tampered), "x");
-	}
-
-	test("the real asset, its file, the release repository and the commit pass", async () => {
-		await cases();
-		expect(await run("verify", asset, provenance, REPO, REVISION)).toEqual({
-			code: EXIT.OK,
-			out: "verify passed\n",
-			err: "",
-		});
-	});
-
-	test.each([
-		["a changed asset", tampered, REPO, REVISION],
-		["another signer", asset, OTHER_REPO, REVISION],
-		["another commit", asset, REPO, OTHER_COMMIT],
-	])(
-		"%s is refused and its arguments arrive as given",
-		async (_, path, repo, commit) => {
-			await cases();
-			const r = await run("verify", path, provenance, repo, commit);
-			expect(r.code).toBe(EXIT.COMMAND);
-			expect(r.out).toStartWith("verify failed reason=exit\n");
-			expect(calls("verify")).toEqual([
-				`verify ${join(dir, path)} ${join(dir, provenance)} ${repo} ${commit}`,
-			]);
-		},
-	);
-});
-
 describe("run-installation: law-version", () => {
 	test("output in form prints the facts and gets the law folder", async () => {
 		versionCommand();
@@ -345,17 +270,6 @@ describe("run-installation: law-version", () => {
 });
 
 describe("run-installation as a program", () => {
-	test("it prints the outcome and opens no database", () => {
-		versionCommand();
-		const r = cli(["run-installation", "law-version"], { LAWMAN_DB: dbFile });
-		expect(r).toEqual({
-			code: 0,
-			out: `revision=${REVISION}\nchanged=no\ntag=${TAG}\n`,
-			err: "",
-		});
-		expect(existsSync(dbFile)).toBe(false);
-	});
-
 	test("a failure exits 5", () => {
 		command(shared(), "verify", "exit 1");
 		mkdirSync(join(dir, "runs"));

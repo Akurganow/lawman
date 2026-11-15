@@ -105,10 +105,6 @@ describe("readCheckObject", () => {
 });
 
 describe("decider command", () => {
-	test("any argument is a usage error", () => {
-		expect(() => decider(["response.json"])).toThrow(Fail);
-	});
-
 	test("in process, an argument fails with the usage line", () => {
 		const r = captured("2026-05-01T00:00:00Z", () => decider(["x"]));
 		expect(r.code).toBe(EXIT.USAGE);

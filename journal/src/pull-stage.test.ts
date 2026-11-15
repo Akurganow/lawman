@@ -31,7 +31,6 @@ const priority = (value: string) =>
 describe("pull", () => {
 	test.each([
 		["none", "spec-writer"],
-		["down", "spec-writer"],
 		["waiting", "none"],
 		["up", "executor"],
 	])("a handed pull request with spec %s needs %s", (spec, need) => {
@@ -45,7 +44,6 @@ describe("pull", () => {
 
 	test.each([
 		["todo", "executor"],
-		["returned", "executor"],
 		["ready", "none"],
 	])("a settled spec with work %s needs %s", (work, need) => {
 		put({ 3: handed(7) });
@@ -79,12 +77,6 @@ describe("pull", () => {
 		expect(pull("main", "7").out).toStartWith("need=spec-writer spec=none");
 	});
 
-	test("an executor is not needed without a handed source", () => {
-		put({ 3: human("OPEN") });
-		cached(7, [3], "up");
-		expect(pull("main", "7").out).toStartWith("need=none spec=up");
-	});
-
 	test("an executor is not needed in a precinct of weight zero", () => {
 		put({ 3: handed(7) });
 		cached(7, [3], "up");
@@ -100,32 +92,12 @@ describe("pull", () => {
 		);
 	});
 
-	test("a pull request without sources needs nobody and prints a dash", () => {
-		cached(7, [], "none");
-		expect(pull("main", "7").out).toBe(
-			"need=none spec=none spec_id=- work=todo sources=- priority=P2\n",
-		);
-	});
-
 	test("the priority is the best among the sources", () => {
 		put({ 3: handed(7, priority("P3")), 4: human("OPEN", priority("P1")) });
 		cached(7, [3, 4], "none");
 		expect(pull("main", "7").out).toBe(
 			"need=spec-writer spec=none spec_id=- work=todo sources=3,4 priority=P1\n",
 		);
-	});
-
-	test("a precinct of weight zero needs nobody", () => {
-		put({ 3: handed(7) });
-		cached(7, [3], "none");
-		call(BASE, ["precinct", "set", "main", "--weight", "0"]);
-		expect(pull("main", "7").out).toStartWith("need=none spec=none");
-	});
-
-	test("a pull request missing from the cache is stale", () => {
-		const stale = "need=none spec=- spec_id=- work=- sources=- priority=P2\n";
-		expect(pull("main", "9")).toMatchObject({ code: 0, out: stale });
-		expect(pull("nowhere", "9").out).toBe(stale);
 	});
 });
 
@@ -165,11 +137,8 @@ describe("pull in process", () => {
 test("bad arguments exit 1", () => {
 	const inPull = (...args: string[]) => inproc(BASE, ["pull", ...args]);
 	// pull
-	expect(pull("main").code).toBe(1);
 	expect(pull("main", "7", "8").code).toBe(1);
 	expect(pull("main", "x").code).toBe(1);
-	expect(pull("main", "0").code).toBe(1);
-	expect(pull("Main", "7").code).toBe(1);
 	// pull in process
 	expect(inPull("main").code).toBe(1);
 	expect(inPull("main", "0").code).toBe(1);

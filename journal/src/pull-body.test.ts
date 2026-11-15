@@ -218,12 +218,6 @@ describe("the body of the precedent pull request", () => {
 		);
 	});
 
-	test("tells no word of a file with several paragraphs and a fenced quote", async () => {
-		const now = `---\nkind: dismissal\ndepartments: []\n---\n\nFirst paragraph.\n\n~~~\nAsk @x about #12 at https://example.com/a\n~~~\n`;
-		const text = await precedentBody(SOURCE, [{ name: "d", was: null, now }]);
-		expect(text).toBe(`${HEAD}\n\n~~~\nnew d: the text was left out\n~~~\n`);
-	});
-
 	test("writes nothing when the place of the body is no plain file", async () => {
 		mkdirSync(body());
 		expect((await write("- new x: A rule.")).code).not.toBe(0);

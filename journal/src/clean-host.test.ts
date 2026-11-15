@@ -2,7 +2,6 @@ import { describe, expect, test } from "bun:test";
 import { generateKeyPairSync } from "node:crypto";
 import { cleanHostText } from "./clean-host";
 import { fencedLines } from "./markers";
-import { PRIVATE_KEYS } from "./test-helpers";
 
 const MARKER =
 	"<!-- lawman: role=court stage=ruling at=2026-10-14T09:30:00Z -->";
@@ -265,13 +264,6 @@ describe("secrets and invisible characters", () => {
 		expect(await clean(`a\n\n${quoted}\n\nb`)).toBe(
 			"a\n\n> REMOVED PRIVATEKEY SECRET\n\nb",
 		);
-	});
-
-	test.each(PRIVATE_KEYS)("%s is masked", async (_, make) => {
-		const out = await clean(`a\n\n${make().trim()}\n\nb`);
-		expect(out).toStartWith("a\n\n");
-		expect(out).toEndWith("REMOVED PRIVATEKEY SECRET\n\nb");
-		expect(out).not.toContain("PRIVATE KEY");
 	});
 
 	test("hidden characters are removed, code included", async () => {

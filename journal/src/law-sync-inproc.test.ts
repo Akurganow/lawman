@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { MIGRATIONS } from "./db";
 import { captured, inproc } from "./inproc";
 import { lawSync } from "./law-sync";
-import { defineCases } from "./law-sync-test-cases";
+import { defineCases, defineRename } from "./law-sync-test-cases";
 import { flags, lay, put, type Runner } from "./law-sync-test-fixture";
 import { BASE, dir, tempDb } from "./test-helpers";
 
@@ -27,6 +27,10 @@ describe("law-sync in process", () => {
 	defineCases(runner);
 });
 
+describe("law-sync in process, the swap", () => {
+	defineRename(runner);
+});
+
 describe("law-sync through the journal entry point", () => {
 	tempDb();
 
@@ -39,7 +43,7 @@ describe("law-sync through the journal entry point", () => {
 		);
 	});
 
-	test("ends with the schema exit before it can touch the runtime", () => {
+	test("reaches law-sync through the entry point and ends with the schema exit", () => {
 		lay(dir, { schemas: [MIGRATIONS.length + 1] });
 		const result = inproc(BASE, ["law-sync", ...flags(dir)]);
 		expect(result).toMatchObject({ code: 6, out: "" });

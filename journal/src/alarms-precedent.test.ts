@@ -1,6 +1,4 @@
 import { beforeEach, describe, expect, test } from "bun:test";
-import { mkdirSync, readFileSync } from "node:fs";
-import { join } from "node:path";
 import {
 	human,
 	issuesJson,
@@ -8,16 +6,13 @@ import {
 	type Spec,
 	withLead,
 } from "./cases-fixture";
-import { inproc, inprocAsync, inprocFed } from "./inproc";
-import { config } from "./input-test-fixture";
-import { headerOf } from "./precedent-file";
+import { inproc, inprocFed } from "./inproc";
 import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
 	BASE,
 	caseMark,
 	charge,
 	defence,
-	dir,
 	later,
 	mark,
 	precinct,
@@ -129,28 +124,11 @@ describe("the conviction path on a fixture", () => {
 		mark("court", "conviction", ` sha=${SHA}`),
 	].join("\n");
 
-	test("the file rides the draft, which alarms only once the work is ready", async () => {
+	test("the draft of a conviction alarms only once the work is ready", async () => {
 		const spec = withLead(caseMark(), charge(), defence(), ruling);
 		await put({ 1: spec });
 		expect(caseLine(1)).toContain(" job=open ");
 		expect(caseLine(1)).toContain(" branch=lawman/execute-1-1 ");
-		config(`trusted_login: ${TRUSTED}\n`);
-		const tree = join(dir, "tree");
-		mkdirSync(tree);
-		const r = await inprocAsync(BASE, [
-			"precedent",
-			"main",
-			"--issue",
-			"1",
-			"--source",
-			"https://git.example.com/o/main/issues/1#comment-3",
-			"--tree",
-			tree,
-		]);
-		expect(r.out).toBe("entry\t2026-10-14-no-panics\n");
-		const file = join(tree, ".lawman", "precedents", "2026-10-14-no-panics.md");
-		expect(headerOf(readFileSync(file, "utf8")).kind).toBe("condemns");
-
 		await put({
 			1: {
 				...spec,
@@ -172,26 +150,5 @@ describe("the conviction path on a fixture", () => {
 			],
 		});
 		expect(alarm(later(1))).toBe(line("main#9", WAITS_WORK));
-	});
-});
-
-describe("case in process: the decision job", () => {
-	test("an entry gives the decision job only once its pull request left the cache", async () => {
-		await put({
-			3: withLead(
-				caseMark(),
-				charge(),
-				defence(),
-				mark("court", "acquittal"),
-				clerk("entry", 7),
-			),
-		});
-		await syncPulls({ number: 7 });
-		expect(caseLine(3)).toContain("job=- ");
-		await syncPulls();
-		expect(caseLine(3)).toStartWith("need=clerk ");
-		expect(caseLine(3)).toContain(
-			"job=decision action=- pull=7 sources=- branch=-",
-		);
 	});
 });

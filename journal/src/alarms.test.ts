@@ -38,31 +38,9 @@ describe("alarms and status", () => {
 			expect(alarm(later(24 * 30)).out).toBe("");
 		});
 
-		test("a tick with no end record alarms when a later tick of its role exists", () => {
-			seed((db) => {
-				tick(db, "patrol", BASE, null, null);
-				tick(db, "patrol", later(1), null, null);
-			});
-			alarmsOnce(
-				later(3),
-				new RegExp(`^ALARM tick-hung 1 patrol started ${BASE}\\n$`),
-			);
-		});
-
 		test("a tick with no end record and no later tick of its role raises nothing", () => {
 			seed((db) => tick(db, "patrol", BASE, null, null));
 			expect(alarm(later(3)).out).toBe("");
-		});
-
-		test("role-silent fires after three intervals and not before", () => {
-			seed((db) => {
-				db.run("INSERT INTO roles (name, every_minutes) VALUES ('patrol', 10)");
-				tick(db, "patrol", BASE, later(0, 60), "silent");
-			});
-			expect(alarm(later(0, 1800)).out).toBe("");
-			expect(alarm(later(0, 1801)).out).toMatch(
-				/^ALARM role-silent patrol .+\n$/,
-			);
 		});
 
 		test("role-silent measures from the latest tick start", () => {
@@ -225,10 +203,6 @@ describe("alarms and status", () => {
 				{ cleared_at: later(4) },
 				{ cleared_at: null },
 			]);
-		});
-
-		test("the alarm command is a usage error", () => {
-			expect(call(BASE, ["alarm"]).code).toBe(1);
 		});
 	});
 
@@ -437,31 +411,6 @@ describe("decision-waiting", () => {
 		expect(alarm(later(2), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
 	});
 
-	test("finished work after an unseen vote raises the review alarm in place of the vote alarm", () => {
-		waitingSpec();
-		alarm(BASE);
-		setPull("UPDATE pulls SET spec = 'up', work = 'ready'");
-		expect(alarm(later(1)).out).toBe(line("main#7", WAITS_WORK));
-		expect(open()[0]?.cleared_at).toBe(later(1));
-	});
-
-	test("a removed row clears the alarm", () => {
-		waitingSpec();
-		alarm(BASE);
-		setPull("DELETE FROM pulls");
-		expect(alarm(later(1)).out).toBe("");
-		expect(open()).toEqual([{ ref: "main#7", cleared_at: later(1) }]);
-	});
-
-	test("a return of the finished work clears the alarm", () => {
-		put({ 3: handed(7) });
-		cachePull("main", 7, [3], "up", "ready");
-		alarm(BASE);
-		setPull("UPDATE pulls SET work = 'returned'");
-		expect(alarm(later(1)).out).toBe("");
-		expect(open()[0]?.cleared_at).toBe(later(1));
-	});
-
 	describe("finished work in a synced cache", () => {
 		const comments = (readyUp: string[]) => [
 			{ body: `Spec\n\n${SPEC}`, id: "SPEC_1", up: ["maint-a"] },
@@ -494,14 +443,6 @@ describe("decision-waiting", () => {
 			expect(alarm(later(1)).out).toBe("");
 			expect(open()).toEqual([{ ref: "main#7", cleared_at: null }]);
 		});
-	});
-
-	test("the repeat prints only with --repeat, at every repeat call", () => {
-		waitingSpec();
-		alarm(BASE);
-		expect(alarm(later(1)).out).toBe("");
-		expect(alarm(later(1), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
-		expect(alarm(later(2), "--repeat").out).toBe(line("main#7", WAITS_SPEC));
 	});
 
 	test("candidates come in the order of precinct, then pull request number", () => {

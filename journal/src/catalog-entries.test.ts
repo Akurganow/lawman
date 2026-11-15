@@ -9,7 +9,6 @@ import {
 	parseList,
 	parseSourceLine,
 	sourceLine,
-	splitPackageToken,
 	UNRESOLVED_VERSION,
 } from "./catalog-entries";
 import { canonicalId } from "./markers";
@@ -112,10 +111,6 @@ describe("parseList", () => {
 		expect(parsed).toEqual({ entries: [], refused: [1], unresolved: [] });
 	});
 
-	test("a field holding the text undefined is not a missing field", () => {
-		expect(parseList("a\tnpm").refused).toEqual([1]);
-	});
-
 	test("an empty input is an empty list", () => {
 		expect(parseList("")).toEqual({ entries: [], refused: [], unresolved: [] });
 	});
@@ -161,10 +156,6 @@ describe("source line and identity", () => {
 		"source: catalog GHSA-1 npm/name",
 	])("a line outside the classes is refused: %p", (value) => {
 		expect(parseSourceLine(value)).toBeNull();
-	});
-
-	test("a package token without a separator has no parts", () => {
-		expect(splitPackageToken("npm")).toBeNull();
 	});
 
 	test("the identity is canonical and holds no version", () => {

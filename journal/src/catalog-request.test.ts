@@ -1,6 +1,4 @@
 import { describe, expect, test } from "bun:test";
-import { readdirSync } from "node:fs";
-import { dirname, join } from "node:path";
 import { BATCH_LIMIT, cutParts } from "./catalog";
 import { UNRESOLVED_VERSION } from "./catalog-entries";
 import {
@@ -8,12 +6,10 @@ import {
 	inProcess,
 	list,
 	prepare,
-	RUNNERS,
 	type Run,
 	resultsReply,
-	throughCli,
 } from "./catalog-test-run";
-import { dbFile, tempDb } from "./test-helpers";
+import { tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -46,7 +42,9 @@ function allBodies(run: Run, tick: string, input: string): string[] {
 	return bodies;
 }
 
-describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
+describe("catalog request", () => {
+	const run = inProcess;
+
 	test("the first call prints part 1 as one compact JSON line", () => {
 		prepare();
 		const r = run(
@@ -108,14 +106,6 @@ describe.each(RUNNERS)("catalog request (%s)", (_name, run) => {
 		const r = run(first("7", ["--precinct", "alpha"]), entry(1));
 		expect(r.code).toBe(1);
 		expect(r.err).toContain("database");
-	});
-});
-
-describe("state of the tick", () => {
-	test("it lies in the runs folder next to the database", () => {
-		prepare();
-		throughCli(first("7", ["--precinct", "alpha"]), entry(1));
-		expect(readdirSync(join(dirname(dbFile), "runs", "7"))).toHaveLength(1);
 	});
 });
 

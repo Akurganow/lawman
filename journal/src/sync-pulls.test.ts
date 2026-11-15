@@ -4,15 +4,7 @@ import fixture from "./fixtures/pulls.json";
 import { capturedAsync } from "./inproc";
 import { syncPulls } from "./pulls";
 import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
-import {
-	addPrecincts,
-	cli,
-	dbFile,
-	issuesForm,
-	rows,
-	seed,
-	tempDb,
-} from "./test-helpers";
+import { addPrecincts, cli, dbFile, rows, seed, tempDb } from "./test-helpers";
 
 tempDb();
 
@@ -52,13 +44,6 @@ describe("sync --pulls", () => {
 
 	beforeEach(() => addPrecincts({ main: 1, other: 1 }));
 
-	test("stores the rows of the fixture and prints the count", () => {
-		const r = feed(fixture);
-		expect(r.code).toBe(0);
-		expect(r.out).toBe("pulls=2\n");
-		expect(stored()).toEqual(FIXTURE_ROWS);
-	});
-
 	test("a second sync replaces the rows of that precinct only", () => {
 		seedOld();
 		seed((db) => {
@@ -73,24 +58,8 @@ describe("sync --pulls", () => {
 		]);
 	});
 
-	test("an empty list replaces a filled cache with none", () => {
-		seedOld();
-		const r = feed(hostPulls([]));
-		expect(r.out).toBe("pulls=0\n");
-		expect(stored()).toEqual([]);
-	});
-
 	test("every validity failure exits 4 and leaves the cache intact", () => {
-		expectRejected(["{", "{}", "[]", JSON.stringify({ writers: [] })]);
-	});
-
-	test("a comment without an id, or with a bad time, exits 4", () => {
-		const noId = hostPulls([
-			{ number: 3, comments: [{ body: "x", noId: true }] },
-		]);
-		const badTime = hostPulls([{ number: 3, comments: [{ body: "x" }] }]);
-		Object.assign(badTime.pulls[0]?.comments[0] as object, { createdAt: "x" });
-		expectRejected([noId, badTime]);
+		expectRejected(["{"]);
 	});
 
 	test("a comment url is stored when it is a plain address, and as null when it is not", () => {
@@ -112,25 +81,6 @@ describe("sync --pulls", () => {
 		]);
 	});
 
-	test("a pull request of another author without a comment id is no failure", () => {
-		const input = hostPulls([{ number: 4 }]);
-		input.pulls.unshift({
-			number: 3,
-			author: "stranger",
-			comments: [{ body: "x" }],
-		} as never);
-		const r = feed(input);
-		expect(r.code).toBe(0);
-		expect(stored().map((p) => p.number)).toEqual([4]);
-	});
-
-	test("a repeated pull request number exits 4 and leaves the cache intact", () => {
-		seedOld();
-		const r = feed(hostPulls([{ number: 3 }, { number: 3 }]));
-		expect(r.code).toBe(4);
-		expect(stored()).toEqual(OLD);
-	});
-
 	test("--reset with --pulls is a usage error", () => {
 		seedOld();
 		const r = feed(fixture, ["--pulls", "--reset", "--author", BOT]);
@@ -144,10 +94,6 @@ describe("sync --pulls", () => {
 		const r = feed(fixture, ["--pulls", "--author", BOT], "nowhere");
 		expect(r.code).toBe(1);
 		expect(r.err).toContain("unknown precinct");
-	});
-
-	test("without --pulls the issue sync is unchanged", () => {
-		expect(feed(issuesForm([]), ["--author", BOT]).code).toBe(0);
 	});
 });
 

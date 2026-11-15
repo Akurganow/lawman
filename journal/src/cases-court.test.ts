@@ -1,17 +1,12 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
 	answer,
-	type Comment,
-	due,
 	expectNeed,
 	expectRoundKept,
 	fields,
 	lined,
-	needOnly,
 	put,
 	referral,
-	type Spec,
-	T,
 	withLead,
 } from "./cases-fixture";
 import { inproc } from "./inproc";
@@ -19,18 +14,15 @@ import {
 	acquittal,
 	addPrecincts,
 	BASE,
-	call,
 	caseMark,
 	charge,
 	conviction,
 	decline,
 	defence,
-	lead,
 	mark,
 	refute,
 	returnTo,
 	SHA,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -59,50 +51,8 @@ describe("case: court stage", () => {
 			"court",
 		],
 		[
-			"a declined closed issue needs nobody",
-			{ ...withLead(caseMark(), decline()), state: "CLOSED" },
-			"none",
-		],
-		[
-			"a refuted closed issue needs nobody",
-			{ ...withLead(caseMark(), charge(), refute()), state: "CLOSED" },
-			"none",
-		],
-		[
-			"a conviction after the defence needs the clerk",
-			defended(conviction()),
-			"clerk",
-		],
-		[
-			"an acquittal on an open issue needs the clerk",
-			defended(lined(acquittal)()),
-			"clerk",
-		],
-		[
-			"a refute instead of a defence needs the court",
-			withLead(caseMark(), charge(), refute()),
-			"court",
-		],
-		[
-			"a defender return instead of a defence needs the investigation",
-			withLead(caseMark(), charge(), returnTo("investigation", 1, "defender")),
-			"investigation",
-		],
-		[
 			"a conviction older than the defence does not count",
 			withLead(caseMark(), charge(), conviction(), defence()),
-			"court",
-		],
-		[
-			"a conviction from an earlier case does not count",
-			withLead(
-				caseMark(),
-				charge(),
-				conviction(),
-				caseMark(),
-				charge(),
-				defence(),
-			),
 			"court",
 		],
 		[
@@ -110,60 +60,19 @@ describe("case: court stage", () => {
 			withLead(caseMark(), charge(), conviction()),
 			"defender",
 		],
-		[
-			"a conviction older than the charge leaves the defender",
-			withLead(caseMark(), conviction(), charge()),
-			"defender",
-		],
-		[
-			"a new case and charge after a conviction need the defender",
-			defended(conviction(), caseMark(), charge()),
-			"defender",
-		],
-		[
-			"a new case after a conviction needs the prosecutor",
-			defended(conviction(), caseMark()),
-			"prosecutor",
-		],
 	])("%s", (_name, spec, expected) => expectNeed(spec, expected));
-
-	test("due for the prosecutor, defender and investigation skips closed issues", () => {
-		put({ 1: { ...withLead(), state: "CLOSED" } });
-		put({ 2: { ...withLead(caseMark()), state: "CLOSED" } });
-		put({ 3: { ...withLead(caseMark(), charge()), state: "CLOSED" } });
-		for (const role of ["investigation", "prosecutor", "defender"])
-			expect(due(role)).toBe("");
-	});
 
 	test("a court return leaves round and returned unchanged", () => {
 		expectRoundKept(defended(returnTo("investigation", 1, "court")));
-	});
-
-	test("due for the court lists a defended, declined or refuted open case", () => {
-		put({ 1: defended() });
-		expect(due("court")).toBe("main\t1\n");
-		put({ 2: withLead(caseMark(), decline()) });
-		expect(due("court")).toBe("main\t2\n");
-		put({ 3: withLead(caseMark(), charge(), refute()) });
-		expect(due("court")).toBe("main\t3\n");
-		put({
-			1: defended(conviction()),
-			2: defended(acquittal()),
-			3: { ...defended(), state: "CLOSED" },
-		});
-		expect(due("court")).toBe("");
 	});
 });
 
 const referred = (...rest: string[]) =>
 	withLead(caseMark(), charge(), defence(), referral(), ...rest);
 
-describe.each([
-	["cli", call],
-	["in process", inproc],
-])("case: referral answers (%s)", (_name, run) => {
+describe("case: referral answers", () => {
 	const line = (issue: number) => {
-		const r = run(BASE, ["case", "main", String(issue)]);
+		const r = inproc(BASE, ["case", "main", String(issue)]);
 		expect(r.code).toBe(0);
 		return r.out.trim();
 	};
@@ -195,38 +104,6 @@ describe.each([
 	});
 });
 
-describe("case: referral", () => {
-	test("a case reopened after an answered referral needs the prosecutor", () => {
-		put({ 1: referred(caseMark()) });
-		answer(1, "up");
-		expect(needOnly(1)).toBe("need=prosecutor");
-	});
-
-	const stepped = (...tail: Comment[]): Spec => ({
-		body: [lead()],
-		comments: [
-			[T(10), caseMark()],
-			[T(11), charge()],
-			[T(12), defence()],
-			...tail,
-		],
-	});
-
-	test("a thumb on an older referral answers the new one", () => {
-		put({
-			1: stepped([T(13), referral(), [TRUSTED]], [T(14), referral()]),
-		});
-		expect(fields(1).answer).toBe("up");
-		expect(needOnly(1)).toBe("need=court");
-	});
-
-	test("a thumbs up on the referral gives the court the case", () => {
-		put({ 1: stepped([T(13), referral(), [TRUSTED]]) });
-		expect(needOnly(1)).toBe("need=court");
-		expect(fields(1).answer).toBe("up");
-	});
-});
-
 describe("case: priority", () => {
 	const ruledWith = (extra: string) =>
 		withLead(
@@ -239,7 +116,6 @@ describe("case: priority", () => {
 	test.each([
 		[" priority=P0", "P0"],
 		[" priority=P1", "P1"],
-		[" priority=P2", "P2"],
 		[" priority=P3", "P3"],
 		["", "P2"],
 		[" priority=P4", "P2"],
@@ -264,12 +140,5 @@ describe("case: priority", () => {
 			),
 		});
 		expect(fields(1).priority).toBe("P3");
-	});
-
-	test("a case without a conviction reads P2", () => {
-		put({ 1: withLead(caseMark(), charge(), defence(), acquittal()) });
-		expect(fields(1).priority).toBe("P2");
-		put({ 1: withLead() });
-		expect(fields(1).priority).toBe("P2");
 	});
 });

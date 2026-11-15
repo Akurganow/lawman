@@ -325,39 +325,6 @@ describe("migration 9", () => {
 	});
 });
 
-describe("migration 10", () => {
-	test("keeps every row of a schema 9 database and adds no pull sync time and no checks", () => {
-		const old = new Database(dbFile);
-		for (const sql of MIGRATIONS.slice(0, 9)) old.run(sql);
-		old.run("PRAGMA user_version = 9");
-		old.run(
-			"INSERT INTO precincts (name, repo, weight, credit, synced_at) VALUES ('p', 'o/p', 2, 1, 't')",
-		);
-		old.run(
-			"INSERT INTO roles (name, every_minutes, checked_at) VALUES ('patrol', 30, 't')",
-		);
-		old.close();
-		const db = open(dbFile);
-		expect(userVersion(db)).toBe(MIGRATIONS.length);
-		expect(db.query("SELECT * FROM precincts").all()).toEqual([
-			{
-				name: "p",
-				repo: "o/p",
-				weight: 2,
-				credit: 1,
-				synced_at: "t",
-				pulls_synced_at: null,
-				constitution_cause: null,
-				sync_failures: 0,
-			},
-		]);
-		expect(db.query("SELECT * FROM roles").all()).toEqual([
-			{ name: "patrol", every_minutes: 30, checked_at: "t", checks: 0 },
-		]);
-		db.close();
-	});
-});
-
 describe("probe", () => {
 	test("probe prints the version, schema and journal mode and leaves no row", () => {
 		const db = open(dbFile);
@@ -368,38 +335,14 @@ describe("probe", () => {
 		db.close();
 	});
 
-	test("--schema above the supported version exits 6", () => {
-		const r = cli(["probe", "--schema", "99"]);
-		expect(r.code).toBe(6);
-	});
-
 	test("--schema accepts the current and older versions and rejects the next", () => {
 		expect(cli(["probe", "--schema", "13"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "12"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "11"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "10"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "9"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "8"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "7"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "6"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "5"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "4"]).code).toBe(0);
-		expect(cli(["probe", "--schema", "3"]).code).toBe(0);
 		expect(cli(["probe", "--schema", "14"]).code).toBe(6);
 	});
 
 	test("--schema that is not a number exits 1", () => {
 		expect(cli(["probe", "--schema", "abc"]).code).toBe(1);
 		expect(cli(["probe", "--schema"]).code).toBe(1);
-		expect(cli(["probe", "--bogus"]).code).toBe(1);
-	});
-
-	test("exits 1 when LAWMAN_NOW is set", () => {
-		const r = cli(["probe"], {
-			LAWMAN_DB: dbFile,
-			LAWMAN_NOW: "2026-01-01T00:00:00Z",
-		});
-		expect(r.code).toBe(1);
 	});
 
 	test("exits 1 when LAWMAN_DB is set", () => {

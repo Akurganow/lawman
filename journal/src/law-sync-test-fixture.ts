@@ -9,7 +9,7 @@ import {
 import { dirname, join } from "node:path";
 import type { Result } from "./inproc";
 
-// Both law-sync test files run the same cases through a runner of their own.
+// The law-sync test files run their cases through a runner of their own.
 export type Runner = {
 	// A fresh executable at <root>/runs/<name>/journal.
 	exe(root: string, name: string): string;

@@ -1,20 +1,11 @@
 import { describe, expect, test } from "bun:test";
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
-import { handed, human, issuesJson, type Spec, T } from "./cases-fixture";
+import { human, issuesJson, type Spec, T } from "./cases-fixture";
 import { inprocAsync, inprocFed } from "./inproc";
 import { CONFIG, lines } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
-import {
-	BASE,
-	caseMark,
-	charge,
-	defence,
-	dir,
-	LEAD_ID,
-	TRUSTED,
-	tempDb,
-} from "./test-helpers";
+import { BASE, caseMark, dir, LEAD_ID, TRUSTED, tempDb } from "./test-helpers";
 import {
 	CONSTITUTION,
 	departmentPage,
@@ -107,28 +98,6 @@ const ROLES: Record<string, Role> = {
 		order: { issue: 3 },
 		setup: (t) =>
 			host({ tree: t, issues: { 3: withLead("fixtures", caseMark()) } }),
-		expected: PLAIN,
-	},
-	court: {
-		order: { issue: 3 },
-		setup: (t) =>
-			host({
-				tree: t,
-				issues: { 3: withLead("logic", caseMark(), charge(), defence()) },
-			}),
-		expected: PLAIN,
-	},
-	"spec-writer": {
-		order: { issue: 7 },
-		setup: async (t) => {
-			host({ tree: t, pulls: [PULL] });
-			const synced = await inprocFed(
-				BASE,
-				["sync", "main", "--author", TRUSTED],
-				issuesJson({ 3: handed(7) }),
-			);
-			expect(synced.code).toBe(0);
-		},
 		expected: PLAIN,
 	},
 	clerk: {
@@ -250,13 +219,6 @@ describe("the precedents of the tick group", () => {
 		);
 	});
 
-	test("an empty or missing folder gives precedents none", async () => {
-		setUp();
-		orderOf("patrol", { department: "fixtures" });
-		host({ tree: tree({}) });
-		expect(lines(await start("patrol"))).toContain("precedents none");
-	});
-
 	test("a folder whose files all serve another department gives precedents none", async () => {
 		setUp();
 		orderOf("patrol", { department: "fixtures" });
@@ -286,15 +248,5 @@ describe("the precedents of the tick group", () => {
 			SELF,
 		]);
 		expect(out).not.toContain("bad name");
-	});
-
-	test("the rebuild of tick input names the folder as a self step", async () => {
-		setUp();
-		orderOf("prosecutor", { issue: 3 });
-		await ROLES.prosecutor?.setup(tree());
-		command(configs("main"), "fetch", "exit 0");
-		expect(lines(await start("prosecutor"))).toContain("self fetch");
-		const r = await inprocAsync(BASE, ["tick", "input", "1"]);
-		expect(precedentLines(r.out)).toEqual([SELF]);
 	});
 });

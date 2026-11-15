@@ -12,7 +12,7 @@ import {
 import { join } from "node:path";
 import { fits } from "./args";
 import { EXIT } from "./db";
-import { inprocAsync, inprocFed } from "./inproc";
+import { inprocAsync } from "./inproc";
 import { config, references } from "./input-test-fixture";
 import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
@@ -163,15 +163,6 @@ describe("precedent: a new precedent", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("an empty section beside one with a new line still writes", async () => {
-		const out = await written([
-			...precedentSection(),
-			"",
-			...precedentSection("- new one: Rule one."),
-		]);
-		expect(out).toEqual([`entry\t${DATE}-one`]);
-	});
-
 	test("a none section beside one with lines changes nothing it should not", async () => {
 		const out = await written([
 			...precedentSection("none"),
@@ -214,13 +205,6 @@ describe("precedent: no precedent is lost", () => {
 		expect(lstatSync(file(`${DATE}-x-2`)).isSymbolicLink()).toBe(true);
 	});
 
-	test("two new lines with one gist get two names", async () => {
-		const out = await written(
-			precedentSection("- new x: One.", "- new x: Two."),
-		);
-		expect(out).toEqual([`entry\t${DATE}-x`, `entry\t${DATE}-x-2\tname-taken`]);
-	});
-
 	test("a refine of a missing precedent writes a new file with its rule", async () => {
 		const out = await written(precedentSection("- refine gone: New rule."));
 		expect(out).toEqual([`entry\t${DATE}-issue-1\trefine-missing`]);
@@ -250,7 +234,6 @@ describe("precedent: no precedent is lost", () => {
 		],
 		["a line above an underline", ["new x: y", "---"], "new x: y"],
 		["a lower heading", ["### new x: y"], "### new x: y"],
-		["a quote", ["> new x: y"], "> new x: y"],
 		["None", ["None"], "None"],
 		["none.", ["none."], "none."],
 		["a two-line paragraph", ["new x: y", "and more"], "new x: y\nand more"],
@@ -737,24 +720,7 @@ describe("oldLineToFile", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("a tail in parentheses that is no link stays in the rule", async () => {
-		// old-precedent list
-		const text = [
-			"# Constitution",
-			"",
-			"## Precedents",
-			"",
-			"- 2026-09-02 #1: Never use bar (important)",
-			"",
-			"## Notes",
-			"",
-			"Kept.",
-			"",
-		].join("\n");
-		expect((await inprocFed(BASE, ["old-precedent", "list"], text)).out).toBe(
-			"line 1 date=2026-09-02 link=no position=1\n~~~rule\nNever use bar (important)\n~~~\n",
-		);
-		// oldLineToFile
+	test("a tail in parentheses that is no link stays in the rule", () => {
 		writeFileSync(
 			page(),
 			PAGE.replace(

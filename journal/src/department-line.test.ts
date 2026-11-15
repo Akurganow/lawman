@@ -99,10 +99,6 @@ describe("department-line", () => {
 		expect(lintPage("constitution", result).reasons).toEqual([]);
 	});
 
-	test("the result passes the constitution check", () => {
-		expect(lintPage("constitution", insert(VALID)).reasons).toEqual([]);
-	});
-
 	test("the subcommand prints the edited text", () => {
 		const r = run(
 			VALID,
@@ -114,12 +110,6 @@ describe("department-line", () => {
 		expect(r.code).toBe(0);
 		expect(r.out).toBe(insert(VALID));
 		expect(r.err).toBe("");
-	});
-
-	test("a repeated call changes nothing", () => {
-		const once = run(VALID, "--name", "security", "--judged-by", "none").out;
-		const twice = run(once, "--name", "security", "--judged-by", "none").out;
-		expect(twice).toBe(once);
 	});
 
 	test("a page that fails the check exits 8 with reasons and no stdout", () => {

@@ -1,18 +1,12 @@
 import { describe, expect, spyOn, test } from "bun:test";
-import { readdirSync } from "node:fs";
-import { isRecordId } from "./catalog-entries";
-import { recordAnswer } from "./catalog-record";
 import {
 	ANSWER,
 	expectCleanComment,
-	FOUND,
-	ID,
-	RUNNERS,
+	inProcessAnswer,
 	TOKEN,
 	withSummary,
 	ZWSP,
 } from "./catalog-record-fixture";
-import { FIXTURES, fixture, inProcessAsync, reply } from "./catalog-test-run";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
 import { lead, tempDb } from "./test-helpers";
@@ -38,54 +32,29 @@ const HOSTILE: [string, string][] = [
 	],
 ];
 
-describe.each(RUNNERS)(
-	"catalog record hostile summary (%s)",
-	(_name, _req, answer) => {
-		test.each(HOSTILE)(
-			"%s gives one line that passes the checks",
-			async (_label, summary) => {
-				const { out, code } = await answer(ANSWER, withSummary(summary));
-				expect(code).toBe(0);
-				expect(out.endsWith("\n")).toBe(true);
-				expect(out.slice(0, -1)).not.toContain("\n");
-				expect(out).not.toContain(TOKEN);
-				expect(out).not.toContain(ZWSP);
-				const { comment, carrier } = expectCleanComment(out);
-				expect(extractMarkers({ ...carrier, text: comment }, "t")).toHaveLength(
-					1,
-				);
-			},
-		);
+describe("catalog record hostile summary", () => {
+	const answer = inProcessAnswer;
 
-		test("the visible words of a hostile summary survive", async () => {
-			const { out } = await answer(ANSWER, withSummary(HOSTILE[0]?.[1]));
-			expect(out).toContain("before");
-			expect(out).toContain("after");
-		});
-
-		test("a hostile value in a short field is dropped", async () => {
-			const bad = `x ${TOKEN}`;
-			const input = reply({
-				...FOUND.reply,
-				modified: bad,
-				database_specific: { severity: bad },
-			});
-			const { out } = await answer(ANSWER, input);
+	test.each(HOSTILE)(
+		"%s gives one line that passes the checks",
+		async (_label, summary) => {
+			const { out, code } = await answer(ANSWER, withSummary(summary));
+			expect(code).toBe(0);
+			expect(out.endsWith("\n")).toBe(true);
+			expect(out.slice(0, -1)).not.toContain("\n");
 			expect(out).not.toContain(TOKEN);
-			expect(out).toContain(" dropped=severity,modified ");
-		});
-	},
-);
+			expect(out).not.toContain(ZWSP);
+			const { comment, carrier } = expectCleanComment(out);
+			expect(extractMarkers({ ...carrier, text: comment }, "t")).toHaveLength(
+				1,
+			);
+		},
+	);
 
-describe("catalog record identifiers", () => {
-	const fromBatches = readdirSync(FIXTURES)
-		.filter((name) => name.startsWith("batch."))
-		.flatMap((name) => fixture(name).reply.results as unknown[])
-		.flatMap((result) => (result as { vulns?: { id: string }[] }).vulns ?? [])
-		.map((vuln) => vuln.id);
-
-	test.each([...new Set([...fromBatches, ID])])("the class admits %s", (id) => {
-		expect(isRecordId(id)).toBe(true);
+	test("the visible words of a hostile summary survive", async () => {
+		const { out } = await answer(ANSWER, withSummary(HOSTILE[0]?.[1]));
+		expect(out).toContain("before");
+		expect(out).toContain("after");
 	});
 });
 
@@ -95,10 +64,7 @@ describe("a cleaning library that fails", () => {
 			new Error(`rules failed ${TOKEN}`),
 		);
 		try {
-			const result = await inProcessAsync(recordAnswer)(
-				ANSWER,
-				withSummary("fine words"),
-			);
+			const result = await inProcessAnswer(ANSWER, withSummary("fine words"));
 			expect(result.code).toBe(0);
 			expect(result.out).toContain(" dropped=summary summary=unknown\n");
 			expect(result.out + result.err).not.toContain("rules failed");

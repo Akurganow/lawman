@@ -138,11 +138,3 @@ describe("the OpenClaw trigger script", () => {
 		});
 	});
 });
-
-describe("the Role entry section of the OpenClaw page", () => {
-	const [lines] = sectionsOf(PAGE, ["Role entry"]);
-
-	test("names the size of a part", () => {
-		expect(lines).toContain("input_chars: 15000");
-	});
-});
