@@ -30,7 +30,7 @@ Each entry of issues:
   title: the title
   url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
-  author: login
+  author.login: the login of its author
   body: the body text
   comments: comments by people and accounts, oldest first.
     The host's own event notes are not comments

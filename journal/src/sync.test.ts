@@ -444,6 +444,47 @@ describe("sync", () => {
 		]);
 	});
 
+	test("an author that is no object with a login is rejected", () => {
+		sync(issues);
+		const before = snapshot();
+		const r = sync([
+			{
+				number: 9,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: "reporter",
+			},
+		]);
+		expect(r.code).toBe(4);
+		expect(r.err).toContain(
+			"journal: sync input rejected, cache untouched: an author is an object with a login or null",
+		);
+		expect(snapshot()).toEqual(before);
+	});
+
+	test("a comment author that is no object with a login is rejected", () => {
+		sync(issues);
+		const before = snapshot();
+		const r = sync([
+			{
+				number: 9,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "someone" },
+				comments: [
+					{ id: "C1", author: "reporter", body: "hi", createdAt: CREATED },
+				],
+			},
+		]);
+		expect(r.code).toBe(4);
+		expect(r.err).toContain(
+			"journal: sync input rejected, cache untouched: a comment author is an object with a login or null",
+		);
+		expect(snapshot()).toEqual(before);
+	});
+
 	test("an unknown precinct exits 1 and a bad login exits 1", () => {
 		expect(
 			feed(EMPTY_FORM, ["sync", "nowhere", "--author", TRUSTED]).code,
