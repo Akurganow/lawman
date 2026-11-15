@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { EXIT } from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
@@ -97,30 +98,27 @@ describe("sync", () => {
 		markers: rows("SELECT * FROM markers ORDER BY issue, ord"),
 		synced: rows("SELECT synced_at FROM precincts"),
 	});
-	const human = (i: (typeof issues)[number]) =>
-		i.author.is_bot !== true && !i.author.login.startsWith("app/");
 	const lines = (i: (typeof issues)[number]) =>
 		[i.body, ...i.comments.map((c) => c.body)].flatMap((t) => t.split("\n"));
 
 	beforeEach(() => addPrecincts({ [PRECINCT]: 1 }));
 
 	test("a fixture sync prints counts that match the fixture", () => {
-		const kept = issues.filter(human);
-		const found = kept.map((i) => collectIssueMarkers(i, TRUSTED));
+		const found = issues.map((i) => collectIssueMarkers(i, TRUSTED));
 		const markers = found.reduce((n, f) => n + f.markers.length, 0);
 		const legacy = found
 			.flatMap((f) => f.markers)
 			.filter((m) => m.marker.fields.legacy !== undefined).length;
-		const shaped = kept
+		const shaped = issues
 			.flatMap(lines)
 			.filter((l) => l.startsWith("<!-- lawman:")).length;
 		const r = sync(issues);
 		expect(r.code).toBe(0);
 		expect(r.out.trim()).toBe(
-			`issues=${kept.length} leads=${found.filter((f) => f.leadOrigin).length} markers=${markers} invalid=${shaped - (markers - legacy)} skipped=${issues.length - kept.length}`,
+			`issues=${issues.length} leads=${found.filter((f) => f.leadOrigin).length} markers=${markers} invalid=${shaped - (markers - legacy)}`,
 		);
 		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([
-			{ n: kept.length },
+			{ n: issues.length },
 		]);
 		expect(rows("SELECT count(*) AS n FROM markers")).toEqual([{ n: markers }]);
 		expect(rows("SELECT synced_at IS NOT NULL AS ok FROM precincts")).toEqual([
@@ -344,7 +342,7 @@ describe("sync", () => {
 		expect(snapshot()).toEqual(before);
 		const r = sync([], ["--reset"]);
 		expect(r.code).toBe(0);
-		expect(r.out.trim()).toBe("issues=0 leads=0 markers=0 invalid=0 skipped=0");
+		expect(r.out.trim()).toBe("issues=0 leads=0 markers=0 invalid=0");
 		expect(rows("SELECT count(*) AS n FROM issues")).toEqual([{ n: 0 }]);
 		expect(rows("SELECT count(*) AS n FROM markers")).toEqual([{ n: 0 }]);
 	});
@@ -368,7 +366,7 @@ describe("sync", () => {
 		expect(snapshot()).toEqual(before);
 	});
 
-	test("issues of other humans are stored and their markers do not count", () => {
+	test("issues of other authors are stored and their markers do not count", () => {
 		const foreign = {
 			number: 50,
 			state: "OPEN",
@@ -379,7 +377,7 @@ describe("sync", () => {
 			comments: [],
 		};
 		const r = sync([issues[0], foreign]);
-		expect(r.out.trim()).toBe("issues=2 leads=1 markers=2 invalid=1 skipped=0");
+		expect(r.out.trim()).toBe("issues=2 leads=1 markers=2 invalid=1");
 		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
 			{ issue: 1 },
 			{ issue: 50 },
@@ -394,13 +392,97 @@ describe("sync", () => {
 		["an app login", { login: "app/renovate", is_bot: false }],
 		["no author", null],
 		["an empty login", { login: "" }],
-	])("an issue by %s is skipped and counted", (_name, author) => {
+	])("an issue by %s is stored and counted", (_name, author) => {
 		const r = sync([
 			issues[0],
 			{ number: 51, state: "OPEN", title: "x", createdAt: CREATED, author },
 		]);
-		expect(r.out.trim()).toBe("issues=1 leads=1 markers=2 invalid=0 skipped=1");
-		expect(rows("SELECT issue FROM issues")).toEqual([{ issue: 1 }]);
+		expect(r.out.trim()).toBe("issues=2 leads=1 markers=2 invalid=0");
+		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
+			{ issue: 1 },
+			{ issue: 51 },
+		]);
+	});
+
+	test("an issue by an excluded author is left out and counted", () => {
+		writeFileSync(
+			join(dir, "config.yaml"),
+			`excluded_authors: ${PRECINCT}-x=someone ${PRECINCT}=dependabot,renovate\n`,
+		);
+		const r = sync([
+			issues[0],
+			{
+				number: 51,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "dependabot" },
+				body: lead(),
+				comments: [],
+			},
+			{
+				number: 52,
+				state: "OPEN",
+				title: "y",
+				createdAt: CREATED,
+				author: { login: "Renovate" },
+			},
+			{
+				number: 53,
+				state: "OPEN",
+				title: "z",
+				createdAt: CREATED,
+				author: { login: "someone" },
+			},
+		]);
+		expect(r.out.trim()).toBe(
+			"issues=2 leads=1 markers=2 invalid=0 excluded=2",
+		);
+		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
+			{ issue: 1 },
+			{ issue: 53 },
+		]);
+	});
+
+	test("an author that is no object with a login is rejected", () => {
+		sync(issues);
+		const before = snapshot();
+		const r = sync([
+			{
+				number: 9,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: "reporter",
+			},
+		]);
+		expect(r.code).toBe(4);
+		expect(r.err).toContain(
+			"journal: sync input rejected, cache untouched: an author is an object with a login or null",
+		);
+		expect(snapshot()).toEqual(before);
+	});
+
+	test("a comment author that is no object with a login is rejected", () => {
+		sync(issues);
+		const before = snapshot();
+		const r = sync([
+			{
+				number: 9,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "someone" },
+				comments: [
+					{ id: "C1", author: "reporter", body: "hi", createdAt: CREATED },
+				],
+			},
+		]);
+		expect(r.code).toBe(4);
+		expect(r.err).toContain(
+			"journal: sync input rejected, cache untouched: a comment author is an object with a login or null",
+		);
+		expect(snapshot()).toEqual(before);
 	});
 
 	test("an unknown precinct exits 1 and a bad login exits 1", () => {
@@ -426,7 +508,7 @@ describe("sync", () => {
 	test("status counts the synced leads by department", () => {
 		sync(issues);
 		const want = new Map<string, number>();
-		for (const i of issues.filter(human).filter((x) => x.state === "OPEN")) {
+		for (const i of issues.filter((x) => x.state === "OPEN")) {
 			const dept = collectIssueMarkers(i, TRUSTED).leadOrigin?.marker.fields
 				.department;
 			if (dept !== undefined) want.set(dept, (want.get(dept) ?? 0) + 1);

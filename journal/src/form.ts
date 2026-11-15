@@ -30,7 +30,7 @@ Each entry of issues:
   title: the title
   url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
-  author: login, and is_bot, true for an automated account
+  author.login: the login of its author
   body: the body text
   comments: comments by people and accounts, oldest first.
     The host's own event notes are not comments
@@ -90,7 +90,7 @@ const EXAMPLES: Record<FormKind, unknown> = {
 				url: "https://host.example/owner/repo/issues/3",
 				createdAt: "2026-10-14T09:00:00Z",
 				closedAt: "2026-10-15T09:00:00Z",
-				author: { login: "reporter", is_bot: false },
+				author: { login: "reporter" },
 				body: "Example body",
 				comments: [
 					{

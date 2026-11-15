@@ -214,9 +214,7 @@ describe("the texts in the cache", () => {
 			},
 		]);
 		const r = await onlyFaultFails(() => sync("a", JSON.stringify(form)));
-		expect(r.out).toBe(
-			"issues=1 leads=0 markers=0 invalid=0 skipped=0 withheld=2\n",
-		);
+		expect(r.out).toBe("issues=1 leads=0 markers=0 invalid=0 withheld=2\n");
 		expect(texts("a").issues).toEqual([{ issue: 1, body: WITHHELD }]);
 		expect(texts("a").comments.map((c) => c.body)).toEqual(["fine", WITHHELD]);
 	});

@@ -19,6 +19,7 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
+import { excludedAuthors, readConfig } from "./input-files";
 import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
@@ -30,20 +31,12 @@ type SyncStats = {
 	leads: number;
 	markers: number;
 	invalid: number;
-	skipped: number;
 };
 
 const markerShaped = (issue: SyncIssue) =>
 	[issue.body, ...issue.comments.map((c) => c.body)]
 		.flatMap((t) => t.split("\n"))
 		.filter((l) => l.startsWith(MARKER_PREFIX)).length;
-
-const APP_LOGIN_PREFIX = "app/";
-
-const isHuman = (issue: SyncIssue) =>
-	issue.author !== null &&
-	!issue.bot &&
-	!issue.author.login.startsWith(APP_LOGIN_PREFIX);
 
 // The newest comment by the issue author that carries no marker line.
 function repliedAt(issue: SyncIssue): string | null {
@@ -147,7 +140,6 @@ function replaceCache(
 		leads: 0,
 		markers: 0,
 		invalid: 0,
-		skipped: 0,
 	};
 	if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 		throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
@@ -159,11 +151,8 @@ function replaceCache(
 	db.run("DELETE FROM markers WHERE precinct = ?", [name]);
 	db.run("DELETE FROM issues WHERE precinct = ?", [name]);
 	dropComments(db, name, "issue");
-	for (const issue of issues) {
-		const text = texts.get(issue);
-		if (text === undefined) stats.skipped++;
-		else storeIssue(db, name, issue, text, trust, stats);
-	}
+	for (const [issue, text] of texts)
+		storeIssue(db, name, issue, text, trust, stats);
 	db.run("UPDATE precincts SET synced_at = ? WHERE name = ?", [now(), name]);
 	return stats;
 }
@@ -183,10 +172,15 @@ export async function syncIssues(
 	reset: boolean,
 ): Promise<string> {
 	const { writers, issues } = readIssues(input);
-	const stored = issues.filter(isHuman);
+	const excludedLogins = excludedAuthors(readConfig(), name);
+	const kept = issues.filter(
+		(issue) =>
+			issue.author === null ||
+			!excludedLogins.has(asciiLower(issue.author.login)),
+	);
 	const cleaned = await cleanTexts(
 		name,
-		stored.map((issue) => ({ item: issue, text: issueText(issue) })),
+		kept.map((issue) => ({ item: issue, text: issueText(issue) })),
 	);
 	const texts = new Map(cleaned.map(({ item, done }) => [item, done]));
 	return withDb((db) => {
@@ -202,7 +196,8 @@ export async function syncIssues(
 			);
 		}
 		const held = withheldCount(cleaned);
-		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid} skipped=${stats.skipped}${held > 0 ? ` withheld=${held}` : ""}`;
+		const excluded = issues.length - kept.length;
+		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid}${excluded > 0 ? ` excluded=${excluded}` : ""}${held > 0 ? ` withheld=${held}` : ""}`;
 	});
 }
 

@@ -14,7 +14,6 @@ export type SyncComment = GhIssue["comments"][number] & {
 	rejectedBy: string[];
 };
 export type SyncIssue = Omit<GhIssue, "comments"> & {
-	bot: boolean;
 	state: string;
 	stateReason: string | null;
 	title: string;
@@ -31,13 +30,21 @@ export const syncInput = (why: string) =>
 const timeField = (v: unknown, what: string) => timeOf(v, what, syncInput);
 const logins = (v: unknown, what: string) => loginList(v, what, syncInput);
 
+// an author is an object with a login or null; a silent null would lose the identity
+function authorOf(raw: Record<string, unknown>, what: string) {
+	const author = raw.author;
+	if (author === undefined || author === null) return null;
+	if (!isRecord(author) || typeof author.login !== "string")
+		throw syncInput(`${what} is an object with a login or null`);
+	return author.login === "" ? null : { login: author.login };
+}
+
 function readComment(c: Record<string, unknown>): SyncComment {
 	if (!COMMENT_ID.test(text(c.id)))
 		throw syncInput("a comment id is letters, digits, _, = or -");
-	const login = isRecord(c.author) ? text(c.author.login) : "";
 	return {
 		id: text(c.id),
-		author: login === "" ? null : { login },
+		author: authorOf(c, "a comment author"),
 		body: text(c.body),
 		createdAt: timeField(c.createdAt, "a comment createdAt"),
 		approvedBy: logins(c.approvedBy, "a comment approvedBy"),
@@ -68,20 +75,18 @@ function readIssue(raw: unknown): SyncIssue {
 		throw syncInput("a stateReason is upper case, such as COMPLETED");
 	}
 	const closed = textOrNull(raw.closedAt);
-	const login = isRecord(raw.author) ? text(raw.author.login) : "";
 	const comments = Array.isArray(raw.comments)
 		? raw.comments.filter(isRecord)
 		: [];
 	return {
 		number: raw.number as number,
-		bot: isRecord(raw.author) && raw.author.is_bot === true,
 		state: raw.state,
 		stateReason: textOrNull(reason),
 		title: text(raw.title),
 		url: linkOrNull(raw.url),
 		createdAt: timeField(raw.createdAt, "an issue createdAt"),
 		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
-		author: login === "" ? null : { login },
+		author: authorOf(raw, "an author"),
 		body: text(raw.body),
 		comments: comments.map(readComment),
 	};

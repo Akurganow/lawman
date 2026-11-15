@@ -382,7 +382,7 @@ journal run-installation <release <repo> <tag>|verify <asset> <provenance> <repo
 The journal checks every argument against its class before the command runs. An argument outside its class never reaches the command.
 
 - A name of a precinct, a role or a department starts with a lowercase letter and holds lowercase letters, digits and `-`.
-- A login is a string of ASCII letters, digits, `.`, `_` and `-`. It does not start with `.` or `-`.
+- A login is a string of ASCII letters, digits, `.`, `_` and `-`. It does not start with `.` or `-`. A bot login of the host is that string with the suffix `[bot]`.
 - A name of a precedent is a string of ASCII letters, digits, `.`, `_` and `-`. It starts with a letter or a digit.
 - An outcome of `tick end --outcome` is a token that [the law](../skills/lawman-law/references/LAW.md#one-tick-one-case-exit) names, or `skipped-<slug>` or `stopped-<slug>`. A slug holds lowercase letters, digits and `-`. The journal refuses any other token.
 - A revision is one string of ASCII letters, digits and `.` `_` `-` `/` `:` `+`. It does not start with `-`. Its length and shape are free, so a Git hash of 40 or 64 characters and a Subversion number both pass.

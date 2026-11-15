@@ -24,7 +24,6 @@ const FIELDS = {
 		"stateReason",
 		"createdAt",
 		"closedAt",
-		"is_bot",
 		"approvedBy",
 		"rejectedBy",
 	],
@@ -43,7 +42,7 @@ Each entry of issues:
   title: the title
   url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
-  author: login, and is_bot, true for an automated account
+  author.login: the login of its author
   body: the body text
   comments: comments by people and accounts, oldest first.
     The host's own event notes are not comments
@@ -143,7 +142,7 @@ describe("each example passes its reader", () => {
 		);
 		expect(r).toMatchObject({
 			code: 0,
-			out: "issues=1 leads=0 markers=0 invalid=0 skipped=0\n",
+			out: "issues=1 leads=0 markers=0 invalid=0\n",
 		});
 		expect(
 			rows("SELECT issue, state, created_at, closed_at FROM issues"),
