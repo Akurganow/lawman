@@ -4,6 +4,21 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v2.0.0 - 2026-11-15
+#### Features
+- (**journal**) leave the excluded authors of a precinct out of the roles' input (1cb90b3)
+- (**journal**) accept a host's bot login with a [bot] suffix (ad4c82d)
+- BREAKING: stop excluding automatic accounts from the issue sync (8524b31)
+#### Bug Fixes
+- (**journal**) reject a malformed author and name the field author.login (ba858b4)
+#### Documentation
+- let the exclusions name application accounts and write only on an answer (ab4b3d2)
+- fix the exclusion instructions per review (70969ac)
+- recommend a separate identity for the schedule (98c1caa)
+
+- - -
+
+
 ## v1.5.5 - 2026-11-15
 #### Bug Fixes
 - accept the briefed outcome token in the journal (a87bef2)
