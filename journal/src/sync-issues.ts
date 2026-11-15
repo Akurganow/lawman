@@ -14,7 +14,6 @@ export type SyncComment = GhIssue["comments"][number] & {
 	rejectedBy: string[];
 };
 export type SyncIssue = Omit<GhIssue, "comments"> & {
-	bot: boolean;
 	state: string;
 	stateReason: string | null;
 	title: string;
@@ -74,7 +73,6 @@ function readIssue(raw: unknown): SyncIssue {
 		: [];
 	return {
 		number: raw.number as number,
-		bot: isRecord(raw.author) && raw.author.is_bot === true,
 		state: raw.state,
 		stateReason: textOrNull(reason),
 		title: text(raw.title),

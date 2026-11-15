@@ -12,7 +12,7 @@ This page summarises the law and links the files that bind each part. Where this
 | :-- | :-- | :-- |
 | Duty desk | The journal and the synced trackers of every precinct with a weight above zero | One order for every case, pull request, waiting issue and patrol visit that needs a role. No issue and no comment. |
 | Patrol | An order that names a precinct and a department | At most the cap of draft leads, each an issue with a `lead` marker |
-| Response unit | An order on an issue that a human wrote | One comment: a lead, a question or an out. No label and no alarm |
+| Response unit | An order on an issue | One comment: a lead, a question or an out. No label and no alarm |
 | Investigation | An order on an issue with a lead | A `Case` comment with facts only |
 | Prosecutor | An order on an issue with a case | A `Decision` comment: charge, return or decline |
 | Defender | An order on a charged case | A `Defence` comment: defence, return or refute |
@@ -45,7 +45,7 @@ The department `vulnerabilities` works differently, because the finding is a mat
 
 ### Response unit
 
-The response unit takes an order on an issue that a human wrote. It reads the issue and its comments as evidence. It leaves one comment with one marker:
+The response unit takes an order on an issue. It reads the issue and its comments as evidence. It leaves one comment with one marker:
 
 - A `Lead` comment turns the issue into a lead. The marker is `stage=lead` with `department=-`.
 - A `Question` comment asks the reporter one question. The marker is `stage=await`.
@@ -177,7 +177,7 @@ The duty desk runs first.
 - It closes the stale orders of the precincts it read.
 - It computes the alarms, as [Alarms](#alarms) says.
 
-The response unit gets an order when a human-written issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
+The response unit gets an order when an issue still waits for a lead, a question or an out. Priority orders the queues of the clerk, the spec writer and the executor, P0 first.
 
 Each role then starts independently. It takes up to its number of jobs from the orders of its input. It starts one tick for each, with `bin/journal tick start --role <role> --order <id>`. Orders nobody took come first, then taken ones. Patrol takes its orders by weight. A role with no order answers the silence form and records no tick. The tick closes the order with its outcome. A taken order that nobody finishes stays takeable.
 

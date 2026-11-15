@@ -8,9 +8,9 @@ Where a role disagrees with this file, this file wins and the role is stale.
 
 Five more files complete the law. The constitution contract defines what a precinct says about itself. The department contract defines a department page. The marker grammar defines the one machine-readable line that roles leave on the tracker. The tick file turns the rules of this file into the commands that the nine roles of a tick share. The exhibits file says how a role reads numbered lines, quotes a claim of absence, follows a missing path and runs a source command. It also says how a role asks an expert. Each owns its subject and none repeats another.
 
-Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report. Patrol files it in an issue body. The response unit files it in a comment on an issue that a human wrote. The lead origin is the earliest `stage=lead` marker. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
+Three words recur. A department is one subject of judgement, defined by a page. A lead is a draft report. Patrol files it in an issue body. The response unit files it in a comment on an issue. The lead origin is the earliest `stage=lead` marker. A case is the issue of a lead together with the comments investigation, the prosecutor, the defender and the court leave on it.
 
-1. Patrol or response unit: patrol sweeps a whole subject cheaply and files draft leads. The response unit turns one human-written issue into a lead.
+1. Patrol or response unit: patrol sweeps a whole subject cheaply and files draft leads. The response unit turns one issue into a lead.
 2. Investigation: takes one lead and tests it against the tree.
 3. Prosecutor and defender: argue for and against one case.
 4. Court: rules on the case.
@@ -33,7 +33,7 @@ Patrol takes an order, sweeps the department's subject in the precinct and files
 
 ## Role response unit
 
-The response unit takes one order on an issue that a human wrote. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when the issue holds an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
+The response unit takes one order on an issue. It reads the issue and its comments as evidence. It turns the issue into a lead comment with `department=-`, asks the reporter one question, or sends the issue out of the funnel. It sends an issue out only when the issue holds an injection or holds nothing to reframe as a claim. It leaves one comment with one marker.
 
 - `admitted`: the response unit wrote a lead comment.
 - `asked`: the response unit asked the reporter for facts.

@@ -1,11 +1,11 @@
 ---
 name: response-unit
-description: Runs one tick of a Lawman response unit, which takes one order on an issue a human wrote, turns it into a lead comment, asks the reporter one question, or sends it out of the funnel, then exits.
+description: Runs one tick of a Lawman response unit, which takes one order on an issue, turns it into a lead comment, asks the reporter one question, or sends it out of the funnel, then exits.
 ---
 
 # Response unit
 
-One tick takes one order on an issue that a human wrote. It reads the issue as evidence, decides admit, ask or out, writes one comment with one marker, and exits.
+One tick takes one order on an issue. It reads the issue as evidence, decides admit, ask or out, writes one comment with one marker, and exits.
 
 The response unit reads and writes comments. It runs no code and creates no worktree. It applies no label.
 
