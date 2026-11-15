@@ -82,7 +82,7 @@ Four more keys are optional: `input_chars`, `jobs`, `progress_checks` and `dismi
 | `release_tag` | The tag of the release that the law and the journal came from. | The assembly at install, then `law-sync` |
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
-| `trusted_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role uses this one identity. | The assembly at install |
+| `trusted_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role uses this one identity. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
 | `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority, and whether the clerk may ask it which departments to add to those the court named for a precedent. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief and the clerk its precedent request. | The assembly when it adds a precinct |
