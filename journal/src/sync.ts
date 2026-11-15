@@ -19,6 +19,7 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
+import { excludedAuthors, readConfig } from "./input-files";
 import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
@@ -171,9 +172,15 @@ export async function syncIssues(
 	reset: boolean,
 ): Promise<string> {
 	const { writers, issues } = readIssues(input);
+	const excludedLogins = excludedAuthors(readConfig(), name);
+	const kept = issues.filter(
+		(issue) =>
+			issue.author === null ||
+			!excludedLogins.has(asciiLower(issue.author.login)),
+	);
 	const cleaned = await cleanTexts(
 		name,
-		issues.map((issue) => ({ item: issue, text: issueText(issue) })),
+		kept.map((issue) => ({ item: issue, text: issueText(issue) })),
 	);
 	const texts = new Map(cleaned.map(({ item, done }) => [item, done]));
 	return withDb((db) => {
@@ -189,7 +196,8 @@ export async function syncIssues(
 			);
 		}
 		const held = withheldCount(cleaned);
-		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid}${held > 0 ? ` withheld=${held}` : ""}`;
+		const excluded = issues.length - kept.length;
+		return `issues=${stats.issues} leads=${stats.leads} markers=${stats.markers} invalid=${stats.invalid}${excluded > 0 ? ` excluded=${excluded}` : ""}${held > 0 ? ` withheld=${held}` : ""}`;
 	});
 }
 

@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, spyOn, test } from "bun:test";
 import * as fs from "node:fs";
-import { mkdirSync, rmSync } from "node:fs";
+import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { EXIT } from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
@@ -400,6 +401,46 @@ describe("sync", () => {
 		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
 			{ issue: 1 },
 			{ issue: 51 },
+		]);
+	});
+
+	test("an issue by an excluded author is left out and counted", () => {
+		writeFileSync(
+			join(dir, "config.yaml"),
+			`excluded_authors: ${PRECINCT}-x=someone ${PRECINCT}=dependabot,renovate\n`,
+		);
+		const r = sync([
+			issues[0],
+			{
+				number: 51,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "dependabot" },
+				body: lead(),
+				comments: [],
+			},
+			{
+				number: 52,
+				state: "OPEN",
+				title: "y",
+				createdAt: CREATED,
+				author: { login: "Renovate" },
+			},
+			{
+				number: 53,
+				state: "OPEN",
+				title: "z",
+				createdAt: CREATED,
+				author: { login: "someone" },
+			},
+		]);
+		expect(r.out.trim()).toBe(
+			"issues=2 leads=1 markers=2 invalid=0 excluded=2",
+		);
+		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
+			{ issue: 1 },
+			{ issue: 53 },
 		]);
 	});
 

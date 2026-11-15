@@ -198,7 +198,7 @@ Read every issue of `<owner/repo>` from the host, open and closed, with the comm
 bin/journal sync <p> --author <login>
 ```
 
-The output is `issues= leads= markers= invalid=`, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure fails the sync. A failed sync ends no tick, and the cache keeps its old data. The `unsynced` line of the intro names it.
+The output is `issues= leads= markers= invalid=`, and `excluded=<n>` when the sync left out the authors that `excluded_authors` names, and `withheld=<n>` when the sync withheld texts. Exit 4 or any other failure fails the sync. A failed sync ends no tick, and the cache keeps its old data. The `unsynced` line of the intro names it.
 
 ## Sync the pull requests
 

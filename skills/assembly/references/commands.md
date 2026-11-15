@@ -39,7 +39,7 @@ Compare what the command printed with a value that you get from the host separat
 | :-- | :-- |
 | `fetch` | The printed revision equals the tip of the default branch as the host reports it, and the tip of the local clone equals it. |
 | `identity` | The printed login equals the account that the host reports for the tool. |
-| `issues` | `issues=` equals the host's count for the same set. `invalid=` is shown as a number and decides nothing. |
+| `issues` | `issues=` plus `excluded=` equals the host's count for the same set. `excluded=` appears only when `excluded_authors` names authors. `invalid=` is shown as a number and decides nothing. |
 | `pulls` | The count of open pull requests equals the host's count. |
 | `decider`, `file`, `files` | The run is in form, and the journal's reader reads the output. `decider` gets the number of a closed issue from this same check. `file` gets a path from the list that `files` printed, and that path must lie in the clone. The value is not compared, and the proposal says so. |
 

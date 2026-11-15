@@ -143,7 +143,7 @@ The rows for a constitution that passes lint:
 
 Then decide.
 
-41. Ask in the question tool, in one call for this repository, after the screens and the old-precedent calls. The call holds the approval, the TypeSafe consent, the catalog consent and the documents question. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
+41. Ask in the question tool, in one call for this repository, after the screens and the old-precedent calls. The call holds the approval, the TypeSafe consent, the catalog consent, the exclusions question and the documents question. When the limit of the tool splits the call, send the parts back to back and take their answers as one decision.
 42. For an absent constitution, offer "Open the pull request" (recommended), "Change" and "Skip".
 43. For a constitution that passes lint, offer "Add the precinct" (recommended) and "Skip".
 44. When `typesafe` is yes in `config.yaml`, ask the consent for this repository in the same call.
@@ -158,6 +158,8 @@ Then decide.
 > May the patrol send the names and versions of the packages that <owner>/<repo> pins to the OSV service at every visit? The repository is <private|public>, and the list of a private repository leaves too. The service sees this installation's address.
 
 49. When the repository lacks typical documents, ask the question of "Recommended documents" in the same call.
+49a. Ask the exclusions question in the same call: whether the repository holds authors whose issues must stay out of Lawman's input — automation such as a dependency bot, or any user. Offer "Nothing" (recommended) and "Exclude authors", which takes the logins as free text. Name the consequence: the journal leaves those authors' issues out of the input of every role. A skip or an empty answer reads as "Nothing".
+49b. For "Exclude authors", write the pair `<precinct>=<login>,<login>` into `excluded_authors` of `config.yaml`, creating the key below the other keys when it is absent. Each login matches the journal's login class: ASCII letters, digits, `.`, `_` and `-`, not starting with `.` or `-`. A key that is there keeps its other pairs.
 50. Treat a skip or an empty answer as "Skip", a missing consent as "No", and a missing documents choice as "Skip".
 51. On "Skip", write nothing for the repository, and go on with the next one. No command file, no host action, no move and no pull request follows. Remove the throwaway base of "Prove a command" for the repository.
 52. On "Change", apply the rule "Bulk edits" of `SKILL.md` to the rows.
