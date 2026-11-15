@@ -159,7 +159,7 @@ Then decide.
 
 49. When the repository lacks typical documents, ask the question of "Recommended documents" in the same call.
 49a. Ask the exclusions question in the same call: whether the repository holds authors whose issues must stay out of Lawman's input — automation such as a dependency bot, or any user. Offer "Nothing" (recommended) and "Exclude authors", which takes the logins as free text. Name the consequence: the journal leaves those authors' issues out of the input of every role. A skip or an empty answer reads as "Nothing".
-49b. For "Exclude authors", write the pair `<precinct>=<login>,<login>` into `excluded_authors` of `config.yaml`, creating the key below the other keys when it is absent. Each login matches the journal's login class: ASCII letters, digits, `.`, `_` and `-`, not starting with `.` or `-`. A key that is there keeps its other pairs.
+49b. For "Exclude authors", note the pair `<precinct name>=<login>,<login>`. Each login matches the journal's login class: ASCII letters, digits, `.`, `_` and `-`, not starting with `.` or `-`, with an optional `[bot]` suffix. An exclusion matches the complete login the host reports, such as `dependabot[bot]`. Item 75a writes the pair after the approval.
 50. Treat a skip or an empty answer as "Skip", a missing consent as "No", and a missing documents choice as "Skip".
 51. On "Skip", write nothing for the repository, and go on with the next one. No command file, no host action, no move and no pull request follows. Remove the throwaway base of "Prove a command" for the repository.
 52. On "Change", apply the rule "Bulk edits" of `SKILL.md` to the rows.
@@ -199,6 +199,7 @@ Run this section once for a precinct, when its catalog consent is "Yes" or its l
 73. Run `bin/journal precinct add <precinct name> --repo <owner>/<repo> --weight <w>`, and stop if it fails, showing the message. `<w>` is the Weight row of the proposal. A new draft always takes 0.
 74. When the call asked the TypeSafe consent, set `<precinct name>=<answer>` in `typesafe_precincts`.
 75. When the call asked the catalog consent, set `<precinct name>=<answer>` in `catalog_precincts`.
+75a. When the call asked the exclusions, set `<precinct name>=<login>,<login>` in `excluded_authors`, creating the key below the other keys when it is absent.
 76. In each, replace `none`, replace an existing pair for that name, and never append a second one.
 77. Read `config.yaml` again, so the pairs of the license questions stay. Write it, and read it back.
 77a. Run the subsection "Write the commands" of "Commands of the precinct". The precinct is in the journal now.
