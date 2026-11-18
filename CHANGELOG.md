@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.2 - 2026-11-18
+#### Bug Fixes
+- (**law**) name the delimiter suffix without a placeholder (05bcc03)
+- (**law**) extend the heredoc delimiter instead of failing the tick (dba3fc5)
+- (**law**) keep an issue with an instruction in the funnel (ea04243)
+
+- - -
+
+
 ## v3.0.1 - 2026-11-18
 #### Bug Fixes
 - (**assembly**) compare pulls= with the pull requests of trusted authors (4f2792f)
