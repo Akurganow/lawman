@@ -40,7 +40,7 @@ Compare what the command printed with a value that you get from the host separat
 | `fetch` | The printed revision equals the tip of the default branch as the host reports it, and the tip of the local clone equals it. |
 | `identity` | The printed login equals the account that the host reports for the tool. |
 | `issues` | `issues=` plus `excluded=` equals the host's count for the same set. An absent `excluded=` is zero, and the field appears only when the count is positive. `invalid=` is shown as a number and decides nothing. |
-| `pulls` | The count of open pull requests equals the host's count. |
+| `pulls` | `pulls=` equals the host's count of the open pull requests of trusted authors. |
 | `decider`, `file`, `files` | The run is in form, and the journal's reader reads the output. `decider` gets the number of a closed issue from this same check. `file` gets a path from the list that `files` printed, and that path must lie in the clone. The value is not compared, and the proposal says so. |
 
 - Judge a run by the first line that the journal printed. It is the outcome line, such as `revision=<revision>`, `login=<login>`, the counts of `issues` and `pulls`, `verify passed` or `<operation> failed reason=<reason>`. A failure line is followed by its `error` fence. In the tick environment the harness page gives that output as the record of the run, with the surrounding whitespace trimmed.
