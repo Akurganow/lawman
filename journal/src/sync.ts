@@ -20,7 +20,7 @@ import {
 	withDb,
 } from "./db";
 import { countedLogins, excludedAuthors, readConfig } from "./input-files";
-import { asciiLower, collectIssueMarkers, type Logins } from "./markers";
+import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
@@ -50,16 +50,16 @@ function repliedAt(issue: SyncIssue): string | null {
 	return times.length === 0 ? null : times.reduce((a, b) => (a > b ? a : b));
 }
 
-type Trust = { login: Logins; writers: Set<string> };
+type Trust = { counted: ReadonlySet<string>; writers: Set<string> };
 
 function storeMarkers(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
-	login: Logins,
+	counted: ReadonlySet<string>,
 	stats: SyncStats,
 ): void {
-	const { markers, leadOrigin } = collectIssueMarkers(issue, login);
+	const { markers, leadOrigin } = collectIssueMarkers(issue, counted);
 	for (const { ord, marker } of markers) {
 		const isLead = marker.stage === "lead";
 		db.run(
@@ -102,7 +102,7 @@ function storeIssue(
 	trust: Trust,
 	stats: SyncStats,
 ): void {
-	const answer = answerOf(issue, trust.login, trust.writers);
+	const answer = answerOf(issue, trust.counted, trust.writers);
 	db.run(
 		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		[
@@ -123,7 +123,7 @@ function storeIssue(
 		],
 	);
 	storeComments(db, name, "issue", issue.number, text.comments, syncInput);
-	storeMarkers(db, name, issue, trust.login, stats);
+	storeMarkers(db, name, issue, trust.counted, stats);
 	stats.issues++;
 }
 
@@ -191,7 +191,7 @@ export async function syncIssues(
 				replaceCache(
 					db,
 					name,
-					{ login: countedLogins(config, login), writers },
+					{ counted: countedLogins(config, login), writers },
 					issues,
 					texts,
 					reset,

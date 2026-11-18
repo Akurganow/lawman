@@ -11,13 +11,7 @@ import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
 import { countedLogins, readConfig } from "./input-files";
 import { linkOrNull } from "./link";
-import {
-	asciiLower,
-	counts,
-	extractMarkers,
-	type Logins,
-	stripCr,
-} from "./markers";
+import { asciiLower, counts, extractMarkers, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
 export type Work = "todo" | "ready" | "returned";
@@ -134,7 +128,7 @@ type Counted = { ord: string; comment: Comment };
 // the comment that carries the newest counted marker of a role and stage
 function newestMarker(
 	pull: Pull,
-	login: Logins,
+	counted: ReadonlySet<string>,
 	want: { role: string; stage: string },
 ): Counted | null {
 	let newest: Counted | null = null;
@@ -146,7 +140,7 @@ function newestMarker(
 				rank,
 				author: comment.author,
 			},
-			login,
+			counted,
 		);
 		for (const { ord, marker } of found)
 			if (
@@ -170,11 +164,11 @@ function specVote(spec: Counted | null, writers: Set<string>): Vote {
 
 function workOf(
 	pull: Pull,
-	login: Logins,
+	counted: ReadonlySet<string>,
 	writers: Set<string>,
 	spec: Counted | null,
 ): Work {
-	const done = newestMarker(pull, login, READY);
+	const done = newestMarker(pull, counted, READY);
 	if (done === null || spec === null || done.ord <= spec.ord) return "todo";
 	const sentBack = pull.changesRequested.some(
 		(review) => writers.has(review.login) && review.at > done.comment.createdAt,
@@ -203,21 +197,24 @@ const pullText = (pull: Pull): HostText => ({
 	})),
 });
 
-export function readPulls(input: string, login: Logins): ReadPull[] {
+export function readPulls(
+	input: string,
+	counted: ReadonlySet<string>,
+): ReadPull[] {
 	const { writers, pulls } = readForm(input);
 	const read: ReadPull[] = [];
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		if (!counts(login, text(raw.author))) continue;
+		if (!counts(counted, text(raw.author))) continue;
 		const pull = readPull(raw);
-		const spec = newestMarker(pull, login, SPEC);
+		const spec = newestMarker(pull, counted, SPEC);
 		read.push({
 			row: {
 				number: pull.number,
 				issues: sourceNumbers(pull),
 				spec: specVote(spec, writers),
-				work: workOf(pull, login, writers, spec),
+				work: workOf(pull, counted, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
 			traced: pull.body

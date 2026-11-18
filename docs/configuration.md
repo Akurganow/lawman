@@ -77,7 +77,13 @@ Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissal
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
 
-The key `earlier_logins` holds `<login>,<login>`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's, so the state that an earlier account wrote stays after a change of account. The roles still act only as `trusted_login`, and that account needs the host's right to change those pull requests. An account named there keeps the power to write counted markers, so name only an account that you control. Only you write the key. A command of a precinct written before the key was set may leave out the reactions on the comments of an earlier login. Ask the assembly to write it again in the job "re-check a precinct".
+The key `earlier_logins` holds `<login>,<login>`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's, so the state that an earlier account wrote stays after a change of account. The roles still act only as `trusted_login`. You write the key, and the assembly keeps it.
+
+Three things hold for a key that works:
+
+- You control each account that it names. Such an account keeps the power to write counted markers.
+- The trusted login may change the open pull requests of the earlier account on the host. The clerk and the pull request roles write to them.
+- The `issues` command of each precinct reads the reactions on the comments of the earlier account. A command written before the key reads none there. The job "re-check a precinct" offers to write it again.
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -203,7 +209,7 @@ Ticks read the keys they need.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
-- The commands `sync` and `old-precedent` read `earlier_logins`. The identity check of a tick never does.
+- Every sync of the tracker and of the pull requests reads `earlier_logins`, and so does `old-precedent`. The identity check compares the host's account with `trusted_login` alone.
 - The alarms read `progress_checks` every time the journal computes them.
 - The role's input reads `jobs`, `harness` and `input_chars` when it builds its group: at `wake` with work, and at `tick input --role`. The start of a tick that takes an order reads `input_chars` and `trusted_login`. `tick input <tick id>` reads `input_chars` when it builds the tick group, and the commands `text` and `clean` read it too. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
 

@@ -10,6 +10,7 @@ import {
 	loginList,
 } from "./form";
 import { inproc, inprocAsync } from "./inproc";
+import { countedLogins } from "./input-files";
 import { readPulls } from "./pulls";
 import { addPrecincts, BASE, cli, dbFile, rows, tempDb } from "./test-helpers";
 
@@ -54,7 +55,7 @@ Each comment:
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
   rejectedBy: the logins that reacted with the thumbs down reaction, every page read
-  Both lists matter only on comments written by the trusted login or an earlier login on open issues. Leave them empty elsewhere.`;
+  Both lists matter only on open issues, on comments written by the trusted login or by a login that earlier_logins of config.yaml names. Leave them empty elsewhere.`;
 
 describe("the issues form", () => {
 	test("is one object, with the common lines and then the field text", () => {
@@ -116,7 +117,9 @@ describe("each example passes its reader", () => {
 
 	test("pulls", () => {
 		const input = exampleOf("pulls");
-		expect(readPulls(input, "lawman-bot").map((p) => p.row)).toEqual([
+		expect(
+			readPulls(input, countedLogins(null, "lawman-bot")).map((p) => p.row),
+		).toEqual([
 			{
 				number: 7,
 				issues: "3",

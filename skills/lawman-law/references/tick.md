@@ -45,7 +45,7 @@ The issue roles are the response unit, investigation, the prosecutor, the defend
 
 The spec writer and the executor are the pull request roles. The number of an order is an issue for the issue roles and a pull request for the pull request roles. `<m>` below is a pull request number.
 
-The fetch step gives the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`.
+The fetch step gives the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`. Where a skill looks for a comment or a pull request by `<login>`, one by an earlier login counts too. The earlier logins are the value of `earlier_logins` in `config.yaml`, and an absent key names none. You write only as `<login>`, and a read-back compares the author with `<login>` alone.
 
 ## Parts
 

@@ -232,17 +232,15 @@ export function fencedLines(lines: string[]): boolean[] {
 	});
 }
 
-// the logins whose texts count: one login, or a set of lowercased logins
-export type Logins = string | ReadonlySet<string>;
+// `counted` holds lowercased logins; an empty author never counts
+export const counts = (counted: ReadonlySet<string>, author: string) =>
+	author !== "" && counted.has(asciiLower(author));
 
-export const counts = (logins: Logins, author: string) =>
-	author !== "" &&
-	(typeof logins === "string"
-		? asciiLower(logins) === asciiLower(author)
-		: logins.has(asciiLower(author)));
-
-export function extractMarkers(carrier: Carrier, trusted: Logins): Found[] {
-	if (!counts(trusted, carrier.author)) return [];
+export function extractMarkers(
+	carrier: Carrier,
+	counted: ReadonlySet<string>,
+): Found[] {
+	if (!counts(counted, carrier.author)) return [];
 	const lines = carrier.text.split("\n").map(stripCr);
 	const hidden = fencedLines(lines);
 	const found: Found[] = [];
@@ -262,7 +260,10 @@ export function extractMarkers(carrier: Carrier, trusted: Logins): Found[] {
 
 export const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-export function collectIssueMarkers(issue: GhIssue, trusted: Logins) {
+export function collectIssueMarkers(
+	issue: GhIssue,
+	counted: ReadonlySet<string>,
+) {
 	const comments = [...issue.comments].sort((a, b) =>
 		byText(a.createdAt, b.createdAt),
 	);
@@ -275,7 +276,7 @@ export function collectIssueMarkers(issue: GhIssue, trusted: Logins) {
 					rank,
 					author: c.author?.login ?? "",
 				},
-				trusted,
+				counted,
 			),
 		)
 		.sort((a, b) => byText(a.ord, b.ord));

@@ -1,6 +1,7 @@
 import { describe, expect, test } from "bun:test";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
+import { countedLogins } from "./input-files";
 import {
 	canonicalId,
 	decodeIdPart,
@@ -272,9 +273,10 @@ describe("id parts", () => {
 describe("extractMarkers", () => {
 	test("ord sorts by carrier time, then rank, then line", () => {
 		const at = (createdAt: string, rank: number, text: string) =>
-			extractMarkers({ text, createdAt, rank, author: TRUSTED }, TRUSTED).map(
-				(m) => m.ord,
-			);
+			extractMarkers(
+				{ text, createdAt, rank, author: TRUSTED },
+				countedLogins(null, TRUSTED),
+			).map((m) => m.ord);
 		const ords = [
 			...at("2026-10-14T10:00:00Z", 1, `${ret()}\n${ret()}`),
 			...at("2026-10-14T10:00:00Z", 2, ret()),
@@ -297,7 +299,10 @@ describe("extractMarkers", () => {
 		expect(carrier(ret(), "someone-else")).toHaveLength(0);
 		expect(carrier(ret(), "")).toHaveLength(0);
 		expect(
-			extractMarkers({ text: ret(), createdAt: "x", rank: 0, author: "" }, ""),
+			extractMarkers(
+				{ text: ret(), createdAt: "x", rank: 0, author: "" },
+				countedLogins(null, ""),
+			),
 		).toEqual([]);
 		expect(carrier(ret(), "octocat-lawman2")).toHaveLength(0);
 	});

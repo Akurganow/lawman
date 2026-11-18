@@ -38,7 +38,9 @@ export function countedLogins(
 ): Set<string> {
 	const earlier = configValue(config ?? "", "earlier_logins") ?? "";
 	return new Set(
-		[login, ...earlier.split(",")].filter(Boolean).map(asciiLower),
+		[login, ...earlier.split(",")]
+			.map((l) => asciiLower(l.trim()))
+			.filter(Boolean),
 	);
 }
 

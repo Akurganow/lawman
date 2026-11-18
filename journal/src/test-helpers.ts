@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
+import { countedLogins } from "./input-files";
 import { collectIssueMarkers, extractMarkers } from "./markers";
 
 export { issues };
@@ -176,7 +177,7 @@ export const entry = () => mark("clerk", "entry");
 export const noEntry = () => mark("clerk", "no-entry");
 
 export function collect(n: number) {
-	return collectIssueMarkers(issueOf(n), TRUSTED);
+	return collectIssueMarkers(issueOf(n), countedLogins(null, TRUSTED));
 }
 
 export const rounds = (n: number) =>
@@ -185,7 +186,7 @@ export const rounds = (n: number) =>
 export function carrier(text: string, author = TRUSTED) {
 	return extractMarkers(
 		{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author },
-		TRUSTED,
+		countedLogins(null, TRUSTED),
 	);
 }
 

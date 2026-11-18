@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { countedLogins } from "./input-files";
 import { CLERK_TRACE, readPulls } from "./pulls";
 import {
 	BOT,
@@ -10,7 +11,8 @@ import {
 } from "./pulls-fixture";
 import { mark } from "./test-helpers";
 
-const rowsOf = (input: string) => readPulls(input, BOT).map((p) => p.row);
+const rowsOf = (input: string) =>
+	readPulls(input, countedLogins(null, BOT)).map((p) => p.row);
 const read = (input: unknown) => rowsOf(JSON.stringify(input));
 const readOf = (pulls: Pull[], writers?: string[]) =>
 	read(hostPulls(pulls, writers));
@@ -19,7 +21,7 @@ const voteOf = (comments: Comment[]) =>
 const spec = (r: Reactions): Comment => ({ body: `Spec\n\n${SPEC}`, ...r });
 
 function rejects(input: string, why: RegExp): void {
-	expect(() => readPulls(input, BOT)).toThrow(why);
+	expect(() => readPulls(input, countedLogins(null, BOT))).toThrow(why);
 }
 
 describe("readPulls validity", () => {
@@ -113,7 +115,10 @@ describe("readPulls rows", () => {
 			"Closes #6",
 		];
 		const pulls = bodies.map((body, number) => ({ number, body }));
-		const read = readPulls(JSON.stringify(hostPulls(pulls)), BOT);
+		const read = readPulls(
+			JSON.stringify(hostPulls(pulls)),
+			countedLogins(null, BOT),
+		);
 		expect(read.map((p) => p.traced)).toEqual([true, true, false, false]);
 	});
 });

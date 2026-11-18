@@ -8,8 +8,8 @@ export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
-One account carries one login in every field of every form. For the installation's own account it is the login that identity prints.
-A host can name one account differently across its interfaces. Bring each login to that one form.
+One account has one spelling of its login in every field of every form. The installation's own account has the spelling that the operation identity prints.
+A host can spell one account differently across its interfaces. Choose one spelling for the account and give it everywhere.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
@@ -44,7 +44,7 @@ Each comment:
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
   rejectedBy: the logins that reacted with the thumbs down reaction, every page read
-  Both lists matter only on comments written by the trusted login or an earlier login on open issues. Leave them empty elsewhere.`,
+  Both lists matter only on open issues, on comments written by the trusted login or by a login that earlier_logins of config.yaml names. Leave them empty elsewhere.`,
 	pulls: `pulls, for sync --pulls. One object.
 ${COMMON}
 ${WHOLE}

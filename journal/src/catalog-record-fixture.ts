@@ -8,6 +8,7 @@ import {
 	reply,
 	throughCli,
 } from "./catalog-test-run";
+import { countedLogins } from "./input-files";
 import { extractMarkers } from "./markers";
 import { cli, lead } from "./test-helpers";
 
@@ -52,6 +53,6 @@ export function expectCleanComment(out: string) {
 		err: "",
 	});
 	const carrier = { text: out, createdAt: CLOCK, rank: 0, author: "t" };
-	expect(extractMarkers(carrier, "t")).toEqual([]);
+	expect(extractMarkers(carrier, countedLogins(null, "t"))).toEqual([]);
 	return { comment, carrier };
 }

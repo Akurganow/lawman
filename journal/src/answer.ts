@@ -1,4 +1,4 @@
-import { asciiLower, collectIssueMarkers, type Logins } from "./markers";
+import { asciiLower, collectIssueMarkers } from "./markers";
 import type { SyncComment, SyncIssue } from "./sync-issues";
 
 export const MARKER_PREFIX = "<!-- lawman:";
@@ -14,11 +14,11 @@ const rankOf = (ord: string) => Number(ord.split("|")[1]);
 // Only the object's own fields count: reactions come from the reader, never from a body.
 export function answerOf(
 	issue: SyncIssue,
-	login: Logins,
+	counted: ReadonlySet<string>,
 	writers: Set<string>,
 ): Answer | null {
 	if (issue.state !== "OPEN") return null;
-	const { markers } = collectIssueMarkers(issue, login);
+	const { markers } = collectIssueMarkers(issue, counted);
 	const newestCourt = markers.filter((m) => m.marker.role === "court").at(-1);
 	if (newestCourt?.marker.stage !== "referral") return null;
 	// A newer marker of another role means a new round, so the referral no longer waits.
