@@ -11,7 +11,8 @@ const COMMON = `A login compares ignoring ASCII case.
 One account has one spelling of its login in every field of every form. A host can spell one account differently across its interfaces.
 The acting login, acting_login of config.yaml, has the spelling that the operation identity prints. An account that trusted_authors of config.yaml names has the spelling of that key.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
-A list field is empty when the host has no such thing.`;
+A list field is empty when the host has no such thing.
+An author is a login as text or an object with that login, and null when the host gives none.`;
 
 const WHOLE =
 	"The command returns the whole list and exits non-zero when it cannot.";
@@ -32,14 +33,14 @@ Each entry of issues:
   title: the title
   url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
-  author.login: the login of its author
+  author: the login of its author
   body: the body text
   comments: comments by people and accounts, oldest first.
     The host's own event notes are not comments
 
 Each comment:
   id: the host's id of the comment, as text, the one that reads it back later
-  author.login: the login of its author
+  author: the login of its author
   body: the body text
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
@@ -76,7 +77,7 @@ ${COMMON}
 Fields:
   lastActor: the login of whoever made the last close or reopen of the number in question, null when none
   writers: as in pulls
-  comments: optional. The conversation comments of the pull request in question, oldest first, each with author (login), createdAt and body. The precedent command reads them.`,
+  comments: optional. The conversation comments of the pull request in question, oldest first, each with author, createdAt and body. The precedent command reads them.`,
 	catalog: LIST_FORM,
 };
 
@@ -184,6 +185,19 @@ export function loginList(
 			throw reject(`${what} holds a non-text entry`);
 		return asciiLower(login);
 	});
+}
+
+// an author is a login, an object with a login, or null; any other value would lose the identity silently
+export function authorLogin(
+	value: unknown,
+	what: string,
+	reject: (why: string) => Fail,
+): string | null {
+	if (value === undefined || value === null) return null;
+	const login = isRecord(value) ? value.login : value;
+	if (typeof login !== "string")
+		throw reject(`${what} is a login, an object with a login, or null`);
+	return login === "" ? null : login;
 }
 
 export function form(args: string[]): void {

@@ -71,14 +71,22 @@ describe("readCheckObject", () => {
 			JSON.stringify({
 				lastActor: "Maint-A",
 				writers: ["Maint-A"],
-				// the second is of an account that is gone
-				comments: [comment, { ...comment, author: null }],
+				// the second is of an account that is gone, the third names its login as an object
+				comments: [
+					comment,
+					{ ...comment, author: null },
+					{ ...comment, author: { login: "maint-a" } },
+				],
 			}),
 		);
 		expect(got).toEqual({
 			actor: "Maint-A",
 			writers: ["maint-a"],
-			comments: [comment, { ...comment, author: "" }],
+			comments: [
+				comment,
+				{ ...comment, author: "" },
+				{ ...comment, author: "maint-a" },
+			],
 		});
 	});
 
@@ -92,7 +100,13 @@ describe("readCheckObject", () => {
 
 	test("a comments field that is not a list, or a bad item, is rejected", () => {
 		const base = { lastActor: "a", writers: [] };
-		for (const comments of ["x", {}, [5], [{ ...comment, createdAt: "x" }]]) {
+		for (const comments of [
+			"x",
+			{},
+			[5],
+			[{ ...comment, createdAt: "x" }],
+			[{ ...comment, author: 7 }],
+		]) {
 			try {
 				readCheckObject(JSON.stringify({ ...base, comments }));
 			} catch (e) {

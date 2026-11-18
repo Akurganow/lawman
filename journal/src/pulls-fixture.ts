@@ -21,14 +21,14 @@ export type Reactions = { up?: string[]; down?: string[] };
 export type Comment = Reactions & {
 	body: string;
 	id?: string;
-	author?: string;
+	author?: string | { login: string };
 	at?: string;
 	noId?: boolean;
 };
 export type Review = { at: string; author?: string };
 export type Pull = {
 	number: number;
-	author?: string;
+	author?: string | { login: string };
 	body?: string;
 	closes?: number[];
 	comments?: Comment[];
