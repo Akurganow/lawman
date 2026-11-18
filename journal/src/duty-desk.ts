@@ -48,7 +48,12 @@ type Precinct = {
 	synced_at: string | null;
 	pulls_synced_at: string | null;
 };
-type Reading = { revision: string; files: string; lines: string[] };
+type Reading = {
+	revision: string;
+	files: string;
+	lines: string[];
+	judged: [string, string][];
+};
 // What one read of a precinct found. `cause` is the recorded lack of an unusable constitution.
 // A read that failed before the constitution has neither a reading nor a cause.
 type Read = { reading: Reading | null; cause: Lack | null };
@@ -132,6 +137,7 @@ async function readPrecinct(p: string, blockers: string[]): Promise<Read> {
 			revision,
 			files: files.text,
 			lines: lint.departments.map(([name]) => name),
+			judged: lint.departments,
 		},
 		cause: null,
 	};
@@ -174,6 +180,17 @@ async function chooseDepartment(
 		const { page, lint } = found;
 		if (lint.reasons.length > 0) {
 			blockers.push(`${p}: department ${d} page check failed`);
+			continue;
+		}
+		// a page that works only with a judging document counts as capped where no line names one in the tree
+		if (
+			lint.requiresDocument &&
+			!reading.judged.some(
+				([name, path]) =>
+					name === d && path !== "none" && listed(reading.files, path),
+			)
+		) {
+			capped = true;
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped

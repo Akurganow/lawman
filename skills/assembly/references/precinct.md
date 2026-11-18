@@ -70,12 +70,12 @@ Run this section only when `LAWMAN.md` is absent. The draft stays in the clone u
 
 ### Departments
 
-A judging document is evidence, and every role that reads it reads it as evidence. No role checks its content against the department contract. A missing path reads as `judged by none`, and the proposal shows why. Lawman never removes a department from a precinct's rotation on its own. Every department works in any repository, including an empty repository. A judging document only makes it more precise.
+A judging document is evidence, and every role that reads it reads it as evidence. No role checks its content against the department contract. A missing path reads as `judged by none`, and the proposal shows why. Lawman never removes a department from a precinct's rotation on its own. A department works in any repository, including an empty repository, and a judging document only makes it more precise. A page whose Judged by section starts with `Required:` is the exception: its department gets no patrol order until a line names a document that the tree holds.
 
 Run this section only when `LAWMAN.md` is absent. Every shared department is in the precinct's rotation with no line. The page `licenses` is the one exception: it joins a precinct's rotation only when `license_precincts` in `config.yaml` holds the whole token `<precinct>=yes`. It is no candidate for a line. The section holds a line only for a department that has a judging document.
 
 29. List the pages in `lawman/skills/lawman-law/references/departments`, and take the page names without `.md` as the shared departments, except `licenses`. Take only the files whose name ends in `.md`: a folder beside a page is no page.
-30. Read the `Mission` section of each page, and note its first sentence.
+30. Read the `Mission` section of each page, and note its first sentence. Note too whether its `Judged by` section starts with `Required:`.
 31. Match the candidate documents of "Clone and read" to the departments, each by the department's mission.
 32. Check that each path exists. A pair whose path is missing reads as `judged by none`, and the proposal shows the reason.
 33. Write one line `- <name>: judged by <path>` under `Departments` for each pair whose path exists.
@@ -116,7 +116,7 @@ The rows for an absent constitution:
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Constitution: the draft as a table, one row for each of its eight sections. Show each line with the file it came from (recommended).
-- Departments: the lines with a judging document, the count of the other departments, which run with no line, and the reason for each missing path (recommended).
+- Departments: the lines with a judging document, the count of the other departments, which run with no line, the departments that wait for a judging document, and the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).
 - Weight: 0. The duty desk does not cover a precinct of weight 0. No role gets an order there, and no patrol visits it. That holds until the constitution merges and you raise the weight (default).
@@ -441,7 +441,7 @@ Make a working copy of the tip of the default branch in `runs/add-department-<na
 
 ### Step 7. Check the judging document
 
-When the judging document is not `none`, check that its path exists in the copy. A missing path reads as `judged by none`. Then run item 3 of Step 6 again with `none`, and tell the developer why.
+When the judging document is not `none`, check that its path exists in the copy. A missing path reads as `judged by none`. Then run item 3 of Step 6 again with `none`, and tell the developer why. When the page's `Judged by` section starts with `Required:` and the document is `none`, tell the developer that the department gets no patrol order until a line names its document.
 
 ### Step 8. Approve, commit and open the pull request
 

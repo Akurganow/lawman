@@ -86,7 +86,7 @@ The journal picks the department for each patrol order when the duty desk starts
 - It takes the first department whose page passes and whose cap is above zero.
 - It writes one patrol order for each precinct that has no open patrol order.
 
-A department at cap 0 is skipped, unless its page has an `Alarm check:` paragraph. A bad page goes into the blockers of the tick. When every department of a precinct is skipped, that precinct gets no patrol order in that tick.
+A department at cap 0 is skipped, unless its page has an `Alarm check:` paragraph. A department whose page starts Judged by with `Required:` is skipped while no Departments line names a document that the tree holds. A bad page goes into the blockers of the tick. When every department of a precinct is skipped, that precinct gets no patrol order in that tick.
 
 The cap depends on the open leads of the department on the precinct. Up to 2 open leads allow 3 filings per tick. With 3 or 4 the cap is 1. With 5 or more it is 0. The cap is a ceiling and not a target.
 
@@ -99,7 +99,7 @@ A department may have a document in the precinct that tries its findings. The pa
 - `- <name>: judged by <path>` names the document.
 - `- <name>: judged by none` says no document judges the department yet.
 
-A department with no line is judged by none. Its page then judges by its own words, or says that nothing is judged. A judging document is evidence. It can protect a shape. It never convicts.
+A department with no line is judged by none. Its page then judges by its own words. A page that cannot work without the document starts its Judged by section with `Required:`, as `privacy` does. Such a department gets a patrol order only when a Departments line names a path that the tree holds at the analysed commit. A judging document is evidence. It can protect a shape. It never convicts.
 
 ## Add a department
 

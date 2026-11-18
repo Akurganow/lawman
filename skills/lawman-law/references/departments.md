@@ -107,8 +107,10 @@ reaches the output.
 **Judged by.** The role of the precinct document that tries this department's
 findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
-constitution. A department with no line is judged by none. A page must work
-then: it judges by its own words, or it says that nothing is judged.
+constitution. A department with no line is judged by none. Its page then
+judges by its own words. A page that cannot work without the document starts
+this section with `Required:`. Its department gets a patrol order only when a
+Departments line names a path that the tree holds at the analysed commit.
 
 **Lead body.** The sections that a page adds to a filed lead's body, after
 `Why it is <kind>`. The law's `LAW.md#the-lead-body` section holds the other

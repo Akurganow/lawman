@@ -61,6 +61,7 @@ export type PageLint = {
 	reasons: string[];
 	departments: [string, string][];
 	alarmCheck?: true;
+	requiresDocument?: true;
 	notes?: string[];
 };
 
@@ -141,6 +142,23 @@ export function hasAlarmCheck(
 				!hidden[from + j] &&
 				(j === 0 || (lines[from + j - 1] ?? "").trim() === ""),
 		);
+}
+
+const REQUIRED = "Required:";
+
+// the first visible line of the Judged by section opens with the word
+export function requiresDocument(
+	lines: string[],
+	hidden: boolean[],
+	found: Heading[],
+): boolean {
+	const k = found.findIndex((h) => h.name === "Judged by");
+	if (k < 0) return false;
+	const from = found[k]?.line ?? 0;
+	const first = lines
+		.slice(from, sectionEnd(found, k, lines.length))
+		.findIndex((line, j) => !hidden[from + j] && line.trim() !== "");
+	return first >= 0 && (lines[from + first] ?? "").startsWith(REQUIRED);
 }
 
 function emptySections(
@@ -247,6 +265,8 @@ export function lintPage(
 		return { reasons: page.reasons, departments: [] };
 	if (kind === "department" && hasAlarmCheck(lines, hidden, found))
 		page.alarmCheck = true;
+	if (kind === "department" && requiresDocument(lines, hidden, found))
+		page.requiresDocument = true;
 	const unknown = found.filter((h) => !isListed(kind, h));
 	if (unknown.length > 0)
 		page.notes = unknown.map((h) => `# ${h.line}: unknown section "${h.name}"`);
