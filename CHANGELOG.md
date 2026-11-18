@@ -4,6 +4,19 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v2.1.0 - 2026-11-18
+#### Features
+- (**journal**) count the texts of earlier logins as the trusted login's (9c15752)
+#### Bug Fixes
+- (**journal**) let the roles and the commands find the texts of earlier logins (3aa284b)
+- (**journal**) give one account one login in every form (23af94b)
+- name the trusted authors once, and let a bot login pass the role checks (c071ea0)
+#### Documentation
+- say whose issue body counts, and prove a command with the earlier logins (4095f46)
+
+- - -
+
+
 ## v2.0.0 - 2026-11-15
 #### Features
 - (**journal**) leave the excluded authors of a precinct out of the roles' input (1cb90b3)
