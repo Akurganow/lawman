@@ -54,8 +54,8 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read `law_commit`, `release_repo` and the commit that the law folder holds, and take the first case that fits.
 
 - `law_commit` or `release_repo` is missing. Take the row `stop stopped-law-config` of the table below.
-- The commit cannot be read, and `shared/law-version` exists. The journal reads the commit through that file. Run the command of the paragraph "The sync of the law" below. It changes nothing when the law is at `law_commit`.
-- The commit cannot be read, and `shared/law-version` does not exist. Compare nothing. Say in one line that no comparison was made. Say what "Find the facts of the law" in `references/install.md` says about a folder with no history. The keys of `config.yaml` may still carry the names of an earlier release. Go on to the modes.
+- The commit cannot be read, and `shared/law-version` exists. The journal reads the commit through that file. Run `bin/journal law-update assembly` and act on its lines as the paragraph after "The sync of the law" says. Say nothing before the run: the journal changes nothing when the law is at `law_commit`.
+- The commit cannot be read, and `shared/law-version` does not exist. Compare nothing. Say in one line that no comparison was made, and why the commit could not be read. For a folder with no history, say what "Find the facts of the law" in `references/install.md` says about it. Say that the installation stays on its release until `shared/law-version` exists. Its `config.yaml` may then hold `trusted_login` and `earlier_logins`: where a mode reads `acting_login` or `trusted_authors`, read that line. Go on to the modes.
 - The commit equals `law_commit`. Go on to the modes.
 - The commit differs from `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
 

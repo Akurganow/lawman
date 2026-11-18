@@ -77,18 +77,6 @@ Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissal
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
 
-### Trusted authors
-
-A trusted author is an account whose texts the journal counts. Only an issue body or a comment of a trusted author carries a counted [marker](pipeline.md#stages-and-markers), and only its open pull requests are taken up. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
-
-Use the key at a change of account: name the login that the installation acted as before, and what that login wrote stays. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. A host can spell one account in more than one way, so the key fixes one spelling: the commands give each named account the spelling of this key. Spell a login that was once the acting login as `acting_login` held it.
-
-Do three things for the key to work:
-
-- Name only accounts that you control. An account named there has the power to write counted markers.
-- Give the acting login the host's right to change the open pull requests of those accounts. The clerk and the pull request roles write to them.
-- Run the job "re-check a precinct" for each precinct after every change of the key or of `acting_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
-
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
 | `harness` | The name of the harness page, without `.md`. | The assembly at install |
@@ -109,6 +97,18 @@ Do three things for the key to work:
 | `dismissals_since` | The UTC time from which a close of a lead can leave a dismissal, as `YYYY-MM-DDThh:mm:ssZ`. A lead closed earlier leaves none. The journal also reads a time with a zone offset or with fractions of a second. Any other value reads as no key, and then no close leaves a dismissal. | The assembly at install, or `law-sync` as a default |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
+
+### Trusted authors
+
+A trusted author is an account whose texts the journal counts. Only an issue body or a comment of a trusted author carries a counted [marker](pipeline.md#stages-and-markers). The roles take up only the open pull requests of a trusted author. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
+
+Use the key at a change of account: name the login that the installation acted as before, and what that login wrote stays. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. A host can spell one account in more than one way. The key fixes one spelling, and the commands give each named account that spelling. Spell a login that was once the acting login as `acting_login` held it.
+
+Do three things for the key to work:
+
+- Name only accounts that you control. An account named there has the power to write counted markers.
+- Give the acting login the host's right to change the open pull requests of those accounts. The clerk and the pull request roles write to them.
+- Run the job "re-check a precinct" for each precinct after every change of the key or of `acting_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
 
 ## Jobs and progress checks
 
@@ -141,7 +141,7 @@ The assembly writes the file at install, after the commands of the installation 
 
 After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. The defaults cover `typesafe_key`, `amended_law_commit`, `dismissals_since`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. The third takes the time of that update. A key of the defaults that is already there stays as it is. The command does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
-The command `law-sync` also renames two keys of an earlier release: `trusted_login` becomes `acting_login`, and `earlier_logins` becomes `trusted_authors`. It leaves an old line alone when its new key already has a line, and the journal does not read that old line. Delete a leftover `trusted_login` line. Move the logins of a leftover `earlier_logins` line into `trusted_authors` by hand, then delete that line.
+The command `law-sync` also renames two keys of an earlier release: `trusted_login` becomes `acting_login`, and `earlier_logins` becomes `trusted_authors`. It leaves an old line alone when its new key already has a line, and the journal does not read that old line. Delete a leftover `trusted_login` line. When it names another account than `acting_login`, and what that account wrote must stay, name the account in `trusted_authors` first. Move the logins of a leftover `earlier_logins` line into `trusted_authors` by hand, then delete that line.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 

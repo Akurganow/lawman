@@ -32,6 +32,7 @@ const EXECUTABLE = 0o111;
 const READ_ONLY = 0o555;
 const NO_ACCESS = 0o000;
 const OWNER_ONLY = 0o600;
+const GROUP_WRITABLE = 0o664;
 const ALL_WRITABLE = 0o755;
 const PERMISSION_BITS = 0o777;
 const JOBS =
@@ -174,9 +175,10 @@ export function defineCases(runner: Runner): void {
 
 		test("keeps the file mode of the old config", () => {
 			lay(root);
-			chmodSync(config(), OWNER_ONLY);
+			// a mode with a bit that a usual umask strips, so a plain write would not keep it
+			chmodSync(config(), GROUP_WRITABLE);
 			synced("tick1");
-			expect(statSync(config()).mode & PERMISSION_BITS).toBe(OWNER_ONLY);
+			expect(statSync(config()).mode & PERMISSION_BITS).toBe(GROUP_WRITABLE);
 		});
 	});
 

@@ -116,10 +116,11 @@ const contractAlarm = (law: string, config: string | undefined) =>
 				`ALARM contract-changed installation constitution contract ${law}, precincts at ${config ?? ABSENT}, run the assembly to amend`,
 			];
 
-// Before the swap the sync only reads and writes a temporary file, so a failure there leaves the installation as it was.
+// A failure before the swap leaves the binary and the config of the installation as they were.
 // The config lands last, because its law_commit records that the sync is done.
 // A failed move of the binary leaves the old binary and the old config.
-// A failed move of the config leaves the new binary on the old config, and the next law-update repeats the sync, because it reads only law_commit and release_repo.
+// A failed move of the config leaves the new binary on the old config. The next law-update repeats the sync.
+// law-update can run on that pair: it reads only law_commit and release_repo.
 function sync(opt: Options, execPath: string): string[] {
 	const root = resolve(opt.installation);
 	const configPath = join(root, "config.yaml");
