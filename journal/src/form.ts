@@ -8,6 +8,8 @@ export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
+One account carries one login in every field of every form. For the installation's own account it is the login that identity prints.
+A host can name one account differently across its interfaces. Bring each login to that one form.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
