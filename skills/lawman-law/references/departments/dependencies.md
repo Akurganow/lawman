@@ -49,8 +49,6 @@ Each hit names a condition, a dependency or both.
 **Promises.** A flag or pin whose comment calls it load bearing. A document line
 that rests on a version. A test that blames a dependency.
 
-Skip what the precinct's constitution lists under Not judged.
-
 ## Not findings
 Beyond what the law already excludes (the Fence section, Not judged and the
 recorded answers):
@@ -62,13 +60,8 @@ recorded answers):
 - A version that appears in a release record.
 - A source kind with no anchor in the tree. A claim about upstream needs a line
   of this tree to land on.
-- A movable reference that a secret or a write token reaches. That is
-  `security`. The test: the fix that pins the reference belongs to `security`,
-  and the fix that moves to another version belongs here.
 - A secret inside a manifest or a lockfile, and a credential inside a registry
-  address. These belong to `security` as an alarm.
-- Hand written code with no recorded reason: `proportion.mismatched`.
-- An unused declared dependency is `abstractions.dead`.
+  address. A live secret follows the law's rule for alarms and is never a lead.
 
 **Too small to file, even when true:**
 - One comment that names a version, with no consequence.
@@ -77,12 +70,9 @@ recorded answers):
 - A version that is behind, and nothing more.
 
 File drift that changes what is installed or published. File a workaround or
-a detour. File a promise of several lines, or of a whole step. When the best finding
-of the sweep is small, the correct output is no lead.
+a detour. File a promise of several lines, or of a whole step.
 
 ## Proof
-Commands, not intuition. Quote every command and its output.
-
 **The inventory.** List the manifests, lockfiles and automation definitions
 that the tree holds. Name each by its role.
 
@@ -94,8 +84,6 @@ Where to look, as a regular expression.
 
 **A positive control.** Run each search again over a case known to be in the
 tree: a dependency that is declared and imported, a reason that is written.
-Quote both outputs. A zero proves nothing until the control prints a non zero
-count.
 
 **The condition against the tree.** For `stale-reason`, quote the reason and
 the condition in words. Quote the version or fact that meets it from the
@@ -107,8 +95,7 @@ the reason and the commit that last changed the pin.
 **The tree claim of a source kind.** The claim is that the anchor line exists
 and that its identifiers are the tree's. It makes no claim about upstream.
 
-**Hidden readers.** A plain text search misses these classes. Check each and say
-which you could not check.
+**Hidden readers.** A plain text search misses these classes.
 - A version supplied by a variable or a template.
 - A pin in a file that a tool's configuration names.
 - A version in a document on which a promise stands.
@@ -118,15 +105,12 @@ which you could not check.
 
 **Attack your own claim once.** Look for a reason recorded beside the pin, a
 comment on the dependency, an assertion or test that holds the behaviour, and
-the judging document's answer. When one holds, drop the candidate. When you are
-less than confident, drop it. A missed finding costs nothing this tick. A false
-one costs the owner's belief in every lead.
+the judging document's answer.
 
 ## Anchors
 Value is what the change buys.
-- Value 1: one line, word or version in a comment moves.
-- Value 3: a detour of several lines or a sentence goes, or a named fact about a
-  version needs a recheck.
+- Value 1: one line, word or version moves in a comment.
+- Value 3: a sentence goes, or a named fact about a version needs a recheck.
 - Value 5: a whole step, a job or a class of pins goes.
 
 Risk is the chance that the change breaks something.
@@ -135,46 +119,25 @@ Risk is the chance that the change breaks something.
 - Risk 5: the change alters what the automation installs or what a release
   publishes.
 
-Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
-splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
-qualifies. It means a whole step or a whole detour, never a line. These numbers
-are a starting value, not measured.
+Threshold: value 4 or more. Value 4 is the smallest finding that Not findings
+says to file.
 
 ## Judged by
 The role of the rule on upstream judgements: the document of the precinct that
 says what a claim about an upstream may stand on, and which pins the precinct
-records as deliberate. With no line, the department is judged by none.
+records as deliberate.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the two places and how they disagree, or the anchor and the claim.
-- `Evidence`: every quote as `path:line`, and the commands with their output,
-  controls included.
-- `Where it lands here`: the lines, steps or sentences that the fact makes wrong
-  or needless.
-- `Why it is <kind>`: the symptom in the judging document's words, and the
-  recorded reason you checked.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed|demonstrated|plausible`. The
-  confidence of a source kind speaks to the claim about the tree.
-- `Not checked`: what investigation must verify. Name the hidden reader classes
-  not searched and the remedy not designed. For a source kind, add the
-  `Source:` lines here, one for each source, in the exact forms of the Kinds
-  table:
-  - `Source: releases <owner>/<repo>`
-
-The marker is the last line.
+Add one section, `Where it lands here`, after `Why it is <kind>`: the lines,
+steps or sentences that the fact makes wrong or needless. The confidence of a
+source kind speaks to the claim about the tree. For a source kind,
+`Not checked` holds the `Source:` lines, one for each source, in the form of
+the Kinds table. `Not checked` also says that no remedy was designed.
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the file that declares the pin or names the version. For `drift`
   it is the file that sorts first by path among the files in disagreement.
 - The symbol is the dependency's name as its own package system spells it. An
-  `@` in a name becomes `%40`. Security prefixes its symbols with `pin/` and
-  `perm/`. Keep yours plain, so the two never collide.
-- The kind is one row of the Kinds table. `drift` takes the same path and symbol
-  form.
+  `@` in a name becomes `%40`.
 
-No version, line number, count or commit enters the identity.
+No version enters the identity.

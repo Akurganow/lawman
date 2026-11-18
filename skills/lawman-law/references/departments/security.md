@@ -4,12 +4,14 @@ contract_version: 1
 ---
 ## Mission
 Find what an outsider can exploit. An outsider is anyone who can open an issue,
-write a comment or propose a change. Five defects count: a live credential in
-the tree or its history; automation that an outsider can steer, or that hands a
-secret to code an outsider influences; a script that a package runs on a user's
-machine; an artifact, digest or update channel that someone other than the
-owner can alter; and text an outsider wrote that a role obeys or a page
-publishes as written. Test: does an outsider have a path to a consequence?
+write a comment or propose a change. So is anyone who can change an outside
+component, artifact or channel that the precinct trusts. Five defects count: a
+live credential in the tree or its history; automation that an outsider can
+steer, or that hands a secret to code an outsider influences; a script that a
+package runs on a user's machine; an artifact, digest or update channel that
+someone other than the owner can alter; and text an outsider wrote that an
+agent obeys or a page publishes as written. Test: does an outsider have a path
+to a consequence?
 
 ## Kinds
 | kind | meaning | measurement |
@@ -20,7 +22,7 @@ publishes as written. Test: does an outsider have a path to a consequence?
 | `unpinned-component` | A job runs an outside component by a movable reference, and a secret or write token reaches that job | The component, the movable reference, and the secret or token that reaches it, each as `path:line` |
 | `release-integrity` | A released artifact, its digest or the update channel is taken on faith, and someone other than the owner can change what it believes | The step that takes it on faith, quoted, and who can change what it believes |
 | `install-script` | A script that a package runs at install or start on a user's machine reads an input an outsider can write and reaches a shell or a path outside the package | The script, the input, who writes the input, and the sink, each as `path:line` |
-| `agentic-injection` | A role reads text an outsider wrote and acts on it as an instruction, or a template applies a label that lets an outsider's issue start a role's work | The role, the text an outsider writes, the line where it is acted on, and the recorded guard that does not apply |
+| `agentic-injection` | An agent reads text an outsider wrote and acts on it as an instruction, or a template applies a label that lets an outsider's issue start an agent's work | The agent, the text an outsider writes, the line where it is acted on, and the recorded guard that does not apply |
 | `rendered-output` | External data reaches a published text, such as a changelog, release notes or a page, with no sanitiser between | The data source, the template line that prints it, and the absence of a sanitiser, each as `path:line` |
 
 ## Where to look
@@ -51,7 +53,7 @@ launch scripts that a package ships. Take a census of them first. For each,
 read what it reads, who writes that, and whether it reaches a shell, an
 evaluation or a path outside the package.
 
-**The agentic surface.** Roles that act as the owner while they read text
+**The agentic surface.** Agents that act as the owner while they read text
 strangers wrote. Issue templates and forms that apply a label which starts
 work. A finding is a place where the precinct's recorded guard is not applied,
 traced to the line.
@@ -75,25 +77,22 @@ recorded answers):
   insider, and review of the merged text is the defence.
 - A placeholder in the place of a secret: an example, a documented test
   credential, or a value this page names.
-- A known vulnerability in a version of a dependency. That belongs to
-  `vulnerabilities`. A stale pin and version drift belong to `dependencies`.
+- A known vulnerability in a version of a dependency, a stale pin and version
+  drift.
 - A sentence in a security document that does not match the protection. The
-  wrong sentence is another department's. The missing protection is this
-  page's when an outsider can walk through it.
+  missing protection is this page's when an outsider can walk through it.
 
 **Too small to file, even when true:**
 - Broad permissions on a job that holds no secret and no write token.
 - A movable reference to a component in a job that no secret and no write token
   reaches.
 - A test or stand-in credential.
-- Anything of value 3 or less, which includes every medium severity.
+- A path of medium severity or less. The outsider gains less than a write
+  through a job's token or an agent, or needs a second weakness.
 
-File only a path that an outsider can walk to a consequence of value 4 or 5.
-When the best finding of the sweep is smaller, the correct output is no lead.
+File only a path that an outsider can walk to a consequence.
 
 ## Proof
-Commands, not intuition. Quote every command and its output.
-
 Alarm check: look for a live credential with two patterns, and print positions
 only. Pattern one is a private key header, `-----BEGIN [A-Z ]*PRIVATE KEY-----`.
 Pattern two is a password inside an address,
@@ -129,38 +128,34 @@ sits in a shell block.
 grant permissions, pass secrets or reference an outside component.
 
 **A positive control for each census.** Run the same search over a definition
-known to hold the construct. Quote both outputs. A zero proves nothing until
-the control prints a non zero count.
+known to hold the construct.
 
 **The path.** Write four parts: who the outsider is, what they control, the
 quoted path from input to sink as `path:line` at `<sha>`, and the consequence.
 
-**Hidden paths.** A plain text search misses these classes. Check each and say
-which you could not check.
+**Hidden paths.** A plain text search misses these classes.
 - An expression built from variables or step outputs before it reaches a shell.
 - A value that passes through an intermediate file or an environment variable.
 - A definition called by another, which inherits its secrets.
 - A secret that reaches a component through a configuration file the component
   reads.
-- Text a role fetches at run time through a command, not through its prompt.
+- Text an agent fetches at run time through a command, not through its prompt.
 - A label applied by automation, not by a person.
 
 **Attack your own claim once.** Look for a guard that breaks the path. Candidates
 are a permission block, missing secrets for changes from outside the precinct,
 a label only the owner can apply, an escape, a signature or digest check, a
-protection rule on the environment, and the Fence section. When one holds,
-drop the candidate. When you are less than confident, drop it. A missed finding
-costs nothing this tick. A false one costs the owner's belief in every lead.
+protection rule on the environment, and the Fence section.
 
 **No probes.** Run nothing from the tree, test no credential, open no issue.
 
 ## Anchors
 Severity becomes value. Value is how much an outsider gains.
-- Value 1: a gap with no outsider path. Never filed.
+- Value 1: a gap with no outsider path.
 - Value 3: a smaller gain, or a path that needs a second weakness which also
-  exists. This is a medium severity. Never filed.
-- Value 4: an outsider changes what a job with a write token does, or makes a
-  role write. This is a high severity.
+  exists. This is a medium severity.
+- Value 4: an outsider changes what a job with a write token does, or makes an
+  agent write. This is a high severity.
 - Value 5: an outsider obtains a secret, changes a release or its digest, or
   runs code on a user's machine or in the automation with the precinct's
   secrets. This is a critical severity.
@@ -171,49 +166,32 @@ Risk is the chance that the fix breaks something.
 - Risk 3: the fix changes what a job installs or runs.
 - Risk 5: the fix touches a release, or a hook on a user's machine.
 
-Threshold: value 4 or more, at any risk. The danger decides. The cost of the
-fix does not. A `secret` has no score. It is an alarm. These numbers are a
-starting value, not measured.
+Threshold: value 4 or more. A `secret` has no score. It is an alarm.
 
 ## Judged by
 The role of the precinct's security policy: the document that names where
 problems are reported, which versions are supported and which protections the
-precinct promises. It judges only what it speaks to. With no line, the
-department is judged by none.
+precinct promises. It judges only what it speaks to.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: who can do what, and where. Name the missing guard. Give no input that
-  helps an attack.
-- `Evidence`: the unguarded place as `path:line`, the guard that is missing, the
-  path as a list of `path:line`, and the commands with their output, controls
-  included.
-- `Why it is <kind>`: the symptom in the judging document's words, the outsider,
-  and the recorded guard you checked and why it does not apply.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed|demonstrated|plausible`.
-- `Not checked`: what investigation must verify. Name the history that was not
-  searched, the host settings the patrol cannot read, the hidden path classes
-  not checked, and the probes and reproduction that were not run.
+The page adds no section. `What` says who can do what, and where, and names the
+missing guard. It gives no input that helps an attack. `Why it is <kind>` names
+the outsider and the guard you checked. `Not checked` names the history that
+was not searched, the host settings the patrol cannot read, and the probes and
+reproduction that were not run.
 
 A `secret` has no lead body. The alarm replaces it.
 
-The marker is the last line.
-
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the file that holds the unguarded place.
-- The symbol depends on the kind, and the prefix keeps it apart from other
-  departments:
+- The symbol depends on the kind:
   - `pipeline-injection`: `inject/<job>/<step name>`, each space written as `%20`.
   - `pipeline-permissions`: `perm/<job>`.
   - `unpinned-component`: `pin/<component>`.
   - `release-integrity`: `release/<job or artifact>`.
   - `install-script`: `script/<name>`.
-  - `agentic-injection`: `<role or workflow>/<read point>`.
+  - `agentic-injection`: `<agent or workflow>/<read point>`.
   - `rendered-output`: `render/<output>`.
-- The kind is one row of the Kinds table. `secret` has no identity.
+- `secret` has no identity.
 
-No line number, severity or commit enters the identity.
+No severity enters the identity.

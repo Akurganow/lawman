@@ -42,8 +42,6 @@ A dependency that the recorded reading did not name is beyond this check. State
 the class you could not check.
 
 ## Anchors
-none
-
 No value threshold and no order by value apply. The Cost and risk line reads
 from the match alone. Confidence is `confirmed`. Effort and Risk each get one
 value, with a stated reason drawn from the match alone. The patrol reads no
@@ -53,23 +51,13 @@ fixed version, so the page claims none.
 none
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the place, the package and the record that names its version.
-- `Evidence`: the journal's output, verbatim.
-- `Where it lands here`: the place in the tree that pins the version.
-- `Why it is advisory`: the record identifier and the pinned version.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed`.
-- `Not checked`: the line `Source: catalog <record identifier> <package>`, and
-  what investigation must verify.
-
-The marker is the last line.
+Add one section, `Where it lands here`, after `Why it is advisory`: the place
+in the tree that pins the version. `What` names the place, the package and the
+record that names its version. `Why it is advisory` gives the record identifier
+and the pinned version. Confidence is `confirmed`.
 
 ## Identity
-`<place>::<record identifier>/<package>::advisory`. Encode each part as the
-marker grammar requires.
+`<place>::<record identifier>/<package>::advisory`.
 - The place is what the reading reports for the entry, as the journal prints it.
 - The record identifier and the package are as the catalog names them.
 

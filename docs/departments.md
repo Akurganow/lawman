@@ -16,10 +16,10 @@ A page starts with frontmatter. It holds `name`, which matches the file name wit
 | Kinds | A table of `kind`, `meaning` and `measurement`. A kind names a symptom, never a tool. |
 | Where to look | The subject in terms of the tree. |
 | Not findings | What the page excludes beyond the law, and the threshold below which a true finding stays unfiled. |
-| Proof | The commands that show each kind, the positive control and the classes of hidden callers. |
-| Anchors | What the value and risk scores mean, and the threshold. |
+| Proof | The commands that show each kind, what the positive control runs on and the classes of hidden callers. |
+| Anchors | What the value and risk scores mean, and the lowest value that is filed. That value is the size that Not findings states, as a number. Risk fills the `Cost and risk` line of the lead and cuts no finding. |
 | Judged by | The role of the precinct document that tries the findings. The path comes from the constitution. |
-| Lead body | The sections of a filed lead's body, in order. |
+| Lead body | The sections that the page adds to a filed lead's body. The law holds the other parts. |
 | Identity | The fields of the lead's `id`: `<path>::<symbol>::<kind>`. No line number, count or commit enters it. |
 
 A page whose department can find a live secret names an `Alarm check:` paragraph under Proof. Patrol runs that paragraph even when the department is at cap 0. It prints positions and never values.
@@ -31,7 +31,7 @@ Lawman ships thirteen shared pages in [departments/](../skills/lawman-law/refere
 | Department | Subject |
 | :-- | :-- |
 | `abstractions` | Abstractions that cost a maintainer reading time and buy nothing |
-| `agent-config` | Files that configure agents and no longer describe one machine |
+| `agent-config` | Files that configure agents and disagree with each other or with the tree |
 | `claims` | Claims in published text that the tree does not bear out |
 | `dependencies` | A dependency whose state in the tree disagrees with the reason it is held that way |
 | `licenses` | Material whose license terms the project's license and its reach cannot honour, or that has no stated terms |
@@ -44,13 +44,17 @@ Lawman ships thirteen shared pages in [departments/](../skills/lawman-law/refere
 | `text-residue` | Text that costs a reader time and tells them nothing true |
 | `vulnerabilities` | A dependency whose pinned version a catalog record names as affected |
 
-The page `vulnerabilities` has one kind, `advisory`. Its patrol sends the precinct's list of pinned packages to the OSV catalog through the journal, and a match with a catalog record is the finding. It runs only for a precinct that gave consent. It has its own count of open leads and its own cap, by the same table as the other pages. The `dependencies` page keeps its other kinds and no longer holds `advisory`. The `security` page hands known vulnerabilities of dependencies to `vulnerabilities`. See [the journal](journal.md#the-catalog-check) and [configuration](configuration.md#what-leaves-the-machine).
+The page `vulnerabilities` has one kind, `advisory`. Its patrol sends the precinct's list of pinned packages to the OSV catalog through the journal, and a match with a catalog record is the finding. It runs only for a precinct that gave consent. It has its own count of open leads and its own cap, by the same table as the other pages. The `dependencies` page keeps its other kinds and no longer holds `advisory`. The `security` page files no known vulnerability of a dependency. See [the journal](journal.md#the-catalog-check) and [configuration](configuration.md#what-leaves-the-machine).
 
 The page `licenses` has three kinds: `conflict`, `unlicensed` and `unmet`. It is off by default. It is in a precinct's rotation only when `license_precincts` in `config.yaml` holds the whole token `<precinct>=yes`. A missing key or pair reads as no. Its finding is not critical and sends no signal to chat. In the paths of the Not judged section, the page looks only for signs of foreign material and statements of license. It judges nothing else there. The folder `licenses/` beside the page `licenses.md` holds its reading files, `reading.md`, `field.md` and `text.md`. The folder is not a page. The other pages stay where they are.
 
 The page `surplus` files each thing as its own lead, however small. A call or a test of a thing is no sign of need. The lead covers the whole capability with its own tests. The page files text only when the tree shows the surplus.
 
 A shared page uses no paths and no tool names of a specific repository, because many repositories read it.
+
+A page describes only its own subject and names no other department. A finding outside its Kinds is not its finding. Two departments may each file on one place, each under its own kind.
+
+The page repeats no rule of the law or of the patrol skill. It holds what differs for its subject.
 
 ## Your own pages
 
@@ -95,7 +99,7 @@ A department may have a document in the precinct that tries its findings. The pa
 - `- <name>: judged by <path>` names the document.
 - `- <name>: judged by none` says no document judges the department yet.
 
-A department with no line is judged by none. A judging document is evidence. It can protect a shape. It never convicts.
+A department with no line is judged by none. Its page then judges by its own words, or says that nothing is judged. A judging document is evidence. It can protect a shape. It never convicts.
 
 ## Add a department
 
