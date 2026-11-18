@@ -109,19 +109,6 @@ function highestSchema(installation: string): number {
 	return Math.max(0, ...numbers);
 }
 
-// The temp file is the write that can fail, so it comes first. The rename later keeps a reader from ever seeing a half-written file.
-function stage(path: string, text: string, mode: number): string {
-	const temp = `${path}.${process.pid}.${randomUUID()}`;
-	try {
-		writeFileSync(temp, text, { mode });
-		chmodSync(temp, mode);
-	} catch (e) {
-		rmSync(temp, { force: true });
-		throw e;
-	}
-	return temp;
-}
-
 const contractAlarm = (law: string, config: string | undefined) =>
 	law === config
 		? []
@@ -129,8 +116,10 @@ const contractAlarm = (law: string, config: string | undefined) =>
 				`ALARM contract-changed installation constitution contract ${law}, precincts at ${config ?? ABSENT}, run the assembly to amend`,
 			];
 
-// Everything before the swap only reads or writes a temp file, so a failure there leaves the installation as it was.
-// The binary moves first and the config second, so a failed temp write never leaves a new binary on an old config.
+// Before the swap the sync only reads and writes a temporary file, so a failure there leaves the installation as it was.
+// The config lands last, because its law_commit records that the sync is done.
+// A failed move of the binary leaves the old binary and the old config.
+// A failed move of the config leaves the new binary on the old config, and the next law-update repeats the sync, because it reads only law_commit and release_repo.
 function sync(opt: Options, execPath: string): string[] {
 	const root = resolve(opt.installation);
 	const configPath = join(root, "config.yaml");
@@ -142,8 +131,10 @@ function sync(opt: Options, execPath: string): string[] {
 	const sum = createHash("sha256").update(readFileSync(execPath)).digest("hex");
 	const next = rewriteConfig(config, { tag: opt.tag, commit: opt.commit, sum });
 	const mode = statSync(configPath).mode & PERMISSION_BITS;
-	const temp = stage(configPath, next, mode);
+	const temp = `${configPath}.${process.pid}.${randomUUID()}`;
 	try {
+		writeFileSync(temp, next, { mode });
+		chmodSync(temp, mode);
 		chmodSync(execPath, EXECUTABLE_MODE);
 		renameSync(execPath, join(root, "bin", "journal"));
 		renameSync(temp, configPath);

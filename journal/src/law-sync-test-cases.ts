@@ -220,26 +220,30 @@ export function defineCases(runner: Runner): void {
 	});
 
 	describe("write failure", () => {
-		test("keeps the old binary and the old config, and a rerun completes", () => {
-			lay(root);
-			const exe = runner.exe(root, "tick1");
-			const before = configOf(root);
-			chmodSync(root, READ_ONLY);
-			let result: Result;
-			try {
-				result = sync(exe);
-			} finally {
-				chmodSync(root, ALL_WRITABLE);
-			}
-			expect(result.code).not.toBe(0);
-			expect(result.out).toBe("");
-			expect(readFileSync(bin(), "utf8")).toBe(OLD_BINARY);
-			expect(existsSync(exe)).toBe(true);
-			expect(configOf(root)).toBe(before);
-			expect(leftovers(root)).toEqual([]);
-			expect(synced("tick2").out).toBe(SYNCED);
-			expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
-		});
+		test.each([".", "bin"])(
+			"with %s read-only, keeps the old binary and the old config, and a rerun completes",
+			(folder) => {
+				lay(root);
+				const exe = runner.exe(root, "tick1");
+				const before = configOf(root);
+				const locked = join(root, folder);
+				chmodSync(locked, READ_ONLY);
+				let result: Result;
+				try {
+					result = sync(exe);
+				} finally {
+					chmodSync(locked, ALL_WRITABLE);
+				}
+				expect(result.code).not.toBe(0);
+				expect(result.out).toBe("");
+				expect(readFileSync(bin(), "utf8")).toBe(OLD_BINARY);
+				expect(existsSync(exe)).toBe(true);
+				expect(configOf(root)).toBe(before);
+				expect(leftovers(root)).toEqual([]);
+				expect(synced("tick2").out).toBe(SYNCED);
+				expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
+			},
+		);
 	});
 
 	describe("usage and validation", () => {

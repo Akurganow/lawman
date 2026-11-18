@@ -9,7 +9,7 @@ const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
 One account has one spelling of its login in every field of every form. A host can spell one account differently across its interfaces.
-The acting login has the spelling that the operation identity prints. An account that trusted_authors of config.yaml names has the spelling of that key.
+The acting login, acting_login of config.yaml, has the spelling that the operation identity prints. An account that trusted_authors of config.yaml names has the spelling of that key.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
