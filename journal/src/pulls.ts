@@ -207,8 +207,8 @@ export function readPulls(
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
 		const author = text(raw.author);
-		const byRole = isTrusted(trusted, author);
-		if (!byRole && !isTrusted(writers, author)) continue;
+		const byTrusted = isTrusted(trusted, author);
+		if (!byTrusted && !isTrusted(writers, author)) continue;
 		const pull = readPull(raw);
 		const spec = newestMarker(pull, trusted, SPEC);
 		read.push({
@@ -220,7 +220,7 @@ export function readPulls(
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
 			traced:
-				byRole &&
+				byTrusted &&
 				pull.body
 					.split("\n")
 					.map(stripCr)
