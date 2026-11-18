@@ -4,6 +4,14 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.5 - 2026-11-18
+#### Bug Fixes
+- (**assembly**) keep the merge-form sentence as it was (408680b)
+- (**assembly**) show the checks that have not passed before a merge (d9427b3)
+
+- - -
+
+
 ## v3.0.4 - 2026-11-18
 #### Bug Fixes
 - (**journal**) keep a decider's pull request as the owner's (6afbe7d)
