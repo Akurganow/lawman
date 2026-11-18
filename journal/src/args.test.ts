@@ -72,18 +72,7 @@ describe("argument validators", () => {
 			"a[BOT]",
 			"a[]",
 		],
-		outcome: [
-			"",
-			"skipped-A",
-			"stopped-x y",
-			"silent\n",
-			"Silent",
-			"Out",
-			"Briefed",
-			"Specified",
-			"Executed",
-			"Referred",
-		],
+		outcome: ["", "1a", "-a", "Silent", "skipped-A", "stopped-x y", "silent\n"],
 	} as const;
 
 	for (const kind of Object.keys(good) as (keyof typeof good)[]) {

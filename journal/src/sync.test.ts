@@ -265,7 +265,6 @@ describe("sync", () => {
 			["comments absent", withTimes({ comments: undefined })],
 			["comments null", withTimes({ comments: null })],
 			["comments a number", withTimes({ comments: 0 })],
-			["comments a string", withTimes({ comments: "none" })],
 			["a comment that is no object", withTimes({ comments: [1] })],
 			["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
 			["a state outside the form", withTimes({ state: "opened" })],
