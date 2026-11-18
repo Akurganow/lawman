@@ -79,7 +79,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead`, `related` and `kind`. The
 
 The tick group prints the issue: its title, its body and its comments. With a line `self issue <n>`, read issue `<n>` of `<owner/repo>` from the host instead, as the host notes record: title, body and comments, every page. A failed read gives `stopped-issue-read`.
 
-The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+The case is the newest comment by a trusted author, ignoring ASCII case, whose last line is a marker with `stage=case`. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
 When `related` is not `-`, read each issue it names from the host, as the host notes record. A failed read is a fact for Blockers and stops nothing.
 

@@ -54,14 +54,14 @@ A marker counts only when all of these hold:
 3. The line lies outside a fenced block.
 4. The line is not indented by 4 or more spaces.
 5. The line is not inside a blockquote.
-6. The line is in the issue body or in a comment of the trusted author. A comment on a pull request counts under the same rules as a comment on an issue.
+6. The line is in the issue body or in a comment of a trusted author. A comment on a pull request counts under the same rules as a comment on an issue.
 7. The marker is valid.
 
 A marker quoted anywhere else counts for nothing. An invalid marker is ignored. It displaces no older marker.
 
 Rules 1, 4 and 5 follow from column 0, so the parser needs no blockquote state. The fixture still tests each case.
 
-The trusted author is the installation's trusted login or an earlier login. Compare logins ignoring ASCII case.
+A trusted author is the installation's trusted login or an earlier login. Compare logins ignoring ASCII case.
 
 ### Fenced blocks
 

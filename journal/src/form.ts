@@ -8,8 +8,8 @@ export type FormKind = "issues" | "pulls" | "decider" | "catalog";
 const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
-One account has one spelling of its login in every field of every form. The installation's own account has the spelling that the operation identity prints.
-A host can spell one account differently across its interfaces. Choose one spelling for the account and give it everywhere.
+One account has one spelling of its login in every field of every form. A host can spell one account differently across its interfaces.
+The installation's own account has the spelling that the operation identity prints. An account that earlier_logins of config.yaml names has the spelling of that key.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 

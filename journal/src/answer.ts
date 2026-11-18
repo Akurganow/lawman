@@ -14,11 +14,11 @@ const rankOf = (ord: string) => Number(ord.split("|")[1]);
 // Only the object's own fields count: reactions come from the reader, never from a body.
 export function answerOf(
 	issue: SyncIssue,
-	counted: ReadonlySet<string>,
+	trusted: ReadonlySet<string>,
 	writers: Set<string>,
 ): Answer | null {
 	if (issue.state !== "OPEN") return null;
-	const { markers } = collectIssueMarkers(issue, counted);
+	const { markers } = collectIssueMarkers(issue, trusted);
 	const newestCourt = markers.filter((m) => m.marker.role === "court").at(-1);
 	if (newestCourt?.marker.stage !== "referral") return null;
 	// A newer marker of another role means a new round, so the referral no longer waits.

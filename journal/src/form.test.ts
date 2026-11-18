@@ -10,9 +10,16 @@ import {
 	loginList,
 } from "./form";
 import { inproc, inprocAsync } from "./inproc";
-import { countedLogins } from "./input-files";
 import { readPulls } from "./pulls";
-import { addPrecincts, BASE, cli, dbFile, rows, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	BASE,
+	cli,
+	dbFile,
+	rows,
+	tempDb,
+	trustedOnly,
+} from "./test-helpers";
 
 tempDb();
 
@@ -118,7 +125,7 @@ describe("each example passes its reader", () => {
 	test("pulls", () => {
 		const input = exampleOf("pulls");
 		expect(
-			readPulls(input, countedLogins(null, "lawman-bot")).map((p) => p.row),
+			readPulls(input, trustedOnly("lawman-bot")).map((p) => p.row),
 		).toEqual([
 			{
 				number: 7,

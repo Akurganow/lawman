@@ -77,13 +77,13 @@ Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissal
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
 
-The key `earlier_logins` holds `<login>,<login>`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's, so the state that an earlier account wrote stays after a change of account. The roles still act only as `trusted_login`. You write the key, and the assembly keeps it.
+The key `earlier_logins` holds `<login>,<login>` or `none`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's. So what an earlier login wrote stays after a change of account. The roles still act only as `trusted_login`. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. Spell each login as `trusted_login` held it.
 
-Three things hold for a key that works:
+Do three things for the key to work:
 
-- You control each account that it names. Such an account keeps the power to write counted markers.
-- The trusted login may change the open pull requests of the earlier account on the host. The clerk and the pull request roles write to them.
-- The `issues` command of each precinct reads the reactions on the comments of the earlier account. A command written before the key reads none there. The job "re-check a precinct" offers to write it again.
+- Name only accounts that you control. An account named there keeps the power to write counted markers.
+- Give the trusted login the host's right to change the open pull requests of the earlier logins. The clerk and the pull request roles write to them.
+- Run the job "re-check a precinct" for each precinct after every change of the key or of `trusted_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |

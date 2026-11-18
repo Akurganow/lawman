@@ -2,7 +2,6 @@ import { expect, test } from "bun:test";
 import { writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { stripInvisible } from "./clean";
-import { countedLogins } from "./input-files";
 import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
 import { command, configs } from "./operations-test-fixture";
@@ -13,6 +12,7 @@ import {
 	PRIVATE_KEYS,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 import {
 	CONSTITUTION,
@@ -58,7 +58,7 @@ async function expectSafe(printed: string) {
 	expect(
 		extractMarkers(
 			{ text: printed, createdAt: TIME, rank: 0, author: TRUSTED },
-			countedLogins(null, TRUSTED),
+			trustedOnly(TRUSTED),
 		),
 	).toEqual([]);
 	expect(printed).not.toContain(TOKEN);

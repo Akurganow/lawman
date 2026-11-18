@@ -46,7 +46,7 @@ The output is the comment. Write it unchanged as a conversation comment on pull 
 
 ### Read the ruling
 
-The tick group prints the comments of the issue `<n>`, cleaned, each with its id. The ruling is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Its URL is not in the group. Read the comments of the issue from the host and send the reply through `bin/journal clean --json`. Take the URL field of that id from the cleaned output. A failed read gives `stopped-issue-read`. Keep the URL with the id.
+The tick group prints the comments of the issue `<n>`, cleaned, each with its id. The ruling is the newest comment by a trusted author, ignoring ASCII case, whose last line is a marker with `role=court` and stage `conviction` or `acquittal`. Its URL is not in the group. Read the comments of the issue from the host and send the reply through `bin/journal clean --json`. Take the URL field of that id from the cleaned output. A failed read gives `stopped-issue-read`. Keep the URL with the id.
 
 ### Create the tree
 
@@ -198,7 +198,7 @@ Taken up by the clerk as a draft that counts as not started.
 `<pull>` is the owner's pull request. Change nothing on it but this one comment.
 
 1. Read the ruling.
-2. In the cleaned output of step 1, take the URL of the newest comment by `<login>` with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`.
+2. In the cleaned output of step 1, take the URL of the newest comment by a trusted author with each of these markers: `role=investigation stage=case`, `role=prosecutor stage=charge` and `role=defender stage=defence`.
 3. Write the brief on pull request `<pull>`, as the `tick.md#write-a-comment` section says. Its heading is `Clerk`. Its body is the sentence `Issue #<n> was investigated and ruled on. This pull request stays as its author left it.`, a blank line, and these four lines in this order. Leave out the Case, Charge or Defence line when step 2 found no such comment.
    ```
    - Case: <URL>
@@ -215,7 +215,7 @@ The title is `Precedents of #<n>: ` and the names of the files the `precedent` o
 
 1. Read the ruling when the issue has one. Without one, go on.
 2. Create the tree.
-3. When `<state>` is `closed`, build the object of the `tick.md#check-the-decider` section for the issue `<n>`. Do not run `bin/journal decider`. When `<pull>` is not `-` and the last close of the issue is `<login>`'s, build the object for the pull request `<pull>` instead. Add the conversation comments of that pull request to it as `comments`. A command builds the object from the host replies. Your own text carries no comment body into it. `bin/journal form decider` prints the form.
+3. When `<state>` is `closed`, build the object of the `tick.md#check-the-decider` section for the issue `<n>`. Do not run `bin/journal decider`. When `<pull>` is not `-` and the last close of the issue is a trusted author's, build the object for the pull request `<pull>` instead. Add the conversation comments of that pull request to it as `comments`. A command builds the object from the host replies. Your own text carries no comment body into it. `bin/journal form decider` prints the form.
 4. Write the precedent files. With a `none` or `no-entry` line in the output, go to step 8.
 5. Record the precedent files.
 6. Publish the commit from the tree to the repository on the host, as the new branch `<branch>`. A refusal ends the tick with `failed`. Blockers holds the host's error line.

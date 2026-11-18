@@ -198,7 +198,7 @@ jobs: <role>=<n> ... | none
 progress_checks: <whole number above zero>
 dismissals_since: <UTC time of the install or of the update that brought dismissals>
 excluded_authors: <name>=<login>,<login> ... | none
-earlier_logins: <login>,<login>
+earlier_logins: <login>,<login> | none
 ```
 
 The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. The assembly never writes `earlier_logins`, and it keeps a key that is there.

@@ -31,8 +31,8 @@ export function excludedAuthors(
 	return new Set(logins.split(",").filter(Boolean).map(asciiLower));
 }
 
-// the trusted login and the earlier logins of the key; an absent key names none
-export function countedLogins(
+// the trusted login and the earlier logins of the key; an absent key and the value `none` name none
+export function trustedAuthors(
 	config: string | null,
 	login: string,
 ): Set<string> {
@@ -40,7 +40,7 @@ export function countedLogins(
 	return new Set(
 		[login, ...earlier.split(",")]
 			.map((l) => asciiLower(l.trim()))
-			.filter(Boolean),
+			.filter((l) => l !== "" && l !== "none"),
 	);
 }
 

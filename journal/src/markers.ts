@@ -232,15 +232,15 @@ export function fencedLines(lines: string[]): boolean[] {
 	});
 }
 
-// `counted` holds lowercased logins; an empty author never counts
-export const counts = (counted: ReadonlySet<string>, author: string) =>
-	author !== "" && counted.has(asciiLower(author));
+// `trusted` holds lowercased logins; an empty author is never trusted
+export const isTrusted = (trusted: ReadonlySet<string>, author: string) =>
+	author !== "" && trusted.has(asciiLower(author));
 
 export function extractMarkers(
 	carrier: Carrier,
-	counted: ReadonlySet<string>,
+	trusted: ReadonlySet<string>,
 ): Found[] {
-	if (!counts(counted, carrier.author)) return [];
+	if (!isTrusted(trusted, carrier.author)) return [];
 	const lines = carrier.text.split("\n").map(stripCr);
 	const hidden = fencedLines(lines);
 	const found: Found[] = [];
@@ -262,7 +262,7 @@ export const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
 export function collectIssueMarkers(
 	issue: GhIssue,
-	counted: ReadonlySet<string>,
+	trusted: ReadonlySet<string>,
 ) {
 	const comments = [...issue.comments].sort((a, b) =>
 		byText(a.createdAt, b.createdAt),
@@ -276,7 +276,7 @@ export function collectIssueMarkers(
 					rank,
 					author: c.author?.login ?? "",
 				},
-				counted,
+				trusted,
 			),
 		)
 		.sort((a, b) => byText(a.ord, b.ord));

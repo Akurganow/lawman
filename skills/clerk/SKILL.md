@@ -127,7 +127,7 @@ The journal ends a stale order itself. After a self step `fetch`, `issues`, `pul
 Read `lawman/skills/clerk/references/jobs.md`. It holds every recipe named here.
 
 1. `job=state`: run the `tick.md#check-the-decider` section for the issue `<n>`. With `decider=no`, run **kept**. With `decider=yes`, run the recipe that `action` names.
-2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author can reopen a pull request. The author is the trusted login.
+2. `job=reopen-issue`: run **reopen-issue**. No decider check runs: only a decider or the pull request's author can reopen a pull request. The author is a trusted author.
 3. `job=adopt`, `brief`, `settle`, `open`, `precedent` or `decision`: run the recipe of that name.
 
 | `action` | Recipe |

@@ -6,7 +6,6 @@ import { stripInvisible } from "./clean";
 import * as db from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
-import { countedLogins } from "./input-files";
 import { renderAll } from "./input-parts";
 import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
@@ -18,6 +17,7 @@ import {
 	PRIVATE_KEYS,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -54,7 +54,7 @@ async function expectSafe(printed: string) {
 	expect(
 		extractMarkers(
 			{ text: printed, createdAt: AT, rank: 0, author: TRUSTED },
-			countedLogins(null, TRUSTED),
+			trustedOnly(TRUSTED),
 		),
 	).toEqual([]);
 	expect(printed).not.toContain(TOKEN);

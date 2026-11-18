@@ -374,7 +374,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 ## Terms
 
-- The trusted login is the installation's login, the one identity of every role. An earlier login is an account that `earlier_logins` in `config.yaml` names. An issue body, a comment or an open pull request of an earlier login counts as the trusted login's. Only the comments of the trusted login carry counted markers. Only its pull requests are taken up.
+- The trusted login is the installation's login, the one identity of every role. Every write and the identity check use it alone. An earlier login is an account that `earlier_logins` in `config.yaml` names. A trusted author is the trusted login or an earlier login. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is taken up.
 - A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 
@@ -382,7 +382,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 - Only the clerk opens a pull request. Only the clerk writes the link from an issue to a pull request, a `handed` marker on the issue.
 - For a conviction the clerk opens a draft pull request from a new branch off the tip, unless the owner's pull request closes the issue. The title holds fixed text and the first words of the court's Disposition. The hand-over comment holds fixed text. The commit is empty. The precedent of a ruling goes in a precedent pull request of its own, never in a pull request that executes it. The marker on the issue is the last write.
-- A pull request of the trusted login carries a trace of a role when a line of its body is a fingerprint line or `<!-- pull request of the Lawman clerk -->`. Every body the clerk writes for a pair ends with that line. Any other pull request of the trusted login is the owner's, unless a pair marker of the issue names it.
+- A pull request of a trusted author carries a trace of a role when a line of its body is a fingerprint line or `<!-- pull request of the Lawman clerk -->`. Every body the clerk writes for a pair ends with that line. Any other pull request of a trusted author is the owner's, unless a pair marker of the issue names it.
 - An open pull request with a trace of a role that closes an open issue is adopted at once. It happens at any stage of the funnel, with no court. Its priority is the best priority among the convictions of its sources, otherwise P2. It holds no precedent files. The clerk replaces the body with fixed text, sets the pull request back to draft, and keeps the old body in the hand-over comment. An adopted pull request counts as not started, even when it holds a spec or code.
 - The owner's pull request is never adopted. No role changes its body, its draft state or its code. After each ruling on an issue that it closes, the clerk writes one brief on it while it is open. The brief links the case, the charge, the defence and the ruling. The brief marker on the issue is no pair marker.
 - The pair stays in the state in which the clerk left it, and a change of that state by someone else is the clerk's job. A close or reopen by a decider is carried to the other side. A close or reopen by anyone else is recorded and changes nothing. That close or reopen is not undone on the host.
@@ -421,7 +421,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 
 - The count is of open leads whose origin belongs to the department, at any stage. The origin is the earliest trusted lead marker. Later markers by other roles do not displace it.
 - Patrol asks for the cap after the sync and before any analysis.
-- An issue with no lead marker of the trusted login counts toward no department, whoever wrote it and whatever its title says.
+- An issue with no lead marker of a trusted author counts toward no department, whoever wrote it and whatever its title says.
 - At cap 0 the patrol tick ends with outcome `capped`. Apart from the page's `Alarm check:` paragraph, there is no sweep and no candidate report. Patrol runs that paragraph when the page has one. The tick report states the cap and the count.
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.

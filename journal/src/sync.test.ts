@@ -5,7 +5,6 @@ import { join } from "node:path";
 import { EXIT } from "./db";
 import { formText } from "./form";
 import { inprocAsync } from "./inproc";
-import { countedLogins } from "./input-files";
 import { collectIssueMarkers } from "./markers";
 import {
 	addPrecincts,
@@ -22,6 +21,7 @@ import {
 	run,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -106,7 +106,7 @@ describe("sync", () => {
 
 	test("a fixture sync prints counts that match the fixture", () => {
 		const found = issues.map((i) =>
-			collectIssueMarkers(i, countedLogins(null, TRUSTED)),
+			collectIssueMarkers(i, trustedOnly(TRUSTED)),
 		);
 		const markers = found.reduce((n, f) => n + f.markers.length, 0);
 		const legacy = found
@@ -154,7 +154,7 @@ describe("sync", () => {
 		const stored = rows("SELECT * FROM markers WHERE issue = 1 ORDER BY ord");
 		const want = collectIssueMarkers(
 			must(issues[0]),
-			countedLogins(null, TRUSTED),
+			trustedOnly(TRUSTED),
 		).markers;
 		expect(stored.map((r) => r.ord)).toEqual(want.map((m) => m.ord));
 		const first = must(stored[0]);
@@ -453,7 +453,7 @@ describe("sync", () => {
 	test("a marker by an earlier login counts as the trusted login's", () => {
 		writeFileSync(
 			join(dir, "config.yaml"),
-			"earlier_logins: , Earlier-Login,,other-login\n",
+			"earlier_logins: , Earlier-Login,,none\n",
 		);
 		const r = sync([
 			{
@@ -470,7 +470,7 @@ describe("sync", () => {
 				state: "OPEN",
 				title: "y",
 				createdAt: CREATED,
-				author: { login: "stranger" },
+				author: { login: "none" },
 				body: lead(),
 				comments: [],
 			},
@@ -543,8 +543,8 @@ describe("sync", () => {
 		sync(issues);
 		const want = new Map<string, number>();
 		for (const i of issues.filter((x) => x.state === "OPEN")) {
-			const dept = collectIssueMarkers(i, countedLogins(null, TRUSTED))
-				.leadOrigin?.marker.fields.department;
+			const dept = collectIssueMarkers(i, trustedOnly(TRUSTED)).leadOrigin
+				?.marker.fields.department;
 			if (dept !== undefined) want.set(dept, (want.get(dept) ?? 0) + 1);
 		}
 		expect(want.size).toBeGreaterThan(0);

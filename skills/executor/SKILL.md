@@ -81,7 +81,7 @@ Before a value enters a command, check that it matches its class. A value outsid
 | :-- | :-- |
 | precinct `<p>` | `^[a-z][a-z0-9-]*$` |
 | repository `<owner/repo>` | `^[A-Za-z0-9._-]+(/[A-Za-z0-9._-]+)+$`, and no segment is `.` or `..` |
-| login `<login>` | `^[A-Za-z0-9_][A-Za-z0-9._-]*$` |
+| login `<login>` | `^[A-Za-z0-9_][A-Za-z0-9._-]*(\[bot\])?$` |
 | pull request `<m>`, source `<s>`, comment id, run id | `^[1-9][0-9]*$` |
 | `<head commit>`, `<sha>` | `^[0-9a-f]{40}$` |
 | `<head branch>` | `^[A-Za-z0-9._/-]+$`, and the clone accepts it as a branch name |

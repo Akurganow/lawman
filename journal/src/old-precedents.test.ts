@@ -236,6 +236,17 @@ describe("old-precedent check", () => {
 		);
 	});
 
+	test("a ruling of an author that earlier_logins names gives its kind", async () => {
+		config(`trusted_login: ${TRUSTED}\nearlier_logins: Old-Login\n`);
+		const json = JSON.parse(form({ 2: ruled(conviction()) }));
+		json.issues[0].comments[0].author = { login: "old-login" };
+		const stdin = JSON.stringify(json);
+		expect((await check(stdin, "1:2")).out).toBe("line 1 kind=condemns\n");
+		expect((await move(stdin, "--line", "1", "--issue", "2")).out).toBe(
+			"entry 2026-09-02-callbacks\n",
+		);
+	});
+
 	test("an issue that the form holds twice gives ask for its lines only", async () => {
 		const json = JSON.parse(
 			form({ 1: ruled(acquittal()), 2: ruled(acquittal()) }),

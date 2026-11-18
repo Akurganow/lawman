@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, test } from "bun:test";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { inprocAsync } from "./inproc";
-import { countedLogins } from "./input-files";
 import { config } from "./input-test-fixture";
 import { cache } from "./precedent-test-fixture";
 import { plainWords, precedentBody } from "./pull-body";
@@ -16,6 +15,7 @@ import {
 	seed,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -104,7 +104,7 @@ const sourcesOf = (body: string) =>
 				},
 			],
 		}),
-		countedLogins(null, TRUSTED),
+		trustedOnly(TRUSTED),
 	)[0]?.row.issues;
 
 const call = (...args: string[]) => inprocAsync(BASE, args);
