@@ -1,4 +1,4 @@
-import { asciiLower, collectIssueMarkers } from "./markers";
+import { asciiLower, collectIssueMarkers, type Logins } from "./markers";
 import type { SyncComment, SyncIssue } from "./sync-issues";
 
 export const MARKER_PREFIX = "<!-- lawman:";
@@ -14,7 +14,7 @@ const rankOf = (ord: string) => Number(ord.split("|")[1]);
 // Only the object's own fields count: reactions come from the reader, never from a body.
 export function answerOf(
 	issue: SyncIssue,
-	login: string,
+	login: Logins,
 	writers: Set<string>,
 ): Answer | null {
 	if (issue.state !== "OPEN") return null;

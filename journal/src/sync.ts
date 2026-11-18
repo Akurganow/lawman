@@ -19,8 +19,8 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
-import { excludedAuthors, readConfig } from "./input-files";
-import { asciiLower, collectIssueMarkers } from "./markers";
+import { countedLogins, excludedAuthors, readConfig } from "./input-files";
+import { asciiLower, collectIssueMarkers, type Logins } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
 
@@ -50,13 +50,13 @@ function repliedAt(issue: SyncIssue): string | null {
 	return times.length === 0 ? null : times.reduce((a, b) => (a > b ? a : b));
 }
 
-type Trust = { login: string; writers: Set<string> };
+type Trust = { login: Logins; writers: Set<string> };
 
 function storeMarkers(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
-	login: string,
+	login: Logins,
 	stats: SyncStats,
 ): void {
 	const { markers, leadOrigin } = collectIssueMarkers(issue, login);
@@ -172,7 +172,8 @@ export async function syncIssues(
 	reset: boolean,
 ): Promise<string> {
 	const { writers, issues } = readIssues(input);
-	const excludedLogins = excludedAuthors(readConfig(), name);
+	const config = readConfig();
+	const excludedLogins = excludedAuthors(config, name);
 	const kept = issues.filter(
 		(issue) =>
 			issue.author === null ||
@@ -187,7 +188,14 @@ export async function syncIssues(
 		let stats: SyncStats;
 		try {
 			stats = inTransaction(db, () =>
-				replaceCache(db, name, { login, writers }, issues, texts, reset),
+				replaceCache(
+					db,
+					name,
+					{ login: countedLogins(config, login), writers },
+					issues,
+					texts,
+					reset,
+				),
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;

@@ -444,6 +444,34 @@ describe("sync", () => {
 		]);
 	});
 
+	test("a marker by an earlier login counts as the trusted login's", () => {
+		writeFileSync(
+			join(dir, "config.yaml"),
+			"earlier_logins: ,Earlier-Login,,other-login\n",
+		);
+		const r = sync([
+			{
+				number: 60,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "earlier-login" },
+				body: lead(),
+				comments: [],
+			},
+			{
+				number: 61,
+				state: "OPEN",
+				title: "y",
+				createdAt: CREATED,
+				author: { login: "stranger" },
+				body: lead(),
+				comments: [],
+			},
+		]);
+		expect(r.out.trim()).toBe("issues=2 leads=1 markers=1 invalid=1");
+	});
+
 	test("an author that is no object with a login is rejected", () => {
 		sync(issues);
 		const before = snapshot();

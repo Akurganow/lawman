@@ -9,8 +9,15 @@ import {
 } from "./cache-text";
 import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { countedLogins, readConfig } from "./input-files";
 import { linkOrNull } from "./link";
-import { asciiLower, extractMarkers, stripCr } from "./markers";
+import {
+	asciiLower,
+	counts,
+	extractMarkers,
+	type Logins,
+	stripCr,
+} from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
 export type Work = "todo" | "ready" | "returned";
@@ -127,7 +134,7 @@ type Counted = { ord: string; comment: Comment };
 // the comment that carries the newest counted marker of a role and stage
 function newestMarker(
 	pull: Pull,
-	login: string,
+	login: Logins,
 	want: { role: string; stage: string },
 ): Counted | null {
 	let newest: Counted | null = null;
@@ -163,7 +170,7 @@ function specVote(spec: Counted | null, writers: Set<string>): Vote {
 
 function workOf(
 	pull: Pull,
-	login: string,
+	login: Logins,
 	writers: Set<string>,
 	spec: Counted | null,
 ): Work {
@@ -196,13 +203,13 @@ const pullText = (pull: Pull): HostText => ({
 	})),
 });
 
-export function readPulls(input: string, login: string): ReadPull[] {
+export function readPulls(input: string, login: Logins): ReadPull[] {
 	const { writers, pulls } = readForm(input);
 	const read: ReadPull[] = [];
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		if (asciiLower(text(raw.author)) !== asciiLower(login)) continue;
+		if (!counts(login, text(raw.author))) continue;
 		const pull = readPull(raw);
 		const spec = newestMarker(pull, login, SPEC);
 		read.push({
@@ -258,7 +265,7 @@ export async function syncPulls(
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
 	});
-	const parsed = readPulls(input, login);
+	const parsed = readPulls(input, countedLogins(readConfig(), login));
 	const cleaned = await cleanTexts(
 		name,
 		parsed.map((p) => ({ item: p, text: p.text })),

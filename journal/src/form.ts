@@ -44,7 +44,7 @@ Each comment:
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
   rejectedBy: the logins that reacted with the thumbs down reaction, every page read
-  Both lists matter only on comments written by the trusted login on open issues. Leave them empty elsewhere.`,
+  Both lists matter only on comments written by the trusted login or an earlier login on open issues. Leave them empty elsewhere.`,
 	pulls: `pulls, for sync --pulls. One object.
 ${COMMON}
 ${WHOLE}

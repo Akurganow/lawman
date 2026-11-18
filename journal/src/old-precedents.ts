@@ -3,9 +3,10 @@ import { check, parseArgs, usage } from "./args";
 import { CleanFailed, cleaning } from "./cache-text";
 import { cleanCharacters } from "./clean";
 import { EXIT, Fail, out, readStdin } from "./db";
+import { countedLogins, readConfig } from "./input-files";
 import { type Block, fencedBlock, renderAll } from "./input-parts";
 import { hasCommand, precinctPlace } from "./launch";
-import { collectIssueMarkers } from "./markers";
+import { collectIssueMarkers, type Logins } from "./markers";
 import { output, Refused, refusal, registered } from "./operations";
 import {
 	KIND_OF,
@@ -112,7 +113,7 @@ async function issuesForm(precinct: string): Promise<Issues> {
 function judged(
 	read: Exclude<Issues, { refused: Refused }>,
 	issue: number,
-	login: string,
+	login: Logins,
 ): Verdict {
 	if ("why" in read) return read;
 	const found = read.issues.issues.filter((i) => i.number === issue);
@@ -152,7 +153,7 @@ async function checkCommand(args: string[]): Promise<number> {
 		};
 	});
 	registered(check("precinct", precinct));
-	const login = trustedLogin();
+	const login = countedLogins(readConfig(), trustedLogin());
 	// the form is read once, and only when a line names an issue
 	let read: Issues | undefined;
 	const verdicts: Verdict[] = [];
@@ -183,7 +184,7 @@ async function moveCommand(args: string[]): Promise<number> {
 	if (opt.kind !== undefined && !PRECEDENT_KINDS.includes(opt.kind))
 		throw usage(USAGE);
 	registered(precinct);
-	const login = trustedLogin();
+	const login = countedLogins(readConfig(), trustedLogin());
 	let verdict = NO_ISSUE;
 	if (issue !== null) {
 		const read = await issuesForm(precinct);

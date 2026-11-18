@@ -374,7 +374,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 ## Terms
 
-- The trusted login is the installation's login, the one identity of every role. Only its comments carry counted markers. Only its pull requests are taken up.
+- The trusted login is the installation's login, the one identity of every role. Only its comments carry counted markers. Only its pull requests are taken up. A text of an earlier login counts as a text of the trusted login. The earlier logins are the accounts that `earlier_logins` in `config.yaml` names.
 - A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 

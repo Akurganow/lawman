@@ -192,7 +192,7 @@ Bring the clone `precincts/<p>` up to date with the repository on the host. Drop
 
 ## Sync the tracker
 
-Read every issue of `<owner/repo>` from the host, open and closed, with the comments of each. Read also the logins that may write to the repository, access inherited from a group included. For each comment of the trusted login on an open issue, read the logins that reacted with a thumbs up and with a thumbs down. Read every page. A page that fails to read fails the sync. Send the host replies to the journal on standard input, unread, in the journal's issues form. A command builds the object from those replies and the logins. Your own text never carries an issue body, a comment body, a login or a reaction into it. The host notes record how this machine does it. `bin/journal form issues` prints the form.
+Read every issue of `<owner/repo>` from the host, open and closed, with the comments of each. Read also the logins that may write to the repository, access inherited from a group included. For each comment of the trusted login or an earlier login on an open issue, read the logins that reacted with a thumbs up and with a thumbs down. Read every page. A page that fails to read fails the sync. Send the host replies to the journal on standard input, unread, in the journal's issues form. A command builds the object from those replies and the logins. Your own text never carries an issue body, a comment body, a login or a reaction into it. The host notes record how this machine does it. `bin/journal form issues` prints the form.
 
 ```
 bin/journal sync <p> --author <login>
