@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.1 - 2026-11-18
+#### Bug Fixes
+- (**assembly**) compare pulls= with the pull requests of trusted authors (4f2792f)
+#### Documentation
+- (**assembly**) drop the reason from the row of the pulls check (eef2876)
+
+- - -
+
+
 ## v3.0.0 - 2026-11-18
 #### Features
 - BREAKING: name the acting login and the trusted authors in config.yaml (ecb351a)
