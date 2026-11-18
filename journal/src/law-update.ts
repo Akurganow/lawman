@@ -262,7 +262,9 @@ async function update(
 					opt.verify === "unnamed" ? "stopped-no-verifier" : DRIFT,
 				);
 		}
-		return await swap(folder, asset, f.tag, f.revision);
+		const synced = await swap(folder, asset, f.tag, f.revision);
+		remove(folder);
+		return synced;
 	} catch (e) {
 		remove(folder);
 		throw e;

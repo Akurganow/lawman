@@ -159,7 +159,7 @@ describe("law-update: the update with three commands", () => {
 			"verify",
 		]);
 		expect(assetRuns()).toEqual([syncCall()]);
-		expect(statSync(assetPath()).mode & 0o111).not.toBe(0);
+		expect(existsSync(releaseFolder())).toBe(false);
 		expect(binaryText()).toBe(OLD_BINARY);
 		expect(configText()).toBe(originalConfig);
 	});

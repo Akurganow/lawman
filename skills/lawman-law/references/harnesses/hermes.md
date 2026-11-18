@@ -119,7 +119,7 @@ Refused, seen in scheduled runs:
 
 A role removes a folder without a recursive delete. The form below passed the harness's check function as a role sends it.
 
-- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rm runs/<tick id>/pull-body.md` when the journal left it, then `rmdir runs/<tick id>`. The `rm` was not checked with the harness's check function.
+- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rm` of each file the folder holds, such as `runs/<tick id>/pull-body.md`, then `rmdir runs/<tick id>`. A tick with no tree starts at the `rm`. A plain `rm` of a file and `rmdir` passed, seen in scheduled runs.
 
 Refused, checked with the harness's check function and not seen in a scheduled run:
 
