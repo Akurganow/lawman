@@ -32,7 +32,7 @@ describe("argument validators", () => {
 			"octo-cat[bot]",
 			"lawman-agent[bot]",
 		],
-		outcome: ["silent", "skipped-no-work", "stopped-law-mismatch"],
+		outcome: ["done", "a0", "skipped-no-work", "stopped-law-mismatch"],
 	} as const;
 	const bad = {
 		precinct: ["", "A", "1a", "-a", "a_b", "a b", "a\n", "a/b"],
