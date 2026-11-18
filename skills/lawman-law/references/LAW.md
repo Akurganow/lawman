@@ -112,6 +112,7 @@ The lines of the update list are delivered to the owner too. The update list is 
 ## Writing
 
 Write what you say to the user in the user's language.
+That includes the tick report, except the names of its parts and its fixed lines.
 Put one thought in one sentence.
 Name a source by reference and do not retell it.
 
