@@ -8,10 +8,9 @@ more than they protect. Six defects count: an input the test does not control,
 pinned implementation text, a protection that another test already gives, an
 assertion stricter than the requirement, machinery heavier than the contract,
 and a cluster that outgrew its contracts. A test is a test file, or an
-automation step whose only job is to refuse something. File only the few that
-matter. Test: does
-this test fail only when the product is wrong, and is what it costs in
-proportion to what no other test protects?
+automation step whose only job is to refuse something. Test: does this test
+fail only when the product is wrong, and is what it costs in proportion to
+what no other test protects?
 
 ## Kinds
 | kind | meaning | measurement |
@@ -23,7 +22,8 @@ proportion to what no other test protects?
 | `disproportionate` | Its machinery outweighs its contract, and a cheaper point already makes the decision: a rendered result, parsed source text, a wall clock, a real service, a job on several systems for what a validator decides | The contract in one sentence, the line that makes the decision, the smallest check that would guard it written out, and the ways the test fails with the product unchanged |
 | `bloat` | A file or a cluster grew without a matching contract: more tests, assertions, helpers or setup than the contracts they pin | Two columns: the cost (tests, assertions, lines, helpers) and the protection that only these tests provide |
 
-One finding gets one kind: the kind that the fix replaces.
+One finding gets one kind. When two fit, name the defect that the fix would
+remove.
 
 ## Where to look
 Sweep wide with cheap reads first. Then go deep on the best suspects.
@@ -61,15 +61,11 @@ Skip the content of fixtures, generated files and the programs under test.
 
 ## Not findings
 Beyond what the law already excludes:
-- A test that cannot fail, and a scenario copied word for word under a second
-  name. Those belong to text-residue.
 - A missing test. This page finds tests that cost more than they protect.
-- A defect in the code under test that a test reveals. That is logic's. The
-  wrong verdict of a validator that gates a merge is logic's too. The test of
-  that validator is this page's.
-- A test of a dead unit. The abstractions lead for the unit carries it.
-- A seam that exists only so a test can reach a unit. It is not filed here,
-  and abstractions does not file it either. It is the price of testability.
+- A defect in the code under test that a test reveals, and the wrong verdict
+  of a validator that gates a merge. The test of that validator is this page's.
+- A test of a dead unit. The lead on the unit carries it.
+- A seam that exists only so a test can reach a unit.
 - A test that is only inconvenient, slow or noisy and still guards a contract.
   Where its cost matters, run it less often.
 - A probe that exists to prove a check can fail: a planted sample and the
@@ -87,7 +83,6 @@ Beyond what the law already excludes:
 - Setup repeated so each test reads alone. A distinct input that no other test
   feeds.
 - A test born with a fix. Judge it by what later happened to the code.
-- A shape with a recorded reason, while the reason is true.
 - The content of fixtures, and the programs the tests run.
 
 **Too small to file, even when true:**
@@ -96,22 +91,18 @@ Beyond what the law already excludes:
 - One test whose only fault is its wording.
 
 File a whole test, a whole file or a cluster, a recurring false red, or a
-concept tested in three places. When the best finding of the sweep is small, the
-correct output is no lead.
+concept tested in three places.
 
 ## Proof
-Commands, not intuition. Nothing runs. The patrol runs no code of the
-precinct, so every mutation and every behaviour preserving edit is written out
-and traced, and the lead says it was not run. Confidence stops at
+Nothing runs here, so every mutation and every behaviour preserving edit is
+written out and traced, and the lead says it was not run. Confidence stops at
 `demonstrated`.
 
-- **The measurement of the kind.** Quote each command and its output.
 - **The protection ledger.** For every removal, list each mutation the test
   catches, written out as an edit of the product. Pair each with the test that
   still catches it as `path:line`. Redundancy counts mutations caught, never
   lines executed.
 - **Where the protection lives.** A plain text search misses these classes.
-  Check each and say which you could not check.
   - A gate or a validator in automation that refuses the same thing.
   - A type or a schema that forbids it.
   - A case registered at run time from a data file or a table.
@@ -124,15 +115,12 @@ and traced, and the lead says it was not run. Confidence stops at
   Not checked: what to run alone, what to run in the full suite, what to print,
   and which output means which cause.
 - **A positive control for every census.** Run the same search on a known
-  occurrence. A count of zero proves nothing until the control reports a non
-  zero count.
+  occurrence.
 - **The history of the test.** Read the history of the file, and the commit that
   last changed each of its lines. A test that was born with a fix, or that was edited in commits that
   changed no behaviour, shows in the subjects.
 - **Attack your own claim once.** Look for a recorded reason, a contract that
-  only this test guards, a distinct input. When one holds, drop the candidate.
-  When you are less than confident, drop it. A missed finding costs nothing
-  this tick. A false one costs the owner's belief in every lead.
+  only this test guards, a distinct input.
 
 ## Anchors
 Value is what the removal or the rework buys.
@@ -147,11 +135,8 @@ Risk is the chance that a protection is lost.
 - Risk 3: a named test catches it only after a release.
 - Risk 5: a mutation exists that no remaining test catches.
 
-Threshold: value 3 or more, and risk 1, with no protection lost and no
-recorded reason against it, or a plan in steps that keeps the checks refusing
-what they refuse today. Value 3 is the lowest that qualifies. It means a false
-signal or a test that adds no protection, never a single line. These numbers
-are a starting value, not measured.
+Threshold: value 3 or more. It means a false signal or a test that adds no
+protection, never a single line.
 
 ## Judged by
 The role of the testing rules: the document of the precinct that says what a
@@ -159,32 +144,18 @@ test must earn, which contract each suite guards, and which tests stay on
 purpose with their reasons.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the contract in one sentence, the machinery, and the count of lines,
-  tests and assertions.
-- `Evidence`: the measurement of the kind, the commands with their output, and
-  the positive control.
-- `Why it is <kind>`: the symptom, and what the test was meant to buy. Name
-  the recorded reason you checked and say why it does not apply.
-- `What still protects`: the protection ledger. Each mutation, paired with the
-  test that still catches it as `path:line`.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  demonstrated`.
-- `Not checked`: the isolation experiment, the edit history that was not read,
-  the runs of the routine checks, and what only a release proves.
-
-No replacement is written. The marker is the last line.
+Add one section, `What still protects`, after `Why it is <kind>`. It holds the
+protection ledger: each mutation paired with the test that still catches it as
+`path:line`. `What` gives the contract in one sentence, the machinery, and the
+count of lines, tests and assertions. Confidence is `demonstrated`.
+`Not checked` holds the isolation experiment, the edit history that was not
+read, the runs of the routine checks, and what only a release proves. No
+replacement is written.
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the test file. For a cluster it is the file that holds the most
   of its tests, and on a tie the first in alphabetical order.
 - The symbol is the test function or the case id. For automation it is
   `<job>/<step name>` with each space written as `%20`. For a cluster it is its
   contract in two to four words joined by hyphens. Use the same words at every
   visit.
-- The kind is one row of the Kinds table.
-
-No line number, count or commit enters the identity.

@@ -50,20 +50,12 @@ kind may rest on such a sign or statement.
 ## Not findings
 Beyond what the law already excludes:
 - For `conflict`: material under the project's own license: the same license, or a later version the project's statement accepts through an "or later" grant.
-- Two statements of the project's own license that disagree, or a statement
-  of the project's own license that points to a file the tree lacks: `claims`.
-- A pin that is behind, or a version that two files give differently:
-  `dependencies`. A known vulnerability: `vulnerabilities`. A secret:
-  `security`.
 
 Too small to file, even when true: a copied snippet of a few lines that is a common idiom or has a one-line credit comment. A notice that differs from the license only in a year or in punctuation is too small as well.
 
 ## Proof
-Commands, not intuition. Quote every command and its output.
-
 **Census of statements.** Search the tree for each place of Where to look.
-Run the same search over a statement known to exist, and quote both outputs. A
-zero proves nothing until the control prints a non-zero count.
+Run the same search over a statement known to exist.
 
 **No statement.** When the census finds no statement of the project's license,
 nothing can be compared. File nothing, `unlicensed` included. Blockers names the missing statement, and
@@ -104,8 +96,7 @@ The test is a reason to file and never a verdict. A lead says nothing about a
 broken law. Doubt whether the project's license carries the condition keeps the
 candidate: Not checked names it for the expert.
 
-**Hidden readers.** A plain text search misses these classes. Check each and
-say which you could not check.
+**Hidden readers.** A plain text search misses these classes.
 - A dependency that a build step fetches and no manifest names.
 - A dependency named by a version control address that the list could not carry.
 - A copy of outside code whose license text was dropped.
@@ -113,11 +104,9 @@ say which you could not check.
 Attack your own claim once. Look for a statement of license that covers the
 place and that the census missed, or a recorded answer. Look also for a judging
 document that settles the license of the material against the license of the
-project. Drop the candidate when one holds.
+project.
 
 ## Anchors
-none
-
 No value threshold applies. The Cost and risk line reads from the candidate.
 Confidence speaks to the exhibits of the tree and of the reads, not to the
 interpretation of the license. Order the survivors `conflict`, `unlicensed`, `unmet`,
@@ -125,26 +114,20 @@ and inside a kind by the path of the place.
 
 ## Judged by
 The role of the owner's license policy: the document that lists accepted
-licenses and accepted exceptions, such as a bought license. With no line,
-none.
+licenses and accepted exceptions, such as a bought license.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the material, where it lives, the family and the gap.
-- `Evidence`: every quote as `path:line`, and the commands with their output, controls included.
-- `Why it is <kind>`: the exhibits of the filing test, one for each.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed|demonstrated`.
-- `Not checked`: what a person must settle, such as whether the material is combined with the project in the way the condition needs. A pin that names a mutable label. The clause of the license for the funnel's expert: by license identifier, or, when the license has none, by the quote of the clause. No package name and no path. The hidden-reader classes not searched.
-
-The marker is the last line.
+No section is added. `What` names the material, the family and the gap.
+`Why it is <kind>` gives the exhibits of the filing test, one for each.
+`Not checked` says what a person must settle, such as whether the material is
+combined with the project in the way the condition needs. It names a pin that
+holds a mutable label. It names the clause of the license for the funnel's
+expert. It names the clause by license identifier, or by a quote of the clause
+when the license has none. It gives no package name and no path.
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - For a dependency the path is the file that pins it. The symbol is `<ecosystem>/<name>`. The ecosystem token is the one the precinct's entry names. A git pin is named `<host>/<path>`, with the host in lower case, no scheme and no `.git`.
 - For held material the path is its folder or file. The symbol is its name and
   the identifier of its license when the tree states one, otherwise `unstated`.
 
-No expression, text digest, version, line number, count or commit enters the identity.
+No expression, text digest or version enters the identity.

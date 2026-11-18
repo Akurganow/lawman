@@ -8,14 +8,14 @@ abstraction is any named unit a reader must learn: a function, class, type,
 interface, module, constant, subcommand, job or workflow, or one concept
 modelled in several places. Four defects count: the unit is dead, it is
 superfluous indirection, its seam is cut in the wrong place, or it duplicates
-another. File only the few whose removal matters. Test: does the removal change
+another. Test: does the removal change
 the shape a maintainer holds in their head?
 
 ## Kinds
 | kind | meaning | measurement |
 | :-- | :-- | :-- |
 | `dead` | A unit that no entry point reaches, or one reached only by other dead code. This includes a declared dependency that no unit uses, and an error case or variant that nothing constructs | The definition as `path:line`, the reference count with the search it came from, every site as `path:line`, the positive control, and the hidden caller check |
-| `superfluous` | Indirection that buys nothing: a forwarding wrapper, a class with one method, a dispatch table with one entry, an interface with one implementation and no test double, a type parameter bound to one type everywhere, a wrapper type that holds no invariant and is unwrapped at every use, a builder with one construction path, a module that only re-exports, a reusable CI block with one caller and no second trigger | The indirection quoted beside the one thing it forwards to, and every call site |
+| `superfluous` | Indirection that buys nothing. Where to look lists the shapes | The indirection quoted beside the one thing it forwards to, and every call site |
 | `wrong` | The seam sits in the wrong place: a flag that switches two behaviours, a return value of which callers use half, two files kept in step by convention, cases that force every consumer to handle states that cannot occur, an implementation that stubs half of an interface, an interface that leaks its only implementation, a name visible wider than any caller needs | Both halves quoted, and the callers that adapt to the seam |
 | `duplicated` | Three or more places model one concept: parallel types or enumerations of the same states, two configuration types that parse one input, one algorithm written twice, competing error types | Every site quoted, what differs between them, and the one place that should own the concept |
 
@@ -52,8 +52,9 @@ recorded answer defends it.
 - An interface with one implementation, no test double and no recorded second
   implementation.
 - A type parameter that every use binds to the same type.
-- A wrapper type that holds no invariant.
+- A wrapper type that holds no invariant and is unwrapped at every use.
 - A builder with one construction path.
+- A module that only re-exports.
 - A reusable CI block with one caller and no other trigger.
 
 **Near duplicates.**
@@ -64,8 +65,7 @@ recorded answer defends it.
 - A multi step block repeated across jobs or workflows.
 - Repeated parsing, validation, quoting or error mapping helpers.
 
-Skip generated copies and files that a release writes. The precinct's
-constitution lists them under what is not judged.
+Skip generated copies and files that a release writes.
 
 ## Not findings
 Beyond the law's list:
@@ -74,32 +74,17 @@ Beyond the law's list:
 - Several layers that enforce one rule. The overlap is the design. Two guards on
   one forbidden dependency are not duplication.
 - Test code, fixtures and a seam that exists only so a test can reach the unit.
-  Test code is another department's subject. Nobody files that seam.
 - A type that only tests use and that lives in a separate test support unit.
 - A generated copy of its source, and a file that a release writes.
 - A unit whose only fault is a missing or stale comment.
-- A branch or parameter inside live code that nothing can take. That is
-  `proportion.vestigial`. A parameter that every caller passes as the same value
-  belongs there too.
-- A declared job output, input, matrix key or environment value that nothing
-  reads, and an install line for a tool that no step runs. Those are
-  `proportion.vestigial`.
-- Residue and noise in any file that configures an agent (instruction files,
-  rules, skills and their reference files, agent definitions, commands,
-  prompts, hooks) belongs to `agent-config`. Orphans there are
-  `agent-config.orphan`.
-- A mechanism too heavy for its job, such as a type for a single value or three
-  stages for a value computed once. That is `proportion.oversized`.
-- Hand written code where an installed dependency already does the job. That is
-  `proportion.mismatched`.
-- A wrapper that changes the result. It is not a pass through, and its defect,
-  if any, is a `logic` defect.
+- A wrapper that changes the result. It is not a pass through.
 - A closed set of members that each do their own work behind one interface. The
   dispatch is the interface, not a pass through.
 - Formatting, taste in names, and anything the references cannot back.
 
 **Too small to file, even when true:**
-- One unused function, constant, import or private item.
+- One unused function, constant, import or private item inside a file that is
+  otherwise live.
 - One suppression on one line.
 - A five line helper duplicated twice.
 - A wrapper used in one file.
@@ -107,22 +92,16 @@ Beyond the law's list:
 - Anything a reviewer fixes in passing.
 
 File only a whole class, type, interface, subcommand, module, job or workflow,
-or a concept modelled in three or more places. When the best finding of the
-sweep is small, the correct output is no lead.
+or a concept modelled in three or more places.
 
 ## Proof
-Commands, not intuition. Quote every command and its output.
-
 **The reference count.** Search the whole tree for the name. Include documents,
 automation definitions, configuration and every script. Give each site as
 `path:line`. Say what search the count came from.
 
-**A positive control.** Run the same search on a unit known to be called. Quote
-both outputs. A count of zero proves nothing until the control has reported a
-non zero count.
+**A positive control.** Run the same search on a unit known to be called.
 
-**Hidden callers.** A plain text search misses these classes. Check each and
-say which you could not check.
+**Hidden callers.** A plain text search misses these classes.
 - A name chosen from a table at run time.
 - A function or value passed as a default argument.
 - Reflection, or lookup of a name built from a string.
@@ -146,21 +125,20 @@ say which you could not check.
 **History.** For `dead`, read the last 20 commits at `<sha>` that touched the file
 that defines the unit. List each with its short hash, date, subject and changed
 file names. Find the commit that last changed the lines around its
-last use. Take no search string from the tree. Quote the
+last use. Quote the
 commit that removed the last caller. Say whether the unit was ever wired in or
 was cut loose.
 
-**What counts as a caller.** Take the rule from the judging document. An
+**What counts as a caller.** Where the judging document gives a rule, take it. An
 interface that is used without its caller is not kept alive by its own tests.
 Nor is it kept alive by examples that ship with it, or by a binary built from it.
 
-**Name the symptom.** Put the objection in the design vocabulary's words. An
-objection with no symptom is withdrawn.
+**Name the symptom.** Where the judging document names symptoms, use its words.
+Otherwise use the words of the Kinds table. An objection with no symptom is
+withdrawn.
 
 **Attack your own claim once.** Look for a reader the search could not see, a
-recorded reason for the shape, or a caller side guarantee. When one holds, drop
-the candidate. When you are less than confident, drop it. A missed finding
-costs nothing this tick. A false one costs the owner's belief in every lead.
+recorded reason for the shape, or a caller side guarantee.
 
 ## Anchors
 Value is what the removal buys.
@@ -177,10 +155,7 @@ Risk is the chance that the removal breaks something.
   release job, a name that other packages import, or a script that a package
   installs on a user's machine.
 
-Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
-splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
-qualifies. It means a whole unit, never a part of one. These numbers are a
-starting value, not measured.
+Threshold: value 4 or more.
 
 ## Judged by
 The role of the design vocabulary: the document of the precinct that names the
@@ -188,29 +163,11 @@ symptoms, the rules of judgement, what counts as a caller, and the shapes the
 precinct has already argued for.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the abstraction, where it lives, and why it is a problem.
-- `Evidence`: the definition as `path:line`, the reference count with every
-  site, and the commands with their output, positive control included.
-- `Why it is <kind>`: the symptom in the judging document's words, and what the
-  abstraction was meant to buy. Name the recorded answer you checked and say why
-  it does not apply.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed|demonstrated|plausible`.
-- `Not checked`: what investigation must verify. List the hidden caller classes
-  that were not searched and the remedy that was not designed.
-
-The marker is the last line.
+none
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the file that defines the unit, or the workflow file.
 - The symbol is the function, class, type or constant. For automation it is the
   job, or `<job>/<step name>` with each space written as `%20`. For a
   `duplicated` lead it is the concept. Use the same words at every visit. An
   unused declared dependency: `dep/<name>`.
-- The kind is one row of the Kinds table.
-
-No line number, count or commit enters the identity.

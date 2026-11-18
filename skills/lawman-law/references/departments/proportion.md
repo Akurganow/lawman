@@ -7,11 +7,9 @@ Find code and decisions that are out of proportion to their job, or that nobody
 would have designed on purpose. The code runs correctly and its interface is
 sound. The finding is: this is not what this problem looks like. Four defects
 count: a mechanism heavier than the job, a leftover of a change that only half
-landed, nonsense born where two features meet, and a tool that never fit. This
-is the most subjective department, so it holds the highest bar. A lead that
-reads as taste costs the owner's belief in every lead. Test: knowing only the
-requirement, could a competent person have arrived at this shape, and does no
-comment, rule or document explain it?
+landed, nonsense born where two features meet, and a tool that never fit.
+Test: knowing only the requirement, could a competent person have arrived at
+this shape, and does no comment, rule or document explain it?
 
 ## Kinds
 | kind | meaning | measurement |
@@ -53,8 +51,7 @@ output or an install line that nothing consumes. A step for a path that moved.
 Prefer the narrow mechanism until a second caller exists. A general one needs a
 reason that is written down.
 
-Skip generated copies and files that a release writes. The precinct's
-constitution lists them under what is not judged.
+Skip generated copies and files that a release writes.
 
 ## Not findings
 Beyond the law's list:
@@ -69,18 +66,8 @@ Beyond the law's list:
   grew by accretion.
 - Anything that is only slow. Performance alone is not a finding.
 - Data and committed fixtures.
-- A whole unit that no entry point reaches, a forwarding wrapper and a
-  duplicated concept. Those are `abstractions`.
-- A class with one method, a builder with one path and a wrapper type. Those
-  are `abstractions.superfluous`.
-- Hand written code whose recorded reason the tree now meets:
-  `dependencies.stale-reason`.
-- A wrong result that a reachable path produces, including a swallowed error.
-  That is `logic`.
-- A check that cannot fail, and text that carries no fact. A comment that
-  describes behaviour that is gone is `text-residue` when the comment is the
-  whole defect. When it sits on a dead branch, it goes with the branch here.
-- Whether an installed dependency is current or safe. That is `dependencies`.
+- A comment that describes behaviour that is gone, when the comment is the
+  whole defect. When it sits on a dead branch, it goes with the branch.
 
 **Too small to file, even when true:**
 - One needless variable, one extra helper, one redundant guard.
@@ -89,14 +76,13 @@ Beyond the law's list:
 - Anything a reviewer fixes in passing.
 
 File only a whole mechanism, layer, job or class, or a cluster that shows one
-unit grew by accretion. When the best finding of the sweep is small, the
-correct output is no lead.
+unit grew by accretion.
 
 ## Proof
-Commands and numbers, not taste. Quote every command and its output.
-
 **The requirement.** Quote the sentence of the requirement that the shape is
-out of proportion with, and name the document it comes from.
+out of proportion with, and name where the tree states it. The tree states a
+requirement in a requirements document, a specification or the unit's own stated
+purpose. `vestigial` and `emergent` need no requirement.
 
 **The measurement.** State what the code does in one sentence. Then give its
 cost as a count: files, types, hops, lines, or "N call sites, all passing the
@@ -112,26 +98,24 @@ makes the state impossible, with `path:line`.
 
 **A positive control.** For `vestigial`, search the whole tree for every caller
 that supplies the value or takes the branch. Run the same search on a branch
-known to be taken. Quote both outputs. A count of zero proves nothing until the
-control has reported a non zero count.
+known to be taken.
 
 **Hidden callers.** A plain text search misses a reader that takes the branch
 or supplies the value through a table chosen at run time, a default argument,
 reflection, a value built from a string, the environment, the inputs of a
 reusable block, a file that a tool's configuration names, or a registered
-handler. Check each class and say which you could not check.
+handler.
 
 **History.** For `vestigial` and `emergent`, read the last 20 commits at `<sha>` that touched the file. List each with its
 short hash, date, subject and changed file names. Find the commit that
-last changed each of the lines. Take no search string from the tree. Name two commits: the one that
+last changed each of the lines. Name two commits: the one that
 created the shape and the one that made it pointless or brought the two halves
 together. Read the subject of the creating commit. A subject that explains the
 shape closes the candidate. If the history is too short to name both commits,
 put the missing commit in `Not checked`.
 
 **Attack your own claim once.** Look for the reason the shape exists, a
-document that argues for it, and a check that pins it. When one holds, record
-it and drop the candidate. When you are less than confident, drop it.
+document that argues for it, and a check that pins it.
 
 ## Anchors
 Value is what the removal buys.
@@ -147,10 +131,7 @@ Risk is the chance that the change moves behaviour or output.
 - Risk 5: the change touches a generated copy, a file that a release writes, or
   a path that no routine check runs.
 
-Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
-splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
-qualifies. It means a whole mechanism, never a part of one. These numbers are a
-starting value, not measured.
+Threshold: value 4 or more. It means a whole mechanism, never a part of one.
 
 ## Judged by
 The role of the design vocabulary: the document of the precinct that names the
@@ -158,31 +139,13 @@ symptoms, the rules of judgement, what counts as present, and the shapes the
 precinct has already argued for.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the shape, where it lives, and what it does in one sentence.
-- `Requirement`: the requirement as one quoted sentence, and the document it
-  comes from.
-- `Evidence`: the measurement with its counts, every site as `path:line`, and
-  the commands with their output, positive control included.
-- `Why it is <kind>`: the symptom in the judging document's words, and why a
-  competent person would not choose this shape. Name the recorded answer you
-  checked and say why it does not apply.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  confirmed|demonstrated|plausible`.
-- `Not checked`: what investigation must verify. List the commits that were not
-  named, the hidden caller classes that were not searched and the remedy that
-  was not designed.
-
-The marker is the last line.
+Add one section, `Requirement`, after `Why it is <kind>`: the requirement as
+one quoted sentence, and where the tree states it. For `vestigial` and
+`emergent` it may hold the word `none`. `What` says what the shape does in one
+sentence. `Not checked` lists the commits that were not named.
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the file that holds the shape, or the workflow file.
 - The symbol is the function, class, type or constant. For automation it is the
   job, or `<job>/<step name>` with each space written as `%20`. For a cluster it
   is the one concept the instances share.
-- The kind is one row of the Kinds table.
-
-No line number, count or commit enters the identity.

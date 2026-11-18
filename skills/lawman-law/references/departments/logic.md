@@ -5,14 +5,13 @@ contract_version: 1
 ## Mission
 Find code that runs, passes its checks and review, and still computes the wrong
 result, crashes, or corrupts state. A program whose verdict gates a merge is
-code too. A production defect that a test reveals counts here. File only a
-defect with a traced path from a real entry point to a wrong output. Test: is
-there a reachable wrong result?
+code too. A production defect that a test reveals counts here. Test: is there a
+reachable wrong result?
 
 ## Kinds
 | kind | meaning | measurement |
 | :-- | :-- | :-- |
-| `wrong-condition` | A test, a comparison or the order of branches selects the wrong case | The line as `path:line`, one input that takes the wrong branch, the result it gives, and the result the judging document requires |
+| `wrong-condition` | A test, a comparison or the order of branches selects the wrong case | The line as `path:line`, one input that takes the wrong branch, the result it gives, and the result the tree requires |
 | `copy-paste-divergence` | One of two or more parallel blocks uses the wrong field, variable, index or unit | Both blocks quoted side by side with the differing token marked, and the entry point that reaches the odd one |
 | `error-handling` | A failure is turned into success or lost: a dropped status, a value forced to exist, a path that skips cleanup, a message that names the wrong cause | The line that drops or forces, the failure or input that triggers it, and what the caller does next |
 | `numbers-and-time` | Truncation, overflow, rounding, float equality, a mix of units or time zones, an off by one date or timeout | The expression, one pair of operands that breaks it, the computed value against the required one |
@@ -41,7 +40,7 @@ locks, groups, and the order between an event and work already in flight. Read
 every schedule that reruns a writer.
 
 **Gates.** A program whose exit code blocks a merge or a release is judged by
-the clause it quotes. Does it refuse what that clause forbids?
+the rule it quotes. Does it refuse what that rule forbids?
 
 **Escape hatches.** Census them by mechanism: a dropped failure status, a
 forced presence of a value, an unchecked cast, hand written ordering, equality
@@ -50,30 +49,19 @@ text, comments that say "hack", "for now", "should be fine", "assume".
 
 **Units that no test references.** They have had the least scrutiny.
 
-Skip generated copies, data and files that a release writes. The precinct's
-constitution lists them under what is not judged.
+Skip generated copies, data and files that a release writes.
 
 ## Not findings
 Beyond what the law already excludes:
 - Style, naming, missing documentation, a linter's business, performance
   alone, theory with no reachable path, taste.
 - Behaviour that the judging document records as deliberate.
-- A disagreement with your own paraphrase of a clause. A disagreement with the
-  quoted clause is a candidate.
+- A disagreement with your own paraphrase of a rule. A disagreement with the
+  quoted rule is a candidate.
 - A failure that names itself and stops. A clean stop is the code working.
 - An escape hatch with a written reason beside it.
 - A wrong value inside generated or committed data. File the code that wrote
   it.
-- A guard against a state that cannot occur, and a mechanism heavier than its
-  job. Those are proportion's.
-- Indirection, dead code and duplicates whose results are right. Those are
-  abstractions'. A wrapper that changes the result is logic's.
-- Data leaving beyond the precinct's promise document. That is privacy's.
-- A test that costs more than it protects, test helpers and duplicates inside
-  the test tree. Those are tests'. A production defect that a test reveals
-  stays here.
-- A test of a gate. The gate's own wrong verdict is logic's, the test of it is
-  tests'.
 
 **Too small to file, even when true:**
 - A wrong result on a rare input that touches no stored record, no published
@@ -82,39 +70,34 @@ Beyond what the law already excludes:
 - A defect with no traced entry point.
 
 File a wrong result on an input an ordinary run supplies, or a rare input whose
-wrong result lands in durable state. When the best finding of the sweep is
-smaller, the correct output is no lead.
+wrong result lands in durable state.
 
 ## Proof
-Commands, not intuition. Nothing runs. The patrol runs no code of the
-precinct, so a traced path is the exhibit and confidence stops at
+Nothing runs here, so a traced path is the exhibit and confidence stops at
 `demonstrated`. Reproduction belongs to the investigation, through the
 precinct's regression proof.
 
 - **The failure scenario.** Concrete inputs, order or interleaving, then the
-  exact wrong output, crash or state, against the output the judging document
-  requires.
+  exact wrong output, crash or state, against the output the tree requires.
+- **The required result.** The tree states it: in the judging document, or
+  without one in a specification, a documented contract, a test or a type. A
+  result that contradicts only your assumption is no defect.
 - **The traced path.** Start at a real entry point. Quote each step as
   `path:line` at the analysed commit. No entry point reaches it, no finding.
 - **The escape hatch census.** Quote the search and its count.
 - **A positive control.** Run the same search on a known occurrence in the
-  tree. A count of zero proves nothing until the control reports a non zero
-  count.
+  tree.
 - **The history of the line.** Find the commit that last changed each defective line.
   Read the last 20 commits at `<sha>` that touched the file. List each with its
   short hash, date, subject and changed file names. Look for a change made on purpose, with the reason in the subject.
-- **Hidden guarantees.** Check each before filing, and say which you could not
-  check.
+- **Hidden guarantees.**
   - A step upstream that validates or normalises the input.
   - A trigger that never supplies the value.
   - A state that the tree or a type forbids.
   - An assertion or an invariant.
   - A later step that corrects the value.
   - A test that pins the result, or a recorded reason.
-- **Attack your own claim once.** Look for any hidden guarantee above. When one
-  holds, drop the candidate. When you are less than confident, drop it. A
-  missed finding costs nothing this tick. A false one costs the owner's belief
-  in every lead.
+- **Attack your own claim once.** Look for any hidden guarantee above.
 
 ## Anchors
 Value is what the fix buys.
@@ -133,42 +116,25 @@ Risk is the chance that the fix breaks something.
 - Risk 5: the fix changes a stored or published value, or touches a path that
   no routine check runs.
 
-Threshold: value 4 or more. Risk 3 or less qualifies, and so does a plan that
-splits the risk into steps a reviewer can take one at a time. Value 4 is the lowest that
-qualifies. It means an ordinary input, or a rare input whose wrong result lands
-in durable state. These numbers are a starting value, not measured.
+Threshold: value 4 or more. It means an ordinary input, or a rare input whose
+wrong result lands in durable state.
 
 ## Judged by
 The role of the behaviour specification: the document of the precinct that
 states what the code must do, records the trades kept on purpose, and names
-the entry points. A defect that contradicts the document is a defect. One that
-contradicts your assumption is not.
+the entry points.
 
 ## Lead body
-Analysed commit and Department come first. The law owns those two lines. Then
-these sections, in this order:
-
-- `What`: the defect, where it lives, and the result it gives.
-- `Failure scenario`: the input or the order of events, the entry point, the
-  call path with each step as `path:line`, and the wrong result against the
-  required one.
-- `Evidence`: the quoted lines, the commands with their output, and the
-  positive control.
-- `Why it is <kind>`: the symptom, and the clause or the recorded answer that
-  makes the result wrong.
-- `Cost and risk`: one line, `Effort S|M|L, Risk low|medium|high, Confidence
-  demonstrated`.
-- `Not checked`: the hidden guarantee classes that were not searched, whether
-  wrong values were already stored or published, and whether the path ever ran.
-
-No fix is proposed. The marker is the last line.
+Add one section, `Failure scenario`, after `Why it is <kind>`. It holds the
+input or the order of events, the entry point and the call path, each step as
+`path:line`. It ends with the wrong result against the required one.
+`Why it is <kind>` names the rule or the recorded answer that makes the result
+wrong. Confidence is `demonstrated`. `Not checked` says whether wrong values
+were already stored or published, and whether the path ever ran. No fix is
+proposed.
 
 ## Identity
-`<path>::<symbol>::<kind>`. Encode each part as the marker grammar requires.
 - The path is the file that holds the defect.
 - The symbol is the function or the type. For automation it is
   `<job>/<step name>` with each space written as `%20`. For a program with no
   function it is `main`.
-- The kind is one row of the Kinds table.
-
-No line number, count or commit enters the identity.
