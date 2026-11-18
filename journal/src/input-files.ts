@@ -36,12 +36,12 @@ export function trustedAuthors(
 	config: string | null,
 	login: string,
 ): Set<string> {
-	const listed = configValue(config ?? "", "trusted_authors") ?? "";
-	return new Set(
-		[login, ...listed.split(",")]
-			.map((l) => asciiLower(l.trim()))
-			.filter((l) => l !== "" && l !== "none"),
-	);
+	const lower = (l: string) => asciiLower(l.trim());
+	const listed = (configValue(config ?? "", "trusted_authors") ?? "")
+		.split(",")
+		.map(lower)
+		.filter((l) => l !== "none");
+	return new Set([lower(login), ...listed].filter((l) => l !== ""));
 }
 
 // read only when there is something to print, so a bad value never touches an idle check

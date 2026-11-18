@@ -64,7 +64,8 @@ describe("case: the line of a clerk job", () => {
 		const asOutsider = (spec: Spec, at: number) => {
 			const form = JSON.parse(issuesJson({ 1: spec }));
 			form.issues[0].comments[at].author = { login: "outsider" };
-			call(BASE, ["sync", "main", "--author", ACTING], JSON.stringify(form));
+			const args = ["sync", "main", "--author", ACTING];
+			expect(call(BASE, args, JSON.stringify(form)).code).toBe(0);
 			expect(jobOf(1)).toBe("- - - - -");
 		};
 		asOutsider(closed(ruled(conviction, copy)), 4);

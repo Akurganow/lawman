@@ -103,7 +103,7 @@ The start of every tick checks the law folder too, and it has one more reason. S
 | :-- | :-- | :-- |
 | the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update stops with `stopped-law-config`: run the assembly. |
 
-`law-sync` writes the new `config.yaml` beside the old one, renames the new binary over `bin/journal`, and then renames the new `config.yaml` into place. It rewrites the sync keys and renames the keys of an earlier release. A failure before the second rename leaves the installation as it was. A failure of the second rename leaves the new binary on the old `config.yaml`, and the next `law-update` repeats the sync. `law-sync` refuses when the skills ask for a newer schema than the binary has.
+`law-sync` writes the new `config.yaml` beside the old one, renames the new binary over `bin/journal`, and then renames the new `config.yaml` into place. It rewrites the sync keys and renames the keys of an earlier release. A failure before the second rename leaves the installation as it was. A failure of the second rename leaves the new binary on the old `config.yaml`, and the next `law-update` repeats the sync. Until it does, a command that requires a key under its new name refuses and names the key. `law-sync` refuses when the skills ask for a newer schema than the binary has.
 
 Never open the database or run SQL on it. The commands below are the only way in.
 

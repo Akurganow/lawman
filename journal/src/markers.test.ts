@@ -305,6 +305,8 @@ describe("extractMarkers", () => {
 			),
 		).toEqual([]);
 		expect(carrier(ret(), "octocat-lawman2")).toHaveLength(0);
+		// `none` names no author only as a value of trusted_authors
+		expect(trustedOnly("None")).toEqual(new Set(["none"]));
 	});
 
 	test("a fence opens with 3+ backticks or tildes, indented up to 3 spaces", () => {
