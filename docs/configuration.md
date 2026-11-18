@@ -100,7 +100,7 @@ The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. T
 
 ### Trusted authors
 
-A trusted author is an account whose texts the journal counts. Only an issue body or a comment of a trusted author carries a counted [marker](pipeline.md#stages-and-markers). The roles take up only the open pull requests of a trusted author. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
+A trusted author is an account whose texts the journal counts. Only an issue body or a comment of a trusted author carries a counted [marker](pipeline.md#stages-and-markers). The journal keeps only the open pull requests of a trusted author or of a login that may write to the repository. Only a pull request of a trusted author can carry a trace of a role. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
 
 Use the key at a change of account: name the login that the installation acted as before, and what that login wrote stays. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. A host can spell one account in more than one way. The key fixes one spelling, and the commands give each named account that spelling. Spell a login that was once the acting login as `acting_login` held it.
 

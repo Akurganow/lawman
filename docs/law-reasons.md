@@ -50,7 +50,7 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 ### Pairs
 
-> The owner and the roles work under one login. Only a trace of a role tells a pull request that a role left behind from the owner's own work.
+> The owner works under the login of the roles or under another login that may write to the repository. Only a trace of a role tells a pull request that a role left behind from the owner's own work.
 
 > A second pull request beside the owner's would do the same work twice. The brief keeps the case and the ruling beside the owner's work.
 
