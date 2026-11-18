@@ -81,7 +81,7 @@ Show one row for each operation: how it runs, its source (found, current, propos
 
 ### Choose the method of verification
 
-The notes record the method. The proposal row names one method: the recorded one, or else the one verifier found. A run of part Host from the menu sets the recorded method aside. Ask on the Host screen only when the row can name no method. "Change" in the approval takes another choice or the refusal. The list is open. For example:
+The Verifier row of the proposal names the method. It names the verifier that the notes record while this machine still has it. Otherwise it names the only verifier that fits here, and with none or several that fit, ask on the Host screen. A recorded refusal never fills the row: the menu item "Host" is how the developer turns the check on. "Change" in the approval takes another choice or the refusal. The list is open. For example:
 
 - Verify the signature with a verifier that was found on this machine (recommended). Name the found verifiers.
 - Install a verifier, when none fits. Offer choices that fit this machine, and Apply installs the chosen one.
