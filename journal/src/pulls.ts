@@ -206,7 +206,9 @@ export function readPulls(
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		if (!isTrusted(trusted, text(raw.author))) continue;
+		const author = text(raw.author);
+		const byRole = isTrusted(trusted, author);
+		if (!byRole && !isTrusted(writers, author)) continue;
 		const pull = readPull(raw);
 		const spec = newestMarker(pull, trusted, SPEC);
 		read.push({
@@ -217,10 +219,12 @@ export function readPulls(
 				work: workOf(pull, trusted, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
-			traced: pull.body
-				.split("\n")
-				.map(stripCr)
-				.some((line) => line === CLERK_TRACE || FINGERPRINT.test(line)),
+			traced:
+				byRole &&
+				pull.body
+					.split("\n")
+					.map(stripCr)
+					.some((line) => line === CLERK_TRACE || FINGERPRINT.test(line)),
 			text: pullText(pull),
 			url: pull.url,
 		});

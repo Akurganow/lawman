@@ -52,14 +52,18 @@ describe("readPulls validity", () => {
 });
 
 describe("readPulls rows", () => {
-	test("only pull requests of the author enter, ignoring ASCII case", () => {
-		const rows = readOf([
-			{ number: 1, author: "Lawman-Bot" },
-			{ number: 2, author: "stranger" },
-			{ number: 3, author: "lawman-bot" },
-			{ number: 4 },
-		]);
-		expect(rows.map((r) => r.number)).toEqual([1, 3, 4]);
+	test("pull requests of trusted authors and deciders enter, ignoring ASCII case", () => {
+		const rows = readOf(
+			[
+				{ number: 1, author: "Lawman-Bot" },
+				{ number: 2, author: "stranger" },
+				{ number: 3, author: "lawman-bot" },
+				{ number: 4 },
+				{ number: 5, author: "Alice" },
+			],
+			["alice"],
+		);
+		expect(rows.map((r) => r.number)).toEqual([1, 3, 4, 5]);
 	});
 
 	test("a pull request with no link keeps an empty issues string", () => {
@@ -113,9 +117,17 @@ describe("readPulls rows", () => {
 			`Closes #6 ${CLERK_TRACE}`,
 			"Closes #6",
 		];
-		const pulls = bodies.map((body, number) => ({ number, body }));
-		const read = readPulls(JSON.stringify(hostPulls(pulls)), trustedOnly(BOT));
-		expect(read.map((p) => p.traced)).toEqual([true, true, false, false]);
+		const pulls: Pull[] = bodies.map((body, number) => ({ number, body }));
+		pulls.push({ number: 9, body: CLERK_TRACE, author: "alice" });
+		const input = hostPulls(pulls, ["alice"]);
+		const read = readPulls(JSON.stringify(input), trustedOnly(BOT));
+		expect(read.map((p) => p.traced)).toEqual([
+			true,
+			true,
+			false,
+			false,
+			false,
+		]);
 	});
 });
 
