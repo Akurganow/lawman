@@ -4,6 +4,17 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.3 - 2026-11-18
+#### Bug Fixes
+- (**journal**) accept any outcome token of the token class (4fcbee7)
+- (**journal**) reject issue comments that are not a list of objects (db68ad0)
+#### Tests
+- (**journal**) accept outcomes that the closed list refused (c6c1125)
+- (**journal**) drop repeated cases of the outcome and comments checks (309e743)
+
+- - -
+
+
 ## v3.0.2 - 2026-11-18
 #### Bug Fixes
 - (**law**) name the delimiter suffix without a placeholder (05bcc03)
