@@ -87,6 +87,8 @@ recorded answers):
 - A movable reference to a component in a job that no secret and no write token
   reaches.
 - A test or stand-in credential.
+- A path of medium severity or less. The outsider gains less than a write
+  through a job's token or an agent, or needs a second weakness.
 
 File only a path that an outsider can walk to a consequence.
 
@@ -172,7 +174,7 @@ problems are reported, which versions are supported and which protections the
 precinct promises. It judges only what it speaks to.
 
 ## Lead body
-No section is added. `What` says who can do what, and where, and names the
+The page adds no section. `What` says who can do what, and where, and names the
 missing guard. It gives no input that helps an attack. `Why it is <kind>` names
 the outsider and the guard you checked. `Not checked` names the history that
 was not searched, the host settings the patrol cannot read, and the probes and
@@ -188,7 +190,7 @@ A `secret` has no lead body. The alarm replaces it.
   - `unpinned-component`: `pin/<component>`.
   - `release-integrity`: `release/<job or artifact>`.
   - `install-script`: `script/<name>`.
-  - `agentic-injection`: `<role or workflow>/<read point>`.
+  - `agentic-injection`: `<agent or workflow>/<read point>`.
   - `rendered-output`: `render/<output>`.
 - `secret` has no identity.
 

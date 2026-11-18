@@ -57,7 +57,7 @@ date, subject and changed file names. Start with the paths that
 appear most often.
 
 Skip generated and vendored text. Skip the files that configure the agents of
-this repository, and the files in Read first.
+the precinct, and the files in Read first.
 
 ## Not findings
 Beyond the law's list, which covers the fence, what is not judged and recorded
@@ -72,7 +72,7 @@ reasons:
 - A name fixed by a stored key, a wire format, a specification or the
   documentation of an outside system. Quote it, never choose it.
 - Instructions. The files in Read first and the files that configure the
-  agents of this repository are read, not judged as text. Such files are, among
+  agents of the precinct are read, not judged as text. Such files are, among
   others, instruction files, rules, skills and their reference files, agent
   definitions, commands, prompts and hooks. Instruction text that the product
   ships to its users is judged here.
@@ -86,7 +86,7 @@ reasons:
 - Anything a reviewer fixes in passing.
 
 File `noise` and `naming` as a cluster: the same tell in three or more files.
-`lying`, `ceremony` and `residue` may stand alone, but the anchors still apply.
+`lying`, `ceremony` and `residue` may stand alone.
 
 ## Proof
 **The strike test (`noise`).** Strike from the text every word that stands
@@ -157,10 +157,11 @@ judging text, the list of texts that are protected, and the conventions of the
 house that the owner has already accepted.
 
 ## Lead body
-No section is added. For a cluster, `What` gives the count, the files and the
-three most telling instances. `Why it is <kind>` says why nobody would write
-this text on purpose. `Not checked` lists the commit that added the text, the
-commit that made it stale, and any run of a planted violation.
+The page adds no section. For a cluster, `What` gives the count, the files and
+the three most telling instances. `Why it is <kind>` says why nobody would
+write this text on purpose. `Not checked` names what investigation must verify.
+That is the commit that added the text, the commit that made it stale, and any
+run of a planted violation.
 
 ## Identity
 - A cluster across files: the path is `.`. A finding in one file, a cluster in

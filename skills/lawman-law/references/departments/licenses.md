@@ -117,13 +117,13 @@ The role of the owner's license policy: the document that lists accepted
 licenses and accepted exceptions, such as a bought license.
 
 ## Lead body
-No section is added. `What` names the material, the family and the gap.
+The page adds no section. `What` names the material, the family and the gap.
 `Why it is <kind>` gives the exhibits of the filing test, one for each.
 `Not checked` says what a person must settle, such as whether the material is
 combined with the project in the way the condition needs. It names a pin that
 holds a mutable label. It names the clause of the license for the funnel's
-expert. It names the clause by license identifier, or by a quote of the clause
-when the license has none. It gives no package name and no path.
+expert, with no package name and no path. It names the clause by license
+identifier, or by a quote of the clause when the license has none.
 
 ## Identity
 - For a dependency the path is the file that pins it. The symbol is `<ecosystem>/<name>`. The ecosystem token is the one the precinct's entry names. A git pin is named `<host>/<path>`, with the host in lower case, no scheme and no `.git`.

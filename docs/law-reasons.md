@@ -152,6 +152,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Read the tick group to its last part, as item 2 says, because the `self` lines stand at the end.
 
+### Step 4: sweep
+
+> Several unused units are separate, because each removal is its own decision.
+
 ## skills/prosecutor/SKILL.md
 
 ### Step 0: the input and the order
@@ -218,10 +222,6 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > These numbers are a starting value, not measured.
 
-> The values come from the nearest neighbour.
-
-> These numbers are a starting value from the older systems, not measured here.
-
 ## skills/lawman-law/references/departments/abstractions.md
 
 ### Proof
@@ -235,6 +235,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 > A heading anchor is `plausible` only, because renderers slug headings in different ways.
 
 > Add no `Source:` line, because that line belongs to dependencies.
+
+### Anchors
+
+> The values come from the nearest neighbour.
 
 ## skills/lawman-law/references/departments/dependencies.md
 
@@ -279,6 +283,12 @@ This page holds sentences that were taken out of the law. They explain rules or 
 ### Not findings
 
 > It is the price of testability.
+
+## skills/lawman-law/references/departments/text-residue.md
+
+### Anchors
+
+> These numbers are a starting value from the older systems, not measured here.
 
 ## skills/lawman-law/references/harnesses/hermes.md
 

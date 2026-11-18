@@ -25,7 +25,7 @@ Departments line names for this department, not one found by a search. Read it
 line by line. Show the census in the report: the promise, its sections, and
 each data item it names. A precinct with no such document has no promise to
 judge by. Every check is then inapplicable. Quote the empty census as the
-exhibit. File nothing. Read nothing else.
+exhibit. File nothing. The sweep ends there.
 
 Follow each data item of the promise from where the code makes it to every
 place it can go.

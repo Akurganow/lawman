@@ -5,8 +5,9 @@ Contract version: 1.
 
 A department is a page, not an agent. One generic patrol role reads the page
 and sweeps its subject. One department covers one class of defect. The page
-says only what to look for. Forensics, filing, caps and markers come from the
-law. Investigation works out a defect's cause. The page never does.
+says only what to look for. It names no other department. Forensics, filing,
+caps and markers come from the law. Investigation works out a defect's cause.
+The page never does.
 
 A page that violates this contract is skipped by the duty desk for that tick and named in Blockers.
 
@@ -73,14 +74,13 @@ and tools.
 **Not findings.** What the page excludes beyond what the law already excludes:
 the Fence, Not judged and every recorded reason. It also states
 the "too small to file" threshold in words. It lists the small cases that stay
-unfiled even when true. It says what size of finding is filed. No other
-section states that size. The page names no other department.
+unfiled even when true. It says what size of finding is filed.
 
 **Proof.** The commands that show each kind. The known unit that the positive
 control runs the same command on. The classes of hidden callers that a plain
 text search misses. Describe each class by mechanism. Name no language. The
 page may name what the attack on a claim looks for in its subject. The law and
-the patrol skill hold the method, and the page repeats none of it.
+the patrol skill hold the method.
 
 A page in a precinct's own `.lawman/departments/` may name source commands. A
 source command is a list item under Proof that starts with `Source command:`
@@ -100,7 +100,8 @@ reaches the output.
 
 - Value 1, 3 and 5: the smallest, a middle and the largest payoff of a fix.
 - Risk 1, 3 and 5: the chance that the fix breaks something.
-- The threshold: the lowest value that qualifies a finding. Risk fills the
+- The threshold: the lowest value that qualifies a finding. It gives as a
+  number the size that Not findings states in words. Risk fills the
   `Cost and risk` line of the lead and cuts no finding.
 
 **Judged by.** The role of the precinct document that tries this department's
@@ -111,16 +112,15 @@ then: it judges by its own words, or it says that nothing is judged.
 
 **Lead body.** The sections that a page adds to a filed lead's body, after
 `Why it is <kind>`. The law's `LAW.md#the-lead-body` section holds the other
-parts and their order. A page repeats none of them. A page may say what a part
-holds for its subject.
+parts and their order. A page may say what a part holds for its subject.
 
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
 volatile. A line number, a count or a commit never enters the identity.
 
-One defect repeated in several sites is one finding, as the patrol skill says.
-A page that names an identity for a cluster or a concept gives the id of that
-finding.
+The patrol skill joins one defect repeated in several sites into one finding.
+Where a page's Identity gives an id for such a finding, as for a cluster or a
+concept, that id holds. Otherwise the skill gives the id.
 
 ## Rotation
 

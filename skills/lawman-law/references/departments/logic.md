@@ -79,9 +79,8 @@ precinct's regression proof.
 
 - **The failure scenario.** Concrete inputs, order or interleaving, then the
   exact wrong output, crash or state, against the output the tree requires.
-- **The required result.** The tree states it: in the judging document, or
-  without one in a specification, a documented contract, a type or a test that
-  states it.
+- **The required result.** The tree states it, as in the judging document, a
+  specification, a documented contract, a type or a test.
 - **The traced path.** Start at a real entry point. Quote each step as
   `path:line` at the analysed commit. No entry point reaches it, no finding.
 - **The escape hatch census.** Quote the search and its count.
@@ -90,7 +89,7 @@ precinct's regression proof.
 - **The history of the line.** Find the commit that last changed each defective line.
   Read the last 20 commits at `<sha>` that touched the file. List each with its
   short hash, date, subject and changed file names. Look for a change made on purpose, with the reason in the subject.
-- **Hidden guarantees.**
+- **Hidden guarantees.** A traced path can miss these classes.
   - A step upstream that validates or normalises the input.
   - A trigger that never supplies the value.
   - A state that the tree or a type forbids.

@@ -91,8 +91,8 @@ Beyond the law's list:
 - A step block repeated in two jobs.
 - Anything a reviewer fixes in passing.
 
-File only a whole class, type, interface, subcommand, module, job or workflow,
-or a concept modelled in three or more places.
+File only a whole class, type, interface, subcommand, module, dependency, job
+or workflow, or a concept modelled in three or more places.
 
 ## Proof
 **The reference count.** Search the whole tree for the name. Include documents,
@@ -137,14 +137,11 @@ Nor is it kept alive by examples that ship with it, or by a binary built from it
 Otherwise use the words of the Kinds table. An objection with no symptom is
 withdrawn.
 
-**Attack your own claim once.** Look for a reader the search could not see, a
-recorded reason for the shape, or a caller side guarantee.
-
 ## Anchors
 Value is what the removal buys.
 - Value 1: a line or a constant saved.
-- Value 3: a concept that a reader no longer has to hold, such as a flag or a
-  parameter and the branches it drives.
+- Value 3: a flag or a parameter that a reader no longer has to hold, with the
+  branches it drives.
 - Value 5: a class, subcommand, job, reusable workflow or layer is gone.
 
 Risk is the chance that the removal breaks something.
@@ -164,7 +161,7 @@ symptoms, the rules of judgement, what counts as a caller, and the shapes the
 precinct has already argued for.
 
 ## Lead body
-No section is added. `Not checked` names the remedy that was not designed.
+The page adds no section. `Not checked` says that no remedy was designed.
 
 ## Identity
 - The path is the file that defines the unit, or the workflow file.

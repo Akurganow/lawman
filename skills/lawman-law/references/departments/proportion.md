@@ -81,8 +81,8 @@ unit grew by accretion.
 ## Proof
 **The requirement.** Quote the sentence of the requirement that the shape is
 out of proportion with, and name where the tree states it. The tree states a
-requirement in a requirements document, a specification or the unit's own stated
-purpose.
+requirement in places such as a requirements document, a specification or the
+unit's own stated purpose.
 
 **The measurement.** State what the code does in one sentence. Then give its
 cost as a count: files, types, hops, lines, or "N call sites, all passing the
@@ -114,13 +114,10 @@ together. Read the subject of the creating commit. A subject that explains the
 shape closes the candidate. If the history is too short to name both commits,
 put the missing commit in `Not checked`.
 
-**Attack your own claim once.** Look for the reason the shape exists, a
-document that argues for it, and a check that pins it.
-
 ## Anchors
 Value is what the removal buys.
 - Value 1: a line or a constant saved.
-- Value 3: a mechanism that a reader no longer has to learn.
+- Value 3: a part of a mechanism that a reader no longer has to learn.
 - Value 5: a class, job, reusable workflow or layer is gone.
 
 Risk is the chance that the change moves behaviour or output.
@@ -143,8 +140,8 @@ precinct has already argued for.
 Add one section, `Requirement`, after `Why it is <kind>`: the requirement as
 one quoted sentence, and where the tree states it. For `vestigial` and
 `emergent` it may hold the word `none`. `What` says what the shape does in one
-sentence. `Not checked` lists the commits that were not named and the remedy
-that was not designed.
+sentence. `Not checked` lists the commits that were not named and says that
+no remedy was designed.
 
 ## Identity
 - The path is the file that holds the shape, or the workflow file.

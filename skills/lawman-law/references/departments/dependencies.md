@@ -109,7 +109,7 @@ the judging document's answer.
 
 ## Anchors
 Value is what the change buys.
-- Value 1: one line, word or version in a comment moves.
+- Value 1: one line, word or version moves in a comment.
 - Value 3: a sentence goes, or a named fact about a version needs a recheck.
 - Value 5: a whole step, a job or a class of pins goes.
 
@@ -132,7 +132,7 @@ Add one section, `Where it lands here`, after `Why it is <kind>`: the lines,
 steps or sentences that the fact makes wrong or needless. The confidence of a
 source kind speaks to the claim about the tree. For a source kind,
 `Not checked` holds the `Source:` lines, one for each source, in the form of
-the Kinds table. `Not checked` also names the remedy that was not designed.
+the Kinds table. `Not checked` also says that no remedy was designed.
 
 ## Identity
 - The path is the file that declares the pin or names the version. For `drift`

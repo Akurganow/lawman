@@ -31,7 +31,7 @@ The duty desk runs its own tick, and the journal does the work of it. The journa
 
 ### Patrol
 
-Patrol takes an order that names a precinct and a department. It sweeps that department's subject at one commit. It files at most as many leads as the cap allows. A lead is an issue titled `[Lead] <department>: <symbol>: <what>`. Its last line is a marker with `role=patrol stage=lead`. One defect repeated in several sites is one lead that lists every site, when one change repairs them all. Patrol never comments and never closes an issue.
+Patrol takes an order that names a precinct and a department. It sweeps that department's subject at one commit. It files at most as many leads as the cap allows. A lead is an issue titled `[Lead] <department>: <symbol>: <what>`. Its last line is a marker with `role=patrol stage=lead`. One defect repeated in several sites is one lead that lists every site. Patrol never comments and never closes an issue.
 
 The cap shrinks as the backlog grows. A department with up to 2 open leads on the precinct allows 3 filings per tick. With 3 or 4 open leads it allows 1. With 5 or more it allows none. At cap 0 the tick ends `capped`.
 

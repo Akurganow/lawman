@@ -15,12 +15,12 @@ A page starts with frontmatter. It holds `name`, which matches the file name wit
 | Mission | One paragraph that names the class of defect. It ends with the deciding test. The clerk's TypeSafe Jev question about the departments of a precedent reads it too. |
 | Kinds | A table of `kind`, `meaning` and `measurement`. A kind names a symptom, never a tool. |
 | Where to look | The subject in terms of the tree. |
-| Not findings | What the page excludes beyond the law, and the threshold below which a true finding stays unfiled. It alone says what size of finding is filed. |
+| Not findings | What the page excludes beyond the law, and the threshold below which a true finding stays unfiled. |
 | Proof | The commands that show each kind, what the positive control runs on and the classes of hidden callers. |
-| Anchors | What the value and risk scores mean, and the lowest value that is filed. Risk fills the `Cost and risk` line of the lead and cuts no finding. |
+| Anchors | What the value and risk scores mean, and the lowest value that is filed. That value is the size that Not findings states, as a number. Risk fills the `Cost and risk` line of the lead and cuts no finding. |
 | Judged by | The role of the precinct document that tries the findings. The path comes from the constitution. |
 | Lead body | The sections that the page adds to a filed lead's body. The law holds the other parts. |
-| Identity | The fields of the lead's `id`: `<path>::<symbol>::<kind>`. No line number, count or commit enters it. One defect repeated in several sites is one finding. |
+| Identity | The fields of the lead's `id`: `<path>::<symbol>::<kind>`. No line number, count or commit enters it. |
 
 A page whose department can find a live secret names an `Alarm check:` paragraph under Proof. Patrol runs that paragraph even when the department is at cap 0. It prints positions and never values.
 

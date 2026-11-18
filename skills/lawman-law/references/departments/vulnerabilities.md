@@ -53,14 +53,11 @@ none
 ## Lead body
 Add one section, `Where it lands here`, after `Why it is advisory`: the place
 in the tree that pins the version. `What` names the place, the package and the
-record that names its version. `Evidence` is the journal's output, verbatim.
-`Why it is advisory` gives the record identifier and the pinned version.
-Confidence is `confirmed`. `Not checked` holds the line
-`Source: catalog <record identifier> <package>`.
+record that names its version. `Why it is advisory` gives the record identifier
+and the pinned version. Confidence is `confirmed`.
 
 ## Identity
-`<place>::<record identifier>/<package>::advisory`. Encode each part as the
-marker grammar requires.
+`<place>::<record identifier>/<package>::advisory`.
 - The place is what the reading reports for the entry, as the journal prints it.
 - The record identifier and the package are as the catalog names them.
 

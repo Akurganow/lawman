@@ -159,7 +159,7 @@ says where the canon of the agent files lives, which file outranks which, what
 an entry in a harness directory may hold, and what counts as a rule.
 
 ## Lead body
-No section is added. For a `contradiction`, `Why it is <kind>` names both
+The page adds no section. For a `contradiction`, `Why it is <kind>` names both
 sides and their rank, or says that none exists. `Not checked` names the readers
 outside the tree.
 

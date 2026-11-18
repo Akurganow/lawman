@@ -238,7 +238,7 @@ A condemning precedent says: "this shape in this precinct is a violation".
 
 A dismissal says: "this finding is dismissed".
 
-- Its `finding` field names one finding by its identity. A dismissal fits a candidate or a lead with that identity. It fits no other finding on the same place, and no shape.
+- Its `finding` field names one finding by its identity. A dismissal fits a candidate or a lead with that identity. It fits no other finding on the same place, and no shape. For a finding that joins several sites under the identity of its first site, the identity of each site counts.
 - It decides nothing while the issue it names is open, or closed as completed.
 
 Each role applies them so:

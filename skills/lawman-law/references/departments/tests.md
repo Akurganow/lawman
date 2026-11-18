@@ -64,7 +64,7 @@ Beyond what the law already excludes:
 - A missing test. This page finds tests that cost more than they protect.
 - A defect in the code under test that a test reveals, and the wrong verdict
   of a validator that gates a merge. The test of that validator is this page's.
-- A test of a dead unit. The lead on the unit carries it.
+- A test of a dead unit.
 - A seam that exists only so a test can reach a unit.
 - A test that is only inconvenient, slow or noisy and still guards a contract.
   Where its cost matters, run it less often.
