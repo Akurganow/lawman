@@ -152,7 +152,7 @@ test("bad arguments exit 1", () => {
 		["tick", "start"],
 		["tick", "start", "--role", "Bad"],
 		["tick", "end", id],
-		["tick", "end", id, "--outcome", "done"],
+		["tick", "end", id, "--outcome", "Done"],
 		["tick", "end", "x", "--outcome", "silent"],
 		["tick", "end", id, "--outcome", "silent", "--precinct", "Bad"],
 		["tick", "end", id, "--outcome", "silent", "--department", "Bad Dept"],
