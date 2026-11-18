@@ -4,6 +4,16 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.4 - 2026-11-18
+#### Bug Fixes
+- (**journal**) keep a decider's pull request as the owner's (6afbe7d)
+- (**law**) count a decider's pull request as the owner's (fd3f4a7)
+#### Refactoring
+- (**journal**) name the trust check of a pull request's author (bde9a62)
+
+- - -
+
+
 ## v3.0.3 - 2026-11-18
 #### Bug Fixes
 - (**journal**) accept any outcome token of the token class (4fcbee7)
