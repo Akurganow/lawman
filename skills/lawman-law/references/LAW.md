@@ -426,7 +426,7 @@ This table is the only place in the law that states the cap. The journal's cap c
 - The cap is a ceiling, not a target.
 - A lead with `department=-` counts in no department.
 - No department has an exception to the cap for leads. The alarm check at cap 0 is not one, and it files nothing.
-- A weight is a share of patrol visits, not of leads. Among the orders that no tick took, and among the orders that a tick took, patrol takes its orders by weight. The duty desk skips a department at cap 0 unless its page has an `Alarm check:` paragraph. When every department of a precinct is skipped, the precinct gets no patrol order in that tick.
+- A weight is a share of patrol visits, not of leads. Among the orders that no tick took, and among the orders that a tick took, patrol takes its orders by weight. The duty desk skips a department at cap 0 unless its page has an `Alarm check:` paragraph. It skips a department whose page opens Judged by with `Required:` until a Departments line names a path that the tree holds. When every department of a precinct is skipped, the precinct gets no patrol order in that tick.
 
 ## Five-part report
 

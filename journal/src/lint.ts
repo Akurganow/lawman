@@ -146,7 +146,7 @@ export function hasAlarmCheck(
 
 const REQUIRED = "Required:";
 
-// the first visible line of the Judged by section opens with the word
+// the Judged by section opens with `Required:`, ahead of the role it names
 export function requiresDocument(
 	lines: string[],
 	hidden: boolean[],

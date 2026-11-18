@@ -70,7 +70,7 @@ Run this section only when `LAWMAN.md` is absent. The draft stays in the clone u
 
 ### Departments
 
-A judging document is evidence, and every role that reads it reads it as evidence. No role checks its content against the department contract. A missing path reads as `judged by none`, and the proposal shows why. Lawman never removes a department from a precinct's rotation on its own. A department works in any repository, including an empty repository, and a judging document only makes it more precise. A page whose Judged by section starts with `Required:` is the exception: its department gets no patrol order until a line names a document that the tree holds.
+A judging document is evidence, and every role that reads it reads it as evidence. No role checks its content against the department contract. A missing path reads as `judged by none`, and the proposal shows why. Lawman never removes a department from a precinct's rotation on its own. A department works in any repository, including an empty repository, and a judging document only makes it more precise. A page whose Judged by section starts with `Required:` needs its document: its department stays in the rotation and gets a patrol order only when a Departments line names a path that the tree holds.
 
 Run this section only when `LAWMAN.md` is absent. Every shared department is in the precinct's rotation with no line. The page `licenses` is the one exception: it joins a precinct's rotation only when `license_precincts` in `config.yaml` holds the whole token `<precinct>=yes`. It is no candidate for a line. The section holds a line only for a department that has a judging document.
 
@@ -96,7 +96,7 @@ Run this section for a file that the job drafted.
 
 ### Recommended documents
 
-Name the typical documents the repository lacks, such as a privacy promise or a contribution guide. Ask the user whether to create them. Offer "Open an issue in the repository", which asks for them there. Offer "Create them now", which drafts them with the user in this session, costs model use and interrupts the install. Offer "Skip", which does nothing. No choice changes a department.
+Name the typical documents the repository lacks, such as a privacy promise or a contribution guide. Ask the user whether to create them. Offer "Open an issue in the repository", which asks for them there. Offer "Create them now", which drafts them with the user in this session, costs model use and interrupts the install. Offer "Skip", which does nothing. No choice changes a department. A new document starts a `Required:` department only once a Departments line names a path that the tree holds.
 
 This section runs for every repository, whether its constitution is absent or passes lint.
 
@@ -116,7 +116,7 @@ The rows for an absent constitution:
 
 - Repository: `<owner>/<repo>`, private or public (found).
 - Constitution: the draft as a table, one row for each of its eight sections. Show each line with the file it came from (recommended).
-- Departments: the lines with a judging document, the count of the other departments, which run with no line, the departments that wait for a judging document, and the reason for each missing path (recommended).
+- Departments: the lines with a judging document, the count of the other departments, which run with no line, the names of the `Required:` departments that get no patrol order until a line names their document, and the reason for each missing path (recommended).
 - Owner-attention label: `<label>`, created at approval, or found on the host, or none (recommended, found or yours).
 - Pull request: the branch lawman/constitution and the title "Add the Lawman constitution" (default).
 - Weight: 0. The duty desk does not cover a precinct of weight 0. No role gets an order there, and no patrol visits it. That holds until the constitution merges and you raise the weight (default).
@@ -441,7 +441,7 @@ Make a working copy of the tip of the default branch in `runs/add-department-<na
 
 ### Step 7. Check the judging document
 
-When the judging document is not `none`, check that its path exists in the copy. A missing path reads as `judged by none`. Then run item 3 of Step 6 again with `none`, and tell the developer why. When the page's `Judged by` section starts with `Required:` and the document is `none`, tell the developer that the department gets no patrol order until a line names its document.
+When the judging document is not `none`, check that its path exists in the copy. A missing path reads as `judged by none`. Then run item 3 of Step 6 again with `none`, and tell the developer why. When the page's `Judged by` section starts with `Required:` and the document is `none`, tell the developer that the department gets a patrol order only when a Departments line names a path that the tree holds.
 
 ### Step 8. Approve, commit and open the pull request
 

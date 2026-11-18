@@ -23,7 +23,8 @@ code disagree, with nobody attacking anything?
 Start with the promise. Its document is the one that the constitution's
 Departments line names for this department, not one found by a search. Read it
 line by line. Show the census in the report: the promise, its sections, and
-each data item it names.
+each data item it names. When the tree lacks that document, say so and file
+nothing.
 
 Follow each data item of the promise from where the code makes it to every
 place it can go.
