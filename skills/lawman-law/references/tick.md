@@ -321,7 +321,7 @@ The clerk closes an issue only with `declined by the owner`, which closes as not
 
 ## End the tick
 
-1. When the skill created the tree, remove it even when it holds changes. Leave the precinct's clone with no record of the tree. Then read whether the precinct's clone holds any change, and keep what it reports for Blockers. Every role then removes the folder `runs/<tick id>` with every file in it, when the folder exists. Use no recursive delete. A failed remove goes to Blockers.
+1. A tick whose skill created the tree removes it, even when it holds changes, and leaves the precinct's clone with no record of it. That tick then reads whether the precinct's clone holds any change, and keeps what it reports for Blockers. Every role then removes the folder `runs/<tick id>` with every file in it, when the folder exists. Use no recursive delete. A failed remove goes to Blockers.
 2. End the tick. Send the report on stdin. Pass the precinct and the order id at every outcome, so the order closes with the same outcome. That includes `silent` for a stale order, every `skipped-*`, every `stopped-*` and `failed`.
 
    The order id is the `<id>` of the `order` line of the tick group. If it is lost, `bin/journal status` prints each open order as `order <id> <precinct> <role> …`. Take the id from the line of your role, precinct and issue.

@@ -213,7 +213,7 @@ The marker is the last write of the tick. Write nothing else.
 
 ### Step 12: end the tick
 
-Run the `tick.md#end-the-tick` section. Its first item removes the tree, when step 6 created it.
+Run the `tick.md#end-the-tick` section.
 
 | Situation | Outcome |
 | :-- | :-- |
