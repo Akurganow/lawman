@@ -4,6 +4,21 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.0 - 2026-11-18
+#### Features
+- BREAKING: name the acting login and the trusted authors in config.yaml (ecb351a)
+#### Bug Fixes
+- (**assembly**) sync the law through law-version when the law folder has no history (1bcce40)
+- (**journal**) keep an acting login named none, and name the old keys for a proof base (4eda2dc)
+- (**journal**) prove the order of the law sync, and give the trusted authors their own heading (11da61e)
+- (**journal**) stage the new config before the binary moves, and define a trusted author (68673ed)
+#### Documentation
+- (**assembly**) give a proof base the key lines as config.yaml holds them (7abab22)
+- put the trusted authors below the table of keys, and give the assembly an action for each case (224a8b1)
+
+- - -
+
+
 ## v2.2.0 - 2026-11-18
 #### Features
 - (**departments**) cut the shared pages down to their own subject (3b2979e)
