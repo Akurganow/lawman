@@ -113,7 +113,7 @@ The lines of the update list are delivered to the owner too. The update list is 
 
 Write what you say to the user in the user's language.
 That includes the tick report.
-Keep its labels, such as `Coverage:`, and any text that the law, a skill or the harness page gives in code form, as written.
+Keep its labels, such as `Coverage:` or `Strongest rejected:`, and any text that the law, a skill or the harness page gives in code form, as written.
 Put one thought in one sentence.
 Name a source by reference and do not retell it.
 
