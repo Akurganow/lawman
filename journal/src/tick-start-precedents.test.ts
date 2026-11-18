@@ -5,7 +5,7 @@ import { human, issuesJson, type Spec, T } from "./cases-fixture";
 import { inprocAsync, inprocFed } from "./inproc";
 import { CONFIG, lines } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
-import { BASE, caseMark, dir, LEAD_ID, TRUSTED, tempDb } from "./test-helpers";
+import { ACTING, BASE, caseMark, dir, LEAD_ID, tempDb } from "./test-helpers";
 import {
 	CONSTITUTION,
 	departmentPage,
@@ -77,7 +77,7 @@ type Role = {
 	setup: (t: Record<string, string>) => void | Promise<void>;
 	expected: string[];
 };
-const PULL = { number: 7, author: TRUSTED, closes: [3] };
+const PULL = { number: 7, author: ACTING, closes: [3] };
 const ROLES: Record<string, Role> = {
 	patrol: {
 		order: { department: "fixtures" },
@@ -168,7 +168,7 @@ describe("the precedents of the tick group", () => {
 		});
 		const synced = await inprocFed(
 			BASE,
-			["sync", "main", "--author", TRUSTED],
+			["sync", "main", "--author", ACTING],
 			JSON.stringify(form),
 		);
 		expect(synced.code).toBe(0);

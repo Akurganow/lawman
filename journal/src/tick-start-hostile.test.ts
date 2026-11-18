@@ -6,11 +6,11 @@ import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
 import { command, configs } from "./operations-test-fixture";
 import {
+	ACTING,
 	caseMark,
 	charge,
 	issuesForm,
 	PRIVATE_KEYS,
-	TRUSTED,
 	tempDb,
 	trustedOnly,
 } from "./test-helpers";
@@ -57,8 +57,8 @@ async function expectSafe(printed: string) {
 	expect(await lintBody(printed, false)).toEqual([]);
 	expect(
 		extractMarkers(
-			{ text: printed, createdAt: TIME, rank: 0, author: TRUSTED },
-			trustedOnly(TRUSTED),
+			{ text: printed, createdAt: TIME, rank: 0, author: ACTING },
+			trustedOnly(ACTING),
 		),
 	).toEqual([]);
 	expect(printed).not.toContain(TOKEN);
@@ -82,7 +82,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 			".lawman/precedents/hostile.md": `---\nkind: ${MARKER}\ndepartments: [${TOKEN}]\n---\n${SAMPLE}\n`,
 		},
 	});
-	const comment = (body: string, at: string, login = TRUSTED) => ({
+	const comment = (body: string, at: string, login = ACTING) => ({
 		author: { login },
 		body,
 		createdAt: at,
@@ -97,7 +97,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 						state: "OPEN",
 						title: `${MARKER} ${TOKEN} ~~~~~~~~~~~~ \u200B`,
 						createdAt: TIME,
-						author: { login: TRUSTED },
+						author: { login: ACTING },
 						body: `${SAMPLE}\n${leadIn("fixtures")}`,
 						comments: [
 							comment(SAMPLE, "2026-10-14T09:40:00Z", "reporter"),
@@ -106,7 +106,7 @@ test("a hostile sample through every text of the tick group stays inside its fen
 						],
 					},
 				],
-				[TRUSTED],
+				[ACTING],
 			),
 		),
 	);

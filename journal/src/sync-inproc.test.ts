@@ -5,20 +5,20 @@ import { formText } from "./form";
 import { inprocAsync } from "./inproc";
 import { readIssues } from "./sync-issues";
 import {
+	ACTING,
 	addPrecincts,
 	BASE,
 	issuesForm,
 	mark,
 	rows,
 	SHA,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
 tempDb();
 
 const CREATED = "2026-10-14T09:00:00Z";
-const ARGS = ["sync", "main", "--author", TRUSTED];
+const ARGS = ["sync", "main", "--author", ACTING];
 
 // readStdin reads file descriptor 0, so the test answers that read
 const fed = async (stdin: unknown, args = ARGS) => {
@@ -56,7 +56,7 @@ describe("the issues reader", () => {
 						comments: [
 							{
 								id: "IC_1",
-								author: { login: TRUSTED },
+								author: { login: ACTING },
 								body: "text",
 								createdAt: CREATED,
 								approvedBy: ["Maintainer-Fictional"],
@@ -107,7 +107,7 @@ describe("sync in process: the answer", () => {
 		);
 	const court = {
 		id: "IC_court",
-		author: { login: TRUSTED },
+		author: { login: ACTING },
 		body: referral,
 		createdAt: "2026-10-14T10:00:00Z",
 	};

@@ -175,7 +175,7 @@ A request that the host refuses to accept for its size, its limit or its complex
 
 ## Facts of the precinct
 
-A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives, the account and the trusted authors of `config.yaml`. Write them into the command file when you write the command.
+A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives, the acting login and the logins of `trusted_authors`. Write them into the command file when you write the command.
 
 - `host.md` and `config.yaml` hold the same facts as lines for the whole installation, and the roles and the journal read those lines. Copy the fact into the command and keep the line.
 - When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. The line stays where it is.

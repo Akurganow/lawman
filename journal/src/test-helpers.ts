@@ -145,7 +145,7 @@ export function addPrecincts(weights: Record<string, number>): void {
 	}
 }
 
-export const TRUSTED = "octocat-lawman";
+export const ACTING = "octocat-lawman";
 
 // the set of authors that one login alone makes trusted
 export const trustedOnly = (login: string) => trustedAuthors(null, login);
@@ -156,7 +156,7 @@ export const minimalIssues = (n: number, createdAt: string) =>
 		number: i + 1,
 		state: "OPEN",
 		createdAt,
-		author: { login: TRUSTED },
+		author: { login: ACTING },
 	}));
 export const SHA = "0123456789abcdef0123456789abcdef01234567";
 export const AT = "at=2026-10-14T09:30:00Z";
@@ -180,16 +180,16 @@ export const entry = () => mark("clerk", "entry");
 export const noEntry = () => mark("clerk", "no-entry");
 
 export function collect(n: number) {
-	return collectIssueMarkers(issueOf(n), trustedOnly(TRUSTED));
+	return collectIssueMarkers(issueOf(n), trustedOnly(ACTING));
 }
 
 export const rounds = (n: number) =>
 	collect(n).markers.map((m) => m.marker.fields.round);
 
-export function carrier(text: string, author = TRUSTED) {
+export function carrier(text: string, author = ACTING) {
 	return extractMarkers(
 		{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author },
-		trustedOnly(TRUSTED),
+		trustedOnly(ACTING),
 	);
 }
 

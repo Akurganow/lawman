@@ -24,6 +24,7 @@ import {
 import { CONFIG, content } from "./input-test-fixture";
 import { configs } from "./operations-test-fixture";
 import {
+	ACTING,
 	BASE,
 	dbFile,
 	dir,
@@ -31,7 +32,6 @@ import {
 	precinct,
 	rows,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 import {
@@ -186,7 +186,7 @@ async function started(
 						state: "OPEN",
 						title: "issue 3",
 						createdAt: T(9),
-						author: { login: TRUSTED },
+						author: { login: ACTING },
 						body,
 						comments: notes.map((n) => ({
 							id: n.id,
@@ -196,7 +196,7 @@ async function started(
 						})),
 					},
 				],
-				[TRUSTED],
+				[ACTING],
 			),
 		),
 	);

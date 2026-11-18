@@ -33,6 +33,7 @@ import {
 } from "./operations-test-fixture";
 import { READY, SPEC } from "./pulls-fixture";
 import {
+	ACTING,
 	BASE,
 	call,
 	dbFile,
@@ -41,7 +42,6 @@ import {
 	order,
 	rows,
 	seed,
-	TRUSTED,
 	tempDb,
 	WAITS_WORK,
 } from "./test-helpers";
@@ -281,11 +281,11 @@ const WAITING = {
 	pulls: [
 		{
 			number: 7,
-			author: TRUSTED,
+			author: ACTING,
 			closes: [3],
 			comments: [
-				{ body: SPEC, author: TRUSTED, up: ["maint-a"] },
-				{ body: READY, author: TRUSTED, at: "2026-10-14T11:00:00Z" },
+				{ body: SPEC, author: ACTING, up: ["maint-a"] },
+				{ body: READY, author: ACTING, at: "2026-10-14T11:00:00Z" },
 			],
 		},
 	],
@@ -608,7 +608,7 @@ describe("the failures of the start", () => {
 		[
 			"a config.yaml without law_commit",
 			() =>
-				writeFileSync(join(dir, "config.yaml"), `acting_login: ${TRUSTED}\n`),
+				writeFileSync(join(dir, "config.yaml"), `acting_login: ${ACTING}\n`),
 			"failed",
 			"config.yaml has no law_commit",
 		],
@@ -665,7 +665,7 @@ describe("the failures of the start", () => {
 
 	test("an identity that differs only in ASCII case is the acting login", () => {
 		setUp({ main: 1 });
-		hostOf("main", { ...WORK, login: TRUSTED.toUpperCase() });
+		hostOf("main", { ...WORK, login: ACTING.toUpperCase() });
 		expect(lines(startDesk().out)).toContain("ended ordered");
 	});
 

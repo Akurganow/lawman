@@ -77,15 +77,15 @@ Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissal
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
 
-The key `trusted_authors` holds `<login>,<login>` or `none`. It names accounts, besides the acting login, whose texts the journal trusts. The journal counts their issue bodies, their comments and their open pull requests like the acting login's. Its first use is a change of account: name the login that the installation acted as before, and what that login wrote stays. The roles still act only as `acting_login`. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. Spell a login that was once the acting login as `acting_login` held it.
+A trusted author is an account whose issue bodies, comments and open pull requests the journal counts. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
+
+Use the key at a change of account: name the login that the installation acted as before, and what that login wrote stays. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. The commands give each named account the spelling of this key. Spell a login that was once the acting login as `acting_login` held it.
 
 Do three things for the key to work:
 
 - Name only accounts that you control. An account named there has the power to write counted markers.
 - Give the acting login the host's right to change the open pull requests of those accounts. The clerk and the pull request roles write to them.
 - Run the job "re-check a precinct" for each precinct after every change of the key or of `acting_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
-
-A release before 3.0.0 named these keys `trusted_login` and `earlier_logins`. The law sync renames them in `config.yaml`.
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -137,7 +137,7 @@ The key `progress_checks` is a whole number above zero. The alarm `no-progress` 
 
 The assembly writes the file at install, after the commands of the installation passed their proof, so that a stopped proof leaves no `config.yaml` behind. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires none of the optional keys.
 
-After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. The defaults cover `typesafe_key`, `amended_law_commit`, `dismissals_since`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. The third takes the time of that update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
+After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. The defaults cover `typesafe_key`, `amended_law_commit`, `dismissals_since`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. The third takes the time of that update. A key of the defaults that is already there stays as it is. The command also renames two keys of an earlier release: `trusted_login` becomes `acting_login`, and `earlier_logins` becomes `trusted_authors`. A line whose new key already has a line stays as it is, and the journal does not read it. Move its logins to the new key by hand. The command does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 

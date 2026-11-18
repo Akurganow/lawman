@@ -262,7 +262,7 @@ Each role applies them so:
 - A stuck case is a record, not a process. Nothing waits, loops or sleeps for a case to unstick. The executor waits within its tick for the gate runs of its own push and for nothing else.
 - Roles never block each other. Each has its own schedule, its own model and its own interval.
 - Roles are linked by two records only: a marker on the tracker and an order row in the journal.
-- Every tick starts by checking the installation: the schema version, the law commit and its cleanliness, and the trusted identity. A mismatch ends the tick with a stop outcome.
+- Every tick starts by checking the installation: the schema version, the law commit and its cleanliness, and the acting login. A mismatch ends the tick with a stop outcome.
 - The journal records the start and the end of every tick. The tick record and its outcome come from the role's own report. They never come from an exit code.
 - A tick without an end record is unfinished, not successful.
 - Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2. A role treats that rejection as silence.

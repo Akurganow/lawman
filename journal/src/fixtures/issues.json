@@ -97,7 +97,7 @@
 		"number": 7,
 		"state": "OPEN",
 		"stateReason": "",
-		"title": "Trusted login differs in case",
+		"title": "Acting login differs in case",
 		"createdAt": "2026-10-14T09:00:00Z",
 		"closedAt": null,
 		"author": {

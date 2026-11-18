@@ -5,6 +5,7 @@ import { CONFIG, installation, lines } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
 import { hostPulls, type Pull } from "./pulls-fixture";
 import {
+	ACTING,
 	AT,
 	BASE,
 	call,
@@ -14,7 +15,6 @@ import {
 	precinct,
 	SHA,
 	seed,
-	TRUSTED,
 } from "./test-helpers";
 
 export const PAGES = join(JOURNAL, "src", "fixtures", "pages");
@@ -42,13 +42,13 @@ type Host = {
 // The commands of the precinct main: the host and the tree they read.
 export function host(h: Host = {}): void {
 	const place = configs("main");
-	command(place, "identity", `echo ${h.login ?? TRUSTED}`);
+	command(place, "identity", `echo ${h.login ?? ACTING}`);
 	command(place, "fetch", `echo ${SHA}`);
 	mkdirSync(place, { recursive: true });
 	writeFileSync(join(place, "issues.json"), issuesJson(h.issues ?? {}));
 	writeFileSync(
 		join(place, "pulls.json"),
-		JSON.stringify(hostPulls(h.pulls ?? [], [TRUSTED, "maint-a"])),
+		JSON.stringify(hostPulls(h.pulls ?? [], [ACTING, "maint-a"])),
 	);
 	command(place, "issues", "cat issues.json");
 	command(place, "pulls", "cat pulls.json");

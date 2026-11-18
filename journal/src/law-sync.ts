@@ -109,17 +109,17 @@ function highestSchema(installation: string): number {
 	return Math.max(0, ...numbers);
 }
 
-// The rename keeps a reader from ever seeing a half-written file.
-function writeAtomic(path: string, text: string, mode: number): void {
+// The temp file is the write that can fail, so it comes first. The rename later keeps a reader from ever seeing a half-written file.
+function stage(path: string, text: string, mode: number): string {
 	const temp = `${path}.${process.pid}.${randomUUID()}`;
 	try {
 		writeFileSync(temp, text, { mode });
 		chmodSync(temp, mode);
-		renameSync(temp, path);
 	} catch (e) {
 		rmSync(temp, { force: true });
 		throw e;
 	}
+	return temp;
 }
 
 const contractAlarm = (law: string, config: string | undefined) =>
@@ -129,7 +129,8 @@ const contractAlarm = (law: string, config: string | undefined) =>
 				`ALARM contract-changed installation constitution contract ${law}, precincts at ${config ?? ABSENT}, run the assembly to amend`,
 			];
 
-// Everything before the swap only reads, so a failure there leaves the installation as it was.
+// Everything before the swap only reads or writes a temp file, so a failure there leaves the installation as it was.
+// The binary moves first and the config second, so a failed temp write never leaves a new binary on an old config.
 function sync(opt: Options, execPath: string): string[] {
 	const root = resolve(opt.installation);
 	const configPath = join(root, "config.yaml");
@@ -141,9 +142,15 @@ function sync(opt: Options, execPath: string): string[] {
 	const sum = createHash("sha256").update(readFileSync(execPath)).digest("hex");
 	const next = rewriteConfig(config, { tag: opt.tag, commit: opt.commit, sum });
 	const mode = statSync(configPath).mode & PERMISSION_BITS;
-	chmodSync(execPath, EXECUTABLE_MODE);
-	renameSync(execPath, join(root, "bin", "journal"));
-	writeAtomic(configPath, next, mode);
+	const temp = stage(configPath, next, mode);
+	try {
+		chmodSync(execPath, EXECUTABLE_MODE);
+		renameSync(execPath, join(root, "bin", "journal"));
+		renameSync(temp, configPath);
+	} catch (e) {
+		rmSync(temp, { force: true });
+		throw e;
+	}
 	return [
 		...contractAlarm(law, configValue(config, "contract_version")),
 		`synced ${opt.tag}`,

@@ -15,12 +15,12 @@ import {
 import { syncPulls } from "./pulls";
 import { BOT } from "./pulls-fixture";
 import {
+	ACTING,
 	addPrecincts,
 	BASE,
 	cli,
 	dir,
 	SHA,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -331,8 +331,8 @@ test("the arguments %j are a usage error", async () => {
 		["file", SHA],
 		["decider", "issue"],
 		["issues"],
-		["issues", "--author", TRUSTED, "--reset", "--reset"],
-		["pulls", "--author", TRUSTED, "--reset"],
+		["issues", "--author", ACTING, "--reset", "--reset"],
+		["pulls", "--author", ACTING, "--reset"],
 		["review"],
 		[],
 	] as string[][]) {

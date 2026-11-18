@@ -29,6 +29,7 @@ import {
 import { headerOf, splitPrecedent, withDepartments } from "./precedent-file";
 import { cache, cacheWith } from "./precedent-test-fixture";
 import {
+	ACTING,
 	acquittal,
 	BASE,
 	cli,
@@ -37,7 +38,6 @@ import {
 	JOURNAL,
 	precinct,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 import {
@@ -56,7 +56,7 @@ const NAME = `${DATE}-empty-doubles`;
 const RULE = "An empty double is not dead.";
 const KEY_PLACE = "the file keys/typesafe-fixture of the home folder";
 const ALLOWED = [
-	`acting_login: ${TRUSTED}`,
+	`acting_login: ${ACTING}`,
 	"typesafe: yes",
 	"typesafe_precincts: main=yes",
 	`typesafe_key: ${KEY_PLACE}`,

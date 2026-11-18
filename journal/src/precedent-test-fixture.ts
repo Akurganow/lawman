@@ -3,7 +3,7 @@ import * as fs from "node:fs";
 import { issuesJson, T } from "./cases-fixture";
 import { EXIT } from "./db";
 import { inprocAsync } from "./inproc";
-import { BASE, lead, TRUSTED } from "./test-helpers";
+import { ACTING, BASE, lead } from "./test-helpers";
 
 export type Comment = { body: string; author?: string };
 
@@ -40,7 +40,7 @@ export async function cacheWith(
 	});
 	const spy = spyOn(fs, "readFileSync").mockReturnValue(JSON.stringify(json));
 	try {
-		const r = await inprocAsync(BASE, ["sync", "main", "--author", TRUSTED]);
+		const r = await inprocAsync(BASE, ["sync", "main", "--author", ACTING]);
 		expect(r.code).toBe(EXIT.OK);
 	} finally {
 		spy.mockRestore();

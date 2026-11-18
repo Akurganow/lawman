@@ -103,7 +103,7 @@ The start of every tick checks the law folder too, and it has one more reason. S
 | :-- | :-- | :-- |
 | the law folder is not at law_commit | The law folder holds another commit than `law_commit` when a tick starts | Nothing, as a rule: the next tick updates first. If the stop repeats, check that the law folder holds the commit that `law_commit` names. When `config.yaml` has no `release_repo`, the update stops with `stopped-law-config`: run the assembly. |
 
-`law-sync` renames the new binary over `bin/journal` and rewrites the sync keys of `config.yaml`. Before the swap it only reads, so a failure leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
+`law-sync` writes the new `config.yaml` beside the old one, renames the new binary over `bin/journal`, and then puts the new `config.yaml` in place. It rewrites the sync keys and renames the keys of an earlier release. A failure before the swap leaves the installation as it was. It refuses when the skills ask for a newer schema than the binary has.
 
 Never open the database or run SQL on it. The commands below are the only way in.
 
@@ -160,7 +160,7 @@ journal status
 
 The journal's cache is refreshed when a role syncs. Issues by an author that `excluded_authors` names do not enter the cache. Every working role syncs the tracker and the pull requests of its precinct at its tick start. The duty desk syncs both for every precinct with a weight above zero before it writes stage orders. An order rests on the tracker's state at the start of that tick. A lead filed or closed after that sync is seen at the next tick.
 
-The pull request cache holds every open pull request of a trusted author, with its source issues, its spec vote and its `work`. The journal refreshes it right after the issue cache of the same precinct. A precinct is fresh in a tick when both caches were synced after the tick began. A failed sync of one cache ends no tick. The cache keeps its old data. The duty desk writes no order and closes no stale order for that precinct in that tick. A working role goes on with the cache. The start prints the failure lines and then `unsynced <precinct> <issues|pulls> synced=<time|never>`. A fresh precinct alone gets the alarms `decision-waiting`, `withheld-text` and `no-constitution`, as [the alarms](pipeline.md#alarms) say.
+The pull request cache holds every open pull request of a [trusted author](configuration.md#the-fifteen-keys), with its source issues, its spec vote and its `work`. The journal refreshes it right after the issue cache of the same precinct. A precinct is fresh in a tick when both caches were synced after the tick began. A failed sync of one cache ends no tick. The cache keeps its old data. The duty desk writes no order and closes no stale order for that precinct in that tick. A working role goes on with the cache. The start prints the failure lines and then `unsynced <precinct> <issues|pulls> synced=<time|never>`. A fresh precinct alone gets the alarms `decision-waiting`, `withheld-text` and `no-constitution`, as [the alarms](pipeline.md#alarms) say.
 
 - `sync`: writes the cache of the tracker. It replaces the cache of a precinct's issues with the issues form on stdin. The form is one object with the fields `writers` and `issues`. For an issue whose newest court marker is a referral, the sync also derives the answer of a decider from the reactions and comments. The old form, a bare list, exits 4 and leaves the cache untouched. The message tells you to run the assembly, finish any amendment it offers, then choose Host once to rewrite `host.md`. With `--pulls` the sync replaces the pull request cache from the pulls form. It prints the counts. `--reset` lets an empty list replace a filled cache. The sync also stores the texts of the issues, the pull requests and their comments, cleaned as `journal clean` cleans them. Each text is cleaned alone, and only when its content or the journal version changed since the last sync: a sync of unchanged texts cleans nothing. A text that the cleaning cannot process, or that does not finish within 5 seconds, is stored as the fixed line "This text could not be cleaned and is withheld." It is never stored raw or partly cleaned, and the sync goes on. The sync line ends with `withheld=<n>` when the sync withheld texts, and the alarm `withheld-text` names them. To restore a withheld text, edit or delete it on the host and sync again.
 - `leads`: lists the open leads of a precinct, or of one department.
@@ -185,6 +185,8 @@ journal pull <precinct> <pull request>
 journal decider < response.json
 journal form <issues|pulls|decider|catalog>
 ```
+
+`--author` takes the acting login.
 
 ### Checks and builders
 
@@ -382,7 +384,7 @@ journal run-installation <release <repo> <tag>|verify <asset> <provenance> <repo
 The journal checks every argument against its class before the command runs. An argument outside its class never reaches the command.
 
 - A name of a precinct, a role or a department starts with a lowercase letter and holds lowercase letters, digits and `-`.
-- A login is a string of ASCII letters, digits, `.`, `_` and `-`. It does not start with `.` or `-`. A bot login of the host is that string with the suffix `[bot]`. A host can spell one account differently across its interfaces, for example with that suffix in one and without it in another. A command gives an account one spelling in every field of every form. The installation's own account has the spelling that the operation `identity` prints. A login that `trusted_authors` names has the spelling of that key.
+- A login is a string of ASCII letters, digits, `.`, `_` and `-`. It does not start with `.` or `-`. A bot login of the host is that string with the suffix `[bot]`. A host can spell one account differently across its interfaces, for example with that suffix in one and without it in another. A command gives an account one spelling in every field of every form. The acting login has the spelling that the operation `identity` prints. A login that `trusted_authors` names has the spelling of that key.
 - A name of a precedent is a string of ASCII letters, digits, `.`, `_` and `-`. It starts with a letter or a digit.
 - An outcome of `tick end --outcome` is a token that [the law](../skills/lawman-law/references/LAW.md#one-tick-one-case-exit) names, or `skipped-<slug>` or `stopped-<slug>`. A slug holds lowercase letters, digits and `-`. The journal refuses any other token.
 - A revision is one string of ASCII letters, digits and `.` `_` `-` `/` `:` `+`. It does not start with `-`. Its length and shape are free, so a Git hash of 40 or 64 characters and a Subversion number both pass.

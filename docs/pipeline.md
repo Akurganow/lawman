@@ -99,7 +99,7 @@ The court names one priority. P0 is a live secret, a vulnerability or a serious 
 The clerk takes an order for one job on an issue. The journal names the job. The clerk is the only role that opens a pull request and the only role that links an issue to its pull request.
 
 - For a conviction it opens a draft pull request from a new branch.
-- It takes up an open pull request of a trusted author that a role left behind. A line of its body is a fingerprint line of the old pipeline or `<!-- pull request of the Lawman clerk -->`, which ends every body the clerk writes for a pair.
+- It takes up an open pull request of a [trusted author](configuration.md#the-fifteen-keys) that a role left behind. A line of its body is a fingerprint line of the old pipeline or `<!-- pull request of the Lawman clerk -->`, which ends every body the clerk writes for a pair.
 - It never changes your own pull request. After a ruling on an issue that your pull request closes, it writes one brief there instead. The brief links the case, the charge, the defence and the ruling. It opens no pull request of its own for that issue.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.

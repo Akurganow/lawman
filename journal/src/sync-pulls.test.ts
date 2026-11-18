@@ -69,9 +69,9 @@ describe("sync --pulls", () => {
 	});
 
 	test("an open pull request of a login of trusted_authors is stored", () => {
-		writeFileSync(join(dir, "config.yaml"), "trusted_authors: Earlier-Login\n");
+		writeFileSync(join(dir, "config.yaml"), "trusted_authors: Listed-Login\n");
 		const input = hostPulls([
-			{ number: 1, author: "earlier-login" },
+			{ number: 1, author: "listed-login" },
 			{ number: 2, author: "stranger" },
 			{ number: 3 },
 		]);

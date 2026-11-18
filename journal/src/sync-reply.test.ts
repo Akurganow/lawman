@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	ACTING,
 	addPrecincts,
 	cli,
 	dbFile,
@@ -7,7 +8,6 @@ import {
 	lead,
 	must,
 	rows,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -16,7 +16,7 @@ tempDb();
 const PRECINCT = "main";
 const sync = (data: unknown) =>
 	cli(
-		["sync", PRECINCT, "--author", TRUSTED],
+		["sync", PRECINCT, "--author", ACTING],
 		{ LAWMAN_DB: dbFile },
 		JSON.stringify(issuesForm(data as unknown[])),
 	);
@@ -77,7 +77,7 @@ describe("reply time", () => {
 	test("ignores comments of other people, also the acting login", () => {
 		expect(
 			repliedAt([
-				note(TRUSTED, "2026-10-14T10:00:00Z"),
+				note(ACTING, "2026-10-14T10:00:00Z"),
 				note("bystander-fictional", "2026-10-14T11:00:00Z"),
 				{ body: "ghost", createdAt: "2026-10-14T12:00:00Z" },
 			]),

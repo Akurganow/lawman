@@ -2,6 +2,7 @@ import { expect } from "bun:test";
 import { open } from "./db";
 import { dueEntries } from "./due";
 import {
+	ACTING,
 	BASE,
 	call,
 	caseMark,
@@ -13,7 +14,6 @@ import {
 	mark,
 	SHA,
 	seed,
-	TRUSTED,
 } from "./test-helpers";
 
 export type Comment = [
@@ -41,11 +41,11 @@ export function issuesJson(specs: Record<number, Spec>): string {
 		title: `issue ${n}`,
 		createdAt: s.createdAt ?? T(9),
 		closedAt: null,
-		author: { login: TRUSTED },
+		author: { login: ACTING },
 		body: (s.body ?? []).join("\n"),
 		comments: (s.comments ?? []).map(
 			([createdAt, body, approvedBy = [], rejectedBy = []]) => ({
-				author: { login: TRUSTED },
+				author: { login: ACTING },
 				body,
 				createdAt,
 				approvedBy,
@@ -53,13 +53,13 @@ export function issuesJson(specs: Record<number, Spec>): string {
 			}),
 		),
 	}));
-	return JSON.stringify(issuesForm(data, [TRUSTED]));
+	return JSON.stringify(issuesForm(data, [ACTING]));
 }
 
 export function put(specs: Record<number, Spec>, precinct = "main") {
 	const r = call(
 		BASE,
-		["sync", precinct, "--author", TRUSTED],
+		["sync", precinct, "--author", ACTING],
 		issuesJson(specs),
 	);
 	expect(r.code).toBe(0);

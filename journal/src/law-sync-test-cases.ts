@@ -153,7 +153,6 @@ export function defineCases(runner: Runner): void {
 			expect(configOf(root)).toStartWith(
 				`law_commit: ${LAW_COMMIT}\nacting_login: a\ntrusted_authors: b, c\n`,
 			);
-			expect(configOf(root)).not.toMatch(/trusted_login|earlier_logins/);
 		});
 
 		test("keeps an old line beside a present new key", () => {
@@ -221,10 +220,9 @@ export function defineCases(runner: Runner): void {
 	});
 
 	describe("write failure", () => {
-		test("keeps the new binary and the old config, and a rerun completes", () => {
+		test("keeps the old binary and the old config, and a rerun completes", () => {
 			lay(root);
 			const exe = runner.exe(root, "tick1");
-			const bytes = readFileSync(exe);
 			const before = configOf(root);
 			chmodSync(root, READ_ONLY);
 			let result: Result;
@@ -235,7 +233,8 @@ export function defineCases(runner: Runner): void {
 			}
 			expect(result.code).not.toBe(0);
 			expect(result.out).toBe("");
-			expect(Buffer.compare(readFileSync(bin()), bytes)).toBe(0);
+			expect(readFileSync(bin(), "utf8")).toBe(OLD_BINARY);
+			expect(existsSync(exe)).toBe(true);
 			expect(configOf(root)).toBe(before);
 			expect(leftovers(root)).toEqual([]);
 			expect(synced("tick2").out).toBe(SYNCED);

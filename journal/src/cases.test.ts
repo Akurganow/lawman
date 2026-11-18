@@ -10,6 +10,7 @@ import {
 	withLead,
 } from "./cases-fixture";
 import {
+	ACTING,
 	addPrecincts,
 	BASE,
 	call,
@@ -21,7 +22,6 @@ import {
 	lead,
 	returnTo,
 	SHA,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -210,7 +210,7 @@ describe("due", () => {
 		const fixture = issues.filter((i) => i.number === 19);
 		const r = call(
 			BASE,
-			["sync", "main", "--author", TRUSTED],
+			["sync", "main", "--author", ACTING],
 			JSON.stringify(issuesForm(fixture)),
 		);
 		expect(r.code).toBe(0);

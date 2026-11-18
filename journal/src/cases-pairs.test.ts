@@ -18,6 +18,7 @@ import {
 } from "./cases-fixture";
 import { pairs, run } from "./clerk-jobs-fixture";
 import {
+	ACTING,
 	acquittal,
 	addPrecincts,
 	BASE,
@@ -27,7 +28,6 @@ import {
 	conviction,
 	defence,
 	lead,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -58,13 +58,13 @@ describe("case: the line of a clerk job", () => {
 		expect(due("clerk")).toBe("main\t2\n");
 	});
 
-	// a marker row exists only for the acting login, so only its comment is the ruling
+	// a marker row exists only for a trusted author, so only its comment is the ruling
 	test("a copy of the ruling marker by an outsider changes nothing", () => {
 		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
 		const asOutsider = (spec: Spec, at: number) => {
 			const form = JSON.parse(issuesJson({ 1: spec }));
 			form.issues[0].comments[at].author = { login: "outsider" };
-			call(BASE, ["sync", "main", "--author", TRUSTED], JSON.stringify(form));
+			call(BASE, ["sync", "main", "--author", ACTING], JSON.stringify(form));
 			expect(jobOf(1)).toBe("- - - - -");
 		};
 		asOutsider(closed(ruled(conviction, copy)), 4);
