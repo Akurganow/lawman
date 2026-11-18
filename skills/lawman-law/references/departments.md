@@ -73,13 +73,14 @@ and tools.
 **Not findings.** What the page excludes beyond what the law already excludes:
 the Fence, Not judged and every recorded reason. It also states
 the "too small to file" threshold in words. It lists the small cases that stay
-unfiled even when true. It says what size of finding is filed.
+unfiled even when true. It says what size of finding is filed. No other
+section states that size. The page names no other department.
 
-**Proof.** The commands that show each kind. A positive control: the same
-command run on a unit known to be in use, with the output of both runs quoted. The classes
-of hidden callers that a plain text search misses. Describe each class by
-mechanism. Name no language. The page also tells the patrol to attack its own
-claim once and drop it when unsure.
+**Proof.** The commands that show each kind. The positive control: the known
+unit that the same command runs on. The classes of hidden callers that a plain
+text search misses. Describe each class by mechanism. Name no language. The
+page may name what the attack on a claim looks for in its subject. The law and
+the patrol skill hold the method, and the page repeats none of it.
 
 A page in a precinct's own `.lawman/departments/` may name source commands. A
 source command is a list item under Proof that starts with `Source command:`
@@ -99,20 +100,27 @@ reaches the output.
 
 - Value 1, 3 and 5: the smallest, a middle and the largest payoff of a fix.
 - Risk 1, 3 and 5: the chance that the fix breaks something.
-- The threshold: the lowest value and the highest risk that qualify a finding.
+- The threshold: the lowest value that qualifies a finding. Risk fills the
+  `Cost and risk` line of the lead and cuts no finding.
 
 **Judged by.** The role of the precinct document that tries this department's
 findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
-constitution. A department with no line is judged by none.
+constitution. A department with no line is judged by none. It then judges by
+the words of its own page.
 
-**Lead body.** The sections that a page adds to a filed lead's body, before
-`Not checked`. The law's `LAW.md#the-lead-body` section holds the other parts and
-their order. A page may say how the `Cost and risk` line reads.
+**Lead body.** The sections that a page adds to a filed lead's body, after
+`Why it is <kind>`. The law's `LAW.md#the-lead-body` section holds the other
+parts and their order, and a page repeats none of them. A page may say what a
+part holds for its subject.
 
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
 volatile. A line number, a count or a commit never enters the identity.
+
+One defect repeated in several sites is one finding: the same kind, and one
+change repairs every site. Its identity is that of its first site, by path and
+then by symbol. Different things are never one finding.
 
 ## Rotation
 

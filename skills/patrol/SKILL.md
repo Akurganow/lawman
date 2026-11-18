@@ -119,13 +119,14 @@ A page whose Proof sends a list through the journal sweeps by "The catalog check
 4. Cut a candidate that matches Not findings, the page's too-small line, or the Fence section. The Fence section lists the checks CI already runs.
 5. Cut a candidate that a recorded answer in the judging document settles. Name the answer in the report.
 6. Attack each candidate once. Look for a caller the search could not see, a guarantee from the caller, an assertion or upstream check, or a pinning test. A recorded reason counts too. If one holds, drop the candidate. What the Not findings section of the page names as no guarantee does not hold.
-7. Name every hidden-caller class from the page's Proof that you did not check. Those names go to Not checked.
+7. Check each hidden class that the page's Proof lists. Name every class you did not check. Those names go to Not checked.
 8. Score value and risk with the page's Anchors. Keep only candidates that meet the threshold the page states.
 9. Drop a candidate you rate `plausible`, and any you cannot confirm.
-10. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` drops it. `fixed #<n>` keeps it for filing with `of=<n>`.
-11. Apply the precedents to each candidate that remains, as the law's `LAW.md#precedents` section says for patrol. The `finding` of a dismissal is an id, encoded as in item 10.
-12. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
-13. Order the survivors by value, highest first.
+10. Join the candidates that are one defect repeated: the same kind, and one change repairs every site. They are one candidate, and its lead lists every site. Its id is the id of its first site: the path that sorts first, then the symbol that sorts first. Never join different things, even when each needs the same sort of remedy, such as a removal.
+11. Check each candidate against the journal. Encode its id (see Lead format) and run `bin/journal seen <p> --id <id>`. `open` drops it. `fixed #<n>` keeps it for filing with `of=<n>`. For a joined candidate, ask for the id of every site. One `open` drops the whole candidate.
+12. Apply the precedents to each candidate that remains, as the law's `LAW.md#precedents` section says for patrol. The `finding` of a dismissal is an id, encoded as in item 11.
+13. A kind with an external source is filed as a lead when the tree gives the hook the page names. Add its `Source:` lines to Not checked, as the Lead format says. Read no external source, except a source command of the page, the catalog check and the license reading.
+14. Order the survivors by value, highest first.
 
 ### Step 5: file the leads
 
@@ -175,7 +176,7 @@ Run it when the page's Proof says that a list sent through the journal replaces 
 4. Hand the list to the journal as data, as the `tick.md#working-rules` section says. Never hand it over as text that a shell reads as a command. Write no file for it. The journal cuts it into parts and counts it. Never cut, count or retype it.
 5. Read the `exhibits.md#send` section once. Run `bin/journal catalog request --kind batch`, the send and `bin/journal catalog answer --kind batch` in the order that the section "Sending to the catalog" of the harness page shows. The first request takes the tick id, the precinct and the list. Each later request takes the tick id only. Repeat while the journal prints `catalog next`. Stop when it prints the result.
 6. The Proof of the page governs the sweep. The journal's match against its own cache replaces the per-candidate check with `bin/journal seen`.
-7. Apply item 11 of step 4 to each `new` and `fixed #<n>` line. The identity of the line is the id of the candidate. File the remaining lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
+7. Apply item 12 of step 4 to each `new` and `fixed #<n>` line. The identity of the line is the id of the candidate. File the remaining lines in the journal's order, not by value, within the cap. Use the identity and the `Source:` line as the journal printed them. The filing steps of step 5 stay as they are.
 8. A failed part goes to Blockers, with the reason the journal printed. So does a pass that produced no entry for a tree that names dependencies. The INCOMPLETE line of the law applies when nothing was filed.
 
 ## Lead format
@@ -187,7 +188,7 @@ The body holds every part of the law's `LAW.md#the-lead-body` section. These rul
 - For a fixed candidate, `## What` names the closed issue.
 - For a candidate that differs from a protecting precedent or a dismissal, `## Why it is <kind>` names the difference beside the precedent.
 - For the catalog check, Evidence is the journal's output for the match, verbatim. The title's symbol is the record identifier and the package of the `Source:` line.
-- On the Cost and risk line, pick one value from each list by the page's Anchors. File only `confirmed` or `demonstrated`.
+- On the Cost and risk line, Risk reads from the page's risk anchors. Low is 1 or 2, medium is 3 and high is 4 or 5. Effort is the size of the change the finding calls for. File only `confirmed` or `demonstrated`.
 - Put every `@` inside a code span or a fenced block.
 - A kind with an external source fills the `Source:` slot of Not checked. It holds one `Source:` line per source, inside one fenced block, in one of three shapes:
   ```
@@ -206,7 +207,7 @@ Marker:
 - `at` is the current time in UTC at filing, written `YYYY-MM-DDTHH:MM:SSZ`.
 - For a fixed candidate, add ` of=<n>` before ` -->`. Use the closed issue number.
 
-Identity: `<id>` is `<path>::<symbol>::<kind>`. Encode each part as the section `markers.md#the-id-value` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
+Identity: `<id>` is `<path>::<symbol>::<kind>`. The page says what the path and the symbol are, and the kind is one row of its Kinds table. No line number, count or commit enters the id. Encode each part as the section `markers.md#the-id-value` describes. For the catalog check, `<id>` is the identity the journal printed, unchanged.
 
 `bin/journal seen` exit 1 means the id is not canonical. Fix the encoding and run it again.
 
@@ -225,5 +226,6 @@ Filed nothing. Catalog check did not run.
 - For the license reading, Coverage follows `reading.md`.
 
 - A check is one measurement that the page's Kinds or Proof names. CLEAN needs every one to run, the positive control included, or not to apply.
+- A hidden class that the page lists is no check. A class you could not check goes to Coverage, and to Not checked of each lead it bears on.
 - A check does not apply when its subject is absent from the tree. A census with a positive control shows that.
 - A capped tick writes one line: `cap=<n> open=<k> at <sha>. No sweep.` When the page has an alarm check, add `Alarm check: ran.` or `Alarm check: not run, <reason>.`
