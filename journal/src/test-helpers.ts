@@ -150,14 +150,6 @@ export const ACTING = "octocat-lawman";
 // the set of authors that one login alone makes trusted
 export const trustedOnly = (login: string) => trustedAuthors(null, login);
 
-// The smallest issues that sync accepts, numbered from 1.
-export const minimalIssues = (n: number, createdAt: string) =>
-	Array.from({ length: n }, (_, i) => ({
-		number: i + 1,
-		state: "OPEN",
-		createdAt,
-		author: { login: ACTING },
-	}));
 export const SHA = "0123456789abcdef0123456789abcdef01234567";
 export const AT = "at=2026-10-14T09:30:00Z";
 export const LEAD_ID = "src/a.rs::f::dead-code";
