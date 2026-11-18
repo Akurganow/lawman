@@ -152,6 +152,10 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Read the tick group to its last part, as item 2 says, because the `self` lines stand at the end.
 
+### Step 4: sweep
+
+> Several unused units are separate, because each removal is its own decision.
+
 ## skills/prosecutor/SKILL.md
 
 ### Step 0: the input and the order
@@ -208,6 +212,16 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Read it at the tip of the precinct's default branch, because the page counts for the reason that a reviewed merge put it on the main branch.
 
+## skills/lawman-law/references/departments/ (every page)
+
+### Proof
+
+> A missed finding costs nothing this tick. A false one costs the owner's belief in every lead.
+
+### Anchors
+
+> These numbers are a starting value, not measured.
+
 ## skills/lawman-law/references/departments/abstractions.md
 
 ### Proof
@@ -222,6 +236,16 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Add no `Source:` line, because that line belongs to dependencies.
 
+### Anchors
+
+> The values come from the nearest neighbour.
+
+## skills/lawman-law/references/departments/dependencies.md
+
+### Identity
+
+> Security prefixes its symbols with `pin/` and `perm/`. Keep yours plain, so the two never collide.
+
 ## skills/lawman-law/references/departments/licenses/text.md
 
 ### Reading a long license text
@@ -234,17 +258,37 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > Start with the paths that appear most often, because a shape whose purpose moved sits where history is busy.
 
+### Mission
+
+> This is the most subjective department, so it holds the highest bar. A lead that reads as taste costs the owner's belief in every lead.
+
 ## skills/lawman-law/references/departments/security.md
 
 ### Identity
 
 > `secret` has no identity, because it is never filed.
 
+> The prefix keeps it apart from other departments.
+
+### Anchors
+
+> The danger decides. The cost of the fix does not.
+
 ## skills/lawman-law/references/departments/tests.md
 
 ### Proof
 
 > Redundancy counts mutations caught, never lines executed, because a line can run with nothing checked.
+
+### Not findings
+
+> It is the price of testability.
+
+## skills/lawman-law/references/departments/text-residue.md
+
+### Anchors
+
+> These numbers are a starting value from the older systems, not measured here.
 
 ## skills/lawman-law/references/harnesses/hermes.md
 

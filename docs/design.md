@@ -74,6 +74,9 @@ A developer who maintains many repositories wants the same review process on eac
 | Where the logic of a new department lives | Journal commands and tables for each external source | Law text, one reference file per source and a note of the precinct | Lawman ships law that the user's machine turns into a working check. Code goes into the journal only for what must be safe and reliable |
 | Where facts of a precinct about licenses live | Tails on the Departments line | A section `## Licenses` in the constitution and one entry in the host notes | A note needs no change to the check, and the address and the form depend on the machine |
 | What the assembly asks about licenses | The same questions for every repository | It reads the tree first, recommends the answer that a file shows with its path and line, and asks both license-use questions even when a file shows the answer, with no recommendation where the tree shows nothing | The user can judge a question only when it is plain and the recommendation shows its file. The user decides the answer |
+| Whether the risk of a fix decides a filing | A threshold of value and risk on each department page | A threshold of value alone, with the risk on the `Cost and risk` line of the lead | Nobody knows the risk of a fix before the fix is designed, and patrol designs none |
+| How departments divide a finding | Each page names the department that takes a finding outside its subject | A page states only its own subject, and two departments may each file on one place | The lines contradicted each other, and a second lead costs less than a true finding that no page takes |
+| How a repeated defect is filed | One lead for each site | One lead for one defect repeated in several sites, when the leads would differ only in the place | One change needs one case and one pull request |
 
 ## What is still open
 
