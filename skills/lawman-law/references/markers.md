@@ -54,7 +54,7 @@ A marker counts only when all of these hold:
 3. The line lies outside a fenced block.
 4. The line is not indented by 4 or more spaces.
 5. The line is not inside a blockquote.
-6. The line is in the issue body or in a comment of a trusted author. A comment on a pull request counts under the same rules as a comment on an issue.
+6. The line is in an issue body or in a comment, and a trusted author wrote that body or comment. A comment on a pull request counts under the same rules as a comment on an issue.
 7. The marker is valid.
 
 A marker quoted anywhere else counts for nothing. An invalid marker is ignored. It displaces no older marker.

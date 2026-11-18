@@ -151,7 +151,7 @@ A stop is different. It comes from an external cause, such as a failed credentia
 
 ## Stages and markers
 
-State lives in markers. A marker is one HTML-comment line at the end of an issue body or a comment. Labels carry no state. Only the issue body and the comments of the trusted login or an earlier login count. The grammar is in [markers.md](../skills/lawman-law/references/markers.md).
+State lives in markers. A marker is one HTML-comment line at the end of an issue body or a comment. Labels carry no state. A marker counts only when the trusted login or an earlier login wrote the issue body or the comment that holds it. The grammar is in [markers.md](../skills/lawman-law/references/markers.md).
 
 The newest marker of a role on an issue wins. Nobody edits an old marker. A role writes a new one.
 

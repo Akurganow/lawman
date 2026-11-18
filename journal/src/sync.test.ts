@@ -476,6 +476,7 @@ describe("sync", () => {
 			},
 		]);
 		expect(r.out.trim()).toBe("issues=2 leads=1 markers=1 invalid=1");
+		expect(rows("SELECT issue FROM markers")).toEqual([{ issue: 60 }]);
 	});
 
 	test("an author that is no object with a login is rejected", () => {
