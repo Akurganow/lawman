@@ -117,7 +117,8 @@ The role of the owner's license policy: the document that lists accepted
 licenses and accepted exceptions, such as a bought license.
 
 ## Lead body
-The page adds no section. `What` names the material, the family and the gap.
+The page adds no section. `What` names the material. For a `conflict` it also
+names the family and the gap.
 `Why it is <kind>` gives the exhibits of the filing test, one for each.
 `Not checked` says what a person must settle, such as whether the material is
 combined with the project in the way the condition needs. It names a pin that

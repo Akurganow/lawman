@@ -82,7 +82,7 @@ unit grew by accretion.
 **The requirement.** Quote the sentence of the requirement that the shape is
 out of proportion with, and name where the tree states it. The tree states a
 requirement in places such as a requirements document, a specification or the
-unit's own stated purpose.
+unit's own stated purpose. A `vestigial` or `emergent` shape may have none.
 
 **The measurement.** State what the code does in one sentence. Then give its
 cost as a count: files, types, hops, lines, or "N call sites, all passing the

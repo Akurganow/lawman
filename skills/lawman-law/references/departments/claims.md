@@ -40,7 +40,7 @@ guides. The documents that describe the shape of the tree.
 - A word that promises support, such as "works with", "compatible" or
   "supports".
 - A command to install, build or run.
-- A link to a file or a heading in the tree.
+- A link to a file in the tree.
 - A name, path or version stated in more than one place.
 
 **The tree that backs them.** Configuration, adapters, tables, build
