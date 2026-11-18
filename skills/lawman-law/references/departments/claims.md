@@ -92,7 +92,7 @@ it in Not checked.
 
 **The listing (`broken-link`).** List the target path in the tree at the
 analysed commit. Resolve a relative link from the directory of the file that
-holds it. A heading anchor is `plausible` only. Name it in Not checked.
+holds it. A heading anchor is `plausible` only.
 
 **Both quotes (`two-sources`, `placeholder`).** Quote both sides as
 `path:line`. When one side is generated from the other, the stale copy is a

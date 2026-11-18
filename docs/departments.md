@@ -20,7 +20,7 @@ A page starts with frontmatter. It holds `name`, which matches the file name wit
 | Anchors | What the value and risk scores mean, and the lowest value that is filed. Risk fills the `Cost and risk` line of the lead and cuts no finding. |
 | Judged by | The role of the precinct document that tries the findings. The path comes from the constitution. |
 | Lead body | The sections that the page adds to a filed lead's body. The law holds the other parts. |
-| Identity | The fields of the lead's `id`: `<path>::<symbol>::<kind>`. No line number, count or commit enters it. One defect repeated in several sites is one finding, named by its first site. |
+| Identity | The fields of the lead's `id`: `<path>::<symbol>::<kind>`. No line number, count or commit enters it. One defect repeated in several sites is one finding. |
 
 A page whose department can find a live secret names an `Alarm check:` paragraph under Proof. Patrol runs that paragraph even when the department is at cap 0. It prints positions and never values.
 
@@ -99,7 +99,7 @@ A department may have a document in the precinct that tries its findings. The pa
 - `- <name>: judged by <path>` names the document.
 - `- <name>: judged by none` says no document judges the department yet.
 
-A department with no line is judged by none. It then judges by the words of its own page. A judging document is evidence. It can protect a shape. It never convicts.
+A department with no line is judged by none. Its page then judges by its own words, or says that nothing is judged. A judging document is evidence. It can protect a shape. It never convicts.
 
 ## Add a department
 

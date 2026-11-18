@@ -82,7 +82,7 @@ unit grew by accretion.
 **The requirement.** Quote the sentence of the requirement that the shape is
 out of proportion with, and name where the tree states it. The tree states a
 requirement in a requirements document, a specification or the unit's own stated
-purpose. `vestigial` and `emergent` need no requirement.
+purpose.
 
 **The measurement.** State what the code does in one sentence. Then give its
 cost as a count: files, types, hops, lines, or "N call sites, all passing the
@@ -131,7 +131,8 @@ Risk is the chance that the change moves behaviour or output.
 - Risk 5: the change touches a generated copy, a file that a release writes, or
   a path that no routine check runs.
 
-Threshold: value 4 or more. It means a whole mechanism, never a part of one.
+Threshold: value 4 or more. Value 4 is the smallest finding that Not findings
+says to file.
 
 ## Judged by
 The role of the design vocabulary: the document of the precinct that names the
@@ -142,7 +143,8 @@ precinct has already argued for.
 Add one section, `Requirement`, after `Why it is <kind>`: the requirement as
 one quoted sentence, and where the tree states it. For `vestigial` and
 `emergent` it may hold the word `none`. `What` says what the shape does in one
-sentence. `Not checked` lists the commits that were not named.
+sentence. `Not checked` lists the commits that were not named and the remedy
+that was not designed.
 
 ## Identity
 - The path is the file that holds the shape, or the workflow file.

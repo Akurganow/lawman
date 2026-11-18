@@ -76,8 +76,8 @@ the "too small to file" threshold in words. It lists the small cases that stay
 unfiled even when true. It says what size of finding is filed. No other
 section states that size. The page names no other department.
 
-**Proof.** The commands that show each kind. The positive control: the known
-unit that the same command runs on. The classes of hidden callers that a plain
+**Proof.** The commands that show each kind. The known unit that the positive
+control runs the same command on. The classes of hidden callers that a plain
 text search misses. Describe each class by mechanism. Name no language. The
 page may name what the attack on a claim looks for in its subject. The law and
 the patrol skill hold the method, and the page repeats none of it.
@@ -106,21 +106,21 @@ reaches the output.
 **Judged by.** The role of the precinct document that tries this department's
 findings. The page names a role, such as "the design vocabulary". The path
 never appears on the page. It comes from the Departments line of the precinct's
-constitution. A department with no line is judged by none. It then judges by
-the words of its own page.
+constitution. A department with no line is judged by none. A page must work
+then: it judges by its own words, or it says that nothing is judged.
 
 **Lead body.** The sections that a page adds to a filed lead's body, after
 `Why it is <kind>`. The law's `LAW.md#the-lead-body` section holds the other
-parts and their order, and a page repeats none of them. A page may say what a
-part holds for its subject.
+parts and their order. A page repeats none of them. A page may say what a part
+holds for its subject.
 
 **Identity.** The fields of the `id` marker value: `<path>::<symbol>::<kind>`.
 The page says what the path and the symbol are for its subject. No field is
 volatile. A line number, a count or a commit never enters the identity.
 
-One defect repeated in several sites is one finding: the same kind, and one
-change repairs every site. Its identity is that of its first site, by path and
-then by symbol. Different things are never one finding.
+One defect repeated in several sites is one finding, as the patrol skill says.
+A page that names an identity for a cluster or a concept gives the id of that
+finding.
 
 ## Rotation
 

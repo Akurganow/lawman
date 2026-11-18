@@ -4,14 +4,14 @@ contract_version: 1
 ---
 ## Mission
 Find what an outsider can exploit. An outsider is anyone who can open an issue,
-write a comment or propose a change.
-So is anyone who can change an outside component, artifact or channel that the
-precinct trusts. Five defects count: a live credential in
-the tree or its history; automation that an outsider can steer, or that hands a
-secret to code an outsider influences; a script that a package runs on a user's
-machine; an artifact, digest or update channel that someone other than the
-owner can alter; and text an outsider wrote that an agent obeys or a page
-publishes as written. Test: does an outsider have a path to a consequence?
+write a comment or propose a change. So is anyone who can change an outside
+component, artifact or channel that the precinct trusts. Five defects count: a
+live credential in the tree or its history; automation that an outsider can
+steer, or that hands a secret to code an outsider influences; a script that a
+package runs on a user's machine; an artifact, digest or update channel that
+someone other than the owner can alter; and text an outsider wrote that an
+agent obeys or a page publishes as written. Test: does an outsider have a path
+to a consequence?
 
 ## Kinds
 | kind | meaning | measurement |
@@ -88,7 +88,7 @@ recorded answers):
   reaches.
 - A test or stand-in credential.
 
-File only a path that an outsider can walk to a consequence of value 4 or 5.
+File only a path that an outsider can walk to a consequence.
 
 ## Proof
 Alarm check: look for a live credential with two patterns, and print positions

@@ -135,8 +135,7 @@ Risk is the chance that a protection is lost.
 - Risk 3: a named test catches it only after a release.
 - Risk 5: a mutation exists that no remaining test catches.
 
-Threshold: value 3 or more. It means a false signal or a test that adds no
-protection, never a single line.
+Threshold: value 3 or more.
 
 ## Judged by
 The role of the testing rules: the document of the precinct that says what a

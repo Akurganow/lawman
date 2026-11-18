@@ -80,8 +80,8 @@ precinct's regression proof.
 - **The failure scenario.** Concrete inputs, order or interleaving, then the
   exact wrong output, crash or state, against the output the tree requires.
 - **The required result.** The tree states it: in the judging document, or
-  without one in a specification, a documented contract, a test or a type. A
-  result that contradicts only your assumption is no defect.
+  without one in a specification, a documented contract, a type or a test that
+  states it.
 - **The traced path.** Start at a real entry point. Quote each step as
   `path:line` at the analysed commit. No entry point reaches it, no finding.
 - **The escape hatch census.** Quote the search and its count.
@@ -97,7 +97,6 @@ precinct's regression proof.
   - An assertion or an invariant.
   - A later step that corrects the value.
   - A test that pins the result, or a recorded reason.
-- **Attack your own claim once.** Look for any hidden guarantee above.
 
 ## Anchors
 Value is what the fix buys.
@@ -116,8 +115,8 @@ Risk is the chance that the fix breaks something.
 - Risk 5: the fix changes a stored or published value, or touches a path that
   no routine check runs.
 
-Threshold: value 4 or more. It means an ordinary input, or a rare input whose
-wrong result lands in durable state.
+Threshold: value 4 or more. Value 4 is the smallest finding that Not findings
+says to file.
 
 ## Judged by
 The role of the behaviour specification: the document of the precinct that

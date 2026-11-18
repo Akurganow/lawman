@@ -61,7 +61,7 @@ recorded answers):
 - A source kind with no anchor in the tree. A claim about upstream needs a line
   of this tree to land on.
 - A secret inside a manifest or a lockfile, and a credential inside a registry
-  address. A live secret is an alarm, never a lead.
+  address. A live secret follows the law's rule for alarms and is never a lead.
 
 **Too small to file, even when true:**
 - One comment that names a version, with no consequence.
@@ -110,8 +110,7 @@ the judging document's answer.
 ## Anchors
 Value is what the change buys.
 - Value 1: one line, word or version in a comment moves.
-- Value 3: a detour of several lines or a sentence goes, or a named fact about a
-  version needs a recheck.
+- Value 3: a sentence goes, or a named fact about a version needs a recheck.
 - Value 5: a whole step, a job or a class of pins goes.
 
 Risk is the chance that the change breaks something.
@@ -120,7 +119,8 @@ Risk is the chance that the change breaks something.
 - Risk 5: the change alters what the automation installs or what a release
   publishes.
 
-Threshold: value 4 or more. It means a whole step or a whole detour, never a line.
+Threshold: value 4 or more. Value 4 is the smallest finding that Not findings
+says to file.
 
 ## Judged by
 The role of the rule on upstream judgements: the document of the precinct that
@@ -132,7 +132,7 @@ Add one section, `Where it lands here`, after `Why it is <kind>`: the lines,
 steps or sentences that the fact makes wrong or needless. The confidence of a
 source kind speaks to the claim about the tree. For a source kind,
 `Not checked` holds the `Source:` lines, one for each source, in the form of
-the Kinds table.
+the Kinds table. `Not checked` also names the remedy that was not designed.
 
 ## Identity
 - The path is the file that declares the pin or names the version. For `drift`

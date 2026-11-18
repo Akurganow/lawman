@@ -57,8 +57,7 @@ date, subject and changed file names. Start with the paths that
 appear most often.
 
 Skip generated and vendored text. Skip the files that configure the agents of
-this repository, and the files in Read first. Instruction text that the product
-ships to its users is not skipped.
+this repository, and the files in Read first.
 
 ## Not findings
 Beyond the law's list, which covers the fence, what is not judged and recorded
@@ -73,8 +72,10 @@ reasons:
 - A name fixed by a stored key, a wire format, a specification or the
   documentation of an outside system. Quote it, never choose it.
 - Instructions. The files in Read first and the files that configure the
-  agents of this repository are read, not judged as text. Instruction text
-  that the product ships to its users is judged here.
+  agents of this repository are read, not judged as text. Such files are, among
+  others, instruction files, rules, skills and their reference files, agent
+  definitions, commands, prompts and hooks. Instruction text that the product
+  ships to its users is judged here.
 - A past that the history shows and the tree no longer has. The tree and its
   current documents are the authority.
 

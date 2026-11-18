@@ -155,7 +155,8 @@ Risk is the chance that the removal breaks something.
   release job, a name that other packages import, or a script that a package
   installs on a user's machine.
 
-Threshold: value 4 or more.
+Threshold: value 4 or more. Value 4 is the smallest finding that Not findings
+says to file.
 
 ## Judged by
 The role of the design vocabulary: the document of the precinct that names the
@@ -163,7 +164,7 @@ symptoms, the rules of judgement, what counts as a caller, and the shapes the
 precinct has already argued for.
 
 ## Lead body
-none
+No section is added. `Not checked` names the remedy that was not designed.
 
 ## Identity
 - The path is the file that defines the unit, or the workflow file.
