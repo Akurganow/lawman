@@ -4,6 +4,20 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v2.2.0 - 2026-11-18
+#### Features
+- (**departments**) cut the shared pages down to their own subject (3b2979e)
+- (**patrol**) file one lead for one repeated defect and keep risk off the filing bar (de9377a)
+#### Bug Fixes
+- (**departments**) make three pages agree with their own kinds (3185a68)
+- (**patrol**) scope the join rule to the candidate and state the filing size once (85f828c)
+- (**patrol**) settle the join rule and the filing bar after review (0c814f0)
+#### Documentation
+- describe the simpler department pages (372bc28)
+
+- - -
+
+
 ## v2.1.0 - 2026-11-18
 #### Features
 - (**journal**) count the texts of earlier logins as the trusted login's (9c15752)
