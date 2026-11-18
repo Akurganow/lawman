@@ -56,7 +56,7 @@ const NAME = `${DATE}-empty-doubles`;
 const RULE = "An empty double is not dead.";
 const KEY_PLACE = "the file keys/typesafe-fixture of the home folder";
 const ALLOWED = [
-	`trusted_login: ${TRUSTED}`,
+	`acting_login: ${TRUSTED}`,
 	"typesafe: yes",
 	"typesafe_precincts: main=yes",
 	`typesafe_key: ${KEY_PLACE}`,

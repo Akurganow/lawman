@@ -74,7 +74,7 @@ describe("reply time", () => {
 		).toBe("2026-10-14T10:00:00Z");
 	});
 
-	test("ignores comments of other people, also the trusted login", () => {
+	test("ignores comments of other people, also the acting login", () => {
 		expect(
 			repliedAt([
 				note(TRUSTED, "2026-10-14T10:00:00Z"),

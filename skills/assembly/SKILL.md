@@ -88,7 +88,7 @@ Take the first mode that holds. After amend, catalog, licenses or roles ends wit
     - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
-    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `trusted_login`.
+    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `acting_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
@@ -178,7 +178,7 @@ law_commit: <commit of lawman/ at install or at the last sync>
 release_tag: <tag of the release>
 release_repo: <owner>/<repo> of the release
 journal_sha256: <sha256 of bin/journal>
-trusted_login: <login of the account that the host reports for the chosen tool>
+acting_login: <login of the account that the host reports for the chosen tool>
 deliver: <delivery routes, one or several, in the form the create command takes>
 typesafe: <yes|no>
 typesafe_precincts: <name>=<yes|no> ... | none
@@ -198,10 +198,10 @@ jobs: <role>=<n> ... | none
 progress_checks: <whole number above zero>
 dismissals_since: <UTC time of the install or of the update that brought dismissals>
 excluded_authors: <name>=<login>,<login> ... | none
-earlier_logins: <login>,<login> | none
+trusted_authors: <login>,<login> | none
 ```
 
-The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. The assembly never writes `earlier_logins`, and it keeps a key that is there.
+The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. The assembly never writes `trusted_authors`, and it keeps a key that is there.
 
 The command `bin/journal law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills a missing key that its defaults hold. It does not fill `license_precincts`. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
 

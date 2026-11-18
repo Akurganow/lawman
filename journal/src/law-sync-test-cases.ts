@@ -145,6 +145,26 @@ export function defineCases(runner: Runner): void {
 			);
 		});
 
+		test("renames trusted_login and earlier_logins in place", () => {
+			lay(root, {
+				config: `law_commit: ${OLD_COMMIT}\ntrusted_login: a\nearlier_logins: b, c\n`,
+			});
+			synced("tick1");
+			expect(configOf(root)).toStartWith(
+				`law_commit: ${LAW_COMMIT}\nacting_login: a\ntrusted_authors: b, c\n`,
+			);
+			expect(configOf(root)).not.toMatch(/trusted_login|earlier_logins/);
+		});
+
+		test("keeps an old line beside a present new key", () => {
+			const both = `law_commit: ${OLD_COMMIT}\nacting_login: a\ntrusted_login: z\n`;
+			lay(root, { config: both });
+			synced("tick1");
+			expect(configOf(root)).toStartWith(
+				`law_commit: ${LAW_COMMIT}\nacting_login: a\ntrusted_login: z\n`,
+			);
+		});
+
 		test("starts the appended lines on a new line when the file has no final newline", () => {
 			lay(root, { config: `law_commit: ${OLD_COMMIT}` });
 			synced("tick1");
@@ -164,7 +184,7 @@ export function defineCases(runner: Runner): void {
 	describe("defaults", () => {
 		test.each([
 			["typesafe: no", "none"],
-			["trusted_login: x", "none"],
+			["acting_login: x", "none"],
 		])("%s gives typesafe_key %s", (line, value) => {
 			lay(root, { config: `law_commit: ${OLD_COMMIT}\n${line}\n` });
 			synced("tick1");
@@ -271,7 +291,7 @@ export function defineCases(runner: Runner): void {
 		});
 
 		test("an absent law_commit exits 1 and changes nothing", () => {
-			lay(root, { config: "trusted_login: x\n" });
+			lay(root, { config: "acting_login: x\n" });
 			const result = unchanged(runner.exe(root, "tick1"), flags(root), 1);
 			expect(result.err).toContain("law_commit");
 		});

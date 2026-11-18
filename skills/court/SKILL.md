@@ -55,7 +55,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=court tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
-4. Read `trusted_login`, `typesafe` and `typesafe_precincts` from `config.yaml`. Each is one `key: value` line. A missing file, or a missing `trusted_login`, ends the tick with `failed`. A missing `typesafe` or `typesafe_precincts` does not.
+4. Read `acting_login`, `typesafe` and `typesafe_precincts` from `config.yaml`. Each is one `key: value` line. A missing file, or a missing `acting_login`, ends the tick with `failed`. A missing `typesafe` or `typesafe_precincts` does not.
    `typesafe` allows Jev only with the exact value `yes`. Any other value, or a missing key, reads as `no`.
 
    Check the precinct's pair. `<p>` is the precinct name of the order. A pair is a whole space-separated token. The precinct is allowed only when `typesafe_precincts` holds the token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure.

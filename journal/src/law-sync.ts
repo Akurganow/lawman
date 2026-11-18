@@ -55,8 +55,17 @@ const DEFAULTS: Default[] = [
 	["progress_checks", () => String(PROGRESS_CHECKS)],
 ];
 
+// Keys renamed by a release. A line moves to the new name unless the new name already has a line.
+const RENAMED: [string, string][] = [
+	["trusted_login", "acting_login"],
+	["earlier_logins", "trusted_authors"],
+];
+
 function rewriteConfig(config: string, release: Release): string {
 	let next = config;
+	for (const [from, to] of RENAMED)
+		if (!lineOf(to).test(next))
+			next = next.replace(lineOf(from), (_, value) => `${to}: ${value}`);
 	const appended: string[] = [];
 	const keyed: [string, string][] = [
 		["law_commit", release.commit],

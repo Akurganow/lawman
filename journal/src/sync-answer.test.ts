@@ -181,7 +181,7 @@ describe("sync reads deciders by login", () => {
 		expect(answerOf([REFERRED, reply])).toEqual(["comment", "IC_12"]);
 	});
 
-	test("a comment of the trusted login with no marker line counts when it is a writer", () => {
+	test("a comment of the acting login with no marker line counts when it is a writer", () => {
 		const plain = { at: 12, body: "my decision" };
 		expect(answerOf([REFERRED, plain], [TRUSTED.toUpperCase()])).toEqual([
 			"comment",

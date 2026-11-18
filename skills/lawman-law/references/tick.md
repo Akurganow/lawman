@@ -16,7 +16,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 
 | Step | What the role does |
 | :-- | :-- |
-| `identity` | Ask the host which account the tool in the host notes acts as. A failed ask gives `stopped-host-auth`. An account that differs from `trusted_login`, ignoring ASCII case, gives `stopped-identity-changed`. |
+| `identity` | Ask the host which account the tool in the host notes acts as. A failed ask gives `stopped-host-auth`. An account that differs from `acting_login`, ignoring ASCII case, gives `stopped-identity-changed`. |
 | `law-version` | This is the line of the tick group. The line `self law-version` that the command `law-update` prints is another one: do it as the section "Sync the law" says. Read the revision of the law folder, and whether it has a local change. A revision that cannot be read gives `stopped-law-drift`. When the folder holds no history and the installation has no `law-version` command, the reason is "the law folder gives no facts: put a `law-version` command in `shared/`, form in docs/journal.md". A local change, or a state that cannot be read, gives `stopped-dirty-law`. A revision that differs from `law_commit` gives `stopped-law-drift`. |
 | `fetch` | the section "Fetch the precinct" |
 | `issues` | the section "Sync the tracker" |
@@ -45,7 +45,7 @@ The issue roles are the response unit, investigation, the prosecutor, the defend
 
 The spec writer and the executor are the pull request roles. The number of an order is an issue for the issue roles and a pull request for the pull request roles. `<m>` below is a pull request number.
 
-The fetch step gives the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `trusted_login` from `config.yaml`. A trusted author is `<login>` or a login that `earlier_logins` in `config.yaml` names. An absent key, or the value `none`, names none. Read the key when you read `trusted_login`. You write only as `<login>`, and a read-back compares the author with `<login>` alone.
+The fetch step gives the fetched commit. `<ref>` below is the commit at which the skill reads the precinct. The skill names that commit. `<p>`, `<owner/repo>` and `<n>` are the precinct, the repository and the issue of the order. `<login>` is `acting_login` from `config.yaml`. A trusted author is `<login>` or a login that `trusted_authors` in `config.yaml` names. An absent key, or the value `none`, names none. Read the key when you read `acting_login`. You write only as `<login>`, and a read-back compares the author with `<login>` alone.
 
 ## Parts
 

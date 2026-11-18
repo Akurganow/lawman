@@ -413,9 +413,9 @@ export async function tickStart(args: string[]): Promise<number> {
 	for (const line of journal) o.line(line);
 	if (config === null)
 		return ended(t, o, "failed", "config.yaml is missing", null);
-	const login = configValue(config, "trusted_login");
+	const login = configValue(config, "acting_login");
 	if (login === undefined || !fits("login", login))
-		return ended(t, o, "failed", "config.yaml has no trusted_login", null);
+		return ended(t, o, "failed", "config.yaml has no acting_login", null);
 	const law = await lawCheck(config);
 	if (law === "self") o.selfs.push("law-version");
 	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);

@@ -286,7 +286,7 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `stopped-dirty-law`: the law folder has local changes.
 - `stopped-law-config`: `config.yaml` cannot give `law_commit` or `release_repo`.
 - `stopped-no-verifier`: the host notes name neither a verifier nor a refusal of the signature check.
-- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
+- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the acting login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-issue-read`: reading the issue, the pull request or their comments failed.
@@ -374,8 +374,8 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 ## Terms
 
-- The trusted login is the installation's login, the one identity of every role. Every write and the identity check use it alone. An earlier login is an account that `earlier_logins` in `config.yaml` names. A trusted author is the trusted login or an earlier login. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is taken up.
-- A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider.
+- The acting login is the installation's login, the one identity of every role. Every write and the identity check use it alone. A trusted author is the acting login or a login that `trusted_authors` in `config.yaml` names. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is taken up.
+- A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The acting login may be a decider.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 
 ## Pairs

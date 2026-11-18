@@ -380,10 +380,10 @@ function rulingText(
 	return body ?? "";
 }
 
-export function trustedLogin(): string {
-	const login = configValue(readConfig() ?? "", "trusted_login");
+export function actingLogin(): string {
+	const login = configValue(readConfig() ?? "", "acting_login");
 	if (login === undefined || !fits("login", login))
-		throw new Fail(EXIT.USAGE, "config.yaml has no valid trusted_login");
+		throw new Fail(EXIT.USAGE, "config.yaml has no valid acting_login");
 	return login;
 }
 
@@ -407,7 +407,7 @@ function summary(sections: Item[][], lines: string[]): string[] {
 
 // the newest ruling of the case and its cached comment, an empty text when `lenient` and none is cached
 function rulingOf(precinct: string, issue: number, lenient = false) {
-	trustedLogin();
+	actingLogin();
 	const { marker, text } = withDb((db) => {
 		const m = rulingMarker(db, precinct, issue);
 		return { marker: m, text: rulingText(db, precinct, issue, m.ord, lenient) };

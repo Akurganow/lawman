@@ -9,11 +9,11 @@ import { hasCommand, precinctPlace } from "./launch";
 import { collectIssueMarkers } from "./markers";
 import { output, Refused, refusal, registered } from "./operations";
 import {
+	actingLogin,
 	KIND_OF,
 	type OldItem,
 	oldItems,
 	oldLineToFile,
-	trustedLogin,
 } from "./precedent";
 import { PRECEDENT_KINDS } from "./precedent-file";
 import { type IssuesInput, readIssues } from "./sync-issues";
@@ -153,7 +153,7 @@ async function checkCommand(args: string[]): Promise<number> {
 		};
 	});
 	registered(check("precinct", precinct));
-	const trusted = trustedAuthors(readConfig(), trustedLogin());
+	const trusted = trustedAuthors(readConfig(), actingLogin());
 	// the form is read once, and only when a line names an issue
 	let read: Issues | undefined;
 	const verdicts: Verdict[] = [];
@@ -184,7 +184,7 @@ async function moveCommand(args: string[]): Promise<number> {
 	if (opt.kind !== undefined && !PRECEDENT_KINDS.includes(opt.kind))
 		throw usage(USAGE);
 	registered(precinct);
-	const trusted = trustedAuthors(readConfig(), trustedLogin());
+	const trusted = trustedAuthors(readConfig(), actingLogin());
 	let verdict = NO_ISSUE;
 	if (issue !== null) {
 		const read = await issuesForm(precinct);

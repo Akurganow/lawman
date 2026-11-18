@@ -45,7 +45,7 @@ let tree: string;
 
 beforeEach(() => {
 	seed((db) => precinct(db, "main"));
-	config(`trusted_login: ${TRUSTED}\n`);
+	config(`acting_login: ${TRUSTED}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 });
@@ -308,7 +308,7 @@ describe("precedent: refine and cancel", () => {
 
 	test("a refine changes only the text after the header and asks nothing", async () => {
 		config(
-			`trusted_login: ${TRUSTED}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
+			`acting_login: ${TRUSTED}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
 		);
 		mkdirSync(references("departments"), { recursive: true });
 		writeFileSync(
@@ -438,7 +438,7 @@ describe("precedent: the ruling comes from the cache", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("without a trusted login in config.yaml the command fails", async () => {
+	test("without a acting login in config.yaml the command fails", async () => {
 		await cache([ruling(precedentSection("- new x: y"))]);
 		config("harness: hermes\n");
 		expect((await record()).code).toBe(EXIT.USAGE);

@@ -58,7 +58,7 @@ describe("case: the line of a clerk job", () => {
 		expect(due("clerk")).toBe("main\t2\n");
 	});
 
-	// a marker row exists only for the trusted login, so only its comment is the ruling
+	// a marker row exists only for the acting login, so only its comment is the ruling
 	test("a copy of the ruling marker by an outsider changes nothing", () => {
 		const copy = `Copy.\n\n## Precedent\n\n- new gate: A rule.\n\n${conviction()}`;
 		const asOutsider = (spec: Spec, at: number) => {

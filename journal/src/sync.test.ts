@@ -450,10 +450,10 @@ describe("sync", () => {
 		]);
 	});
 
-	test("a marker by an earlier login counts as the trusted login's", () => {
+	test("a marker by a login of trusted_authors counts as the acting login's", () => {
 		writeFileSync(
 			join(dir, "config.yaml"),
-			"earlier_logins: , Earlier-Login,,none\n",
+			"trusted_authors: , Earlier-Login,,none\n",
 		);
 		const r = sync([
 			{

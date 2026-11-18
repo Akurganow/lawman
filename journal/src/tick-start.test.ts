@@ -504,12 +504,12 @@ const ENDINGS: Ending[] = [
 		taken: false,
 	},
 	{
-		name: "a config.yaml without trusted_login",
+		name: "a config.yaml without acting_login",
 		role: "investigation",
 		order: { issue: 3 },
 		setup: () => config("harness: hermes\n"),
 		outcome: "failed",
-		report: "config.yaml has no trusted_login",
+		report: "config.yaml has no acting_login",
 		taken: false,
 	},
 	{

@@ -77,7 +77,7 @@ let tree: string;
 
 beforeEach(() => {
 	seed((db) => precinct(db, "main"));
-	config(`trusted_login: ${TRUSTED}\ndismissals_since: ${SINCE}\n`);
+	config(`acting_login: ${TRUSTED}\ndismissals_since: ${SINCE}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 });
