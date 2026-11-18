@@ -76,12 +76,6 @@ This page holds sentences that were taken out of the law. They explain rules or 
 
 > A cut output loses the lines after the cut, and the alarms and the orders can stand there.
 
-## markers.md
-
-### Defined markers
-
-> So an older `feature` stays valid.
-
 ## skills/clerk/SKILL.md
 
 ### Step 0: the input and the order

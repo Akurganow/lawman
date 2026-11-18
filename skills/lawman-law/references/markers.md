@@ -105,7 +105,7 @@ Each marker is the last line of the issue body or comment that its role writes.
 | `court` | `referral` | the ruling comment that refers a requirement to a decider | `sha` |
 | `response-unit` | `lead` | the lead comment on the issue it takes in | `department`, `id`, `sha` |
 | `response-unit` | `await` | the comment that asks the reporter for facts | none |
-| `response-unit` | `out` | the comment that sends an issue out of the funnel | `reason` |
+| `response-unit` | `out` | the comment that sends an issue out of the funnel | none |
 | `clerk` | `entry` | the comment after it opens a precedent pull request | `pull`, `issue` |
 | `clerk` | `no-entry` | the comment when no precedent file changes | `issue` |
 | `clerk` | `final` | the comment after the decider settles a precedent pull request | `pull` |
@@ -123,7 +123,6 @@ Each marker is the last line of the issue body or comment that its role writes.
 - `of` is a positive decimal integer without leading zeros. It names the issue closed as completed whose defect has returned.
 - `stage=lead` is valid only with `role=patrol` or `role=response-unit`, and all of `department`, `id`, `sha`. Otherwise the marker is invalid.
 - The response-unit lead writes `department=-` and `id=<path>::<symbol>::<kind>`. The kind is `reported` for a defect and `required` for a requirement. `-` is a value token, also as the path or the symbol.
-- `reason` is `injection` or `other`. The parser keeps any value.
 - `to` matches `[a-z][a-z0-9-]*`. `round` is a positive decimal integer without leading zeros.
 - `stage=return` is valid only with `to` and `round`. Otherwise the marker is invalid.
 - The prosecutor and the defender write `return`, both with `to=investigation` and `round` equal to the round in which it returns.
