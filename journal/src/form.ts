@@ -187,17 +187,18 @@ export function loginList(
 	});
 }
 
-// an author is a login, an object with a login, or null; any other value would lose the identity silently
+// an author is a login, an object with a login, or null; any other value would lose the identity silently.
+// The result is "" when the host gives no author.
 export function authorLogin(
 	value: unknown,
 	what: string,
 	reject: (why: string) => Fail,
-): string | null {
-	if (value === undefined || value === null) return null;
+): string {
+	if (value === undefined || value === null) return "";
 	const login = isRecord(value) ? value.login : value;
 	if (typeof login !== "string")
 		throw reject(`${what} is a login, an object with a login, or null`);
-	return login === "" ? null : login;
+	return login;
 }
 
 export function form(args: string[]): void {

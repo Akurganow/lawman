@@ -51,14 +51,22 @@ describe("readPulls validity", () => {
 	});
 
 	test("an author or a comment author that is no login is rejected", () => {
-		const pull = hostPulls([{ number: 1 }]);
-		for (const author of [7, { login: 7 }]) {
-			Object.assign(pull.pulls[0] as object, { author });
-			rejects(JSON.stringify(pull), /an author is a login/);
-		}
-		const comment = hostPulls([{ number: 1, comments: [spec({})] }]);
-		Object.assign(comment.pulls[0]?.comments[0] as object, { author: 7 });
-		rejects(JSON.stringify(comment), /a comment author is a login/);
+		const pull = { number: 1, author: { login: 7 } };
+		rejects(
+			JSON.stringify({ writers: [], pulls: [pull] }),
+			/an author is a login/,
+		);
+		const commented = {
+			number: 1,
+			author: BOT,
+			closes: [],
+			comments: [{ id: "C1", author: 7 }],
+			changesRequested: [],
+		};
+		rejects(
+			JSON.stringify({ writers: [], pulls: [commented] }),
+			/a comment author is a login/,
+		);
 	});
 });
 

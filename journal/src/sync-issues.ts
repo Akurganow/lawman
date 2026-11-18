@@ -40,7 +40,7 @@ const logins = (v: unknown, what: string) => loginList(v, what, syncInput);
 // the author as { login }, or null when the host gives none
 function authorOf(raw: Record<string, unknown>, what: string) {
 	const login = authorLogin(raw.author, what, syncInput);
-	return login === null ? null : { login };
+	return login === "" ? null : { login };
 }
 
 function readComment(c: unknown): SyncComment {

@@ -75,7 +75,7 @@ function readComment(raw: unknown): Comment {
 	return {
 		id: text(raw.id),
 		url: linkOrNull(raw.url),
-		author: authorLogin(raw.author, "a comment author", reject) ?? "",
+		author: authorLogin(raw.author, "a comment author", reject),
 		createdAt: timeField(raw.createdAt, "a comment createdAt"),
 		body: text(raw.body),
 		approvedBy: logins(raw.approvedBy, "a comment approvedBy"),
@@ -213,7 +213,7 @@ export function readPulls(
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		const author = authorLogin(raw.author, "an author", reject) ?? "";
+		const author = authorLogin(raw.author, "an author", reject);
 		const byTrusted = isTrusted(trusted, author);
 		if (!byTrusted && !isTrusted(writers, author)) continue;
 		const pull = readPull(raw);
