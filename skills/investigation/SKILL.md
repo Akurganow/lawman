@@ -63,7 +63,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    - A non-zero exit: answer `journal unavailable: <stderr>` and stop.
    - Otherwise the tick has started, and the first part of the tick group printed. Its first line is `lawman input <form> role=investigation tick=<tick id> part 1 of <n>`. Keep the tick id. The sections of `tick.md` in the role group govern the whole tick.
    - The lines `ended <outcome>` and `report <report>` mean that the journal ended the tick. Keep its `ALARM` lines for the answer, and its report for a `failed` outcome. After a `stopped-*` outcome the session is over: give the answer. Otherwise go on with the next order.
-4. Read `trusted_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`. Read `catalog`, `catalog_precincts` and `license_precincts` from the same file now, before any work with the tree. A missing key there means no and is no failure.
+4. Read `acting_login` from `config.yaml`. It is one `key: value` line. A missing file or key ends the tick with `failed`. Read `catalog`, `catalog_precincts` and `license_precincts` from the same file now, before any work with the tree. A missing key there means no and is no failure.
 5. Read the tick group to its last part, as item 1 says. Keep every `ALARM` line for the answer. Do each `self` step at once, as the self steps of the intro of `tick.md` say.
    ```
    bin/journal tick input <tick id> --part <k>
@@ -105,7 +105,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
 1. For each path or symbol the lead names, read the file at `<sha>`. A missing path: run the `exhibits.md#follow-a-missing-path` section. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
 2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
 3. Read the history of each named path from `<sha>`: the short hash and the subject of each commit.
-4. List the open pull requests of the trusted authors with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
+4. List the open pull requests of each trusted author with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
 5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of three forms. Read a `releases` line as the host notes record, and take only the fields named here.
    - `catalog <record identifier> <package>`: the one catalog record with that identifier. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. The record needs consent only, never a reading entry. Otherwise pass the line to `bin/journal catalog request --kind record`, send what it printed as the `exhibits.md#send` section says, and hand the reply to `bin/journal catalog answer --kind record --id <identifier>`.
    - `licenses <source> <ecosystem>/<name> <pin>`: one license value or the text of a license. Read it from a source that the precinct's entry in the host notes agrees. Do this only when `role=patrol`. Follow `lawman/skills/lawman-law/references/departments/licenses/reading.md`. It names the consent and the prohibitions. Obey both. With consent, read the source again and take the outcome from your own read:
@@ -162,7 +162,7 @@ Lead: #<n>, "<the claim, quoted>"
 <the commits of each named path>
 
 ## Related
-<open pull requests of the trusted authors on the same paths, each by number; any other open pull request only in a count, never by number; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
+<open pull requests of a trusted author on the same paths, each by number; any other open pull request only in a count, never by number; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
 
 ## Not established
 <what could not be established, and why. For a missing path: the commit, its subject, and the new path, the removal, or that no commit touched the path>

@@ -32,6 +32,7 @@ const EXECUTABLE = 0o111;
 const READ_ONLY = 0o555;
 const NO_ACCESS = 0o000;
 const OWNER_ONLY = 0o600;
+const GROUP_WRITABLE = 0o664;
 const ALL_WRITABLE = 0o755;
 const PERMISSION_BITS = 0o777;
 const JOBS =
@@ -145,6 +146,25 @@ export function defineCases(runner: Runner): void {
 			);
 		});
 
+		test("renames trusted_login and earlier_logins in place", () => {
+			lay(root, {
+				config: `law_commit: ${OLD_COMMIT}\ntrusted_login: a\nearlier_logins: b, c\n`,
+			});
+			synced("tick1");
+			expect(configOf(root)).toStartWith(
+				`law_commit: ${LAW_COMMIT}\nacting_login: a\ntrusted_authors: b, c\n`,
+			);
+		});
+
+		test("keeps an old line beside a present new key", () => {
+			const both = `law_commit: ${OLD_COMMIT}\nacting_login: a\ntrusted_login: z\n`;
+			lay(root, { config: both });
+			synced("tick1");
+			expect(configOf(root)).toStartWith(
+				`law_commit: ${LAW_COMMIT}\nacting_login: a\ntrusted_login: z\n`,
+			);
+		});
+
 		test("starts the appended lines on a new line when the file has no final newline", () => {
 			lay(root, { config: `law_commit: ${OLD_COMMIT}` });
 			synced("tick1");
@@ -155,16 +175,17 @@ export function defineCases(runner: Runner): void {
 
 		test("keeps the file mode of the old config", () => {
 			lay(root);
-			chmodSync(config(), OWNER_ONLY);
+			// a mode with a bit that a usual umask strips, so a plain write would not keep it
+			chmodSync(config(), GROUP_WRITABLE);
 			synced("tick1");
-			expect(statSync(config()).mode & PERMISSION_BITS).toBe(OWNER_ONLY);
+			expect(statSync(config()).mode & PERMISSION_BITS).toBe(GROUP_WRITABLE);
 		});
 	});
 
 	describe("defaults", () => {
 		test.each([
 			["typesafe: no", "none"],
-			["trusted_login: x", "none"],
+			["acting_login: x", "none"],
 		])("%s gives typesafe_key %s", (line, value) => {
 			lay(root, { config: `law_commit: ${OLD_COMMIT}\n${line}\n` });
 			synced("tick1");
@@ -201,26 +222,30 @@ export function defineCases(runner: Runner): void {
 	});
 
 	describe("write failure", () => {
-		test("keeps the new binary and the old config, and a rerun completes", () => {
-			lay(root);
-			const exe = runner.exe(root, "tick1");
-			const bytes = readFileSync(exe);
-			const before = configOf(root);
-			chmodSync(root, READ_ONLY);
-			let result: Result;
-			try {
-				result = sync(exe);
-			} finally {
-				chmodSync(root, ALL_WRITABLE);
-			}
-			expect(result.code).not.toBe(0);
-			expect(result.out).toBe("");
-			expect(Buffer.compare(readFileSync(bin()), bytes)).toBe(0);
-			expect(configOf(root)).toBe(before);
-			expect(leftovers(root)).toEqual([]);
-			expect(synced("tick2").out).toBe(SYNCED);
-			expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
-		});
+		test.each([".", "bin"])(
+			"with %s read-only, keeps the old binary and the old config, and a rerun completes",
+			(folder) => {
+				lay(root);
+				const exe = runner.exe(root, "tick1");
+				const before = configOf(root);
+				const locked = join(root, folder);
+				chmodSync(locked, READ_ONLY);
+				let result: Result;
+				try {
+					result = sync(exe);
+				} finally {
+					chmodSync(locked, ALL_WRITABLE);
+				}
+				expect(result.code).not.toBe(0);
+				expect(result.out).toBe("");
+				expect(readFileSync(bin(), "utf8")).toBe(OLD_BINARY);
+				expect(existsSync(exe)).toBe(true);
+				expect(configOf(root)).toBe(before);
+				expect(leftovers(root)).toEqual([]);
+				expect(synced("tick2").out).toBe(SYNCED);
+				expect(configOf(root)).toContain(`law_commit: ${LAW_COMMIT}\n`);
+			},
+		);
 	});
 
 	describe("usage and validation", () => {
@@ -271,7 +296,7 @@ export function defineCases(runner: Runner): void {
 		});
 
 		test("an absent law_commit exits 1 and changes nothing", () => {
-			lay(root, { config: "trusted_login: x\n" });
+			lay(root, { config: "acting_login: x\n" });
 			const result = unchanged(runner.exe(root, "tick1"), flags(root), 1);
 			expect(result.err).toContain("law_commit");
 		});

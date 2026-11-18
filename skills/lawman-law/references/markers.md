@@ -61,7 +61,7 @@ A marker quoted anywhere else counts for nothing. An invalid marker is ignored. 
 
 Rules 1, 4 and 5 follow from column 0, so the parser needs no blockquote state. The fixture still tests each case.
 
-A trusted author is the installation's trusted login or an earlier login. Compare logins ignoring ASCII case.
+A trusted author is the installation's acting login or a login that `trusted_authors` names. Compare logins ignoring ASCII case.
 
 ### Fenced blocks
 

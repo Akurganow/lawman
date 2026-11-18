@@ -18,6 +18,7 @@ import { oldLineToFile } from "./precedent";
 import { headerOf, splitPrecedent } from "./precedent-file";
 import { cache } from "./precedent-test-fixture";
 import {
+	ACTING,
 	acquittal,
 	BASE,
 	conviction,
@@ -26,7 +27,6 @@ import {
 	precinct,
 	ROOT,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 import { CONSTITUTION, departmentPage } from "./tick-start-test-fixture";
@@ -45,7 +45,7 @@ let tree: string;
 
 beforeEach(() => {
 	seed((db) => precinct(db, "main"));
-	config(`trusted_login: ${TRUSTED}\n`);
+	config(`acting_login: ${ACTING}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 });
@@ -308,7 +308,7 @@ describe("precedent: refine and cancel", () => {
 
 	test("a refine changes only the text after the header and asks nothing", async () => {
 		config(
-			`trusted_login: ${TRUSTED}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
+			`acting_login: ${ACTING}\ntypesafe: yes\ntypesafe_precincts: main=yes\n`,
 		);
 		mkdirSync(references("departments"), { recursive: true });
 		writeFileSync(
@@ -438,7 +438,7 @@ describe("precedent: the ruling comes from the cache", () => {
 		expect(names()).toEqual([]);
 	});
 
-	test("without a trusted login in config.yaml the command fails", async () => {
+	test("without an acting login in config.yaml the command fails", async () => {
 		await cache([ruling(precedentSection("- new x: y"))]);
 		config("harness: hermes\n");
 		expect((await record()).code).toBe(EXIT.USAGE);

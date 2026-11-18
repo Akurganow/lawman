@@ -68,7 +68,7 @@ The folder of the law may carry no history. A harness may place the plugin as a 
 
 1. The history of the law folder, when it has one. It gives the commit it holds, the origin of the history and the release tag of that commit.
 2. With no history, the plugin's manifest and the host's tool, then the developer's word. Read the repository and the version from `plugin.json` in the law folder. Get the release tag and its commit from the host's tool. Ask in free text only for what they cannot give, and name where the value can be seen, such as the plugin's page or the release. The word serves the install. Write no `law-version` command from it. The command would print one value for ever. The check of the law at the start of a tick would not see an update of the plugin. The role reads the facts itself.
-   With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. The person proves it with Host in the menu. The install goes on.
+   With no history, the role cannot read them. Every tick then ends `stopped-law-drift`, because the law folder gives no facts. Say so in the proposal and the summary. The person writes an executable `shared/law-version` in the form of "The law-version file" of `lawman/docs/journal.md`. It reads the revision from a place the harness keeps that changes with the plugin. The next start of the assembly runs the file. A file that fails ends that start with the reason. The person then proves with Host in the menu that its value changes with the plugin. The install goes on.
 3. No history, no value from the manifest or the tool, and no word: stop, and say which source to name.
 
 When the history is readable and the commit carries no release tag, stop: the law is not on a release. Tell the developer that `main` holds only releases and that the install must wait for one. The developer's word does not replace a missing tag while the history is readable. It replaces the history only when there is none.
@@ -114,7 +114,7 @@ Proposes, as rows with their source. The rows are the notes, the recorded action
 | :-- | :-- | :-- |
 | Host | the repository host | found |
 | Tool | the tool in use | found or yours |
-| Account | the login the host reports, which becomes `trusted_login` at install | found, not editable |
+| Account | the login the host reports, which becomes `acting_login` at install | found, not editable |
 | Credential | the place it lives, never its value | found |
 | Issues and templates | how the host keeps them | found |
 | Host actions | one row for each action, with how this machine does it | found |
@@ -306,7 +306,7 @@ Write in this order.
 2. Record the tag and the repository of the release as `release_tag` and `release_repo`.
 3. Read `contract_version` in `lawman/skills/lawman-law/references/constitution.md`, and record it.
 4. Write `<installation>/config.yaml` with the fifteen keys listed in `SKILL.md`.
-5. Take `trusted_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe, and `catalog` from Catalog.
+5. Take `acting_login` from Host, `deliver` from Delivery, and `typesafe` and `typesafe_key` from TypeSafe, and `catalog` from Catalog.
 6. Write `typesafe_precincts`, `catalog_precincts` and `license_precincts` as none.
 7. Write `amended_law_commit` equal to `law_commit`.
 8. Write the optional keys that Limits decided. Write `input_chars` when the harness page names a size. Write `jobs` or `progress_checks` only when the developer changed the value. Write `dismissals_since` as the current UTC time, in the form `YYYY-MM-DDThh:mm:ssZ`.
@@ -354,7 +354,7 @@ Follow "Finish" in `SKILL.md`. Name these items.
 - The limits: the numbers of jobs and progress checks that are in force, and the size of a part when the page gives one.
 - The delivery check: checked, not checked, failed, or did not run.
 - For a file-only install, three facts. Name the output folder that the harness page gives under "Delivery targets". Where the page names no output folder, say that the results lie in the run records. Say how to see recent runs, as "Run records" says. Say that alarms and failures stay in files.
-- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `trusted_login` ends with a stopped outcome. The duty desk checks the account in its run, and its stop arrives on the delivery routes.
+- What a login stop looks like and where it arrives. A run whose account, as the host reports it, differs from `acting_login` ends with a stopped outcome. The duty desk checks the account in its run, and its stop arrives on the delivery routes.
 - After the refusal of the signature, the summary of a refusal that "Choose the method of verification" in `references/commands.md` gives.
 - When no `law-version` command was written and the law folder has history, that the role reads the facts of the law itself.
 - When no `law-version` command was written and the law folder has no history, the statement of "Find the facts of the law".

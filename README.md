@@ -39,7 +39,7 @@ Lawman installs as an Agent Plugins package, with one manifest at the repository
 
 ### Configuration
 
-The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds, among others, the harness, the law commit, the release, the trusted login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
+The installation keeps its settings in `config.yaml`, plain `key: value` lines. It holds, among others, the harness, the law commit, the release, the acting login, the delivery routes, the TypeSafe, catalog and license answers. It never holds the value of a token or a key.
 
 [config.yaml](docs/configuration.md)
 
@@ -67,7 +67,7 @@ A precinct's `LAWMAN.md` states what is true of that repository and of no other.
 
 Lawman runs inside an agent harness, on that harness's own schedule. You need to be signed in to your repository host as the one account every role uses, with access to github.com for Lawman's release. The assembly skill finds the rest, including a way to verify Lawman's release, a check you may decline. After a plugin update, the journal updates itself with the same checks.
 
-Every role acts on the host as one identity, the login in `trusted_login`, and every tick stops when the host reports another. Your personal account is a fine identity. A separate one is recommended: Lawman's comments, issues and commits read as their own, and its access stays to the repositories you give it. A bot identity of the host, such as a GitHub App, is one way to get it. How the identity signs in is yours and your agent's to set up. Lawman holds no credential and reads only what the host reports. An installation that moves to another identity names the earlier login in `earlier_logins`, and keeps what that login wrote. See [configuration](docs/configuration.md).
+Every role acts on the host as one identity, the login in `acting_login`, and every tick stops when the host reports another. Your personal account is a fine identity. A separate one is recommended: Lawman's comments, issues and commits read as their own, and its access stays to the repositories you give it. A bot identity of the host, such as a GitHub App, is one way to get it. How the identity signs in is yours and your agent's to set up. Lawman holds no credential and reads only what the host reports. An installation that moves to another identity names the login it acted as before in `trusted_authors`, and keeps what that login wrote. See [configuration](docs/configuration.md).
 
 ### Hermes Agent
 

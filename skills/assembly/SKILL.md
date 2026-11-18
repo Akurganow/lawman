@@ -54,16 +54,18 @@ The harness pages sit in `lawman-law/references/harnesses/` in the plugin folder
 Read `<installation>/config.yaml`. When it does not exist, go on to the modes below. When it exists, read `law_commit`, `release_repo` and the commit that the law folder holds, and take the first case that fits.
 
 - `law_commit` or `release_repo` is missing. Take the row `stop stopped-law-config` of the table below.
-- The commit cannot be read, because the folder has no history. Compare nothing. Say in one line that no comparison was made. Say what "Find the facts of the law" in `references/install.md` says about a folder with no history, and whether `shared/law-version` exists. Go on to the modes.
+- The commit cannot be read, and `shared/law-version` exists. The journal reads the commit through that file. Run `bin/journal law-update assembly` and act on its lines as the paragraph after "The sync of the law" says. Before the run, say only that the journal compares the law with `law_commit`: it changes nothing when they match.
+- The commit cannot be read, and `shared/law-version` does not exist. Compare nothing. Say in one line that no comparison was made, and why the commit could not be read. For a folder with no history, say what "Find the facts of the law" in `references/install.md` says about it. Say that the installation stays on its release until `shared/law-version` exists. Its `config.yaml` may then hold `trusted_login` and `earlier_logins`, the names that a journal of an earlier release reads. Where a mode names `acting_login` or `trusted_authors`, read the line that the installation's journal reads. Give a proof base each of those lines as `config.yaml` holds it. Go on to the modes.
 - The commit equals `law_commit`. Go on to the modes.
 - The commit differs from `law_commit`. A plugin update moved the law and no tick has synced it. Sync the law, as the paragraph "The sync of the law" below says.
 
-**The sync of the law.** The sync downloads the release of the new law, checks it, replaces `bin/journal` and rewrites the sync keys of `config.yaml`. It is no tick and no model run of a role. Say that in one line, then run it.
+**The sync of the law.** When the law moved, the sync downloads the release of the new law, checks it, replaces `bin/journal` and rewrites the sync keys of `config.yaml`. It is no tick and no model run of a role. Say that in one line, then run it.
 
 Run `bin/journal law-update assembly`. For each `self` line, do the step as the row of that name in the table of `lawman/skills/lawman-law/references/tick.md#sync-the-law` says. The assembly takes no other row of that table. Where the journal has no such command, it is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal` with `assembly` as the role name. Read its stop as a stop below. The assembly keeps no update list, because mode 4 asks the license question.
 
 | Last line | Tell the developer | Then |
 | :-- | :-- | :-- |
+| `law current` | Nothing, unless you read a commit that differs from `law_commit`. Then say that `shared/law-version` reports another commit than the law folder holds. | Go on to the modes. |
 | `synced <tag>` | Each `ALARM` line of the sync. | Read `config.yaml` again. Go on to the modes. |
 | `stop stopped-law-config` | `config.yaml` lacks `law_commit` or `release_repo`. Name the missing key and where its value comes from. `release_repo` is the `<owner>/<repo>` of Lawman's release, the origin of the law folder's history. `law_commit` is the commit of the tag in `release_tag` of `config.yaml`, in the release repository, as the host tool reports it. When it cannot be had, 40 zeros are a placeholder that the sync replaces. The sync then also fills `amended_law_commit` from the value that `law_commit` held, so say that the zeros reach it when that key is absent. | Write the line, read `config.yaml` back, and go on with the cases above. End the assembly run only when a value cannot be had and no placeholder stands for it. |
 | `stop stopped-no-verifier` | The host notes name neither a verifier nor a refusal of the signature check. | Run part Host of `references/install.md` once, then run the sync again. End the assembly run when the same stop comes back. |
@@ -88,7 +90,7 @@ Take the first mode that holds. After amend, catalog, licenses or roles ends wit
     - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
-    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `trusted_login`.
+    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `acting_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
@@ -178,7 +180,7 @@ law_commit: <commit of lawman/ at install or at the last sync>
 release_tag: <tag of the release>
 release_repo: <owner>/<repo> of the release
 journal_sha256: <sha256 of bin/journal>
-trusted_login: <login of the account that the host reports for the chosen tool>
+acting_login: <login of the account that the host reports for the chosen tool>
 deliver: <delivery routes, one or several, in the form the create command takes>
 typesafe: <yes|no>
 typesafe_precincts: <name>=<yes|no> ... | none
@@ -198,12 +200,12 @@ jobs: <role>=<n> ... | none
 progress_checks: <whole number above zero>
 dismissals_since: <UTC time of the install or of the update that brought dismissals>
 excluded_authors: <name>=<login>,<login> ... | none
-earlier_logins: <login>,<login> | none
+trusted_authors: <login>,<login> | none
 ```
 
-The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. The assembly never writes `earlier_logins`, and it keeps a key that is there.
+The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. A trusted author is the acting login or a login that `trusted_authors` names. The assembly never writes `trusted_authors`, and it keeps a key that is there.
 
-The command `bin/journal law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills a missing key that its defaults hold. It does not fill `license_precincts`. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
+The command `bin/journal law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills a missing key that its defaults hold. It renames `trusted_login` to `acting_login` and `earlier_logins` to `trusted_authors`, unless the new key already has a line. It does not fill `license_precincts`. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
 
 ## Finish
 

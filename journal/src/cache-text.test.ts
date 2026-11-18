@@ -10,6 +10,7 @@ import { inprocAsync } from "./inproc";
 import { renderAll } from "./input-parts";
 import { command, configs } from "./operations-test-fixture";
 import {
+	ACTING,
 	addPrecincts,
 	alarm,
 	BASE,
@@ -17,7 +18,6 @@ import {
 	issuesForm,
 	rows,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -65,7 +65,7 @@ const pullsInput = () =>
 		pulls: [
 			{
 				number: 9,
-				author: TRUSTED,
+				author: ACTING,
 				body: HIDDEN,
 				closes: [],
 				comments: [
@@ -90,7 +90,7 @@ const sync = async (name: string, input: string, extra: string[] = []) => {
 			"sync",
 			name,
 			"--author",
-			TRUSTED,
+			ACTING,
 			...extra,
 		]);
 	} finally {
@@ -133,7 +133,7 @@ describe("the texts in the cache", () => {
 		const input = issuesInput();
 		const piped = await sync("a", input);
 		feeding("b", "issues", input);
-		const ran = await run("b", "issues", "--author", TRUSTED);
+		const ran = await run("b", "issues", "--author", ACTING);
 		expect(ran).toEqual({ ...piped, out: piped.out });
 		expect(texts("b")).toEqual(texts("a"));
 		expect(texts("a").issues).toEqual([{ issue: 1, body: "seen text" }]);
@@ -142,7 +142,7 @@ describe("the texts in the cache", () => {
 	test("the pulls command and sync --pulls store the same texts", async () => {
 		const piped = await sync("a", pullsInput(), ["--pulls"]);
 		feeding("b", "pulls", pullsInput());
-		expect(await run("b", "pulls", "--author", TRUSTED)).toEqual(piped);
+		expect(await run("b", "pulls", "--author", ACTING)).toEqual(piped);
 		expect(piped.out).toBe("pulls=1\n");
 		expect(texts("b")).toEqual(texts("a"));
 	});
@@ -150,13 +150,13 @@ describe("the texts in the cache", () => {
 	test("an issue sync keeps the pull request comments, a pull sync the issue comments", async () => {
 		feeding("a", "issues", issuesInput());
 		feeding("a", "pulls", pullsInput());
-		await run("a", "issues", "--author", TRUSTED);
-		await run("a", "pulls", "--author", TRUSTED);
+		await run("a", "issues", "--author", ACTING);
+		await run("a", "pulls", "--author", ACTING);
 		const both = texts("a").comments;
 		expect(both.map((c) => c.kind)).toEqual(["issue", "issue", "pull"]);
-		await run("a", "issues", "--author", TRUSTED);
+		await run("a", "issues", "--author", ACTING);
 		expect(texts("a").comments).toEqual(both);
-		await run("a", "pulls", "--author", TRUSTED);
+		await run("a", "pulls", "--author", ACTING);
 		expect(texts("a").comments).toEqual(both);
 	});
 
@@ -181,19 +181,19 @@ describe("the texts in the cache", () => {
 
 	test("an empty list over a cache is code 4", async () => {
 		feeding("a", "issues", issuesInput());
-		await run("a", "issues", "--author", TRUSTED);
+		await run("a", "issues", "--author", ACTING);
 		feeding("a", "issues", JSON.stringify(issuesForm([])));
-		const empty = await run("a", "issues", "--author", TRUSTED);
+		const empty = await run("a", "issues", "--author", ACTING);
 		expect(empty.code).toBe(EXIT.SYNC_INPUT);
 		expect(empty.out).toContain("empty list over a filled cache needs --reset");
-		expect(
-			(await run("a", "issues", "--author", TRUSTED, "--reset")).code,
-		).toBe(EXIT.OK);
+		expect((await run("a", "issues", "--author", ACTING, "--reset")).code).toBe(
+			EXIT.OK,
+		);
 	});
 
 	test("a pulls form outside the shape prints the reader's message in the fence", async () => {
 		feeding("a", "pulls", JSON.stringify({ writers: [], pulls: {} }));
-		const r = await run("a", "pulls", "--author", TRUSTED);
+		const r = await run("a", "pulls", "--author", ACTING);
 		expect(r.code).toBe(EXIT.SYNC_INPUT);
 		expect(r.out).toStartWith("pulls failed reason=form\n~~~error\n");
 		expect(r.out).toContain("pulls is not a list");
@@ -223,9 +223,7 @@ describe("the texts in the cache", () => {
 		const pulls = JSON.parse(pullsInput());
 		pulls.pulls[0].comments[0].body = "FAULT in this text";
 		feeding("a", "pulls", JSON.stringify(pulls));
-		const r = await onlyFaultFails(() =>
-			run("a", "pulls", "--author", TRUSTED),
-		);
+		const r = await onlyFaultFails(() => run("a", "pulls", "--author", ACTING));
 		expect(r.out).toBe("pulls=1 withheld=1\n");
 		expect(texts("a").comments.map((c) => c.body)).toEqual([WITHHELD]);
 	});

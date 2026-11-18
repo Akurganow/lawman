@@ -17,7 +17,7 @@ A command of `issues` or `pulls` returns `url` for each issue and pull request w
 One layout serves every proof, the first install and the proof of a refused signature included.
 
 - The base is a new folder outside the installation. Create it fresh for each proof pass. The base, with the proved files, lives until the write after the approval has copied them. The copy is "Write the commands" of the same precinct in `references/precinct.md`, or "Write the installation" in `references/install.md`. Part one of "Move the old precedents" reads it in between. Remove the base after that copy. A pass that ends without the copy removes the base at its end, whether by a skip, a stop or any other early outcome. It is the first of two exceptions to "before approval, write only the installation folder, the plugin link and the repository clones" in `SKILL.md`. The second is the one-off job of a consented proof in the tick environment, which the harness page describes under "One-off run". It is made only after the consent. Its name never starts with the prefix of an installation job, and it is removed on every outcome, a stop included.
-- The folder holds a database, and the journal makes it when the precinct is registered. It holds `config.yaml` with `trusted_login`, which the check of kinds reads, and with `earlier_logins` at the installation's value when the installation holds that key. It holds `shared/` and `configs/<precinct>/` with the candidates. It holds `runs/`, where every file of a proof lies. This list of entries is open.
+- The folder holds a database, and the journal makes it when the precinct is registered. It holds `config.yaml` with `acting_login`, which the check of kinds reads, and with `trusted_authors` at the installation's value when the installation holds that key. It holds `shared/` and `configs/<precinct>/` with the candidates. It holds `runs/`, where every file of a proof lies. This list of entries is open.
 - Each candidate comes with the files it needs.
 - The entry `lawman` leads to the law folder. The entry `precincts/<precinct>` leads to the clone that `fetch` reads. Make each a link or a copy, whichever you choose: the command must see the same files.
 - Point the journal at the database of the base with the variable `LAWMAN_DB`. The journal then looks for the commands beside that database, and it runs each file from its own folder. The command finds the clone and the law folder from that folder.
@@ -175,7 +175,7 @@ A request that the host refuses to accept for its size, its limit or its complex
 
 ## Facts of the precinct
 
-A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives, the account and the earlier logins of `config.yaml`. Write them into the command file when you write the command.
+A command of a precinct carries the facts that it reads itself. Examples are the repository on the host, the tool, where the tracker lives, the acting login and the logins of `trusted_authors`. Write them into the command file when you write the command.
 
 - `host.md` and `config.yaml` hold the same facts as lines for the whole installation, and the roles and the journal read those lines. Copy the fact into the command and keep the line.
 - When an update of a precinct finds a line that only the command of that precinct reads, put the line in that precinct's proposal. The line stays where it is.

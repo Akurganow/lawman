@@ -407,7 +407,7 @@ describe("a block the journal cannot give", () => {
 		],
 		[
 			"the harness key",
-			() => config("trusted_login: x\n"),
+			() => config("acting_login: x\n"),
 			["self harness harnesses/<harness>.md Silence"],
 		],
 		[

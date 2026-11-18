@@ -2,11 +2,11 @@ import { cpSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { REFERENCES } from "./input-files";
 import { command, shared } from "./operations-test-fixture";
-import { dir, ROOT, TRUSTED } from "./test-helpers";
+import { ACTING, dir, ROOT } from "./test-helpers";
 
 // the commit the configs record, and the one the law-version command reads
 export const LAW_COMMIT = "1".repeat(40);
-export const CONFIG = `harness: hermes\ntrusted_login: ${TRUSTED}\nlaw_commit: ${LAW_COMMIT}\n`;
+export const CONFIG = `harness: hermes\nacting_login: ${ACTING}\nlaw_commit: ${LAW_COMMIT}\n`;
 
 // the law-version command of the installation, at the given commit
 export const lawVersion = (revision = LAW_COMMIT, changed = "no") =>

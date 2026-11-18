@@ -22,6 +22,7 @@ import { splitPrecedent } from "./precedent-file";
 import { cache } from "./precedent-test-fixture";
 import { precedentBody } from "./pull-body";
 import {
+	ACTING,
 	acquittal,
 	BASE,
 	caseMark,
@@ -32,7 +33,6 @@ import {
 	LEAD_ID,
 	precinct,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -77,7 +77,7 @@ let tree: string;
 
 beforeEach(() => {
 	seed((db) => precinct(db, "main"));
-	config(`trusted_login: ${TRUSTED}\ndismissals_since: ${SINCE}\n`);
+	config(`acting_login: ${ACTING}\ndismissals_since: ${SINCE}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 });

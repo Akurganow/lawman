@@ -7,13 +7,13 @@ import { cache } from "./precedent-test-fixture";
 import { plainWords, precedentBody } from "./pull-body";
 import { CLERK_TRACE, readPulls } from "./pulls";
 import {
+	ACTING,
 	acquittal,
 	BASE,
 	conviction,
 	dir,
 	precinct,
 	seed,
-	TRUSTED,
 	tempDb,
 	trustedOnly,
 } from "./test-helpers";
@@ -76,7 +76,7 @@ let tree: string;
 
 beforeEach(() => {
 	seed((db) => precinct(db, "main"));
-	config(`trusted_login: ${TRUSTED}\n`);
+	config(`acting_login: ${ACTING}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 });
@@ -96,7 +96,7 @@ const sourcesOf = (body: string) =>
 			pulls: [
 				{
 					number: 9,
-					author: TRUSTED,
+					author: ACTING,
 					body,
 					closes: [1],
 					comments: [],
@@ -104,7 +104,7 @@ const sourcesOf = (body: string) =>
 				},
 			],
 		}),
-		trustedOnly(TRUSTED),
+		trustedOnly(ACTING),
 	)[0]?.row.issues;
 
 const call = (...args: string[]) => inprocAsync(BASE, args);

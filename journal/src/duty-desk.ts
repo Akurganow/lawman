@@ -390,9 +390,9 @@ export async function dutyDeskStart(args: string[]): Promise<number> {
 	const config = readConfig();
 	if (config === null)
 		return ended(t, alarms, "failed", "config.yaml is missing");
-	const login = configValue(config, "trusted_login");
+	const login = configValue(config, "acting_login");
 	if (login === undefined || !fits("login", login))
-		return ended(t, alarms, "failed", "config.yaml has no trusted_login");
+		return ended(t, alarms, "failed", "config.yaml has no acting_login");
 	const law = await lawCheck(config);
 	if (law !== "current" && law !== "self")
 		return ended(t, alarms, law.outcome, law.report);

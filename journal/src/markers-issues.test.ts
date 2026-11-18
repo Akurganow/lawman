@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import { collectIssueMarkers, extractMarkers } from "./markers";
 import {
+	ACTING,
 	addPrecincts,
 	carrier,
 	cli,
@@ -14,7 +15,6 @@ import {
 	must,
 	rounds,
 	run,
-	TRUSTED,
 	tempDb,
 	trustedOnly,
 } from "./test-helpers";
@@ -81,7 +81,7 @@ describe("fixture issues", () => {
 			createdAt: "2026-10-14T09:00:00Z",
 			comments: [],
 		};
-		expect(collectIssueMarkers(base, trustedOnly(TRUSTED)).markers).toEqual([]);
+		expect(collectIssueMarkers(base, trustedOnly(ACTING)).markers).toEqual([]);
 	});
 });
 
@@ -173,8 +173,8 @@ describe("legacy fingerprints", () => {
 	test("a lawman marker and a legacy marker on one issue are both kept, the earlier is the origin", () => {
 		const text = `<!-- police-fingerprint: slop-police a/b::c::d -->\n${lead()}`;
 		const found = extractMarkers(
-			{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author: TRUSTED },
-			trustedOnly(TRUSTED),
+			{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author: ACTING },
+			trustedOnly(ACTING),
 		);
 		expect(found.map((f) => f.marker.fields.legacy ?? "lawman")).toEqual([
 			"police-fingerprint",
@@ -182,13 +182,13 @@ describe("legacy fingerprints", () => {
 		]);
 		const issue = {
 			number: 1,
-			author: { login: TRUSTED },
+			author: { login: ACTING },
 			body: text,
 			createdAt: "2026-10-14T09:00:00Z",
 			comments: [],
 		};
 		expect(
-			must(collectIssueMarkers(issue, trustedOnly(TRUSTED)).leadOrigin).marker
+			must(collectIssueMarkers(issue, trustedOnly(ACTING)).leadOrigin).marker
 				.fields.legacy,
 		).toBe("police-fingerprint");
 		const swapped = {
@@ -196,7 +196,7 @@ describe("legacy fingerprints", () => {
 			body: `${lead()}\n<!-- repo-audit-routine:x -->`,
 		};
 		expect(
-			must(collectIssueMarkers(swapped, trustedOnly(TRUSTED)).leadOrigin).marker
+			must(collectIssueMarkers(swapped, trustedOnly(ACTING)).leadOrigin).marker
 				.fields.legacy,
 		).toBeUndefined();
 	});
@@ -204,7 +204,7 @@ describe("legacy fingerprints", () => {
 	describe("through the CLI", () => {
 		const sync = () =>
 			cli(
-				["sync", PRECINCT, "--author", TRUSTED],
+				["sync", PRECINCT, "--author", ACTING],
 				{ LAWMAN_DB: dbFile },
 				JSON.stringify(issuesForm(issues)),
 			);

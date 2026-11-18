@@ -1,5 +1,6 @@
 import { beforeEach, describe, expect, test } from "bun:test";
 import {
+	ACTING,
 	addPrecincts,
 	caseMark,
 	cli,
@@ -9,7 +10,6 @@ import {
 	mark,
 	rows,
 	SHA,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -30,7 +30,7 @@ type Spec = {
 // A comment `at` hours after midnight; the id says which comment it is.
 const comment = (s: Spec) => ({
 	id: `IC_${s.at}`,
-	author: { login: s.by ?? TRUSTED },
+	author: { login: s.by ?? ACTING },
 	body: s.body ?? "",
 	createdAt: `2026-10-14T${String(s.at).padStart(2, "0")}:00:00Z`,
 	approvedBy: s.up ?? [],
@@ -53,7 +53,7 @@ const answerOf = (comments: Spec[], writers = [WRITER], state = "OPEN") => {
 		writers,
 	);
 	const r = cli(
-		["sync", "main", "--author", TRUSTED],
+		["sync", "main", "--author", ACTING],
 		{ LAWMAN_DB: dbFile },
 		JSON.stringify(form),
 	);
@@ -181,9 +181,9 @@ describe("sync reads deciders by login", () => {
 		expect(answerOf([REFERRED, reply])).toEqual(["comment", "IC_12"]);
 	});
 
-	test("a comment of the trusted login with no marker line counts when it is a writer", () => {
+	test("a comment of the acting login with no marker line counts when it is a writer", () => {
 		const plain = { at: 12, body: "my decision" };
-		expect(answerOf([REFERRED, plain], [TRUSTED.toUpperCase()])).toEqual([
+		expect(answerOf([REFERRED, plain], [ACTING.toUpperCase()])).toEqual([
 			"comment",
 			"IC_12",
 		]);

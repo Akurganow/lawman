@@ -9,6 +9,7 @@ import {
 	parseMarker,
 } from "./markers";
 import {
+	ACTING,
 	AT,
 	carrier,
 	LAW,
@@ -19,7 +20,6 @@ import {
 	ret,
 	returnTo,
 	SHA,
-	TRUSTED,
 	trustedOnly,
 } from "./test-helpers";
 
@@ -274,8 +274,8 @@ describe("extractMarkers", () => {
 	test("ord sorts by carrier time, then rank, then line", () => {
 		const at = (createdAt: string, rank: number, text: string) =>
 			extractMarkers(
-				{ text, createdAt, rank, author: TRUSTED },
-				trustedOnly(TRUSTED),
+				{ text, createdAt, rank, author: ACTING },
+				trustedOnly(ACTING),
 			).map((m) => m.ord);
 		const ords = [
 			...at("2026-10-14T10:00:00Z", 1, `${ret()}\n${ret()}`),
@@ -305,6 +305,8 @@ describe("extractMarkers", () => {
 			),
 		).toEqual([]);
 		expect(carrier(ret(), "octocat-lawman2")).toHaveLength(0);
+		// `none` names no author only as a value of trusted_authors
+		expect(trustedOnly("None")).toEqual(new Set(["none"]));
 	});
 
 	test("a fence opens with 3+ backticks or tildes, indented up to 3 spaces", () => {

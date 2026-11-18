@@ -9,6 +9,7 @@ import {
 import { inproc, inprocFed } from "./inproc";
 import { BOT, hostPulls, READY, SPEC } from "./pulls-fixture";
 import {
+	ACTING,
 	BASE,
 	caseMark,
 	charge,
@@ -20,7 +21,6 @@ import {
 	rows,
 	SHA,
 	seed,
-	TRUSTED,
 	tempDb,
 	WAITS_WORK,
 } from "./test-helpers";
@@ -41,7 +41,7 @@ const alarm = (clock: string) => reconciled(clock).out;
 async function put(specs: Record<number, Spec>) {
 	const r = await inprocFed(
 		BASE,
-		["sync", "main", "--author", TRUSTED],
+		["sync", "main", "--author", ACTING],
 		issuesJson(specs),
 	);
 	expect(r.code).toBe(0);

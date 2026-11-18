@@ -82,7 +82,7 @@ With a line `ended <outcome>`, the tick is over. Go to Answer. With `self` lines
 
 ### Step 2: Do the self steps
 
-Do the self steps right after you read the part, before any other work. The line `self law-version` names no precinct. Every other line names the precinct and its repository. Do each step for that precinct, as the section of `tick.md` that the step names says, in the order of the lines. Take `<login>` from `trusted_login` in `config.yaml`; the start has checked that it is there.
+Do the self steps right after you read the part, before any other work. The line `self law-version` names no precinct. Every other line names the precinct and its repository. Do each step for that precinct, as the section of `tick.md` that the step names says, in the order of the lines. Take `<login>` from `acting_login` in `config.yaml`; the start has checked that it is there.
 
 | Step | Where it stands | A failure |
 | :-- | :-- | :-- |

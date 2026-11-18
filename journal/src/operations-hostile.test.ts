@@ -11,11 +11,11 @@ import { lintBody } from "./lint-body";
 import { extractMarkers, fencedLines, stripCr } from "./markers";
 import { command, configs } from "./operations-test-fixture";
 import {
+	ACTING,
 	addPrecincts,
 	BASE,
 	dbFile,
 	PRIVATE_KEYS,
-	TRUSTED,
 	tempDb,
 	trustedOnly,
 } from "./test-helpers";
@@ -53,8 +53,8 @@ async function expectSafe(printed: string) {
 	expect(await lintBody(printed, false)).toEqual([]);
 	expect(
 		extractMarkers(
-			{ text: printed, createdAt: AT, rank: 0, author: TRUSTED },
-			trustedOnly(TRUSTED),
+			{ text: printed, createdAt: AT, rank: 0, author: ACTING },
+			trustedOnly(ACTING),
 		),
 	).toEqual([]);
 	expect(printed).not.toContain(TOKEN);
@@ -110,8 +110,8 @@ describe("a hostile sample through every line the journal prints about a command
 	test.each([
 		["fetch", [], "the output is not one line that holds a revision"],
 		["identity", [], "the output is not one line that holds a login"],
-		["issues", ["--author", TRUSTED], `${NOT_JSON}\n\n${formText("issues")}`],
-		["pulls", ["--author", TRUSTED], `${NOT_JSON}\n\n${formText("pulls")}`],
+		["issues", ["--author", ACTING], `${NOT_JSON}\n\n${formText("issues")}`],
+		["pulls", ["--author", ACTING], `${NOT_JSON}\n\n${formText("pulls")}`],
 		[
 			"decider",
 			["issue", "1"],
@@ -176,7 +176,7 @@ describe("a hostile sample through every line the journal prints about a command
 			pulls: [
 				{
 					number: 2,
-					author: TRUSTED,
+					author: ACTING,
 					body: SAMPLE,
 					closes: [],
 					comments: [
@@ -202,7 +202,7 @@ describe("a hostile sample through every line the journal prints about a command
 				join(configs("main"), `${operation}.json`),
 				JSON.stringify(form),
 			);
-			const r = await run(operation, "--author", TRUSTED);
+			const r = await run(operation, "--author", ACTING);
 			expect(r.code).toBe(0);
 			await expectSafe(r.out);
 		}

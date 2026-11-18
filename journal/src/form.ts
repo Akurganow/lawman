@@ -9,7 +9,7 @@ const FORM_USAGE = "form <issues|pulls|decider|catalog>";
 
 const COMMON = `A login compares ignoring ASCII case.
 One account has one spelling of its login in every field of every form. A host can spell one account differently across its interfaces.
-The installation's own account has the spelling that the operation identity prints. An account that earlier_logins of config.yaml names has the spelling of that key.
+The acting login, acting_login of config.yaml, has the spelling that the operation identity prints. An account that trusted_authors of config.yaml names has the spelling of that key.
 The journal normalises every time to YYYY-MM-DDTHH:MM:SSZ, in UTC.
 A list field is empty when the host has no such thing.`;
 
@@ -44,7 +44,7 @@ Each comment:
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
   rejectedBy: the logins that reacted with the thumbs down reaction, every page read
-  Both lists matter only on open issues, on comments written by the trusted login or by a login that earlier_logins of config.yaml names. Leave them empty elsewhere.`,
+  Both lists matter only on open issues, on comments written by a trusted author: the acting login or a login that trusted_authors of config.yaml names. Leave them empty elsewhere.`,
 	pulls: `pulls, for sync --pulls. One object.
 ${COMMON}
 ${WHOLE}

@@ -22,6 +22,7 @@ import {
 } from "./operations-test-fixture";
 import { hostPulls, type Pull, SPEC } from "./pulls-fixture";
 import {
+	ACTING,
 	BASE,
 	call,
 	caseMark,
@@ -30,7 +31,6 @@ import {
 	rows,
 	SHA,
 	seed,
-	TRUSTED,
 } from "./test-helpers";
 import {
 	CONSTITUTION,
@@ -61,7 +61,7 @@ export function hostOf(name: string, h: Host = {}): void {
 	const place = configs(name);
 	const run = (op: string, body: string) =>
 		command(place, op, h.record ? recording(body) : body);
-	run("identity", `echo ${h.login ?? TRUSTED}`);
+	run("identity", `echo ${h.login ?? ACTING}`);
 	run("fetch", `echo ${SHA}`);
 	writeFileSync(join(place, "issues.json"), issuesJson(h.issues ?? {}));
 	writeFileSync(join(place, "pulls.json"), pullsJson(h.pulls));
@@ -78,7 +78,7 @@ export function hostOf(name: string, h: Host = {}): void {
 }
 
 export const pullsJson = (pulls: Pull[] = []) =>
-	JSON.stringify(hostPulls(pulls, [TRUSTED, "maint-a"]));
+	JSON.stringify(hostPulls(pulls, [ACTING, "maint-a"]));
 
 // a command that fails, or one the host does not have
 export const failing = (name: string, op: string) =>
@@ -103,7 +103,7 @@ export function syncBy(name: string, h: Host, clock = BASE, pulls = false) {
 	const args = pulls ? ["--pulls"] : [];
 	return call(
 		clock,
-		["sync", name, ...args, "--author", TRUSTED],
+		["sync", name, ...args, "--author", ACTING],
 		pulls ? pullsJson(h.pulls) : issuesJson(h.issues ?? {}),
 	);
 }
@@ -163,17 +163,17 @@ export const WORK: Host = {
 		8: human("OPEN"),
 	},
 	pulls: [
-		{ number: 7, author: TRUSTED, closes: [6] },
+		{ number: 7, author: ACTING, closes: [6] },
 		{
 			number: 8,
-			author: TRUSTED,
+			author: ACTING,
 			closes: [7],
-			comments: [{ body: SPEC, author: TRUSTED, up: ["maint-a"] }],
+			comments: [{ body: SPEC, author: ACTING, up: ["maint-a"] }],
 		},
 		// left by the old pipeline, so the clerk adopts it
 		{
 			number: 9,
-			author: TRUSTED,
+			author: ACTING,
 			closes: [5],
 			body: "<!-- pipeline-work-fingerprint: old-work sources=#5 -->",
 		},

@@ -99,7 +99,7 @@ The court names one priority. P0 is a live secret, a vulnerability or a serious 
 The clerk takes an order for one job on an issue. The journal names the job. The clerk is the only role that opens a pull request and the only role that links an issue to its pull request.
 
 - For a conviction it opens a draft pull request from a new branch.
-- It takes up an open pull request of the trusted login or an earlier login that a role left behind. A line of its body is a fingerprint line of the old pipeline or `<!-- pull request of the Lawman clerk -->`, which ends every body the clerk writes for a pair.
+- It takes up an open pull request of a [trusted author](configuration.md#trusted-authors) that a role left behind. A line of its body is a fingerprint line of the old pipeline or `<!-- pull request of the Lawman clerk -->`, which ends every body the clerk writes for a pair.
 - It never changes your own pull request. After a ruling on an issue that your pull request closes, it writes one brief there instead. The brief links the case, the charge, the defence and the ruling. It opens no pull request of its own for that issue.
 - It carries a decider's close or reopen to the other side of the pair.
 - It settles a merged or closed pull request.
@@ -151,7 +151,7 @@ A stop is different. It comes from an external cause, such as a failed credentia
 
 ## Stages and markers
 
-State lives in markers. A marker is one HTML-comment line at the end of an issue body or a comment. Labels carry no state. A marker counts only when the trusted login or an earlier login wrote the issue body or the comment that holds it. The grammar is in [markers.md](../skills/lawman-law/references/markers.md).
+State lives in markers. A marker is one HTML-comment line at the end of an issue body or a comment. Labels carry no state. A marker counts only when a trusted author wrote the issue body or the comment that holds it. The grammar is in [markers.md](../skills/lawman-law/references/markers.md).
 
 The newest marker of a role on an issue wins. Nobody edits an old marker. A role writes a new one.
 
@@ -185,7 +185,7 @@ A role sees only orders that the duty desk already wrote. So a case moves one st
 
 ### Every tick
 
-Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the trusted login. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. It then syncs the tracker and the pull requests of the order's precinct, and computes the alarms. A step that the journal could not do comes back as a self step, and the role does it itself. A sync that fails ends no tick. The role goes on with the cache and names the line `unsynced <precinct> <issues|pulls> synced=<time|never>` in its Blockers.
+Every tick starts with the same checks. Once per session, before the first start, the role syncs the law after a plugin update and checks the journal schema. The start with `tick start --role <role> --order <id>` checks the acting login. It checks the law folder against `law_commit` and for a local change, for each tick ([The check of the law folder](journal.md#the-check-of-the-law-folder)). A mismatch ends the tick with a `stopped-*` outcome. It then syncs the tracker and the pull requests of the order's precinct, and computes the alarms. A step that the journal could not do comes back as a self step, and the role does it itself. A sync that fails ends no tick. The role goes on with the cache and names the line `unsynced <precinct> <issues|pulls> synced=<time|never>` in its Blockers.
 
 The journal records the start and the end of every tick. A tick without an end record is unfinished, not successful. Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2, and the role treats that as silence.
 

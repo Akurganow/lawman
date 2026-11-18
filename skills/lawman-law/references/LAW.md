@@ -262,7 +262,7 @@ Each role applies them so:
 - A stuck case is a record, not a process. Nothing waits, loops or sleeps for a case to unstick. The executor waits within its tick for the gate runs of its own push and for nothing else.
 - Roles never block each other. Each has its own schedule, its own model and its own interval.
 - Roles are linked by two records only: a marker on the tracker and an order row in the journal.
-- Every tick starts by checking the installation: the schema version, the law commit and its cleanliness, and the trusted identity. A mismatch ends the tick with a stop outcome.
+- Every tick starts by checking the installation: the schema version, the law commit and its cleanliness, and the acting login. A mismatch ends the tick with a stop outcome.
 - The journal records the start and the end of every tick. The tick record and its outcome come from the role's own report. They never come from an exit code.
 - A tick without an end record is unfinished, not successful.
 - Every tick is idempotent under catch-up runs. The journal rejects a repeated order with exit code 2. A role treats that rejection as silence.
@@ -286,7 +286,7 @@ A slug is `[a-z0-9-]+`. These are the slugs:
 - `stopped-dirty-law`: the law folder has local changes.
 - `stopped-law-config`: `config.yaml` cannot give `law_commit` or `release_repo`.
 - `stopped-no-verifier`: the host notes name neither a verifier nor a refusal of the signature check.
-- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the trusted login.
+- `stopped-identity-changed`: the account the host reports for the tool named in the host notes differs from the acting login.
 - `stopped-host-auth`: the tools that reach the host cannot authenticate.
 - `stopped-git-fetch`: fetching the precinct's clone failed.
 - `stopped-issue-read`: reading the issue, the pull request or their comments failed.
@@ -374,8 +374,8 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 ## Terms
 
-- The trusted login is the installation's login, the one identity of every role. Every write and the identity check use it alone. An earlier login is an account that `earlier_logins` in `config.yaml` names. A trusted author is the trusted login or an earlier login. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is taken up.
-- A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The trusted login may be a decider.
+- The acting login is the installation's login, the one identity of every role. Every write and the identity check use it alone. A trusted author is the acting login or a login that `trusted_authors` in `config.yaml` names. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is taken up.
+- A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The acting login may be a decider.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 
 ## Pairs

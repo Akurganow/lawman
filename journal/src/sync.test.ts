@@ -7,6 +7,7 @@ import { formText } from "./form";
 import { inprocAsync } from "./inproc";
 import { collectIssueMarkers } from "./markers";
 import {
+	ACTING,
 	addPrecincts,
 	BASE,
 	cli,
@@ -19,7 +20,6 @@ import {
 	must,
 	rows,
 	run,
-	TRUSTED,
 	tempDb,
 	trustedOnly,
 } from "./test-helpers";
@@ -33,7 +33,7 @@ const withTimes = (over: Record<string, unknown>) => [
 		number: 1,
 		state: "OPEN",
 		createdAt: CREATED,
-		author: { login: TRUSTED },
+		author: { login: ACTING },
 		...over,
 	},
 ];
@@ -45,7 +45,7 @@ const OLD_FORM_REASON =
 // readStdin reads file descriptor 0, so the test answers that read
 const fed = async (
 	stdin: unknown,
-	args = ["sync", "main", "--author", TRUSTED],
+	args = ["sync", "main", "--author", ACTING],
 ) => {
 	const spy = spyOn(fs, "readFileSync").mockReturnValue(
 		typeof stdin === "string" ? stdin : JSON.stringify(stdin),
@@ -64,7 +64,7 @@ const commented = (comment: Record<string, unknown>) => ({
 			number: 1,
 			state: "OPEN",
 			createdAt: CREATED,
-			author: { login: TRUSTED },
+			author: { login: ACTING },
 			comments: [{ createdAt: CREATED, ...comment }],
 		},
 	],
@@ -81,7 +81,7 @@ describe("sync", () => {
 		"sync",
 		PRECINCT,
 		"--author",
-		TRUSTED,
+		ACTING,
 		...extra,
 	];
 	const feed = (input: string, args = syncArgs()) =>
@@ -106,7 +106,7 @@ describe("sync", () => {
 
 	test("a fixture sync prints counts that match the fixture", () => {
 		const found = issues.map((i) =>
-			collectIssueMarkers(i, trustedOnly(TRUSTED)),
+			collectIssueMarkers(i, trustedOnly(ACTING)),
 		);
 		const markers = found.reduce((n, f) => n + f.markers.length, 0);
 		const legacy = found
@@ -154,7 +154,7 @@ describe("sync", () => {
 		const stored = rows("SELECT * FROM markers WHERE issue = 1 ORDER BY ord");
 		const want = collectIssueMarkers(
 			must(issues[0]),
-			trustedOnly(TRUSTED),
+			trustedOnly(ACTING),
 		).markers;
 		expect(stored.map((r) => r.ord)).toEqual(want.map((m) => m.ord));
 		const first = must(stored[0]);
@@ -183,10 +183,10 @@ describe("sync", () => {
 				title: "x",
 				createdAt: "2026-10-14T11:30:00.500+02:00",
 				closedAt: "2026-10-15T05:00:00-04:00",
-				author: { login: TRUSTED },
+				author: { login: ACTING },
 				comments: [
 					{
-						author: { login: TRUSTED },
+						author: { login: ACTING },
 						body: lead(),
 						createdAt: "2026-10-14T12:00:00+02:00",
 					},
@@ -228,7 +228,7 @@ describe("sync", () => {
 				"sync",
 				"other",
 				"--author",
-				TRUSTED,
+				ACTING,
 			]).code,
 		).toBe(0);
 		sync(issues);
@@ -365,7 +365,7 @@ describe("sync", () => {
 			state: "OPEN",
 			title: "x",
 			createdAt: CREATED,
-			author: { login: TRUSTED },
+			author: { login: ACTING },
 		};
 		const r = sync([issues[0], twin, twin]);
 		expect(r.code).toBe(4);
@@ -450,10 +450,10 @@ describe("sync", () => {
 		]);
 	});
 
-	test("a marker by an earlier login counts as the trusted login's", () => {
+	test("a marker by a login of trusted_authors counts as the acting login's", () => {
 		writeFileSync(
 			join(dir, "config.yaml"),
-			"earlier_logins: , Earlier-Login,,none\n",
+			"trusted_authors: , Listed-Login,,none\n",
 		);
 		const r = sync([
 			{
@@ -461,7 +461,7 @@ describe("sync", () => {
 				state: "OPEN",
 				title: "x",
 				createdAt: CREATED,
-				author: { login: "earlier-login" },
+				author: { login: "listed-login" },
 				body: lead(),
 				comments: [],
 			},
@@ -521,9 +521,9 @@ describe("sync", () => {
 	});
 
 	test("an unknown precinct exits 1 and a bad login exits 1", () => {
-		expect(
-			feed(EMPTY_FORM, ["sync", "nowhere", "--author", TRUSTED]).code,
-		).toBe(1);
+		expect(feed(EMPTY_FORM, ["sync", "nowhere", "--author", ACTING]).code).toBe(
+			1,
+		);
 		expect(feed(EMPTY_FORM, ["sync", PRECINCT, "--author", "-bad-"]).code).toBe(
 			1,
 		);
@@ -533,7 +533,7 @@ describe("sync", () => {
 				"sync",
 				PRECINCT,
 				"--author",
-				TRUSTED,
+				ACTING,
 				"--reset",
 				"--reset",
 			]).code,
@@ -544,7 +544,7 @@ describe("sync", () => {
 		sync(issues);
 		const want = new Map<string, number>();
 		for (const i of issues.filter((x) => x.state === "OPEN")) {
-			const dept = collectIssueMarkers(i, trustedOnly(TRUSTED)).leadOrigin
+			const dept = collectIssueMarkers(i, trustedOnly(ACTING)).leadOrigin
 				?.marker.fields.department;
 			if (dept !== undefined) want.set(dept, (want.get(dept) ?? 0) + 1);
 		}

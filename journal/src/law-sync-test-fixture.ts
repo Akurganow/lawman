@@ -28,7 +28,7 @@ law_commit: ${OLD_COMMIT}
 unknown_key: kept as it is
 
 # the login of the scheduled session
-trusted_login: octocat-lawman
+acting_login: octocat-lawman
 typesafe: yes
 contract_version: 4
 `;

@@ -55,8 +55,17 @@ const DEFAULTS: Default[] = [
 	["progress_checks", () => String(PROGRESS_CHECKS)],
 ];
 
+// Keys renamed by a release. A line moves to the new name unless the new name already has a line.
+const RENAMED: [string, string][] = [
+	["trusted_login", "acting_login"],
+	["earlier_logins", "trusted_authors"],
+];
+
 function rewriteConfig(config: string, release: Release): string {
 	let next = config;
+	for (const [from, to] of RENAMED)
+		if (!lineOf(to).test(next))
+			next = next.replace(lineOf(from), (_, value) => `${to}: ${value}`);
 	const appended: string[] = [];
 	const keyed: [string, string][] = [
 		["law_commit", release.commit],
@@ -100,19 +109,6 @@ function highestSchema(installation: string): number {
 	return Math.max(0, ...numbers);
 }
 
-// The rename keeps a reader from ever seeing a half-written file.
-function writeAtomic(path: string, text: string, mode: number): void {
-	const temp = `${path}.${process.pid}.${randomUUID()}`;
-	try {
-		writeFileSync(temp, text, { mode });
-		chmodSync(temp, mode);
-		renameSync(temp, path);
-	} catch (e) {
-		rmSync(temp, { force: true });
-		throw e;
-	}
-}
-
 const contractAlarm = (law: string, config: string | undefined) =>
 	law === config
 		? []
@@ -120,7 +116,11 @@ const contractAlarm = (law: string, config: string | undefined) =>
 				`ALARM contract-changed installation constitution contract ${law}, precincts at ${config ?? ABSENT}, run the assembly to amend`,
 			];
 
-// Everything before the swap only reads, so a failure there leaves the installation as it was.
+// A failure before the swap leaves the binary and the config of the installation as they were.
+// The config lands last, because its law_commit records that the sync is done.
+// A failed move of the binary leaves the old binary and the old config.
+// A failed move of the config leaves the new binary on the old config. The next law-update repeats the sync.
+// law-update can run on that pair: it reads only law_commit and release_repo.
 function sync(opt: Options, execPath: string): string[] {
 	const root = resolve(opt.installation);
 	const configPath = join(root, "config.yaml");
@@ -132,9 +132,17 @@ function sync(opt: Options, execPath: string): string[] {
 	const sum = createHash("sha256").update(readFileSync(execPath)).digest("hex");
 	const next = rewriteConfig(config, { tag: opt.tag, commit: opt.commit, sum });
 	const mode = statSync(configPath).mode & PERMISSION_BITS;
-	chmodSync(execPath, EXECUTABLE_MODE);
-	renameSync(execPath, join(root, "bin", "journal"));
-	writeAtomic(configPath, next, mode);
+	const temp = `${configPath}.${process.pid}.${randomUUID()}`;
+	try {
+		writeFileSync(temp, next, { mode });
+		chmodSync(temp, mode);
+		chmodSync(execPath, EXECUTABLE_MODE);
+		renameSync(execPath, join(root, "bin", "journal"));
+		renameSync(temp, configPath);
+	} catch (e) {
+		rmSync(temp, { force: true });
+		throw e;
+	}
 	return [
 		...contractAlarm(law, configValue(config, "contract_version")),
 		`synced ${opt.tag}`,

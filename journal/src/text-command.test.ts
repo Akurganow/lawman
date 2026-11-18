@@ -9,12 +9,12 @@ import { inprocAsync } from "./inproc";
 import { CONFIG, content } from "./input-test-fixture";
 import { configs } from "./operations-test-fixture";
 import {
+	ACTING,
 	BASE,
 	dir,
 	issuesForm,
 	rows,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 import { host, orderOf, setUp } from "./tick-start-test-fixture";
@@ -53,7 +53,7 @@ async function started(size: number, body: string, notes: Note[] = []) {
 						state: "OPEN",
 						title: "issue 3",
 						createdAt: T(9),
-						author: { login: TRUSTED },
+						author: { login: ACTING },
 						body,
 						comments: notes.map((n) => ({
 							id: n.id,
@@ -63,7 +63,7 @@ async function started(size: number, body: string, notes: Note[] = []) {
 						})),
 					},
 				],
-				[TRUSTED],
+				[ACTING],
 			),
 		),
 	);

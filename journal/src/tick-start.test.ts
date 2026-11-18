@@ -25,6 +25,7 @@ import {
 } from "./operations-test-fixture";
 import { SPEC } from "./pulls-fixture";
 import {
+	ACTING,
 	BASE,
 	cachePull,
 	call,
@@ -39,7 +40,6 @@ import {
 	rows,
 	SHA,
 	seed,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 import {
@@ -62,7 +62,7 @@ const withLead = (department: string, ...marks: string[]): Spec => ({
 });
 const HEAD = (role: string, tick = 1) =>
 	`lawman input 1 role=${role} tick=${tick} part 1 of 1`;
-const RAN = [`login=${TRUSTED}`];
+const RAN = [`login=${ACTING}`];
 const ORDER = (issue = "3", department = "-") => [
 	`order 1 main o/main ${department} ${issue}`,
 ];
@@ -74,9 +74,9 @@ const END = "end part 1 of 1";
 const SYNCED = ["issues", "pulls"];
 const SPEC_PULL = {
 	number: 7,
-	author: TRUSTED,
+	author: ACTING,
 	closes: [3],
-	comments: [{ body: SPEC, author: TRUSTED, up: ["maint-a"] }],
+	comments: [{ body: SPEC, author: ACTING, up: ["maint-a"] }],
 };
 
 type Case = {
@@ -208,7 +208,7 @@ const CASES: Record<string, Case> = {
 				pulls: [
 					{
 						number: 7,
-						author: TRUSTED,
+						author: ACTING,
 						closes: [3],
 						body: "<!-- pipeline-work-fingerprint: old-work sources=#3 -->",
 					},
@@ -229,7 +229,7 @@ const CASES: Record<string, Case> = {
 		setup: () => {
 			host({
 				issues: { 3: handed(7) },
-				pulls: [{ number: 7, author: TRUSTED, closes: [3] }],
+				pulls: [{ number: 7, author: ACTING, closes: [3] }],
 			});
 		},
 		skeleton: [
@@ -504,12 +504,12 @@ const ENDINGS: Ending[] = [
 		taken: false,
 	},
 	{
-		name: "a config.yaml without trusted_login",
+		name: "a config.yaml without acting_login",
 		role: "investigation",
 		order: { issue: 3 },
 		setup: () => config("harness: hermes\n"),
 		outcome: "failed",
-		report: "config.yaml has no trusted_login",
+		report: "config.yaml has no acting_login",
 		taken: false,
 	},
 	{
@@ -722,7 +722,7 @@ db.close();`;
 		command(
 			configs("main"),
 			"identity",
-			`${process.execPath} -e '${closer}' > /dev/null\necho ${TRUSTED}`,
+			`${process.execPath} -e '${closer}' > /dev/null\necho ${ACTING}`,
 		);
 		const r = start("investigation");
 		expect(lines(r.out).slice(-3)).toEqual([
@@ -1051,7 +1051,7 @@ describe("the link of the case", () => {
 		setUp();
 		orderOf("spec-writer", { issue: 7 });
 		put({ 3: handed(7) });
-		host({ pulls: [{ number: 7, author: TRUSTED, closes: [3] }] });
+		host({ pulls: [{ number: 7, author: ACTING, closes: [3] }] });
 		withUrl(
 			"pulls.json",
 			"pulls",

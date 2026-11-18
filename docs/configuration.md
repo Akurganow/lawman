@@ -1,6 +1,6 @@
 # Configuration
 
-An installation keeps its settings in one file, `config.yaml`. The file holds the facts that only your installation knows. They are the harness, the trusted login, the delivery routes and the release that the journal came from.
+An installation keeps its settings in one file, `config.yaml`. The file holds the facts that only your installation knows. They are the harness, the acting login, the delivery routes and the release that the journal came from.
 
 ## Where it lives
 
@@ -49,7 +49,7 @@ Each command is either proved in the scheduler's environment or not. A proof the
 - The section `## Dependency reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the catalog check. The words say which dependencies to check, where they are listed and by what way they are read, or `none` when the precinct lists no dependencies. You and the assembly agree the line when the precinct joins or when the assembly asks for the missing answer. The way never runs code of the precinct or a tool that the precinct configures. The patrol reads the line and checks only what it names. A precinct that said yes and has no line gets no check. Rewriting the notes in part Host keeps every line of this section.
 - The section `## License reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the license question. Nested lines under it hold the blocks of the agreed license sources, which the assembly copies word for word from the file of each row. You see the whole entry before the assembly writes it. The entry says, for each ecosystem of the precinct, whether its lock records the license and which sources are agreed, in order. It also keeps the rows you refused. It holds `none` when nothing is agreed. Rewriting the notes in part Host keeps every line of this section too.
 
-The menu item "Host" runs the part again, for a change of tool. It also writes and proves the commands of the installation, and it can install a verifier. It never changes `trusted_login`. After a change of tool, its summary names the precincts whose commands were proved for the earlier tool. The job "re-check a precinct" proves them again. See [the journal](journal.md#where-it-comes-from).
+The menu item "Host" runs the part again, for a change of tool. It also writes and proves the commands of the installation, and it can install a verifier. It never changes `acting_login`. After a change of tool, its summary names the precincts whose commands were proved for the earlier tool. The job "re-check a precinct" proves them again. See [the journal](journal.md#where-it-comes-from).
 
 ## The fifteen keys
 
@@ -59,7 +59,7 @@ law_commit: 0123456789abcdef0123456789abcdef01234567
 release_tag: v0.0.0
 release_repo: example/lawman
 journal_sha256: 0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef
-trusted_login: example-login
+acting_login: example-login
 deliver: example-platform
 typesafe: no
 typesafe_precincts: none
@@ -73,17 +73,9 @@ amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 
 Every value above is a placeholder. `hermes` and `openclaw` are the names of the shipped harness pages. The order follows the assembly skill.
 
-Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissals_since`, `excluded_authors` and `earlier_logins`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The same size is the cut size of a case text longer than one part, and the part size of `text` and `clean`. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work, and makes `text` and `clean` exit 1. See [the journal](journal.md#the-role-entry) and [cut texts](journal.md#cut-texts).
+Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissals_since`, `excluded_authors` and `trusted_authors`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The same size is the cut size of a case text longer than one part, and the part size of `text` and `clean`. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work, and makes `text` and `clean` exit 1. See [the journal](journal.md#the-role-entry) and [cut texts](journal.md#cut-texts).
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
-
-The key `earlier_logins` holds `<login>,<login>` or `none`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's. So what an earlier login wrote stays after a change of account. The roles still act only as `trusted_login`. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. Spell each login as `trusted_login` held it.
-
-Do three things for the key to work:
-
-- Name only accounts that you control. An account named there keeps the power to write counted markers.
-- Give the trusted login the host's right to change the open pull requests of the earlier logins. The clerk and the pull request roles write to them.
-- Run the job "re-check a precinct" for each precinct after every change of the key or of `trusted_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -92,7 +84,7 @@ Do three things for the key to work:
 | `release_tag` | The tag of the release that the law and the journal came from. | The assembly at install, then `law-sync` |
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
-| `trusted_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role uses this one identity. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
+| `acting_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role acts as this one identity. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
 | `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority, and whether the clerk may ask it which departments to add to those the court named for a precedent. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief and the clerk its precedent request. | The assembly when it adds a precinct |
@@ -105,6 +97,18 @@ Do three things for the key to work:
 | `dismissals_since` | The UTC time from which a close of a lead can leave a dismissal, as `YYYY-MM-DDThh:mm:ssZ`. A lead closed earlier leaves none. The journal also reads a time with a zone offset or with fractions of a second. Any other value reads as no key, and then no close leaves a dismissal. | The assembly at install, or `law-sync` as a default |
 | `contract_version` | The constitution contract version that the precinct constitutions stand at. | The assembly at install and at amend |
 | `amended_law_commit` | The law commit at which the precinct constitutions were last brought in line. | The assembly at install and at amend, or `law-sync` as a default |
+
+### Trusted authors
+
+A trusted author is an account whose texts the journal counts. Only an issue body or a comment of a trusted author carries a counted [marker](pipeline.md#stages-and-markers). The roles take up only the open pull requests of a trusted author. The acting login is always one. The key `trusted_authors` adds others, for the whole installation: it holds `<login>,<login>` or `none`. Without the key the acting login is the only trusted author. The roles act only as `acting_login`, whatever the key holds.
+
+Use the key at a change of account: name the login that the installation acted as before, and what that login wrote stays. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. A host can spell one account in more than one way. The key fixes one spelling, and the commands give each named account that spelling. Spell a login that was once the acting login as `acting_login` held it.
+
+Do three things for the key to work:
+
+- Name only accounts that you control. An account named there has the power to write counted markers.
+- Give the acting login the host's right to change the open pull requests of those accounts. The clerk and the pull request roles write to them.
+- Run the job "re-check a precinct" for each precinct after every change of the key or of `acting_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
 
 ## Jobs and progress checks
 
@@ -135,7 +139,9 @@ The key `progress_checks` is a whole number above zero. The alarm `no-progress` 
 
 The assembly writes the file at install, after the commands of the installation passed their proof, so that a stopped proof leaves no `config.yaml` behind. It writes `config.yaml` with the fifteen keys and reads it back. If a key is missing or empty, it stops. It requires none of the optional keys.
 
-After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. The defaults cover `typesafe_key`, `amended_law_commit`, `dismissals_since`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. The third takes the time of that update. A key that is already there stays as it is. It does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
+After a plugin update, the next tick of any role completes the update, with the journal command `law-update`. It gets the journal of the new release, checks its checksum itself and checks its signature with your `verify` command or the verifier in the host notes. Then it runs the `law-sync` command of that file. The command `law-sync` writes `law_commit`, `release_tag` and `journal_sha256`. It also fills a missing key from its defaults. The defaults cover `typesafe_key`, `amended_law_commit`, `dismissals_since`, `jobs` and `progress_checks`. The last two take the values of the table above. The first becomes `environment variable TYPESAFE_API_KEY` when `typesafe` is `yes`, and `none` otherwise. The second takes the value that `law_commit` held before the update. The third takes the time of that update. A key of the defaults that is already there stays as it is. The command does not fill `catalog`, `catalog_precincts` or `license_precincts`. Only the assembly writes them, because only you can consent.
+
+The command `law-sync` also renames two keys of an earlier release: `trusted_login` becomes `acting_login`, and `earlier_logins` becomes `trusted_authors`. It leaves an old line alone when its new key already has a line, and the journal does not read that old line. Delete a leftover `trusted_login` line. When it names another account than `acting_login`, and what that account wrote must stay, name the account in `trusted_authors` first. Move the logins of a leftover `earlier_logins` line into `trusted_authors` by hand, then delete that line. That move changes the key, so re-check each precinct, as [Trusted authors](#trusted-authors) says.
 
 No role replaces `bin/journal` or `config.yaml` by any other means.
 
@@ -198,10 +204,10 @@ The rows, each with the file that says what it receives:
 
 Ticks read the keys they need.
 
-- The start of every tick reads `law_commit` and `trusted_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `trusted_login`.
+- The start of every tick reads `law_commit` and `acting_login`. It stops with `stopped-law-drift` when the law folder holds another commit, and with `stopped-dirty-law` when the folder holds a local change. The journal checks the folder itself when the installation has a `law-version` command, and the role does it otherwise. The tick stops with `stopped-identity-changed` when the account that the host reports differs from `acting_login`.
 - The update reads `law_commit` and `release_repo`.
 - The duty desk reads `license_precincts` when it picks the department of a patrol order. The law's page for licenses serves only a precinct with a pair.
-- The commands `precedent`, `pull-body` and `old-precedent` read `trusted_login`.
+- The commands `precedent`, `pull-body` and `old-precedent` read `acting_login`.
 - The command `precedent` reads `typesafe` and `typesafe_precincts` for the Jev request. It reads `license_precincts` for the pages it reads.
 - The court reads `typesafe`, `typesafe_precincts` and `typesafe_key`. It allows Jev only when `typesafe` is exactly `yes` and the precinct pair is `yes`.
 - The clerk applies the same rule through the journal, which reads `typesafe` and `typesafe_precincts` itself. The clerk reads only `typesafe_key`.
@@ -209,9 +215,9 @@ Ticks read the keys they need.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
-- Every sync of the tracker and of the pull requests reads `earlier_logins`, and so does `old-precedent`. The identity check compares the host's account with `trusted_login` alone.
+- Every sync of the tracker and of the pull requests reads `trusted_authors`, and so does `old-precedent`. The identity check compares the host's account with `acting_login` alone.
 - The alarms read `progress_checks` every time the journal computes them.
-- The role's input reads `jobs`, `harness` and `input_chars` when it builds its group: at `wake` with work, and at `tick input --role`. The start of a tick that takes an order reads `input_chars` and `trusted_login`. `tick input <tick id>` reads `input_chars` when it builds the tick group, and the commands `text` and `clean` read it too. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
+- The role's input reads `jobs`, `harness` and `input_chars` when it builds its group: at `wake` with work, and at `tick input --role`. The start of a tick that takes an order reads `input_chars` and `acting_login`. `tick input <tick id>` reads `input_chars` when it builds the tick group, and the commands `text` and `clean` read it too. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
 
 See [the pipeline](pipeline.md) for the checks that open every tick.
 

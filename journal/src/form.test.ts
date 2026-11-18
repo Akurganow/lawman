@@ -62,7 +62,7 @@ Each comment:
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read
   rejectedBy: the logins that reacted with the thumbs down reaction, every page read
-  Both lists matter only on open issues, on comments written by the trusted login or by a login that earlier_logins of config.yaml names. Leave them empty elsewhere.`;
+  Both lists matter only on open issues, on comments written by a trusted author: the acting login or a login that trusted_authors of config.yaml names. Leave them empty elsewhere.`;
 
 describe("the issues form", () => {
 	test("is one object, with the common lines and then the field text", () => {

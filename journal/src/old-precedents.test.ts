@@ -8,6 +8,7 @@ import { config } from "./input-test-fixture";
 import { command, configs } from "./operations-test-fixture";
 import { headerOf, splitPrecedent } from "./precedent-file";
 import {
+	ACTING,
 	acquittal,
 	addPrecincts,
 	BASE,
@@ -15,7 +16,6 @@ import {
 	dir,
 	mark,
 	rows,
-	TRUSTED,
 	tempDb,
 } from "./test-helpers";
 
@@ -45,7 +45,7 @@ let tree: string;
 
 beforeEach(() => {
 	addPrecincts({ main: 1 });
-	config(`trusted_login: ${TRUSTED}\n`);
+	config(`acting_login: ${ACTING}\n`);
 	tree = join(dir, "tree");
 	mkdirSync(tree);
 	writeFileSync(join(tree, "LAWMAN.md"), PAGE);
@@ -236,8 +236,8 @@ describe("old-precedent check", () => {
 		);
 	});
 
-	test("a ruling of an author that earlier_logins names gives its kind", async () => {
-		config(`trusted_login: ${TRUSTED}\nearlier_logins: Old-Login\n`);
+	test("a ruling of an author that trusted_authors names gives its kind", async () => {
+		config(`acting_login: ${ACTING}\ntrusted_authors: Old-Login\n`);
 		const json = JSON.parse(form({ 2: ruled(conviction()) }));
 		json.issues[0].comments[0].author = { login: "old-login" };
 		const stdin = JSON.stringify(json);
