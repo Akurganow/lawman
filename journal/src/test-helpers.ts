@@ -13,6 +13,7 @@ import { dirname, join } from "node:path";
 import { reconcileAlarms } from "./alarms";
 import { inTransaction, open } from "./db";
 import issues from "./fixtures/issues.json";
+import { trustedAuthors } from "./input-files";
 import { collectIssueMarkers, extractMarkers } from "./markers";
 
 export { issues };
@@ -146,6 +147,9 @@ export function addPrecincts(weights: Record<string, number>): void {
 
 export const TRUSTED = "octocat-lawman";
 
+// the set of authors that one login alone makes trusted
+export const trustedOnly = (login: string) => trustedAuthors(null, login);
+
 // The smallest issues that sync accepts, numbered from 1.
 export const minimalIssues = (n: number, createdAt: string) =>
 	Array.from({ length: n }, (_, i) => ({
@@ -176,7 +180,7 @@ export const entry = () => mark("clerk", "entry");
 export const noEntry = () => mark("clerk", "no-entry");
 
 export function collect(n: number) {
-	return collectIssueMarkers(issueOf(n), TRUSTED);
+	return collectIssueMarkers(issueOf(n), trustedOnly(TRUSTED));
 }
 
 export const rounds = (n: number) =>
@@ -185,7 +189,7 @@ export const rounds = (n: number) =>
 export function carrier(text: string, author = TRUSTED) {
 	return extractMarkers(
 		{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author },
-		TRUSTED,
+		trustedOnly(TRUSTED),
 	);
 }
 

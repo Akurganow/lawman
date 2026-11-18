@@ -15,6 +15,7 @@ import {
 	seed,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -103,7 +104,7 @@ const sourcesOf = (body: string) =>
 				},
 			],
 		}),
-		TRUSTED,
+		trustedOnly(TRUSTED),
 	)[0]?.row.issues;
 
 const call = (...args: string[]) => inprocAsync(BASE, args);

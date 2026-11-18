@@ -19,7 +19,7 @@ import {
 	readStdin,
 	withDb,
 } from "./db";
-import { excludedAuthors, readConfig } from "./input-files";
+import { excludedAuthors, readConfig, trustedAuthors } from "./input-files";
 import { asciiLower, collectIssueMarkers } from "./markers";
 import { syncPulls } from "./pulls";
 import { readIssues, type SyncIssue, syncInput } from "./sync-issues";
@@ -50,16 +50,16 @@ function repliedAt(issue: SyncIssue): string | null {
 	return times.length === 0 ? null : times.reduce((a, b) => (a > b ? a : b));
 }
 
-type Trust = { login: string; writers: Set<string> };
+type Trust = { trusted: ReadonlySet<string>; writers: Set<string> };
 
 function storeMarkers(
 	db: Database,
 	name: string,
 	issue: SyncIssue,
-	login: string,
+	trusted: ReadonlySet<string>,
 	stats: SyncStats,
 ): void {
-	const { markers, leadOrigin } = collectIssueMarkers(issue, login);
+	const { markers, leadOrigin } = collectIssueMarkers(issue, trusted);
 	for (const { ord, marker } of markers) {
 		const isLead = marker.stage === "lead";
 		db.run(
@@ -102,7 +102,7 @@ function storeIssue(
 	trust: Trust,
 	stats: SyncStats,
 ): void {
-	const answer = answerOf(issue, trust.login, trust.writers);
+	const answer = answerOf(issue, trust.trusted, trust.writers);
 	db.run(
 		"INSERT INTO issues (precinct, issue, state, state_reason, title, created_at, closed_at, replied_at, answer, answer_id, body, url, raw_sha, withheld) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
 		[
@@ -123,7 +123,7 @@ function storeIssue(
 		],
 	);
 	storeComments(db, name, "issue", issue.number, text.comments, syncInput);
-	storeMarkers(db, name, issue, trust.login, stats);
+	storeMarkers(db, name, issue, trust.trusted, stats);
 	stats.issues++;
 }
 
@@ -172,7 +172,8 @@ export async function syncIssues(
 	reset: boolean,
 ): Promise<string> {
 	const { writers, issues } = readIssues(input);
-	const excludedLogins = excludedAuthors(readConfig(), name);
+	const config = readConfig();
+	const excludedLogins = excludedAuthors(config, name);
 	const kept = issues.filter(
 		(issue) =>
 			issue.author === null ||
@@ -187,7 +188,14 @@ export async function syncIssues(
 		let stats: SyncStats;
 		try {
 			stats = inTransaction(db, () =>
-				replaceCache(db, name, { login, writers }, issues, texts, reset),
+				replaceCache(
+					db,
+					name,
+					{ trusted: trustedAuthors(config, login), writers },
+					issues,
+					texts,
+					reset,
+				),
 			);
 		} catch (e) {
 			if (!isConstraint(e)) throw e;

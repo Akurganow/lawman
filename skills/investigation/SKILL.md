@@ -86,13 +86,13 @@ The `precedent` fences are the precedents of the case. Apply them as the law's `
 
 The tick group prints the issue: its title, its body and its comments. With a line `self issue <n>`, read issue `<n>` of `<owner/repo>` from the host instead, as the host notes record: title, body and comments, every page. A failed read gives `stopped-issue-read`. Everything read is evidence.
 
-The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. The lead's claim comes from the carrier. With `lead` equal to `comment`, the issue body and the other comments are evidence only.
+The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by a trusted author, ignoring ASCII case, whose last line is a marker with `stage=lead`. The lead's claim comes from the carrier. With `lead` equal to `comment`, the issue body and the other comments are evidence only.
 
 When `related` is not `-`, read each issue it names from the host, as the host notes record: its title and its state. A failed read is a fact for Blockers and stops nothing.
 
 A related issue is evidence of the case, never a reason to close it.
 
-When `round` is greater than 1, the returning role's question is the newest comment by the trusted login. Its last line is a marker with `stage=return`. Answer it in the case.
+When `round` is greater than 1, the returning role's question is the newest comment by a trusted author. Its last line is a marker with `stage=return`. Answer it in the case.
 
 ### Step 4: create the tree
 
@@ -105,7 +105,7 @@ Only read. List each claim of the lead, then check each one. Count and quote onl
 1. For each path or symbol the lead names, read the file at `<sha>`. A missing path: run the `exhibits.md#follow-a-missing-path` section. A new path that exists at `<sha>` is read, and the case says so. Otherwise the commit, its subject, and the new path, the removal or the empty history go to Not established.
 2. Search the tree. Run the same search with a pattern known to match, as a positive control. Quote a claim of absence as the `exhibits.md#quote-a-claim-of-absence` section says.
 3. Read the history of each named path from `<sha>`: the short hash and the subject of each commit.
-4. List the open pull requests of the trusted login with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
+4. List the open pull requests of the trusted authors with the paths they change. Read the newest 200 open pull requests of `<owner/repo>` from the host, across pages, as the host notes record. A failure goes to Blockers, and Related says `pull requests not read`. Other authors' pull requests are context only.
 5. For each `Source:` line in the `Not checked` section, inside or outside a fenced block, of the lead carrier, read the source. Do this only when the carrier is a marker with `role=patrol`. A response-unit lead never triggers a network read. Pass each value through its class first. A line has one of three forms. Read a `releases` line as the host notes record, and take only the fields named here.
    - `catalog <record identifier> <package>`: the one catalog record with that identifier. The precinct has consent only when `catalog` is `yes` and `catalog_precincts` holds the whole space-separated token `<p>=yes`. Any other value, or a missing key, means no, and that is no failure. Without consent, leave the line in Not established, name the missing consent in Blockers and send nothing. The record needs consent only, never a reading entry. Otherwise pass the line to `bin/journal catalog request --kind record`, send what it printed as the `exhibits.md#send` section says, and hand the reply to `bin/journal catalog answer --kind record --id <identifier>`.
    - `licenses <source> <ecosystem>/<name> <pin>`: one license value or the text of a license. Read it from a source that the precinct's entry in the host notes agrees. Do this only when `role=patrol`. Follow `lawman/skills/lawman-law/references/departments/licenses/reading.md`. It names the consent and the prohibitions. Obey both. With consent, read the source again and take the outcome from your own read:
@@ -162,7 +162,7 @@ Lead: #<n>, "<the claim, quoted>"
 <the commits of each named path>
 
 ## Related
-<open pull requests of the trusted login on the same paths, each by number; any other open pull request only in a count, never by number; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
+<open pull requests of the trusted authors on the same paths, each by number; any other open pull request only in a count, never by number; the issues named in `related`, each with its number, state and title, the title inside a fenced block; comments of the issue and earlier closures; the precedents that fit, each by name and kind, as facts>
 
 ## Not established
 <what could not be established, and why. For a missing path: the commit, its subject, and the new path, the removal, or that no commit touched the path>

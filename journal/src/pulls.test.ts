@@ -8,9 +8,10 @@ import {
 	type Reactions,
 	SPEC,
 } from "./pulls-fixture";
-import { mark } from "./test-helpers";
+import { mark, trustedOnly } from "./test-helpers";
 
-const rowsOf = (input: string) => readPulls(input, BOT).map((p) => p.row);
+const rowsOf = (input: string) =>
+	readPulls(input, trustedOnly(BOT)).map((p) => p.row);
 const read = (input: unknown) => rowsOf(JSON.stringify(input));
 const readOf = (pulls: Pull[], writers?: string[]) =>
 	read(hostPulls(pulls, writers));
@@ -19,7 +20,7 @@ const voteOf = (comments: Comment[]) =>
 const spec = (r: Reactions): Comment => ({ body: `Spec\n\n${SPEC}`, ...r });
 
 function rejects(input: string, why: RegExp): void {
-	expect(() => readPulls(input, BOT)).toThrow(why);
+	expect(() => readPulls(input, trustedOnly(BOT))).toThrow(why);
 }
 
 describe("readPulls validity", () => {
@@ -113,7 +114,7 @@ describe("readPulls rows", () => {
 			"Closes #6",
 		];
 		const pulls = bodies.map((body, number) => ({ number, body }));
-		const read = readPulls(JSON.stringify(hostPulls(pulls)), BOT);
+		const read = readPulls(JSON.stringify(hostPulls(pulls)), trustedOnly(BOT));
 		expect(read.map((p) => p.traced)).toEqual([true, true, false, false]);
 	});
 });

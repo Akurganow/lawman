@@ -8,6 +8,7 @@ import {
 	type Review,
 	SPEC,
 } from "./pulls-fixture";
+import { trustedOnly } from "./test-helpers";
 
 const SPEC_AT = "2026-10-14T09:00:00Z";
 const READY_AT = "2026-10-14T11:00:00Z";
@@ -31,7 +32,7 @@ const review = (at: string, author = "maint-a"): Review => ({ at, author });
 
 function rowOf(comments: Comment[], reviews: Review[] = []) {
 	const input = hostPulls([{ number: 1, comments, reviews }]);
-	return readPulls(JSON.stringify(input), BOT)[0]?.row;
+	return readPulls(JSON.stringify(input), trustedOnly(BOT))[0]?.row;
 }
 const workOf = (comments: Comment[], reviews: Review[] = []) =>
 	rowOf(comments, reviews)?.work;
@@ -155,7 +156,7 @@ describe("readPulls work returned by a review", () => {
 
 describe("readPulls sync input checks", () => {
 	const read = (input: unknown) =>
-		readPulls(JSON.stringify(input), BOT).map((p) => p.row);
+		readPulls(JSON.stringify(input), trustedOnly(BOT)).map((p) => p.row);
 	const patched = (change: object) => {
 		const bad = hostPulls([{ number: 1, comments: [spec()] }]);
 		Object.assign(bad.pulls[0] as object, change);

@@ -16,6 +16,7 @@ import {
 	run,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -80,7 +81,7 @@ describe("fixture issues", () => {
 			createdAt: "2026-10-14T09:00:00Z",
 			comments: [],
 		};
-		expect(collectIssueMarkers(base, TRUSTED).markers).toEqual([]);
+		expect(collectIssueMarkers(base, trustedOnly(TRUSTED)).markers).toEqual([]);
 	});
 });
 
@@ -173,7 +174,7 @@ describe("legacy fingerprints", () => {
 		const text = `<!-- police-fingerprint: slop-police a/b::c::d -->\n${lead()}`;
 		const found = extractMarkers(
 			{ text, createdAt: "2026-10-14T09:00:00Z", rank: 0, author: TRUSTED },
-			TRUSTED,
+			trustedOnly(TRUSTED),
 		);
 		expect(found.map((f) => f.marker.fields.legacy ?? "lawman")).toEqual([
 			"police-fingerprint",
@@ -187,15 +188,16 @@ describe("legacy fingerprints", () => {
 			comments: [],
 		};
 		expect(
-			must(collectIssueMarkers(issue, TRUSTED).leadOrigin).marker.fields.legacy,
+			must(collectIssueMarkers(issue, trustedOnly(TRUSTED)).leadOrigin).marker
+				.fields.legacy,
 		).toBe("police-fingerprint");
 		const swapped = {
 			...issue,
 			body: `${lead()}\n<!-- repo-audit-routine:x -->`,
 		};
 		expect(
-			must(collectIssueMarkers(swapped, TRUSTED).leadOrigin).marker.fields
-				.legacy,
+			must(collectIssueMarkers(swapped, trustedOnly(TRUSTED)).leadOrigin).marker
+				.fields.legacy,
 		).toBeUndefined();
 	});
 

@@ -86,7 +86,7 @@ Keep `round`, `returned`, `department`, `sha`, `lead`, `related`, `kind`, `answe
 
 The tick group prints the issue: its title, its body and its comments. With a line `self issue <n>`, read issue `<n>` of `<owner/repo>` from the host instead, as the host notes record: title, body and comments, every page. A failed read gives `stopped-issue-read`.
 
-The case is the newest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=case`. The court judges the decisions of the parties that stand after the case. Each decision below is a comment by `<login>`, ignoring ASCII case, and newer than the case.
+The case is the newest comment by a trusted author, ignoring ASCII case, whose last line is a marker with `stage=case`. The court judges the decisions of the parties that stand after the case. Each decision below is a comment by a trusted author, ignoring ASCII case, and newer than the case.
 
 - The decision of the prosecutor is the newest comment whose last line is a marker with `role=prosecutor`, `stage=charge` or `stage=decline`.
 - After a charge, the decision of the defender is the newest comment newer than the charge. Its last line is a marker with `role=defender`, `stage=defence` or `stage=refute`.
@@ -99,7 +99,7 @@ A missing case, or a missing decision that the kind of the case needs, ends the 
 | refuted | `charge`, `refute` | the `## Grounds` of the charge against the `## Holes in the charge` of the refute and the class that its `## Defence` names |
 | declined | `decline` | the claims of the case against the `## Decision` and the `## Grounds` of the decline |
 
-The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by `<login>`, ignoring ASCII case, whose last line is a marker with `stage=lead`. Do not read the line under the `## Cost and risk` heading of the lead carrier. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
+The lead carrier is the issue body when `lead` is `body`. When `lead` is `comment`, it is the earliest comment by a trusted author, ignoring ASCII case, whose last line is a marker with `stage=lead`. Do not read the line under the `## Cost and risk` heading of the lead carrier. Everything else in the issue is evidence: the body, the other comments and the earlier decisions.
 
 When `related` is not `-`, read each issue it names from the host, as the host notes record. A failed read is a fact for Blockers and stops nothing.
 

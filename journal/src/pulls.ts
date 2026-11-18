@@ -9,8 +9,9 @@ import {
 } from "./cache-text";
 import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
 import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import { readConfig, trustedAuthors } from "./input-files";
 import { linkOrNull } from "./link";
-import { asciiLower, extractMarkers, stripCr } from "./markers";
+import { asciiLower, extractMarkers, isTrusted, stripCr } from "./markers";
 
 export type Vote = "none" | "waiting" | "up" | "down";
 export type Work = "todo" | "ready" | "returned";
@@ -124,10 +125,10 @@ function sourceNumbers(pull: Pull): string {
 
 type Counted = { ord: string; comment: Comment };
 
-// the comment that carries the newest counted marker of a role and stage
+// the comment that carries the newest marker of a trusted author of a role and stage
 function newestMarker(
 	pull: Pull,
-	login: string,
+	trusted: ReadonlySet<string>,
 	want: { role: string; stage: string },
 ): Counted | null {
 	let newest: Counted | null = null;
@@ -139,7 +140,7 @@ function newestMarker(
 				rank,
 				author: comment.author,
 			},
-			login,
+			trusted,
 		);
 		for (const { ord, marker } of found)
 			if (
@@ -163,11 +164,11 @@ function specVote(spec: Counted | null, writers: Set<string>): Vote {
 
 function workOf(
 	pull: Pull,
-	login: string,
+	trusted: ReadonlySet<string>,
 	writers: Set<string>,
 	spec: Counted | null,
 ): Work {
-	const done = newestMarker(pull, login, READY);
+	const done = newestMarker(pull, trusted, READY);
 	if (done === null || spec === null || done.ord <= spec.ord) return "todo";
 	const sentBack = pull.changesRequested.some(
 		(review) => writers.has(review.login) && review.at > done.comment.createdAt,
@@ -196,21 +197,24 @@ const pullText = (pull: Pull): HostText => ({
 	})),
 });
 
-export function readPulls(input: string, login: string): ReadPull[] {
+export function readPulls(
+	input: string,
+	trusted: ReadonlySet<string>,
+): ReadPull[] {
 	const { writers, pulls } = readForm(input);
 	const read: ReadPull[] = [];
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		if (asciiLower(text(raw.author)) !== asciiLower(login)) continue;
+		if (!isTrusted(trusted, text(raw.author))) continue;
 		const pull = readPull(raw);
-		const spec = newestMarker(pull, login, SPEC);
+		const spec = newestMarker(pull, trusted, SPEC);
 		read.push({
 			row: {
 				number: pull.number,
 				issues: sourceNumbers(pull),
 				spec: specVote(spec, writers),
-				work: workOf(pull, login, writers, spec),
+				work: workOf(pull, trusted, writers, spec),
 				spec_id: spec?.comment.id ?? NO_SPEC_ID,
 			},
 			traced: pull.body
@@ -258,7 +262,7 @@ export async function syncPulls(
 		if (!db.query("SELECT 1 FROM precincts WHERE name = ?").get(name))
 			throw new Fail(EXIT.USAGE, `unknown precinct: ${name}`);
 	});
-	const parsed = readPulls(input, login);
+	const parsed = readPulls(input, trustedAuthors(readConfig(), login));
 	const cleaned = await cleanTexts(
 		name,
 		parsed.map((p) => ({ item: p, text: p.text })),

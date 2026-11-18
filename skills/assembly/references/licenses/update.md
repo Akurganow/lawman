@@ -19,7 +19,7 @@ This table has these rows and no others.
 Rules of the update:
 
 - For a new pull request take the section at the tip of the default branch as the base. For an addition to an open pull request take the section at the head of its branch. A pull request adds or removes only the id or the `use` value that has a new answer. A `sources none` is replaced by the new id, never extended.
-- A pull request of Lawman is an open pull request of the trusted login, from the branch `lawman/licenses-sources` or `lawman/constitution`.
+- A pull request of Lawman is an open pull request of the trusted login or an earlier login, from the branch `lawman/licenses-sources` or `lawman/constitution`.
 - An owner who narrowed `sources`, or changed `use` at the merge, gets no question and no pull request.
 - Never remove a recorded answer because the tree or a release changed. Only the row for a request in "Re-check a precinct" replaces answers. A returning ecosystem raises no question.
 - An id of `sources` outside the index is rejected and named. A value with no valid id reads as `none`, as the law says.

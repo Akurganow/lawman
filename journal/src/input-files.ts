@@ -31,6 +31,19 @@ export function excludedAuthors(
 	return new Set(logins.split(",").filter(Boolean).map(asciiLower));
 }
 
+// the trusted login and the earlier logins of the key; an absent key and the value `none` name none
+export function trustedAuthors(
+	config: string | null,
+	login: string,
+): Set<string> {
+	const earlier = configValue(config ?? "", "earlier_logins") ?? "";
+	return new Set(
+		[login, ...earlier.split(",")]
+			.map((l) => asciiLower(l.trim()))
+			.filter((l) => l !== "" && l !== "none"),
+	);
+}
+
 // read only when there is something to print, so a bad value never touches an idle check
 export function inputChars(config: string | null): number {
 	const value = configValue(config ?? "", "input_chars");

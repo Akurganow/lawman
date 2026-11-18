@@ -21,6 +21,7 @@ import {
 	run,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -104,7 +105,9 @@ describe("sync", () => {
 	beforeEach(() => addPrecincts({ [PRECINCT]: 1 }));
 
 	test("a fixture sync prints counts that match the fixture", () => {
-		const found = issues.map((i) => collectIssueMarkers(i, TRUSTED));
+		const found = issues.map((i) =>
+			collectIssueMarkers(i, trustedOnly(TRUSTED)),
+		);
 		const markers = found.reduce((n, f) => n + f.markers.length, 0);
 		const legacy = found
 			.flatMap((f) => f.markers)
@@ -149,7 +152,10 @@ describe("sync", () => {
 			{ state_reason: null },
 		]);
 		const stored = rows("SELECT * FROM markers WHERE issue = 1 ORDER BY ord");
-		const want = collectIssueMarkers(must(issues[0]), TRUSTED).markers;
+		const want = collectIssueMarkers(
+			must(issues[0]),
+			trustedOnly(TRUSTED),
+		).markers;
 		expect(stored.map((r) => r.ord)).toEqual(want.map((m) => m.ord));
 		const first = must(stored[0]);
 		expect(first).toMatchObject({
@@ -444,6 +450,35 @@ describe("sync", () => {
 		]);
 	});
 
+	test("a marker by an earlier login counts as the trusted login's", () => {
+		writeFileSync(
+			join(dir, "config.yaml"),
+			"earlier_logins: , Earlier-Login,,none\n",
+		);
+		const r = sync([
+			{
+				number: 60,
+				state: "OPEN",
+				title: "x",
+				createdAt: CREATED,
+				author: { login: "earlier-login" },
+				body: lead(),
+				comments: [],
+			},
+			{
+				number: 61,
+				state: "OPEN",
+				title: "y",
+				createdAt: CREATED,
+				author: { login: "none" },
+				body: lead(),
+				comments: [],
+			},
+		]);
+		expect(r.out.trim()).toBe("issues=2 leads=1 markers=1 invalid=1");
+		expect(rows("SELECT issue FROM markers")).toEqual([{ issue: 60 }]);
+	});
+
 	test("an author that is no object with a login is rejected", () => {
 		sync(issues);
 		const before = snapshot();
@@ -509,8 +544,8 @@ describe("sync", () => {
 		sync(issues);
 		const want = new Map<string, number>();
 		for (const i of issues.filter((x) => x.state === "OPEN")) {
-			const dept = collectIssueMarkers(i, TRUSTED).leadOrigin?.marker.fields
-				.department;
+			const dept = collectIssueMarkers(i, trustedOnly(TRUSTED)).leadOrigin
+				?.marker.fields.department;
 			if (dept !== undefined) want.set(dept, (want.get(dept) ?? 0) + 1);
 		}
 		expect(want.size).toBeGreaterThan(0);

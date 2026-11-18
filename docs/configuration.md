@@ -73,9 +73,17 @@ amended_law_commit: 0123456789abcdef0123456789abcdef01234567
 
 Every value above is a placeholder. `hermes` and `openclaw` are the names of the shipped harness pages. The order follows the assembly skill.
 
-Five more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissals_since` and `excluded_authors`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The same size is the cut size of a case text longer than one part, and the part size of `text` and `clean`. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work, and makes `text` and `clean` exit 1. See [the journal](journal.md#the-role-entry) and [cut texts](journal.md#cut-texts).
+Six more keys are optional: `input_chars`, `jobs`, `progress_checks`, `dismissals_since`, `excluded_authors` and `earlier_logins`. The assembly does not require them. `input_chars` sets the size of one part of a role's input, in Unicode characters. Without it the size is 16 000. The same size is the cut size of a case text longer than one part, and the part size of `text` and `clean`. The harness page names a size that fits its output limit. When the page names one and the key is absent, the assembly writes it, and it never overwrites a key that is there. The assembly shows `jobs` and `progress_checks` with their current values or defaults and writes them only when you change a value. `law-sync` fills a missing one from its defaults. A value outside the whole numbers above zero is asked again. A value of `input_chars` that is not a whole number above zero makes the role's input exit 1 when the role has work, and makes `text` and `clean` exit 1. See [the journal](journal.md#the-role-entry) and [cut texts](journal.md#cut-texts).
 
 The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. The journal leaves the issues of those authors out of the cache and the input of every role, and counts them as `excluded=` in the output of the issue sync. A precinct with no pair holds no exclusions. The assembly writes the key only for a precinct whose question named authors to exclude.
+
+The key `earlier_logins` holds `<login>,<login>` or `none`. It names the accounts that the installation acted as before its `trusted_login`. The journal counts their issue bodies, their comments and their open pull requests as the trusted login's. So what an earlier login wrote stays after a change of account. The roles still act only as `trusted_login`. You write the key by hand, and the assembly keeps it. Write bare logins with commas between them, with no quotes and no comment. Spell each login as `trusted_login` held it.
+
+Do three things for the key to work:
+
+- Name only accounts that you control. An account named there keeps the power to write counted markers.
+- Give the trusted login the host's right to change the open pull requests of the earlier logins. The clerk and the pull request roles write to them.
+- Run the job "re-check a precinct" for each precinct after every change of the key or of `trusted_login`. A command of a precinct holds its own copy of these logins, and the job offers to write a stale command again.
 
 | Key | Meaning | Written by |
 | :-- | :-- | :-- |
@@ -201,6 +209,7 @@ Ticks read the keys they need.
 - The investigation reads `catalog` and `catalog_precincts`. Without consent it sends nothing and leaves the lead's catalog line in Not established.
 - The patrol and the investigation read `license_precincts`, the section `## Licenses` of the constitution and the precinct's entry under `## License reading` in `host.md`. A license source is read only when three things hold. The pair is `yes`. The entry agrees the row. The section has no `sources` line, or has one that names the row and is not `none`. Without them the tick ends with an ordinary outcome, and its report says that the check did not run.
 - The assembly reads `deliver` when it creates the scheduled jobs.
+- Every sync of the tracker and of the pull requests reads `earlier_logins`, and so does `old-precedent`. The identity check compares the host's account with `trusted_login` alone.
 - The alarms read `progress_checks` every time the journal computes them.
 - The role's input reads `jobs`, `harness` and `input_chars` when it builds its group: at `wake` with work, and at `tick input --role`. The start of a tick that takes an order reads `input_chars` and `trusted_login`. `tick input <tick id>` reads `input_chars` when it builds the tick group, and the commands `text` and `clean` read it too. A missing `harness` key, or a value outside `[a-z][a-z0-9-]*`, leaves the harness section to the role. See [the journal](journal.md#the-role-entry).
 

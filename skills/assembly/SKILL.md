@@ -190,7 +190,7 @@ contract_version: <constitution contract version that the precinct constitutions
 amended_law_commit: <law commit at which the precinct constitutions were last brought in line>
 ```
 
-The fifteen keys above are required. Five more keys are optional:
+The fifteen keys above are required. Six more keys are optional:
 
 ```
 input_chars: <size of one part of a role's input, in characters>
@@ -198,9 +198,10 @@ jobs: <role>=<n> ... | none
 progress_checks: <whole number above zero>
 dismissals_since: <UTC time of the install or of the update that brought dismissals>
 excluded_authors: <name>=<login>,<login> ... | none
+earlier_logins: <login>,<login> | none
 ```
 
-The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude.
+The assembly writes `input_chars` when the harness page names a size and the key is absent. A key that is there is shown as current and is not overwritten. The assembly writes `jobs` and `progress_checks` only when the developer changed the value. `law-sync` fills `jobs` and `progress_checks` with their defaults. The assembly writes `dismissals_since` at install, as the current UTC time. `law-sync` fills it when it is missing. The assembly writes `excluded_authors` only for a precinct whose question named authors to exclude. The assembly never writes `earlier_logins`, and it keeps a key that is there.
 
 The command `bin/journal law-sync` writes `law_commit`, `release_tag` and `journal_sha256` after a plugin update. It fills a missing key that its defaults hold. It does not fill `license_precincts`. This assembly writes the other keys at install and at amend. Ticks read the keys they need.
 

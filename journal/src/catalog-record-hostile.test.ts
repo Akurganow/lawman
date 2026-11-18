@@ -9,7 +9,7 @@ import {
 } from "./catalog-record-fixture";
 import * as cleaners from "./clean";
 import { extractMarkers } from "./markers";
-import { lead, tempDb } from "./test-helpers";
+import { lead, tempDb, trustedOnly } from "./test-helpers";
 
 tempDb();
 
@@ -45,9 +45,9 @@ describe("catalog record hostile summary", () => {
 			expect(out).not.toContain(TOKEN);
 			expect(out).not.toContain(ZWSP);
 			const { comment, carrier } = expectCleanComment(out);
-			expect(extractMarkers({ ...carrier, text: comment }, "t")).toHaveLength(
-				1,
-			);
+			expect(
+				extractMarkers({ ...carrier, text: comment }, trustedOnly("t")),
+			).toHaveLength(1);
 		},
 	);
 

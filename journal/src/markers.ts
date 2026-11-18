@@ -232,15 +232,15 @@ export function fencedLines(lines: string[]): boolean[] {
 	});
 }
 
+// `trusted` holds lowercased logins; an empty author is never trusted
+export const isTrusted = (trusted: ReadonlySet<string>, author: string) =>
+	author !== "" && trusted.has(asciiLower(author));
+
 export function extractMarkers(
 	carrier: Carrier,
-	trustedLogin: string,
+	trusted: ReadonlySet<string>,
 ): Found[] {
-	if (
-		trustedLogin === "" ||
-		asciiLower(carrier.author) !== asciiLower(trustedLogin)
-	)
-		return [];
+	if (!isTrusted(trusted, carrier.author)) return [];
 	const lines = carrier.text.split("\n").map(stripCr);
 	const hidden = fencedLines(lines);
 	const found: Found[] = [];
@@ -260,7 +260,10 @@ export function extractMarkers(
 
 export const byText = (a: string, b: string) => (a < b ? -1 : a > b ? 1 : 0);
 
-export function collectIssueMarkers(issue: GhIssue, trustedLogin: string) {
+export function collectIssueMarkers(
+	issue: GhIssue,
+	trusted: ReadonlySet<string>,
+) {
 	const comments = [...issue.comments].sort((a, b) =>
 		byText(a.createdAt, b.createdAt),
 	);
@@ -273,7 +276,7 @@ export function collectIssueMarkers(issue: GhIssue, trustedLogin: string) {
 					rank,
 					author: c.author?.login ?? "",
 				},
-				trustedLogin,
+				trusted,
 			),
 		)
 		.sort((a, b) => byText(a.ord, b.ord));

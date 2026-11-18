@@ -1,10 +1,20 @@
 import { beforeEach, describe, expect, test } from "bun:test";
+import { writeFileSync } from "node:fs";
+import { join } from "node:path";
 import { out } from "./db";
 import fixture from "./fixtures/pulls.json";
 import { capturedAsync } from "./inproc";
 import { syncPulls } from "./pulls";
 import { BOT, FIXTURE_ROWS, hostPulls } from "./pulls-fixture";
-import { addPrecincts, cli, dbFile, rows, seed, tempDb } from "./test-helpers";
+import {
+	addPrecincts,
+	cli,
+	dbFile,
+	dir,
+	rows,
+	seed,
+	tempDb,
+} from "./test-helpers";
 
 tempDb();
 
@@ -56,6 +66,17 @@ describe("sync --pulls", () => {
 		expect(stored("other")).toEqual([
 			{ number: 5, issues: "", spec: "none", work: "todo", spec_id: "-" },
 		]);
+	});
+
+	test("an open pull request of an earlier login is stored", () => {
+		writeFileSync(join(dir, "config.yaml"), "earlier_logins: Earlier-Login\n");
+		const input = hostPulls([
+			{ number: 1, author: "earlier-login" },
+			{ number: 2, author: "stranger" },
+			{ number: 3 },
+		]);
+		expect(feed(input).code).toBe(0);
+		expect(stored().map((r) => r.number)).toEqual([1, 3]);
 	});
 
 	test("every validity failure exits 4 and leaves the cache intact", () => {

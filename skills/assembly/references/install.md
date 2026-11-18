@@ -120,7 +120,7 @@ Proposes, as rows with their source. The rows are the notes, the recorded action
 | Host actions | one row for each action, with how this machine does it | found |
 | Verifier | the verifier, or the refusal | found, chosen or declined |
 
-The why line for the login: every role writes as this account, and only its markers count.
+The why line for the login: every role writes as this account, and the journal counts the markers it writes.
 
 Decides: ask in the question tool.
 

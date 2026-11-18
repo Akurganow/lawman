@@ -9,7 +9,7 @@ import {
 	throughCli,
 } from "./catalog-test-run";
 import { extractMarkers } from "./markers";
-import { cli, lead } from "./test-helpers";
+import { cli, lead, trustedOnly } from "./test-helpers";
 
 export const FOUND = fixture("record.found.json");
 export const UNKNOWN = fixture("record.unknown.json");
@@ -52,6 +52,6 @@ export function expectCleanComment(out: string) {
 		err: "",
 	});
 	const carrier = { text: out, createdAt: CLOCK, rank: 0, author: "t" };
-	expect(extractMarkers(carrier, "t")).toEqual([]);
+	expect(extractMarkers(carrier, trustedOnly("t"))).toEqual([]);
 	return { comment, carrier };
 }

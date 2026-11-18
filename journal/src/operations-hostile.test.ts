@@ -17,6 +17,7 @@ import {
 	PRIVATE_KEYS,
 	TRUSTED,
 	tempDb,
+	trustedOnly,
 } from "./test-helpers";
 
 tempDb();
@@ -53,7 +54,7 @@ async function expectSafe(printed: string) {
 	expect(
 		extractMarkers(
 			{ text: printed, createdAt: AT, rank: 0, author: TRUSTED },
-			TRUSTED,
+			trustedOnly(TRUSTED),
 		),
 	).toEqual([]);
 	expect(printed).not.toContain(TOKEN);
