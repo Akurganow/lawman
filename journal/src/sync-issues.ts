@@ -39,7 +39,8 @@ function authorOf(raw: Record<string, unknown>, what: string) {
 	return author.login === "" ? null : { login: author.login };
 }
 
-function readComment(c: Record<string, unknown>): SyncComment {
+function readComment(c: unknown): SyncComment {
+	if (!isRecord(c)) throw syncInput("a comment is not an object");
 	if (!COMMENT_ID.test(text(c.id)))
 		throw syncInput("a comment id is letters, digits, _, = or -");
 	return {
@@ -75,9 +76,7 @@ function readIssue(raw: unknown): SyncIssue {
 		throw syncInput("a stateReason is upper case, such as COMPLETED");
 	}
 	const closed = textOrNull(raw.closedAt);
-	const comments = Array.isArray(raw.comments)
-		? raw.comments.filter(isRecord)
-		: [];
+	if (!Array.isArray(raw.comments)) throw syncInput("comments is not a list");
 	return {
 		number: raw.number as number,
 		state: raw.state,
@@ -88,7 +87,7 @@ function readIssue(raw: unknown): SyncIssue {
 		closedAt: closed === null ? null : timeField(closed, "an issue closedAt"),
 		author: authorOf(raw, "an author"),
 		body: text(raw.body),
-		comments: comments.map(readComment),
+		comments: raw.comments.map(readComment),
 	};
 }
 

@@ -34,6 +34,7 @@ const withTimes = (over: Record<string, unknown>) => [
 		state: "OPEN",
 		createdAt: CREATED,
 		author: { login: ACTING },
+		comments: [],
 		...over,
 	},
 ];
@@ -261,6 +262,11 @@ describe("sync", () => {
 				withTimes({ createdAt: "soon" }),
 			],
 			["a closedAt that is no time", withTimes({ closedAt: "later" })],
+			["comments absent", withTimes({ comments: undefined })],
+			["comments null", withTimes({ comments: null })],
+			["comments a number", withTimes({ comments: 0 })],
+			["comments a string", withTimes({ comments: "none" })],
+			["a comment that is no object", withTimes({ comments: [1] })],
 			["a comment without createdAt", withTimes({ comments: [{ body: "x" }] })],
 			["a state outside the form", withTimes({ state: "opened" })],
 			[
@@ -401,7 +407,7 @@ describe("sync", () => {
 	])("an issue by %s is stored and counted", (_name, author) => {
 		const r = sync([
 			issues[0],
-			{ number: 51, state: "OPEN", title: "x", createdAt: CREATED, author },
+			...withTimes({ number: 51, title: "x", author }),
 		]);
 		expect(r.out.trim()).toBe("issues=2 leads=1 markers=2 invalid=0");
 		expect(rows("SELECT issue FROM issues ORDER BY issue")).toEqual([
@@ -432,6 +438,7 @@ describe("sync", () => {
 				title: "y",
 				createdAt: CREATED,
 				author: { login: "Renovate" },
+				comments: [],
 			},
 			{
 				number: 53,
@@ -439,6 +446,7 @@ describe("sync", () => {
 				title: "z",
 				createdAt: CREATED,
 				author: { login: "someone" },
+				comments: [],
 			},
 		]);
 		expect(r.out.trim()).toBe(
@@ -489,6 +497,7 @@ describe("sync", () => {
 				title: "x",
 				createdAt: CREATED,
 				author: "reporter",
+				comments: [],
 			},
 		]);
 		expect(r.code).toBe(4);
