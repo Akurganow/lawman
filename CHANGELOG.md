@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.10 - 2026-11-19
+#### Bug Fixes
+- (**law**) name a plain-text label among the report labels (dfc4921)
+- (**law**) keep the labels and code-form text of a report as written (aa498f7)
+- (**law**) write the tick report in the user's language (1150062)
+
+- - -
+
+
 ## v3.0.9 - 2026-11-19
 #### Bug Fixes
 - (**departments**) state the Required rule everywhere the rotation is described (78f295a)
