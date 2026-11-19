@@ -4,6 +4,16 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.8 - 2026-11-19
+#### Bug Fixes
+- (**assembly**) order the verifier rule and keep a refusal outside the menu (5649a69)
+- (**assembly**) keep a recorded verifier and let Host turn a refusal into a check (6becdaf)
+- (**assembly**) derive the verifier question from the proposal row (42844f7)
+- (**assembly**) ask for the verifier only when no single one fits (d146bad)
+
+- - -
+
+
 ## v3.0.7 - 2026-11-19
 #### Bug Fixes
 - (**law**) remove a killed run's files before its tick ends (ea79236)
