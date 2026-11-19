@@ -198,7 +198,8 @@ function remove(folder: string): void {
 	try {
 		rmSync(folder, { recursive: true, force: true });
 	} catch {
-		// the next pass that builds the folder removes it again
+		// after a stop, the next pass that builds the folder removes it again;
+		// after a sync no pass builds it, so it stays until the operator removes it
 	}
 }
 
