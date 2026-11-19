@@ -406,19 +406,24 @@ export async function tickStart(args: string[]): Promise<number> {
 		),
 	};
 	const o = new Output();
-	// the journal alarms need no host data: every output of the start carries them first
-	const journal = withDb((db) =>
-		inTransaction(db, () => reconcileAlarms(db, stamp, false, "journal")),
-	);
-	for (const line of journal) o.line(line);
-	if (config === null)
-		return ended(t, o, "failed", "config.yaml is missing", null);
+	// The journal alarms need no host data: every output of the start carries them first.
+	// They are judged once, in the take transaction or at a stop before it,
+	// so a take never raises no-progress against itself.
+	const judge = (db: Database) =>
+		o.blocks.unshift(
+			...reconcileAlarms(db, now(), false, "journal").map((line) => ({ line })),
+		);
+	const stop = (outcome: string, report: string) => {
+		withDb((db) => inTransaction(db, () => judge(db)));
+		return ended(t, o, outcome, report, null);
+	};
+	if (config === null) return stop("failed", "config.yaml is missing");
 	const login = configValue(config, "acting_login");
 	if (login === undefined || !fits("login", login))
-		return ended(t, o, "failed", "config.yaml has no acting_login", null);
+		return stop("failed", "config.yaml has no acting_login");
 	const law = await lawCheck(config);
 	if (law === "self") o.selfs.push("law-version");
-	else if (law !== "current") return ended(t, o, law.outcome, law.report, null);
+	else if (law !== "current") return stop(law.outcome, law.report);
 	const p = order.precinct;
 	const who = await operate(p, "identity", call([]));
 	o.add(...who.blocks);
@@ -426,19 +431,15 @@ export async function tickStart(args: string[]): Promise<number> {
 	else {
 		const seen = who.text.replace(/\r?\n$/, "");
 		if (asciiLower(seen) !== asciiLower(login))
-			return ended(
-				t,
-				o,
-				"stopped-identity-changed",
-				`Host identity changed: ${seen}`,
-				null,
-			);
+			return stop("stopped-identity-changed", `Host identity changed: ${seen}`);
 	}
 	const taken = withDb((db) =>
 		inTransaction(db, () => {
-			if (!takeOrder(db, role, id, stamp)) return false;
-			db.run("UPDATE ticks SET dispatch = ? WHERE id = ?", [id, t.id]);
-			return true;
+			const took = takeOrder(db, role, id, stamp);
+			if (took)
+				db.run("UPDATE ticks SET dispatch = ? WHERE id = ?", [id, t.id]);
+			judge(db);
+			return took;
 		}),
 	);
 	if (!taken) return ended(t, o, "silent", "No order.", null);

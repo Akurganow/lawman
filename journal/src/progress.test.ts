@@ -88,6 +88,22 @@ describe("the no-progress alarm", () => {
 		).toEqual([{ cleared_at: BASE }]);
 	});
 
+	test("a take at the check that reaches the count raises no alarm", async () => {
+		setUp();
+		await wakes(3);
+		const taken = await inprocAsync(BASE, [
+			"tick",
+			"start",
+			"--role",
+			"clerk",
+			"--order",
+			"1",
+		]);
+		expect(rows(OPEN)).toEqual([{ checks: 0 }]);
+		expect(taken.out).not.toContain("ALARM");
+		expect(rows("SELECT id FROM alarms")).toEqual([]);
+	});
+
 	test("a progress_checks value that is not a number falls back to 3", async () => {
 		setUp("progress_checks: many\n");
 		await wakes(2);
