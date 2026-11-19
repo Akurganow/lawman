@@ -468,11 +468,12 @@ A file, a section, `config.yaml` or the key `harness` that the journal cannot re
 
 `journal tick start --role <r> --order <id>` runs these steps in order. A start of another role than the duty desk with no `--order` is a usage error and exits 1.
 
-1. The order must belong to the role, be open and be takeable. Otherwise the journal prints `order <id> untakeable` alone and starts no tick. Otherwise it starts the tick. It computes the journal's own alarms and prints each `ALARM` line of a new one.
+1. The order must belong to the role, be open and be takeable. Otherwise the journal prints `order <id> untakeable` alone and starts no tick. Otherwise it starts the tick.
 2. It reads `acting_login` from `config.yaml`.
 3. It checks the law folder, as [the check of the law folder](#the-check-of-the-law-folder) says.
 4. It runs the operation `identity` and compares the login with `acting_login`, ignoring ASCII case.
 5. It takes the order in one transaction, after it checks again that the order is free. It records the precinct, the department and the order in the tick, and prints the order line.
+   In the same transaction it computes the journal's own alarms. A take thus ends the count of `no-progress` before the alarm is judged. A start that stops with an outcome before this step computes them at the stop. Each `ALARM` line of a new one prints first in the output.
 6. It checks the fields of the order. An issue role needs an issue number, the spec writer and the executor a pull request number. A patrol order has a department and no issue number.
 7. It runs `fetch`.
 8. It runs `issues` and `pulls`, with `acting_login` as the author. They update the cache by the same path as `run`.
