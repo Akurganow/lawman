@@ -4,6 +4,16 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.7 - 2026-11-19
+#### Bug Fixes
+- (**law**) remove a killed run's files before its tick ends (ea79236)
+- (**law**) tie the tree steps of the tick end to the tree itself (504cfea)
+- (**law**) scope the tree steps of the tick end and name the folder (e21c0e9)
+- (**law**) every role removes its tick folder at the end of the tick (4122ca8)
+
+- - -
+
+
 ## v3.0.6 - 2026-11-19
 #### Bug Fixes
 - (**journal**) read an author as a login or an object with a login (0b093de)
