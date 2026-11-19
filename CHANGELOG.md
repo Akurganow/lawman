@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.6 - 2026-11-19
+#### Bug Fixes
+- (**journal**) read an author as a login or an object with a login (0b093de)
+#### Refactoring
+- (**journal**) give an absent author one form, the empty login (f35109c)
+
+- - -
+
+
 ## v3.0.5 - 2026-11-18
 #### Bug Fixes
 - (**assembly**) keep the merge-form sentence as it was (408680b)
