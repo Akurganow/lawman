@@ -4,6 +4,13 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.11 - 2026-11-19
+#### Bug Fixes
+- judge the journal alarms after the take in tick start (de2e2d9)
+
+- - -
+
+
 ## v3.0.10 - 2026-11-19
 #### Bug Fixes
 - (**law**) name a plain-text label among the report labels (dfc4921)
