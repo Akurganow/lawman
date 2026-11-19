@@ -160,18 +160,21 @@ describe("a department page that requires a judging document", () => {
 		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
 	});
 
-	test("a line with a path that the tree holds gives the patrol order", () => {
-		privacyOnly();
-		hostOf("main", {
-			...WORK,
-			tree: {
-				"LAWMAN.md": WITH("- privacy: judged by docs/PRIVACY.md\n"),
-				"docs/PRIVACY.md": "# Privacy\n",
-			},
-		});
-		startDesk();
-		expect(patrolOn("main").map((o) => o.department)).toEqual(["privacy"]);
-	});
+	test.each(["docs/PRIVACY.md", "./docs/PRIVACY.md"])(
+		"a line with %s, which the tree holds, gives the patrol order",
+		(path) => {
+			privacyOnly();
+			hostOf("main", {
+				...WORK,
+				tree: {
+					"LAWMAN.md": WITH(`- privacy: judged by ${path}\n`),
+					"docs/PRIVACY.md": "# Privacy\n",
+				},
+			});
+			startDesk();
+			expect(patrolOn("main").map((o) => o.department)).toEqual(["privacy"]);
+		},
+	);
 });
 
 // the stale rule of each role reads the cached stage: the cache below gives a closed issue and a pull request without work

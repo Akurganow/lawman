@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { posix } from "node:path";
 import { isFresh, reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
 import { consents, licensesAllowed } from "./consent";
@@ -185,7 +186,9 @@ async function chooseDepartment(
 		// a page that works only with a judging document counts as capped where no line names one in the tree
 		const documented = reading.departments.some(
 			([name, path]) =>
-				name === d && path !== "none" && listed(reading.files, path),
+				name === d &&
+				path !== "none" &&
+				listed(reading.files, posix.normalize(path)),
 		);
 		if (lint.requiresDocument && !documented) {
 			capped = true;
