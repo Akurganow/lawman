@@ -100,7 +100,7 @@ hermes cron run "[lawman] <role>"
 - A refused run prints its reason after the `Triggered job:` line, and the command exits 0 (read in the harness code: `hermes_cli/cron.py`, `_job_action`).
 - A manual run refuses a paused job, and the refusal reports success with the run not executed. The tool call returns `success` true with `executed` false. The reason sits in `execution_skipped`: "Job is paused/disabled; resume it before running." (read in the harness code: `cron/jobs.py`, `claim_job_for_fire`, and `tools/cronjob_tools.py`, `_claim_for_manual_run`). Resume the job first, with the form under "Paused jobs".
 - The run is recorded like a scheduled one. `hermes cron runs <id>` lists it, and its output lands in the output directory named under Scheduling.
-- A killed run leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The operator ends it with `bin/journal tick end <tick id> --outcome stopped-run-killed`. The tick id is the number in the `tick-hung` alarm. Send one line that names the cause on stdin. Remove the run's tree as item 1 of the `tick.md#end-the-tick` section of `tick.md` says.
+- A killed run leaves a `running` attempt behind. Hermes marks it `unknown` at the next manual run or the next scheduler start. The journal's tick stays open. The journal's `tick-hung` alarm reports it when a later tick of the role starts. The tick id is the number in the `tick-hung` alarm. The operator removes the run's tree and folder as item 1 of the `tick.md#end-the-tick` section of `tick.md` says. Then the operator ends the tick with `bin/journal tick end <tick id> --outcome stopped-run-killed`. Send one line on stdin that names the cause and any failed remove.
 - The job's `--workdir` is the session's project. Hermes loads project files such as `AGENTS.md` from it. Those are the installation's files. They are never a precinct's files.
 
 `hermes chat --oneshot -q "<tick prompt>" -s <skill name>` also runs a role, from the installation directory. Hermes does not record such a run. Use it only while developing a skill.
@@ -114,12 +114,13 @@ Refused, seen in scheduled runs:
 - a shell started with `-c`, with or without other flags: `bash -c`, `bash -o pipefail -c`;
 - an interpreter started with `-c`: `python3 -c`;
 - a recursive delete: `rm -rf`;
+- a delete run by `find`: `find … -exec rm`;
 - the tool `execute_code`, which runs local Python and is blocked because no user is present (seen in a job's run);
 - a redirect whose target is a system path, such as a path under `/etc/`, or on macOS under `/private/tmp/`, `/private/var/`, `/private/etc/` or `/private/home/`. The temporary folders of macOS lie there. The check names it "overwrite system file via redirection" (read in the harness code: `tools/approval_detection.py`, the redirect rule and `_SYSTEM_CONFIG_PATH`).
 
 A role removes a folder without a recursive delete. The form below passed the harness's check function as a role sends it.
 
-- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rm runs/<tick id>/pull-body.md` when the journal left it, then `rmdir runs/<tick id>`. The `rm` was not checked with the harness's check function.
+- A tree of the clone, then its folder: `git -C precincts/<p> worktree remove --force runs/<tick id>/tree`, then `rm` of each file the folder holds, such as `runs/<tick id>/pull-body.md`, then `rmdir runs/<tick id>`. A tick with no tree starts at the `rm`. A plain `rm` of a file and `rmdir` passed, seen in scheduled runs.
 
 Refused, checked with the harness's check function and not seen in a scheduled run:
 

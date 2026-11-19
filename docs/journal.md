@@ -37,7 +37,7 @@ Each call of `law-update` is one pass over these steps. The pass ends at the fir
 
 The command opens no database and writes no tick, because the tick does not exist yet. It writes nothing into the law folder. It changes neither `bin/journal` nor `config.yaml`: only the `law-sync` of the checked file does. It prints fixed lines and values that passed their classes. It never prints a word of the output of your commands. One exception: after the character layer, it prints the `ALARM contract-changed` lines and the first line of the error output of the new binary's `law-sync`.
 
-After a stop at step 6 or later, the journal removes the folder of the release. A failed file operation in these steps is a stop too, never exit 1. These are the failures: the folder cannot be removed or made, a release file cannot be read, or the asset cannot be made executable. After success the folder stays.
+After a stop at step 6 or later, the journal removes the folder of the release. A failed file operation in these steps is a stop too, never exit 1. These are the failures: the folder cannot be removed or made, a release file cannot be read, or the asset cannot be made executable. After success the journal removes the folder too.
 
 ### What `law-update` prints
 

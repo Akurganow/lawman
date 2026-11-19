@@ -150,7 +150,7 @@ Write one Spec per tick. Write nothing else.
 
 ### Step 6: end the tick
 
-Run the `tick.md#end-the-tick` section. The spec writer creates no tree, so its first item does not apply.
+Run the `tick.md#end-the-tick` section.
 
 The outcome is `specified` after a written Spec whose read-back passed. Otherwise it is the token that the step ending the tick names.
 

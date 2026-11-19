@@ -15,7 +15,7 @@ import { join, relative } from "node:path";
 import * as clean from "./clean";
 import { EXIT } from "./db";
 import { capturedAsync, inprocAsync, type Result } from "./inproc";
-import { noDatabase, shasum, snapshot } from "./law-sync-test-fixture";
+import { noDatabase, snapshot } from "./law-sync-test-fixture";
 import { assetName, lawUpdate } from "./law-update";
 import {
 	ASSET,
@@ -159,7 +159,7 @@ describe("law-update: the update with three commands", () => {
 			"verify",
 		]);
 		expect(assetRuns()).toEqual([syncCall()]);
-		expect(statSync(assetPath()).mode & 0o111).not.toBe(0);
+		expect(existsSync(releaseFolder())).toBe(false);
 		expect(binaryText()).toBe(OLD_BINARY);
 		expect(configText()).toBe(originalConfig);
 	});
@@ -613,13 +613,11 @@ describe("law-update: the steps the role does, the answers and the folder", () =
 		expectStop(await run(), "the check could not run");
 	});
 
-	test("the second pass of the role does not call release again and the asset bytes stay", async () => {
+	test("the second pass of the role does not call release again", async () => {
 		noVerify();
 		await run();
-		const first = shasum(assetPath());
 		expect((await run("--verify", "passed")).out).toBe(synced);
 		expect(calls("release")).toEqual([releaseCall()]);
-		expect(shasum(assetPath())).toBe(first);
 	});
 
 	test.each([
