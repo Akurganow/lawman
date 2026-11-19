@@ -4,6 +4,15 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.9 - 2026-11-19
+#### Bug Fixes
+- (**departments**) state the Required rule everywhere the rotation is described (78f295a)
+- (**departments**) give no patrol order to a department that needs a missing document (703b164)
+- (**duty-desk**) normalize a judging path before the tree lookup (08ecc83)
+
+- - -
+
+
 ## v3.0.8 - 2026-11-19
 #### Bug Fixes
 - (**assembly**) order the verifier rule and keep a refusal outside the menu (5649a69)
