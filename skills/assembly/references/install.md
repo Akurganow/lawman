@@ -118,7 +118,7 @@ Proposes, as rows with their source. The rows are the notes, the recorded action
 | Credential | the place it lives, never its value | found |
 | Issues and templates | how the host keeps them | found |
 | Host actions | one row for each action, with how this machine does it | found |
-| Verifier | the verifier, or the refusal | found, chosen or declined |
+| Verifier | the verifier, or the refusal | current, found, chosen or declined |
 
 The why line for the login: every role writes as this account, and the journal counts the markers it writes.
 
@@ -126,7 +126,7 @@ Decides: ask in the question tool.
 
 - The tool, when several reach the host. The user chooses.
 - The host, when the finds do not show it.
-- The verifier, as "Choose the method of verification" in `references/commands.md` says.
+- The verifier, when "Choose the method of verification" in `references/commands.md` says to ask.
 
 Stops:
 
