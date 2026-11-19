@@ -50,14 +50,14 @@ Each entry of issues:
   title: the title
   url: the address that opens the issue in a browser, as the host reports it. Leave it out when the host gives none
   createdAt, closedAt: times. closedAt is null while the issue is open
-  author.login: the login of its author
+  author: the login of its author
   body: the body text
   comments: comments by people and accounts, oldest first.
     The host's own event notes are not comments
 
 Each comment:
   id: the host's id of the comment, as text, the one that reads it back later
-  author.login: the login of its author
+  author: the login of its author
   body: the body text
   createdAt: a time
   approvedBy: the logins that reacted with the thumbs up reaction, every page read

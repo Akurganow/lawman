@@ -1,4 +1,11 @@
-import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import {
+	authorLogin,
+	inputRejected,
+	isRecord,
+	loginList,
+	text,
+	timeOf,
+} from "./form";
 import { linkOrNull } from "./link";
 import type { GhIssue } from "./markers";
 
@@ -30,13 +37,10 @@ export const syncInput = (why: string) =>
 const timeField = (v: unknown, what: string) => timeOf(v, what, syncInput);
 const logins = (v: unknown, what: string) => loginList(v, what, syncInput);
 
-// an author is an object with a login or null; a silent null would lose the identity
+// the author as { login }, or null when the host gives none
 function authorOf(raw: Record<string, unknown>, what: string) {
-	const author = raw.author;
-	if (author === undefined || author === null) return null;
-	if (!isRecord(author) || typeof author.login !== "string")
-		throw syncInput(`${what} is an object with a login or null`);
-	return author.login === "" ? null : { login: author.login };
+	const login = authorLogin(raw.author, what, syncInput);
+	return login === "" ? null : { login };
 }
 
 function readComment(c: unknown): SyncComment {

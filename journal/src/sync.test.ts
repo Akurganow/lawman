@@ -403,6 +403,7 @@ describe("sync", () => {
 		["an app login", { login: "app/renovate", is_bot: false }],
 		["no author", null],
 		["an empty login", { login: "" }],
+		["a login as text", "reporter"],
 	])("an issue by %s is stored and counted", (_name, author) => {
 		const r = sync([
 			issues[0],
@@ -486,7 +487,7 @@ describe("sync", () => {
 		expect(rows("SELECT issue FROM markers")).toEqual([{ issue: 60 }]);
 	});
 
-	test("an author that is no object with a login is rejected", () => {
+	test("a non-login author is rejected", () => {
 		sync(issues);
 		const before = snapshot();
 		const r = sync([
@@ -495,18 +496,18 @@ describe("sync", () => {
 				state: "OPEN",
 				title: "x",
 				createdAt: CREATED,
-				author: "reporter",
+				author: 7,
 				comments: [],
 			},
 		]);
 		expect(r.code).toBe(4);
 		expect(r.err).toContain(
-			"journal: sync input rejected, cache untouched: an author is an object with a login or null",
+			"journal: sync input rejected, cache untouched: an author is a login, an object with a login, or null",
 		);
 		expect(snapshot()).toEqual(before);
 	});
 
-	test("a comment author that is no object with a login is rejected", () => {
+	test("a non-login comment author is rejected", () => {
 		sync(issues);
 		const before = snapshot();
 		const r = sync([
@@ -516,14 +517,12 @@ describe("sync", () => {
 				title: "x",
 				createdAt: CREATED,
 				author: { login: "someone" },
-				comments: [
-					{ id: "C1", author: "reporter", body: "hi", createdAt: CREATED },
-				],
+				comments: [{ id: "C1", author: 7, body: "hi", createdAt: CREATED }],
 			},
 		]);
 		expect(r.code).toBe(4);
 		expect(r.err).toContain(
-			"journal: sync input rejected, cache untouched: a comment author is an object with a login or null",
+			"journal: sync input rejected, cache untouched: a comment author is a login, an object with a login, or null",
 		);
 		expect(snapshot()).toEqual(before);
 	});

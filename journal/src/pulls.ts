@@ -8,7 +8,14 @@ import {
 	withheldCount,
 } from "./cache-text";
 import { EXIT, Fail, inTransaction, isConstraint, now, withDb } from "./db";
-import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import {
+	authorLogin,
+	inputRejected,
+	isRecord,
+	loginList,
+	text,
+	timeOf,
+} from "./form";
 import { readConfig, trustedAuthors } from "./input-files";
 import { linkOrNull } from "./link";
 import { asciiLower, extractMarkers, isTrusted, stripCr } from "./markers";
@@ -68,7 +75,7 @@ function readComment(raw: unknown): Comment {
 	return {
 		id: text(raw.id),
 		url: linkOrNull(raw.url),
-		author: text(raw.author),
+		author: authorLogin(raw.author, "a comment author", reject),
 		createdAt: timeField(raw.createdAt, "a comment createdAt"),
 		body: text(raw.body),
 		approvedBy: logins(raw.approvedBy, "a comment approvedBy"),
@@ -206,7 +213,7 @@ export function readPulls(
 	for (const raw of pulls) {
 		if (!isRecord(raw) || !Number.isInteger(raw.number))
 			throw reject("every pull request needs an integer number");
-		const author = text(raw.author);
+		const author = authorLogin(raw.author, "an author", reject);
 		const byTrusted = isTrusted(trusted, author);
 		if (!byTrusted && !isTrusted(writers, author)) continue;
 		const pull = readPull(raw);

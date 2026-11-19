@@ -49,6 +49,25 @@ describe("readPulls validity", () => {
 	test("a well-formed list with no pull requests reads as no rows", () => {
 		expect(readOf([])).toEqual([]);
 	});
+
+	test("an author or a comment author that is no login is rejected", () => {
+		const pull = { number: 1, author: { login: 7 } };
+		rejects(
+			JSON.stringify({ writers: [], pulls: [pull] }),
+			/an author is a login/,
+		);
+		const commented = {
+			number: 1,
+			author: BOT,
+			closes: [],
+			comments: [{ id: "C1", author: 7 }],
+			changesRequested: [],
+		};
+		rejects(
+			JSON.stringify({ writers: [], pulls: [commented] }),
+			/a comment author is a login/,
+		);
+	});
 });
 
 describe("readPulls rows", () => {
@@ -60,10 +79,11 @@ describe("readPulls rows", () => {
 				{ number: 3, author: "lawman-bot" },
 				{ number: 4 },
 				{ number: 5, author: "Alice" },
+				{ number: 6, author: { login: "Lawman-Bot" } },
 			],
 			["alice"],
 		);
-		expect(rows.map((r) => r.number)).toEqual([1, 3, 4, 5]);
+		expect(rows.map((r) => r.number)).toEqual([1, 3, 4, 5, 6]);
 	});
 
 	test("a pull request with no link keeps an empty issues string", () => {
@@ -199,6 +219,11 @@ describe("readPulls spec vote", () => {
 		const fresh = { ...spec({ up: ["maint-a"] }), at: "2026-10-14T11:00:00Z" };
 		expect(voteOf([fresh, old])).toBe("up");
 		expect(voteOf([old, fresh])).toBe("up");
+	});
+
+	test("a Spec marker whose author is an object with the bot's login counts", () => {
+		const byBot = { ...spec({ up: ["maint-a"] }), author: { login: BOT } };
+		expect(voteOf([byBot])).toBe("up");
 	});
 
 	test("a Spec marker by another author is ignored", () => {

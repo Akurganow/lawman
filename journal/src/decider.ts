@@ -1,6 +1,13 @@
 import { check, usage } from "./args";
 import { out, readStdin } from "./db";
-import { inputRejected, isRecord, loginList, text, timeOf } from "./form";
+import {
+	authorLogin,
+	inputRejected,
+	isRecord,
+	loginList,
+	text,
+	timeOf,
+} from "./form";
 import { asciiLower } from "./markers";
 
 const NO_ACTOR = "-";
@@ -32,7 +39,7 @@ export type CheckObject = {
 function readComment(c: unknown): CheckComment {
 	if (!isRecord(c)) throw reject("a comment is not an object");
 	return {
-		author: text(c.author),
+		author: authorLogin(c.author, "a comment author", reject),
 		createdAt: timeOf(c.createdAt, "a comment createdAt", reject),
 		body: text(c.body),
 	};
