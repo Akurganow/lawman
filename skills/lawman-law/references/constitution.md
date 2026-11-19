@@ -43,7 +43,7 @@ The quoted heading narrows the read to one section.
 
 ### Departments
 
-Every department page in Lawman's `departments/`, except `licenses`, is in this repository's rotation with no line.
+Every department page in Lawman's `departments/`, except `licenses`, is in this repository's rotation with no line. A page that opens its Judged by section with `Required:` gets a patrol order only when a Departments line names a path that the tree holds.
 A line names a department of this repository. It may also name the document that judges a department of Lawman. One per line:
 
 - `- <name>: judged by <path>`

@@ -23,9 +23,8 @@ code disagree, with nobody attacking anything?
 Start with the promise. Its document is the one that the constitution's
 Departments line names for this department, not one found by a search. Read it
 line by line. Show the census in the report: the promise, its sections, and
-each data item it names. A precinct with no such document has no promise to
-judge by. Every check is then inapplicable. Quote the empty census as the
-exhibit. File nothing. The sweep ends there.
+each data item it names. When the tree lacks that document, say so and file
+nothing.
 
 Follow each data item of the promise from where the code makes it to every
 place it can go.
@@ -112,9 +111,8 @@ Risk is the chance that the fix breaks something.
 Threshold: value 3 or more.
 
 ## Judged by
-The role of the privacy promise: the document of the precinct that tells its
-users what happens to their data, and what it records as accepted. Without
-one, nothing is judged and every check is inapplicable.
+Required: the role of the privacy promise, the document of the precinct that
+tells its users what happens to their data and what it records as accepted.
 
 ## Lead body
 Add two sections after `Why it is <kind>`. `The promise`: the line or lines of

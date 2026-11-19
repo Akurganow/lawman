@@ -1,4 +1,5 @@
 import type { Database } from "bun:sqlite";
+import { posix } from "node:path";
 import { isFresh, reconcileAlarms } from "./alarms";
 import { check, count, fits, parseArgs, usage } from "./args";
 import { consents, licensesAllowed } from "./consent";
@@ -48,7 +49,12 @@ type Precinct = {
 	synced_at: string | null;
 	pulls_synced_at: string | null;
 };
-type Reading = { revision: string; files: string; lines: string[] };
+type Reading = {
+	revision: string;
+	files: string;
+	// the constitution's Departments lines: name and judging path, or `none`
+	departments: [string, string][];
+};
 // What one read of a precinct found. `cause` is the recorded lack of an unusable constitution.
 // A read that failed before the constitution has neither a reading nor a cause.
 type Read = { reading: Reading | null; cause: Lack | null };
@@ -131,7 +137,7 @@ async function readPrecinct(p: string, blockers: string[]): Promise<Read> {
 		reading: {
 			revision,
 			files: files.text,
-			lines: lint.departments.map(([name]) => name),
+			departments: lint.departments,
 		},
 		cause: null,
 	};
@@ -156,10 +162,11 @@ async function chooseDepartment(
 	config: string | null,
 	blockers: string[],
 ): Promise<string | null> {
-	for (const d of [...shared, ...reading.lines])
+	const lines = reading.departments.map(([name]) => name);
+	for (const d of [...shared, ...lines])
 		if (!fits("department", d))
 			blockers.push(`${p}: a department name outside its class`);
-	const names = departmentNames(shared, reading.lines).filter((d) =>
+	const names = departmentNames(shared, lines).filter((d) =>
 		fits("department", d),
 	);
 	const turns = withDb((db) => rotationOrder(db, p, PATROL, names));
@@ -174,6 +181,17 @@ async function chooseDepartment(
 		const { page, lint } = found;
 		if (lint.reasons.length > 0) {
 			blockers.push(`${p}: department ${d} page check failed`);
+			continue;
+		}
+		// a page that works only with a judging document counts as capped where no line names one in the tree
+		const documented = reading.departments.some(
+			([name, path]) =>
+				name === d &&
+				path !== "none" &&
+				listed(reading.files, posix.normalize(path)),
+		);
+		if (lint.requiresDocument && !documented) {
+			capped = true;
 			continue;
 		}
 		// a law clone page of licenses without the precinct's consent counts as capped

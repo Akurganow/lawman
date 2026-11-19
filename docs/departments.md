@@ -26,7 +26,7 @@ A page whose department can find a live secret names an `Alarm check:` paragraph
 
 ## Shared pages
 
-Lawman ships thirteen shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has the others in its rotation with no line in its constitution. The page `licenses` is the exception.
+Lawman ships thirteen shared pages in [departments/](../skills/lawman-law/references/departments). Every precinct has the others in its rotation with no line in its constitution. The page `licenses` is the exception. A page that opens Judged by with `Required:`, such as `privacy`, gets patrol orders only when a Departments line names a path that the tree holds.
 
 | Department | Subject |
 | :-- | :-- |
@@ -83,7 +83,7 @@ The journal picks the department for each patrol order when the duty desk starts
 - It lists the departments of each precinct: the shared page names plus the names on the constitution's Departments lines.
 - It sorts them. A department never visited comes first. Then the oldest visit comes first.
 - It walks the list from the top and resolves each page.
-- It takes the first department whose page passes and whose cap is above zero.
+- It takes the first department whose page passes and whose cap is above zero. A page that opens Judged by with `Required:` also needs a Departments line that names a path that the tree holds.
 - It writes one patrol order for each precinct that has no open patrol order.
 
 A department at cap 0 is skipped, unless its page has an `Alarm check:` paragraph. A bad page goes into the blockers of the tick. When every department of a precinct is skipped, that precinct gets no patrol order in that tick.
@@ -99,7 +99,7 @@ A department may have a document in the precinct that tries its findings. The pa
 - `- <name>: judged by <path>` names the document.
 - `- <name>: judged by none` says no document judges the department yet.
 
-A department with no line is judged by none. Its page then judges by its own words, or says that nothing is judged. A judging document is evidence. It can protect a shape. It never convicts.
+A department with no line is judged by none. Its page then judges by its own words. A page that cannot work without the document starts its Judged by section with `Required:`, as `privacy` does. Such a department gets a patrol order only when a Departments line names a path that the tree holds. A judging document is evidence. It can protect a shape. It never convicts.
 
 ## Add a department
 

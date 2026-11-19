@@ -132,6 +132,51 @@ describe("the consent to the licenses department", () => {
 	});
 });
 
+describe("a department page that requires a judging document", () => {
+	// Only the shared page of privacy stays, marked as requiring the document.
+	const privacyOnly = () => {
+		setUp({ main: 1 });
+		for (const f of readdirSync(references("departments")))
+			if (f !== "privacy.md" && f.endsWith(".md"))
+				rmSync(references("departments", f));
+	};
+	const WITH = (line: string) =>
+		CONSTITUTION.replace(
+			/## Departments\n\n(- .*\n)+/,
+			`## Departments\n\n${line}`,
+		);
+
+	test.each([
+		["no line", "none\n"],
+		[
+			"a line with a path absent from the tree",
+			"- privacy: judged by docs/PRIVACY.md\n",
+		],
+	])("%s: no patrol order and no Blockers entry", (_, line) => {
+		privacyOnly();
+		hostOf("main", { ...WORK, tree: { "LAWMAN.md": WITH(line) } });
+		const r = startDesk();
+		expect(patrolOn("main")).toEqual([]);
+		expect(reportOf(r.out, "Blockers")).toBe("Blockers: none");
+	});
+
+	test.each(["docs/PRIVACY.md", "./docs/PRIVACY.md"])(
+		"a line with %s, which the tree holds, gives the patrol order",
+		(path) => {
+			privacyOnly();
+			hostOf("main", {
+				...WORK,
+				tree: {
+					"LAWMAN.md": WITH(`- privacy: judged by ${path}\n`),
+					"docs/PRIVACY.md": "# Privacy\n",
+				},
+			});
+			startDesk();
+			expect(patrolOn("main").map((o) => o.department)).toEqual(["privacy"]);
+		},
+	);
+});
+
 // the stale rule of each role reads the cached stage: the cache below gives a closed issue and a pull request without work
 const STALE = {
 	issues: {
