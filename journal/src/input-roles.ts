@@ -29,6 +29,10 @@ export type RoleInput = {
 
 export const HARNESS_SECTIONS = ["Silence"];
 
+// sections of the installation's host.md, and the roles that commit and push
+export const HOST_SECTIONS = ["Commit and publish"];
+export const HOST_READERS = ["clerk", "executor"];
+
 export const DUTY_DESK = "duty-desk";
 
 // the ten roles; the first nine hold a case or a pull, the duty desk wakes them

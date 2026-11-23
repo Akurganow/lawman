@@ -85,12 +85,13 @@ Take the first mode that holds. After amend, catalog, licenses or roles ends wit
         - A scheduled job that "Translation" in `references/roles.md` would change, found as "Entry mode" there says: "Roles".
         - An installation with every command empty in `bin/journal commands`: "Host".
         - A precinct with every command empty in `bin/journal commands <precinct>`: "Precincts".
+        - A `host.md` with no record `Commit and publish`: "Host". Commits and publishes act as the machine's identity until then.
     - One empty command among others is the person's choice. Offer nothing for it.
     - Ask in the question tool, with one single-choice question and four choices: "Keep as is" (recommended), "Roles", "Precincts" and "Host". "Keep as is" stays first. While a case remains, the choice that mends the first case carries the recommendation in its place. After that part ends, ask again. A case that the part left unmended is said again.
     - For "Keep as is", end the run. Say "Nothing changed" only when this run applied nothing.
     - For "Precincts", ask in the question tool, with four jobs: add a precinct, raise a weight, add a department and re-check a precinct. When a precinct has no command, put "re-check a precinct" first. This question offers no "Keep as is". Read `references/precinct.md` and follow the section with the job's name.
     - For "Roles", run `references/roles.md` for all roles. That covers the role entry and the limits.
-    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `acting_login`.
+    - For "Host", run part Host of `references/install.md` again. Its Apply rewrites `host.md`, sets the clones, writes `shared/`, proves the commands of the installation and may install a verifier. It serves a change of tool. It never changes `acting_login`.
     - The menu writes nothing before Apply. It adds no delivery or TypeSafe choice.
 
 Tell the developer the mode and the reason in one sentence. Then say one line that names the steps of the mode, in order.
@@ -159,6 +160,7 @@ Check for a secret only after the developer chooses the feature that needs it. L
 ## Rules
 
 - Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action. A step may also name what to watch for, such as a list that spans pages.
+- Every clone under `precincts/` carries the settings of the record `Commit and publish` of the host notes. Its commits and publishes then act as the acting login. Set them when you make a clone, and in part Host for every clone. When the notes lack the record, find it as part Host finds other host actions, and record it. Commit and publish a branch only by that record.
 - Before you run or write anything, here or on the host, tell the user in one line what you are about to do.
 - Write what you say to the user in the user's language.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.

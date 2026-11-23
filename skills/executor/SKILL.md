@@ -39,6 +39,7 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
   - Merge the host's default branch with a message. Abort a merge.
   - During a conflict, list the conflicted paths. A conflict in `LAWMAN.md` aborts the merge, as the `work.md#merge-path` recipe says.
   - The one push. It adds commits to the head branch of this pull request.
+  - Commit and push by the record `Commit and publish` of the role group.
 - No other tree action is forbidden, except the next list.
 - Pass every comment body and every commit message through standard input or the quoted heredoc of the `tick.md#working-rules` section.
 - Read a precinct file only as its content at `<ref>`, taken from the clone.
@@ -61,6 +62,7 @@ These actions are forbidden. Each has its boundary:
 These are the only host actions the executor takes. The fixed syncs of the tracker and of the pull requests are the other actions. The `tick.md#sync-the-tracker` and `tick.md#sync-the-pull-requests` sections of the tick file say how they run. `<owner/repo>` is the repository of the order.
 
 - Ask which account the tool in the host notes acts as.
+- With a line `self host` in the role group, ask the host which commit identity it maps to the acting login.
 - Read pull request `<m>`. Its facts are its state, its draft state, its merge state, its base branch, its head branch and its head commit. They also cover whether its head lives in another repository, its title, its body, its conversation comments and its reviews. A read of fewer of these is allowed.
 - Read every page of the inline remarks of pull request `<m>`.
 - Read source issue `<s>`: its title, its body and its comments.
@@ -113,7 +115,7 @@ A pull request that is not open at any read of its state ends the tick with `sil
    ```
    Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>`, `self harness <path> <section>` or `self host <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role executor --part <k>
    ```

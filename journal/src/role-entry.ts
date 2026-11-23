@@ -10,7 +10,14 @@ import {
 	readText,
 } from "./input-files";
 import { type Block, framed, pack } from "./input-parts";
-import { DUTY_DESK, HARNESS_SECTIONS, inputOf, lawOf } from "./input-roles";
+import {
+	DUTY_DESK,
+	HARNESS_SECTIONS,
+	HOST_READERS,
+	HOST_SECTIONS,
+	inputOf,
+	lawOf,
+} from "./input-roles";
 import { commandFolder } from "./launch";
 import { sectionsOf } from "./law-sections";
 import { configValue } from "./law-sync";
@@ -23,8 +30,13 @@ const selfLine = (kind: string, path: string, section: string): Block => ({
 });
 
 // A file or a section the journal cannot give stands as a step the role does itself.
-function fileBlocks(kind: string, path: string, wanted: string[]): Block[] {
-	const text = readText(join(commandFolder(), REFERENCES, path));
+function fileBlocks(
+	kind: string,
+	path: string,
+	wanted: string[],
+	base = join(commandFolder(), REFERENCES),
+): Block[] {
+	const text = readText(join(base, path));
 	if (text === null) return wanted.map((s) => selfLine(kind, path, s));
 	const head = `${kind} ${path}`;
 	const blocks = sectionsOf(text, wanted).map(
@@ -58,6 +70,10 @@ export function roleParts(
 	const law = [
 		...lawOf(role).flatMap(([path, wanted]) => fileBlocks("law", path, wanted)),
 		...harnessBlocks(config),
+		// the installation's host notes reach only the roles that commit and push
+		...(HOST_READERS.includes(role)
+			? fileBlocks("host", "host.md", HOST_SECTIONS, commandFolder())
+			: []),
 	];
 	// the role takes up to its number of orders per session, so the group lists that many
 	const jobs = jobsOf(configValue(config ?? "", "jobs"), role);

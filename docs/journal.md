@@ -441,9 +441,10 @@ The role group is the local part of the input. Its blocks come in this order:
 
 1. The sections of the law that the role reads at the start. A line `law <path>` stands before the sections of each file. The path is relative to `lawman/skills/lawman-law/references/`, as in `law LAW.md` and `harness harnesses/hermes.md`.
 2. The section `Silence` of the harness page. The key `harness` of `config.yaml` names the page. A line `harness <path>` stands before it.
-3. One line per order the role can take, up to the number of jobs of the role (`jobs` in `config.yaml`, see [configuration](configuration.md#jobs-and-progress-checks)). Orders nobody took come first, then taken ones. Within each group the oldest order comes first. Patrol lists its orders by weight: the precinct that the credit picks first, then by credit plus weight, then by name. Taking a patrol order moves the credit. Each precinct with an order that can be taken gains its weight, and the precinct taken loses the sum.
+3. For the clerk and the executor, the record `Commit and publish` of the installation's `host.md`. A line `host host.md` stands before it.
+4. One line per order the role can take, up to the number of jobs of the role (`jobs` in `config.yaml`, see [configuration](configuration.md#jobs-and-progress-checks)). Orders nobody took come first, then taken ones. Within each group the oldest order comes first. Patrol lists its orders by weight: the precinct that the credit picks first, then by credit plus weight, then by name. Taking a patrol order moves the credit. Each precinct with an order that can be taken gains its weight, and the precinct taken loses the sum.
 
-Every line of a law section and of the harness page prints behind `| `, and an empty line prints as `|`. After the prefix the text follows byte for byte. So no line of the group starts with a backtick, whatever the law holds. A line without the prefix is a line of the journal.
+Every line of a law section, of the harness page and of the host notes prints behind `| `. An empty line prints as `|`. After the prefix the text follows byte for byte. So no line of the group starts with a backtick, whatever the law holds. A line without the prefix is a line of the journal.
 
 A section is its heading and everything up to the next heading of the same or a higher level. The intro is everything before the first second-level heading. The sections of a file print in the order of the document. A Markdown parser finds the headings.
 
@@ -567,8 +568,9 @@ The frame of a part:
 The role group:
 
 - `law <path>`;
-- `| <line of the law or the harness page>`, and `|` for an empty line;
+- `| <line of the law, the harness page or the host notes>`, and `|` for an empty line;
 - `harness <path>`;
+- `host <path>`;
 - `order <id> <precinct> <repository> <department|-> <issue or pull request number|->`.
 
 The tick group:
@@ -609,6 +611,7 @@ The line `self law-version` of the tick group is not the line that `law-update` 
 | `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
+| `host <path> <section>` | the row `host` of the table of self steps in the intro of `tick.md` |
 
 ### Parts
 

@@ -9,7 +9,7 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 - `lawman/`, the link to the plugin folder
 - `bin/journal`, the journal binary
 - `journal.sqlite`, the database
-- `precincts/`, the clones of the precincts
+- `precincts/`, the clones of the precincts. The assembly sets each clone so that its commits and publishes act as `acting_login`
 - `runs/`, where the journal makes the release folder of an update, the folder of `run-installation` and the catalog state of a tick, and where roles keep their trees
 - `host.md`, the host notes
 - `configs/` and `shared/`, the commands of the precincts and of the installation
@@ -45,6 +45,7 @@ Each command is either proved in the scheduler's environment or not. A proof the
 - The host, the tool that reaches it, the account the host reports for that tool and the place where its credential lives.
 - How the host keeps issues and their templates, and anything particular to this host.
 - The action record: for each host action that the role skills name, how this machine does it with the chosen tool. That includes handing host data to the journal in its forms. `journal form` prints them. Three actions serve the move of the old precedents: reading a file at the revision of a pull request, writing to the branch of a pull request and turning the link of an old precedent line into an issue number. The notes keep every line, even when a command now does the same work, because the roles read the notes for the steps they do themselves.
+- The record `Commit and publish`: the settings that make each clone commit and publish as `acting_login`. It also says how a role commits and publishes in a tree. The journal prints it to the clerk and the executor.
 - The verifier of Lawman's release, or the record that you declined one. An update uses it only when `shared/` has no `verify` command. The assembly replaces the record of the binary check only after the commands of the installation passed their proof.
 - The section `## Dependency reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the catalog check. The words say which dependencies to check, where they are listed and by what way they are read, or `none` when the precinct lists no dependencies. You and the assembly agree the line when the precinct joins or when the assembly asks for the missing answer. The way never runs code of the precinct or a tool that the precinct configures. The patrol reads the line and checks only what it names. A precinct that said yes and has no line gets no check. Rewriting the notes in part Host keeps every line of this section.
 - The section `## License reading`, with one line `- <precinct name>: <words>` for each precinct that said yes to the license question. Nested lines under it hold the blocks of the agreed license sources, which the assembly copies word for word from the file of each row. You see the whole entry before the assembly writes it. The entry says, for each ecosystem of the precinct, whether its lock records the license and which sources are agreed, in order. It also keeps the rows you refused. It holds `none` when nothing is agreed. Rewriting the notes in part Host keeps every line of this section too.
@@ -84,7 +85,7 @@ The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. T
 | `release_tag` | The tag of the release that the law and the journal came from. | The assembly at install, then `law-sync` |
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
-| `acting_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role acts as this one identity. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
+| `acting_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role acts as this one identity, in its commits and publishes too. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
 | `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority, and whether the clerk may ask it which departments to add to those the court named for a precedent. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief and the clerk its precedent request. | The assembly when it adds a precinct |
