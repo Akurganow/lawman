@@ -4,6 +4,18 @@ All notable changes to Lawman are listed here, newest first. The bump workflow w
 
 - - -
 
+## v3.0.12 - 2026-11-23
+#### Bug Fixes
+- (**assembly**) compare the read-back commit identity with the acting login (b9a8a67)
+- set the clones before the record, and cover merge commits (244ce67)
+- reach existing installations and let roles work without the record (e976c2c)
+- commit and publish as the acting login (a2d5d6e)
+#### Documentation
+- (**assembly**) name what a failed clone setting leaves (17f8b98)
+
+- - -
+
+
 ## v3.0.11 - 2026-11-19
 #### Bug Fixes
 - judge the journal alarms after the take in tick start (de2e2d9)
