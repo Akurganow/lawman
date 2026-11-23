@@ -248,7 +248,7 @@ Apply starts after the approval of phase 1. The order is the same for the first 
 
 In Apply, "the method" is the verifier or the refusal of the signature in the approved proposal of part Host. `host.md` gets its record only at step 5, so no step before it reads the method from the notes.
 
-1. Give every clone under `precincts/` the settings of the approved record `Commit and publish`. Read back the identity a commit in each would name. Then write the host notes, with no new record about the verification of the binary. The earlier record stays.
+1. Give every clone under `precincts/` the settings of the approved record `Commit and publish`. Read back the identity a commit in each would name. It must equal the identity that the host maps to `acting_login`. A mismatch fails like a failed read. Then write the host notes, with no new record about the verification of the binary. The earlier record stays.
 2. Install the verifier that the developer chose, when it is not on this machine.
 3. Get the release files. On the first install, go on: check the sum and the signature, install the binary and probe it.
 4. Where the page's "One-off run" needs the Lawman agent, find it first. When it is missing, show the lines of a new agent. Wait for the developer to create it, by items 1 and 8 of "Apply" in `references/roles.md`. Create no proof job before the agent exists. Then prove the commands of the installation through the journal on a throwaway base.
