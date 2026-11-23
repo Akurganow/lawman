@@ -9,7 +9,7 @@ An installation keeps its settings in one file, `config.yaml`. The file holds th
 - `lawman/`, the link to the plugin folder
 - `bin/journal`, the journal binary
 - `journal.sqlite`, the database
-- `precincts/`, the clones of the precincts
+- `precincts/`, the clones of the precincts. The assembly sets each clone so that its commits and publishes act as `acting_login`
 - `runs/`, where the journal makes the release folder of an update, the folder of `run-installation` and the catalog state of a tick, and where roles keep their trees
 - `host.md`, the host notes
 - `configs/` and `shared/`, the commands of the precincts and of the installation
@@ -84,7 +84,7 @@ The key `excluded_authors` holds `<precinct>=<login>,<login>` pairs or `none`. T
 | `release_tag` | The tag of the release that the law and the journal came from. | The assembly at install, then `law-sync` |
 | `release_repo` | The `<owner>/<repo>` of that release. | The assembly at install |
 | `journal_sha256` | The SHA-256 of `bin/journal`. | The assembly at install, then `law-sync` |
-| `acting_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role acts as this one identity. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
+| `acting_login` | The login that the repository host reports for the chosen tool when the assembly ran. Every role acts as this one identity, in its commits and publishes too. A bot login of the host, in the `name[bot]` form, is accepted. | The assembly at install |
 | `deliver` | The delivery routes for alarms, failures and stops of the law sync or the duty desk, one or several. | The assembly at install |
 | `typesafe` | `yes` or `no`. Whether the court may use TypeSafe Jev as evidence for a priority, and whether the clerk may ask it which departments to add to those the court named for a precedent. | The assembly at install |
 | `typesafe_precincts` | A list of `<precinct>=<yes\|no>` pairs, or `none`. It sets per precinct whether the court may send its brief and the clerk its precedent request. | The assembly when it adds a precinct |

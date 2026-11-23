@@ -10,6 +10,7 @@ import { captured, inprocAsync } from "./inproc";
 import { readConfig } from "./input-files";
 import {
 	HARNESS_SECTIONS,
+	HOST_READERS,
 	INTRO,
 	lawOf,
 	lawSections,
@@ -135,6 +136,9 @@ function expected(role: string): Expected[] {
 			head: "harness harnesses/hermes.md",
 			headings: named(HARNESS_SECTIONS, "### "),
 		},
+		...(HOST_READERS.includes(role)
+			? [{ head: "self host host.md Commit and publish" }]
+			: []),
 		...(role === "duty-desk" ? [] : [{ head: "order 1 main o/main - 3" }]),
 	];
 }
@@ -434,6 +438,24 @@ describe("a block the journal cannot give", () => {
 			expect(got).toContain("order 1 main o/main - 3");
 		},
 	);
+
+	test("host.md gives its section to the roles that commit and push, and to no other", async () => {
+		installation();
+		writeFileSync(
+			join(dir, "host.md"),
+			"## Host\n\n### Commit and publish\n\nPush as the acting login.\n\n### Other\n\nNot this.\n",
+		);
+		for (const role of ["clerk", "executor", "response-unit"]) {
+			orderFor(role);
+			const all = (await parts(role)).join("\n");
+			const has = all.includes("host host.md");
+			expect(has).toBe(role !== "response-unit");
+			if (has) {
+				expect(all).toContain("| Push as the acting login.");
+				expect(all).not.toContain("Not this.");
+			}
+		}
+	});
 });
 
 describe("in process", () => {

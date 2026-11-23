@@ -87,7 +87,7 @@ Record the tag as `release_tag`.
 
 ## Host
 
-In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Never shorten the notes: the roles read each record for the steps they do themselves. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
+In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. Under a heading `Commit and publish` they record the settings that make each clone commit and publish as that account, and how a role commits and publishes a branch in a tree of a clone. Every other record that commits or publishes uses that one. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Never shorten the notes: the roles read each record for the steps they do themselves. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
 
 Part Host keeps every line of `## License reading` in an existing `host.md` too. An item of that section has nested lines for its blocks. The license questions write it.
 
@@ -103,6 +103,7 @@ Finds:
 - Where the chosen tool keeps its credential. Learn the place and never the value.
 - How the host keeps its issues with their templates, and what is particular to it.
 - How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
+- How the own settings of each clone make the version-control tool commit and publish as the account the host reports. A commit names the author and committer that the host maps to that account. A publish authenticates with the chosen tool's credential, fresh at each publish. No credential that the machine keeps answers before it, and no credential value lands in a file. Ask the host whose identity each carries, with no write.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
 - The verifier of Lawman's release, by the paragraph above.
 
@@ -120,7 +121,7 @@ Proposes, as rows with their source. The rows are the notes, the recorded action
 | Host actions | one row for each action, with how this machine does it | found |
 | Verifier | the verifier, or the refusal | current, found, chosen or declined |
 
-The why line for the login: every role writes as this account, and the journal counts the markers it writes.
+The why line for the login: every role writes as this account, its commits and publishes included, and the journal counts the markers it writes.
 
 Decides: ask in the question tool.
 

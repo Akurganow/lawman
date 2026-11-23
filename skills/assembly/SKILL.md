@@ -159,6 +159,7 @@ Check for a secret only after the developer chooses the feature that needs it. L
 ## Rules
 
 - Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action. A step may also name what to watch for, such as a list that spans pages.
+- Every clone under `precincts/` carries the settings of the record `Commit and publish` of the host notes, so its commits and publishes act as the acting login. Set them when you make a clone, and in part Host for every clone. When the notes lack the record, find it as part Host finds other host actions, and record it. Commit and publish a branch only by that record.
 - Before you run or write anything, here or on the host, tell the user in one line what you are about to do.
 - Write what you say to the user in the user's language.
 - Never ask for, print, read or store a token or key value. A listing, an export, a copy or a test that shows a value counts as reading it. Never print the environment. Never run a command whose output can hold a value. Learn only whether a key is found.
