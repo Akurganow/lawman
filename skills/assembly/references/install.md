@@ -322,7 +322,7 @@ Write in this order.
 
 | Stop | What stays | What the next start does |
 | :-- | :-- | :-- |
-| Steps 1 to 4 | `shared/`, the record of verification and `config.yaml` are as before. The new `host.md` without the new record stays, with the verifier and the downloaded files. On the first install `bin/journal` may stand with no `config.yaml`, and an earlier binary is not replaced before the probe passes. | The first install enters the install again, because there is no `config.yaml`. A repeat needs the developer to run part Host again. |
+| Steps 1 to 4 | `shared/`, the record of verification and `config.yaml` are as before. The new `host.md` without the new record stays, with the verifier and the downloaded files. A failure while step 1 sets the clones leaves `host.md` as before, and each clone already set keeps its settings. On the first install `bin/journal` may stand with no `config.yaml`, and an earlier binary is not replaced before the probe passes. | The first install enters the install again, because there is no `config.yaml`. A repeat needs the developer to run part Host again. |
 | Step 5 between two writes | The new files of `shared/` and maybe the record of verification stay. `config.yaml` is as before, because it is written last. A repeat of Apply is safe. | The same. |
 | Step 6 | `config.yaml` is already written. | The next start does not enter the install. The roles mode adds the missing jobs, as `SKILL.md` says. |
 
