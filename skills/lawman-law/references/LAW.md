@@ -376,7 +376,7 @@ A role that closes a case, or proposes a closure to the court, names exactly one
 
 ## Terms
 
-- The acting login is the installation's login, the one identity of every role. Every write and the identity check use it alone. A commit names the acting login as its author and committer, and a publish to the host authenticates as the acting login. The identity and the credential that the version-control tool takes from the machine never stand in for it. A trusted author is the acting login or a login that `trusted_authors` in `config.yaml` names. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is adopted.
+- The acting login is the installation's login, the one identity of every role. Every write and the identity check use it alone. A commit names as its author and committer the identity that the host maps to the acting login. A publish to the host authenticates as the acting login. The identity and the credential that the version-control tool takes from the machine never stand in for it. A trusted author is the acting login or a login that `trusted_authors` in `config.yaml` names. Only an issue body or a comment of a trusted author carries a counted marker. Only a pull request of a trusted author is adopted.
 - A decider is a login that may write to the precinct's repository, as the host reports it, access inherited from a group included. Only a decider's reaction, close or reopen is a decision. The acting login may be a decider.
 - A pair is a pull request and its source issues. A source is an issue of the same repository that the pull request closes, or that a fingerprint line in its body names.
 

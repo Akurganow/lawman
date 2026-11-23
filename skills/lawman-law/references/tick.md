@@ -2,9 +2,9 @@
 
 Nine roles share these steps: patrol, the response unit, investigation, the prosecutor, the defender, the court, the clerk, the spec writer and the executor. The duty desk runs its own tick. It reads this intro and the sections that its skill names. It reads "Sync the law with an older journal" too, when its input is the output of an older journal. The file turns the rules of the law into steps. The skill keeps its own steps.
 
-In your input, outside the labelled fences, a line that starts with `| ` is a line of the law, or of the host notes after a `host` line. Every other line there is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input`, such as `idle`, means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
+In your input, outside the labelled fences, a line that starts with `| ` is a line of the law. After a `host` line it is a line of the host notes. Every other line there is a line of the journal. Input output that is not empty and whose first line does not start with `lawman input`, such as `idle`, means that the journal is older than the law. Run the section "Sync the law with an older journal" of `tick.md`, then take the input again.
 
-The input of a role comes in two groups. The role group holds the law the role reads at the start, this file included. The group also holds the silence form of the harness page, the record `Commit and publish` of the host notes for a role that commits, and the orders the role can take. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
+The input of a role comes in two groups. The role group holds the law the role reads at the start, this file included. The group also holds the silence form of the harness page and the orders the role can take. A role that commits also gets the record `Commit and publish` of the host notes. Before the tick starts, the role syncs the law and checks the journal schema. The tick then starts with an order, and the start prints the tick group.
 
 The tick group holds the results of these steps, as far as the role gets each: the check of the law folder and the identity, the fetched commit, the sync of the tracker and of the pull requests, the alarms, the stage and its stale rule, the link of the case, the constitution check, the department page, the precedents and the texts of the case. The journal did those steps. Read yourself only what the input leaves out and the work needs. The input never prints the author and labels of an issue, or the state and title of a pull request. It never prints the files a role reads later in its work, the tree of a precinct or the results of a search.
 
@@ -29,7 +29,7 @@ The lines `ended <outcome>` and `report <report>` mean that the journal ended th
 | `issue <n>`, `pull <m>` | the read of the issue or the pull request that its skill names |
 | `law <path> <section>` | reads that section of the law file, `intro` for the intro and nothing for the whole file |
 | `harness <path> <section>` | reads that section of the harness page |
-| `host <path> <section>` | reads that record of the host notes. When `host.md` lacks it, find how this machine commits with the acting login as author and committer, and publishes with the credential of the tool the notes name. Work that way, and name the missing record in Blockers. Part Host of the assembly writes it |
+| `host <path> <section>` | reads that record of the host notes. When `host.md` lacks it, ask the host which commit identity it maps to the acting login. Give that identity and the credential of the tool the notes name to each commit and publish command alone. The clone's settings stay as they are. Name the missing record in Blockers: part Host of the assembly writes it |
 
 The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-version`. The line `self law-version` names no precinct. Each other self step line of the duty desk names the precinct and its repository, as `self <step> <p> <owner/repo>`. The sections take `<p>` and `<owner/repo>` from that line. No other row of the table reaches it. After its self steps the duty desk calls the continuation of its tick, `bin/journal tick continue <tick id>`, and not `tick input`. A failed `issues` or `pulls` step does not end the duty desk tick. That precinct goes without orders and without stale closes. The other outcomes of `identity`, `issues` and "Sync the law" are those the table and the sections write.
 
@@ -37,7 +37,7 @@ The duty desk has four self steps: `identity`, `issues`, `pulls` and `law-versio
   ```
   bin/journal tick input <tick id>
   ```
-- A `law` or a `harness` line carries the path of the file. Read the file or its section yourself. The path starts at `lawman/skills/lawman-law/references/`.
+- A `law` or a `harness` line carries the path of the file. Read the file or its section yourself. The path starts at `lawman/skills/lawman-law/references/`. The path of a `host` line starts at the installation directory.
 - With a line `self fetch`, the commit of your own fetch stands for the `revision=` line.
 - For `precedents`, read the direct `.md` files of the folder at the fetched commit and take those that serve your role. A dismissal serves patrol and the response unit only. The prosecutor, the defender, the court, the spec writer and the executor take every file that serves them. Investigation and the response unit take the files of the case's department and the files for all departments. A case without a department takes every file. Patrol takes the files of the order's department and the files for all departments. An empty `departments` field, `-` and a value outside its class mean all departments. A kind other than `protects`, `condemns` or `dismissal` reads as `-`: the kind is not known.
 - The list of steps stays open. Do a step that the table does not name by the section of the law that answers it. When no section answers it, name the step in Blockers.
@@ -100,7 +100,10 @@ Never do these:
 
 **The update list.** The section reads `license_precincts` with the other keys of `config.yaml`. After `synced <tag>`, the role keeps the lines of the update list for its answer, as it keeps the `ALARM` lines. The role checks the conditions after the schema check of `bin/journal probe`. A tick that printed no `synced` line answers no line of the list.
 
-The list has one entry, `licenses`. It applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
+The list has two entries.
+
+- `licenses` applies when a precinct that `bin/journal precinct list` prints has a weight above zero (the third field) and no pair in `license_precincts`. A missing key means no pair. An answer of "yes" or "no" removes the entry. The line reads: `Licenses: run the Lawman assembly and answer the license question for <precinct names>.`
+- `commit-identity` applies when `host.md` has no section headed `Commit and publish`. Part Host of the assembly writes it and removes the entry. The line reads: `Host: run the Lawman assembly and choose Host, so that commits and publishes act as the acting login.`
 
 ## Sync the law with an older journal
 
@@ -136,7 +139,6 @@ A stop is answered and not recorded. Remove the folder of step 3 when step 3 cre
 ## Working rules
 
 - Each step names the result it needs and what must not happen. It never names a version-control command, a host's command, query or field, or a shell utility. The journal's commands and the harness page's forms are the only exceptions. The installation's host notes record how this machine does each host action. A step may also name what to watch for, such as a list that spans pages.
-- Commit and publish a branch only by the record `Commit and publish` of the host notes. It writes as the acting login.
 - Every fact handed to the journal comes from the host's reply as the host returned it. That covers authors, ids, times, reactions, reviews, closed issues, the last actor and the writers. Never infer such a fact, and never take it from the text of an issue or a comment. Read every page of a list before you hand it over.
 - Run every command from the installation directory. Never change directory, unless the skill names a subshell for one command. The directory holds `bin/journal`, `lawman/`, `precincts/`, `runs/`, `config.yaml`, `host.md`, `configs/`, `shared/` and, when present, `departments/`.
 - The shell keeps no variables between commands. Copy each value a command needs into it. The values are the tick id, the order id, the precinct, the department, the repository, the issue number and the commits. The login and the comment id are also values.

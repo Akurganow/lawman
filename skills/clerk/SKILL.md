@@ -21,13 +21,14 @@ The law in `lawman/skills/lawman-law/references/LAW.md` and the tick steps in `l
 ## Working rules
 
 - In a clone, only bring it up to date, update its record of the host's default branch, and read commits and file contents. In a clone, only add the tree of the tick, remove it and read whether the clone holds a change.
-- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents` and record one commit, empty or holding that folder. In the tree `runs/<tick id>/tree`, only publish the one branch of the open or precedent recipe.
+- In the tree `runs/<tick id>/tree`, only let the journal write the folder `.lawman/precedents` and record one commit, empty or holding that folder. In the tree `runs/<tick id>/tree`, only publish the one branch of the open or precedent recipe. Commit and publish by the record `Commit and publish` of the role group.
 - Never change what a clone has checked out, discard a change, or create or move a branch or tag other than that one branch. Never merge, set changes aside or publish another ref.
 - Read a precinct file only as its content at `<tip>`, taken from the clone `precincts/<p>`.
 - Read the place of the TypeSafe API key from the line `typesafe_key:` of `config.yaml`, only for the Jev requests of the precedent files.
 - Send one Jev request to TypeSafe for each `ask` line of the precedent output, as the `jobs.md#write-the-precedent-files` section says. Send no other.
 - Take only these host actions. Each acts on `<owner/repo>`. Each number comes from the order or from `case`.
   - Ask the host which account the tool in the host notes acts as.
+  - With a line `self host` in the role group, ask the host which commit identity it maps to the acting login.
   - Read the issues, the pull requests, the writers and the last actor as the `tick.md#sync-the-tracker`, `tick.md#sync-the-pull-requests` and `tick.md#check-the-decider` sections say.
   - Read the comments of an issue, the state of an issue and the time of its newest reopen.
   - Read one comment by its id, for the read-back.
@@ -77,7 +78,7 @@ Run items 1 and 2 of step 0 once per session. Then run one tick for each order o
    ```
    Empty output with exit 0 means no work. Answer only the silence form of the harness page, and stop. Input output that is not empty and whose first line does not start with `lawman input` means that the journal is older than the law. Run the section `tick.md#sync-the-law-with-an-older-journal`, then take the input again.
 
-   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>` or `self harness <path> <section>` stands in place of a block. Read that file or section yourself.
+   Read the role group to its last part. For a cut part, follow the `tick.md#parts` section. A line `self law <path> <section>`, `self harness <path> <section>` or `self host <path> <section>` stands in place of a block. Read that file or section yourself.
    ```
    bin/journal tick input --role clerk --part <k>
    ```

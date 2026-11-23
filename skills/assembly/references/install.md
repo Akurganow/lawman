@@ -26,7 +26,7 @@ Phase 1 runs as follows.
 
 1. Find the facts of every screen.
 2. For each screen but the first, send one proposal, then ask its decisions, batching the independent ones.
-3. Ask for one approval to apply, offering apply and change. The approval names the folder, the harness and the release. It names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
+3. Ask for one approval to apply, offering apply and change. The approval names the folder, the harness and the release. It names `host.md`, each file of `shared/` to write or to remove, and the entry files. It names the clones that get the settings of `Commit and publish`. It names the lines of a new agent where the page needs one, and each job with its model when known. It names each job whose mode changes, with its change.
 
 Ask the consent to paid proof runs among the questions that come before the approval. "Consent to paid runs" in `references/commands.md` holds the rule.
 
@@ -87,7 +87,7 @@ Record the tag as `release_tag`.
 
 ## Host
 
-In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. Under a heading `Commit and publish` they record the settings that make each clone commit and publish as that account, and how a role commits and publishes a branch in a tree of a clone. Every other record that commits or publishes uses that one. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Never shorten the notes: the roles read each record for the steps they do themselves. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
+In Apply, write what part Host found into `host.md` in the installation, never into a repository. The notes name the host, the tool in use and the account the host reports for it. For each host action the role skills name, they record how this machine does it with that tool. That covers handing host data to the journal in its forms. A section headed exactly `Commit and publish` records the settings that make each clone commit and publish as that account. It also records how a role commits and publishes a branch in a tree of a clone. The journal prints that section to the roles that commit. Every other record that commits or publishes uses it. They name how the host keeps issues and their templates, and anything particular to this host. They name the verifier of Lawman's release or the user's refusal. They say where a credential lives, never its value. Never write a token, a password, a key or a credential's content into them. Roles follow the notes and never write them. Never shorten the notes: the roles read each record for the steps they do themselves. Part Host keeps every line of the section `## Dependency reading` of an existing `host.md`. The section holds one `- <precinct name>: <words>` line per precinct. The precinct path writes it.
 
 Part Host keeps every line of `## License reading` in an existing `host.md` too. An item of that section has nested lines for its blocks. The license questions write it.
 
@@ -103,7 +103,7 @@ Finds:
 - Where the chosen tool keeps its credential. Learn the place and never the value.
 - How the host keeps its issues with their templates, and what is particular to it.
 - How this machine does each host action of the role skills, with the chosen tool. That covers giving the journal host data in its forms.
-- How the own settings of each clone make the version-control tool commit and publish as the account the host reports. A commit names the author and committer that the host maps to that account. A publish authenticates with the chosen tool's credential, fresh at each publish. No credential that the machine keeps answers before it, and no credential value lands in a file. Ask the host whose identity each carries, with no write.
+- How each clone's own settings make the version-control tool commit and publish as the account the host reports. A commit names the author and committer that the host maps to that account. A publish authenticates with the chosen tool's credential, fresh at each publish. No credential that the machine keeps answers before it, and no credential value lands in a file. Ask the host whose identity each carries, with no write.
 - For the assembly's own label actions, how this machine reads a repository's labels with their descriptions and creates a label with a description. Also how it sets a label's description.
 - The verifier of Lawman's release, by the paragraph above.
 
@@ -248,7 +248,7 @@ Apply starts after the approval of phase 1. The order is the same for the first 
 
 In Apply, "the method" is the verifier or the refusal of the signature in the approved proposal of part Host. `host.md` gets its record only at step 5, so no step before it reads the method from the notes.
 
-1. Write the host notes, with no new record about the verification of the binary. The earlier record stays.
+1. Write the host notes, with no new record about the verification of the binary. The earlier record stays. Give every clone under `precincts/` the settings of the record `Commit and publish`, and read back the identity a commit in it would name.
 2. Install the verifier that the developer chose, when it is not on this machine.
 3. Get the release files. On the first install, go on: check the sum and the signature, install the binary and probe it.
 4. Where the page's "One-off run" needs the Lawman agent, find it first. When it is missing, show the lines of a new agent. Wait for the developer to create it, by items 1 and 8 of "Apply" in `references/roles.md`. Create no proof job before the agent exists. Then prove the commands of the installation through the journal on a throwaway base.
